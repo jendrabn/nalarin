@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 
-import { env } from '@/env';
+import { env } from '@/config/env';
 
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, env.BCRYPT_ROUNDS);
