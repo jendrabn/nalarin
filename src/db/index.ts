@@ -1,21 +1,13 @@
 import 'dotenv/config';
-import { drizzle } from "drizzle-orm/mysql2";
-import mysql from "mysql2/promise";
-  
-const poolConnection = mysql.createPool({
-  host: "host",
-  user: "user",
-  database: "database",
-});
-const db = drizzle({ client: poolConnection });
 
-// or if you need client connection
-async function main() {
-  const connection = await mysql.createConnection({
-    host: "host",
-    user: "user",
-    database: "database",
-  });
-  const db = drizzle({ client: connection });
-}
-main();
+import { drizzle } from 'drizzle-orm/mysql2';
+import mysql from 'mysql2/promise';
+
+import * as schema from '@/db/schema';
+import { env } from '@/env';
+
+export const pool = mysql.createPool(env.DATABASE_URL);
+
+export const db = drizzle({ client: pool, schema, mode: 'default' });
+
+export { schema };

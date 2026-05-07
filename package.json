@@ -6,13 +6,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "tsx src/db/seed.ts"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
+    "drizzle-seed": "^0.3.1",
     "lucide-react": "^1.14.0",
     "mysql2": "^3.22.3",
     "next": "16.2.5",
@@ -25,6 +28,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
