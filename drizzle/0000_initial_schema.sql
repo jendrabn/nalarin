@@ -486,7 +486,6 @@ CREATE TABLE `users` (
 	`status` enum('active','inactive','suspended') NOT NULL DEFAULT 'active',
 	`gender` enum('male','female'),
 	`phone_number` varchar(32),
-	`school_class` varchar(100),
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `users_id` PRIMARY KEY(`id`),

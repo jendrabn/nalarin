@@ -4380,13 +4380,6 @@
           "notNull": false,
           "autoincrement": false
         },
-        "school_class": {
-          "name": "school_class",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",

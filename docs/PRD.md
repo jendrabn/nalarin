@@ -1,4 +1,5 @@
 # PRD Nalarin.id
+
 ## 1. Ringkasan Produk
 
 **Nalarin.id** adalah platform persiapan tes online untuk **UTBK**, **UTUL UGM**, **SIMAK UI**, dan **CPNS**. Produk menyediakan bank soal, latihan dengan **Mode Latihan** dan **Mode Quiz**, tryout rutin, review jawaban, pembahasan, progress tracking, blog edukasi, serta subscription Free, Pro, dan Max.
@@ -282,7 +283,7 @@ Pengecekan jadwal rilis dilakukan secara **lazy** saat user mengakses halaman ha
 ### 6.5 Autentikasi dan Session
 
 - **iron-session** — server-side session management berbasis encrypted HTTP-only cookie. Digunakan untuk menyimpan session token di cookie; data session aktual tetap disimpan di tabel `user_sessions` di database sesuai desain PRD. Cocok karena ringan, tidak membutuhkan adapter, dan bekerja native dengan Next.js App Router (Server Components, Route Handlers, Server Actions).
-- **Google OAuth** — diimplementasikan manual via Google OAuth 2.0 REST API atau menggunakan `@auth/core` sebagai thin wrapper. Tidak menggunakan NextAuth/Auth.js penuh karena logika linking Google di PRD ini sangat spesifik (wajib email sama, no auto-takeover).
+- **Google OAuth** — diimplementasikan manual via Google OAuth 2.0 REST API. Tidak menggunakan NextAuth/Auth.js penuh karena logika linking di PRD ini sangat spesifik (wajib email sama, no auto-takeover). Provider saat ini hanya Google; provider lain (Facebook, Apple, dll.) dapat ditambahkan di masa depan cukup dengan menambah kolom `facebook_id`, `apple_id`, dsb. di tabel `users`.
 
 ### 6.6 Rich Text Editor
 
@@ -507,7 +508,6 @@ User dapat:
 - Melihat profil.
 - Mengubah nama.
 - Mengubah foto profil opsional.
-- Mengubah kelas/tingkat pendidikan.
 - Mengubah WhatsApp/phone.
 - Mengubah email dengan verifikasi email baru.
 - Mengubah password.
@@ -658,7 +658,7 @@ Admin dapat:
 #### Chain Grading
 
 1. Jawaban subjektif masuk status `pending`.
-2. Admin atau AI mengisi skor dan feedback → status jawaban menjadi `graded`. Field `grading_source` diisi sesuai penilai (`manual` atau `ai`).
+2. Admin atau AI mengisi skor dan feedback → status jawaban menjadi `graded`. Field `grading_source` diisi sesuai penilai (`manual` atau `ai`). Field `is_correct` diisi bersamaan: `true` jika `score > 0`, `false` jika `score = 0`. Ini diperlukan agar `total_correct` dan `total_wrong` session dapat dihitung ulang secara akurat.
 3. Admin dapat menandai jawaban sebagai `needs_review` jika membutuhkan tinjauan ulang. Status `needs_review` berarti jawaban sudah memiliki skor sementara, tetapi belum final.
 4. Jawaban berstatus `needs_review` dianggap **belum selesai** dan memblokir chain grading. Session tidak akan menjadi `graded` selama masih ada jawaban berstatus `pending` atau `needs_review`.
 5. Setelah satu jawaban diubah menjadi `graded`, sistem mengecek apakah semua jawaban subjektif dalam session sudah berstatus `graded` (bukan `pending` atau `needs_review`).
@@ -726,6 +726,7 @@ Admin dapat:
 - `cancelled`: session dibatalkan, tidak menghasilkan skor.
 
 **Status awal session:**
+
 - `practice_sessions`: status awal **selalu `in_progress`** saat session dibuat — user telah memulai mengerjakan.
 - `tryout_sessions`: status awal **selalu `in_progress`** saat session dibuat — user telah memulai tryout.
 - `tryout_section_sessions`: status awal **selalu `pending`** saat dibuat — semua section di-pre-create secara bersamaan; section belum tentu langsung dibuka user. Status berubah menjadi `in_progress` ketika user pertama kali membuka section tersebut.
@@ -773,13 +774,12 @@ Menyimpan identitas akun, kredensial, role, status, dan profil dasar user/admin.
 | email | Email unik |
 | email_verified_at | Waktu verifikasi email, nullable |
 | password_hash | Hash password, nullable untuk akun Google-only |
-| google_id | ID Google OAuth, nullable |
+| google_id | ID Google OAuth, nullable. Jika di masa depan ditambahkan provider lain (Facebook, Apple, dll.), tambahkan kolom `facebook_id`, `apple_id`, dsb. di tabel ini. |
 | avatar_url | Foto profil, nullable |
 | role | enum UserRole |
 | status | enum UserStatus |
 | gender | enum Gender, nullable |
 | phone_number | Nomor phone/WhatsApp, nullable |
-| **school_class** | **Kelas/tingkat pendidikan user, varchar, nullable. Contoh: "12 IPA", "Kelas 11", "S1 Semester 3".** |
 | created_at | Tanggal dibuat |
 | updated_at | Tanggal update |
 
@@ -1459,7 +1459,7 @@ Nilai batas di atas adalah acuan awal dan dapat disesuaikan berdasarkan monitori
   - `all_or_nothing`: skor penuh hanya jika semua opsi benar dipilih **dan** tidak ada opsi salah yang dipilih. Satu pun opsi salah dipilih atau satu pun opsi benar tidak dipilih → skor `0` (untuk practice); untuk tryout, skor menjadi `wrong_answer_penalty` section.
   - `partial`: skor proporsional. Formula: `max(floor, (benar_dipilih - salah_dipilih) / total_opsi_benar × points)`, dibulatkan ke bawah. Nilai `floor` adalah `0` untuk practice. Untuk tryout, `floor = wrong_answer_penalty` dari section session. Contoh practice: 3 opsi benar, pilih 2 benar + 1 salah → `max(0, (2−1)/3 × points)`. Contoh tryout berpenalti −1 (points=4): `max(−1, (2−1)/3 × 4) = max(−1, 1.33) = 1`.
 - Jawaban subjektif: baris `practice_answers` dibuat saat user **pertama kali menyimpan** teks jawaban (autosave), dengan `grading_status = pending`, `is_correct = null`, `score = null`, `grading_source = null`. Jika user tidak pernah mengisi teks jawaban untuk soal subjektif tertentu, tidak ada baris yang dibuat; soal tersebut dianggap unanswered dengan skor 0.
-- Setelah admin atau AI menilai jawaban subjektif, `grading_source` diisi sesuai penilai (`manual` atau `ai`).
+- Setelah admin atau AI menilai jawaban subjektif, `grading_source` diisi sesuai penilai (`manual` atau `ai`), dan `is_correct` diisi: `true` jika `score > 0`, `false` jika `score = 0`.
 - Jawaban berstatus `needs_review` dianggap belum selesai dan memblokir chain grading.
 - Skor session dihitung ulang dan status berubah menjadi `graded` hanya setelah semua jawaban subjektif berstatus `graded` (tidak ada yang `pending` atau `needs_review`).
 
@@ -1477,11 +1477,13 @@ Nilai batas di atas adalah acuan awal dan dapat disesuaikan berdasarkan monitori
 
 **Cleanup tryout session terbengkalai (tanpa `enforce_end_time`):**
 Untuk tryout dengan `enforce_end_time = false` atau `ends_at = null`, jika `tryout_session` masih `in_progress` dan tidak ada aktivitas selama lebih dari **72 jam**, background job melakukan auto-submit. Aktivitas terakhir ditentukan dari nilai **terbaru** di antara:
+
 - `tryout_sessions.last_saved_at` (autosave di level session)
 - `last_saved_at` dari semua `tryout_section_sessions` milik session tersebut (autosave di level section/jawaban)
 - Jika semua nilai di atas null (belum pernah ada autosave sama sekali), gunakan `tryout_sessions.started_at` sebagai waktu referensi.
 
 Background job mengambil max dari semua nilai ini sebagai "waktu aktivitas terakhir". Jika `NOW() - waktu_aktivitas_terakhir > 72 jam`, jalankan auto-submit:
+
 1. Section yang masih `in_progress` di-submit dengan jawaban terakhir yang tersimpan.
 2. Section berstatus `pending` di-submit langsung dengan skor 0.
 3. `tryout_session` diubah menjadi `submitted` dengan `auto_submitted = true`.
@@ -1513,7 +1515,7 @@ Setelah seluruh tryout session di-submit (semua section selesai):
 3. `duration_used_seconds` dihitung sebagai jumlah `(submitted_at - started_at)` **hanya untuk section yang memiliki `started_at` tidak null**. Section yang di-auto-submit dari status `pending` (`started_at = null`) dikecualikan dari kalkulasi ini dan berkontribusi 0 detik. Dengan demikian user yang tidak mengerjakan section tidak mendapat keuntungan dari kalkulasi durasi.
 4. `total_sections_started` diisi dengan jumlah section yang `started_at`-nya tidak null.
 5. Jika tidak ada jawaban subjektif, status langsung berubah menjadi `graded`. Pada kondisi ini, `tryout_section_sessions.graded_at` untuk setiap section diisi dengan waktu scoring selesai. Section yang di-auto-submit dari `pending` (tidak ada jawaban sama sekali) juga mendapat `graded_at` diisi saat scoring dijalankan.
-6. Jika ada jawaban subjektif, status menjadi `grading`. Nilai `total_score` pada saat ini hanya mencerminkan skor jawaban objektif. Setelah semua jawaban subjektif dalam satu section di-grade (tidak ada lagi yang `pending` atau `needs_review`), `tryout_section_sessions.graded_at` untuk section tersebut diisi. Setelah **semua** section memiliki `graded_at` terisi, `total_score`, `total_correct`, dan `tryout_section_sessions.score` **dihitung ulang** (menggabungkan skor objektif + subjektif yang sudah final), `tryout_sessions.graded_at` diisi, dan status berubah menjadi `graded`.
+6. Jika ada jawaban subjektif, status menjadi `grading`. Nilai `total_score` pada saat ini hanya mencerminkan skor jawaban objektif. Setelah semua jawaban subjektif dalam satu section di-grade (tidak ada lagi yang `pending` atau `needs_review`), `tryout_section_sessions.graded_at` untuk section tersebut diisi. Setelah **semua** section memiliki `graded_at` terisi, `total_score`, `total_correct`, `total_wrong`, dan `tryout_section_sessions.score` **dihitung ulang** (menggabungkan skor objektif + subjektif yang sudah final), `tryout_sessions.graded_at` diisi, dan status berubah menjadi `graded`.
 
 ### 13.6 Tryout Ranking
 
@@ -1544,6 +1546,7 @@ Setelah seluruh tryout session di-submit (semua section selesai):
 
 **Validasi pada saat create dan update (early feedback):**
 Service layer memvalidasi konsistensi relasi pada saat operasi create dan update, bukan hanya saat publish. Validasi yang dijalankan pada create/update:
+
 - Subject harus berasal dari exam type yang sama dengan practice/tryout.
 - Topic (jika diisi) harus berasal dari subject yang dipilih.
 - Jika `starts_at` dan `ends_at` keduanya diisi, `ends_at` harus lebih besar dari `starts_at`.
@@ -1552,6 +1555,7 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 - Jika validasi gagal, operasi ditolak dengan pesan error yang jelas. Admin tidak perlu menunggu proses publish untuk menemukan inkonsistensi relasi.
 
 **Validasi tambahan pada saat publish:**
+
 - Practice tidak boleh dipublish jika tidak punya soal.
 - Practice tidak boleh dipublish jika `has_practice_mode = false` dan `has_quiz_mode = false`. Minimal satu mode harus aktif.
 - Practice tidak boleh dipublish jika `has_quiz_mode = true` tetapi `quiz_duration_minutes` kosong atau kurang dari/sama dengan 0.
@@ -1598,7 +1602,7 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 ### 14.4 Flow Google Login dan Linking
 
 1. User memilih login Google.
-2. Jika email belum ada di sistem, sistem membuat user baru dengan `email_verified_at` terisi.
+2. Jika email belum ada di sistem, sistem membuat user baru dengan `email_verified_at` terisi dan `google_id` diisi.
 3. Jika email sudah ada **dan `google_id` user masih null** (belum pernah dihubungkan ke Google), login Google **ditolak** dengan pesan untuk login menggunakan email/password terlebih dahulu, kemudian menghubungkan Google dari halaman profil.
 4. Jika email sudah ada **dan `google_id` sudah terhubung** (tidak null), login Google diizinkan tanpa memandang ada-tidaknya password.
 5. User yang sudah login dapat membuka profil dan memilih hubungkan Google.
@@ -1683,7 +1687,7 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 - Verifikasi email dan Resend/React Email untuk email transaksional.
 - Forgot/reset password (dengan `invalidated_at` pada token tables).
 - Login Google via OAuth 2.0 manual (no auto-link).
-- Profile dasar (termasuk field `school_class`).
+- Profile dasar.
 - Admin dashboard awal dengan layout shadcn/ui.
 
 ### Phase 2 — Content dan Bank Soal

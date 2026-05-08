@@ -159,7 +159,6 @@ export const users = mysqlTable(
     status: userStatusEnum.default('active').notNull(),
     gender: genderEnum,
     phoneNumber: varchar('phone_number', { length: 32 }),
-    schoolClass: varchar('school_class', { length: 100 }),
     ...auditColumns(),
   },
   (table) => [
