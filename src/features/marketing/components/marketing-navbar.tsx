@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRightIcon, MenuIcon, UserRoundIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  ChevronRightIcon,
+  MenuIcon,
+} from "lucide-react";
 
 import { SiteLogo } from "@/components/site-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -12,7 +16,6 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -43,9 +46,14 @@ export function MarketingNavbar({ user }: MarketingNavbarProps) {
       <nav className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-7">
           <SiteLogo />
-          <div className="hidden items-center gap-1 md:flex">
+          <div className="hidden items-center gap-1.5 md:flex">
             {navLinks.map((link) => (
-              <Button key={link.href} variant="ghost" size="sm" asChild>
+              <Button
+                key={link.href}
+                variant="ghost"
+                className="h-9 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground"
+                asChild
+              >
                 <Link href={link.href}>{link.label}</Link>
               </Button>
             ))}
@@ -108,11 +116,6 @@ export function MarketingNavbar({ user }: MarketingNavbarProps) {
                           <Link href="/account/profile">Profil</Link>
                         </Button>
                       </SheetClose>
-                      <SheetClose asChild>
-                        <Button className="h-11 w-full" variant="outline" asChild>
-                          <Link href="/account/security">Ubah Password</Link>
-                        </Button>
-                      </SheetClose>
                       <form action={logoutAction}>
                         <Button className="h-11 w-full" variant="ghost" type="submit">
                           Logout
@@ -157,35 +160,41 @@ function UserMenu({ user }: { user: NonNullable<MarketingUser> }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-10 gap-2 px-2">
+        <Button
+          variant="ghost"
+          className="h-10 gap-2 px-2 hover:bg-secondary/70 hover:text-foreground"
+          aria-label={`Menu akun ${user.name}`}
+          type="button"
+        >
           <Avatar className="size-8">
             <AvatarImage src={user.avatarUrl ?? undefined} alt={user.name} />
             <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
           </Avatar>
           <span className="max-w-32 truncate text-sm">{user.name}</span>
+          <ChevronDownIcon />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="flex items-center gap-2">
-          <UserRoundIcon />
-          Akun
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
+      <DropdownMenuContent align="end" className="w-44 rounded-2xl p-2">
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem
+            asChild
+            className="h-10 rounded-xl px-3 focus:bg-secondary/70 focus:text-foreground hover:bg-secondary/70 hover:text-foreground"
+          >
             <Link href="/account/profile">Profil</Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/account/security">Ubah Password</Link>
-          </DropdownMenuItem>
-          <form action={logoutAction}>
-            <DropdownMenuItem asChild>
-              <button type="submit" className="w-full">
-                Logout
-              </button>
-            </DropdownMenuItem>
-          </form>
         </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <form action={logoutAction}>
+          <DropdownMenuItem
+            asChild
+            variant="destructive"
+            className="h-10 rounded-xl px-3 focus:bg-destructive/10 focus:text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <button type="submit" className="w-full text-left">
+              Logout
+            </button>
+          </DropdownMenuItem>
+        </form>
       </DropdownMenuContent>
     </DropdownMenu>
   );
