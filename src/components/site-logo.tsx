@@ -17,7 +17,7 @@ export function SiteLogo({ className }: SiteLogoProps) {
     >
       <span>nalarin</span>
       <span className="text-[0.52em] leading-none font-semibold text-brand-ink">
-        .ID
+        .id
       </span>
     </Link>
   );

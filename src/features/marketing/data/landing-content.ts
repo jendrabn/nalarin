@@ -2,11 +2,16 @@ import {
   BarChart3Icon,
   BookOpenCheckIcon,
   CheckCircle2Icon,
+  FileCheck2Icon,
   Layers3Icon,
   PenLineIcon,
   RotateCcwIcon,
   SparklesIcon,
+  TargetIcon,
   TimerIcon,
+  TrendingUpIcon,
+  TrophyIcon,
+  UniversityIcon,
 } from "lucide-react";
 
 export const navLinks = [
@@ -14,6 +19,29 @@ export const navLinks = [
   { label: "Tryout", href: "/tryouts" },
   { label: "Premium", href: "#pricing" },
   { label: "Blog", href: "/blog" },
+];
+
+export const examCategories = [
+  {
+    title: "UTBK",
+    description: "Latihan TPS, literasi, dan penalaran untuk jalur SNBT.",
+    icon: TargetIcon,
+  },
+  {
+    title: "UTUL UGM",
+    description: "Paket soal mandiri UGM dengan ritme latihan bertahap.",
+    icon: UniversityIcon,
+  },
+  {
+    title: "SIMAK UI",
+    description: "Persiapan seleksi UI dengan quiz dan review pembahasan.",
+    icon: TrophyIcon,
+  },
+  {
+    title: "CPNS",
+    description: "Bank soal dasar untuk TWK, TIU, dan TKP saat sudah tersedia.",
+    icon: FileCheck2Icon,
+  },
 ];
 
 export const featureHighlights = [
@@ -46,6 +74,11 @@ export const featureHighlights = [
     title: "Review Pembahasan",
     description: "Cek jawaban, alasan, dan pembahasan saat hasil latihan atau tryout sudah tersedia.",
     icon: RotateCcwIcon,
+  },
+  {
+    title: "Progress Tracking",
+    description: "Pantau akurasi, topik kuat, topik lemah, dan tren skor agar belajar berikutnya lebih presisi.",
+    icon: TrendingUpIcon,
   },
 ];
 
@@ -80,6 +113,7 @@ export const footerGroups = [
       { label: "UTBK", href: "/practices/utbk" },
       { label: "UTUL UGM", href: "/practices/utul-ugm" },
       { label: "SIMAK UI", href: "/practices/simak-ui" },
+      { label: "CPNS", href: "/practices/cpns" },
     ],
   },
   {

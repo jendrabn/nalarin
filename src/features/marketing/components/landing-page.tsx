@@ -24,22 +24,23 @@ import { MarketingFooter } from "./marketing-footer";
 import { TestimonialsSlider } from "./testimonials-slider";
 import faqs from "@/features/marketing/data/faqs.json";
 import {
+  examCategories,
   featureHighlights,
   howItWorks,
   pricingBullets,
   trustBadges,
 } from "@/features/marketing/data/landing-content";
 
-const currentUser: MarketingUser = null;
 const softCardClass =
   "rounded-lg bg-card shadow-lg shadow-primary/5 ring-1 ring-foreground/5 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/10";
 
-export function LandingPage() {
+export function LandingPage({ user }: { user: MarketingUser }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <MarketingNavbar user={currentUser} />
+      <MarketingNavbar user={user} />
       <main>
         <HeroSection />
+        <ExamCategoriesSection />
         <FeatureHighlightsSection />
         <TestimonialsSlider />
         <HowItWorksSection />
@@ -49,6 +50,44 @@ export function LandingPage() {
       </main>
       <MarketingFooter />
     </div>
+  );
+}
+
+function ExamCategoriesSection() {
+  return (
+    <section id="kategori-tes" className="bg-background py-16 sm:py-20">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+          <div>
+            <p className="text-sm font-semibold text-primary">Kategori Tes</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-normal sm:text-4xl">
+              Jalur Seleksi Yang Bisa Kamu Siapkan Dari Sekarang
+            </h2>
+          </div>
+          <p className="text-base leading-7 text-muted-foreground">
+            Mulai dari seleksi PTN sampai CPNS, setiap kategori dirancang agar
+            latihan bisa dipetakan per subject, topik, dan mode ujian.
+          </p>
+        </div>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {examCategories.map((category) => (
+            <Card key={category.title} className={softCardClass}>
+              <CardHeader className="gap-4 p-5">
+                <div className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
+                  <category.icon />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">{category.title}</CardTitle>
+                  <CardDescription className="mt-2 leading-6">
+                    {category.description}
+                  </CardDescription>
+                </div>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -86,7 +125,7 @@ function HeroSection() {
           <p className="mx-auto mt-6 max-w-xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg">
             Latihan soal, quiz bertimer, tryout rutin, pembahasan, ranking, dan
             progress belajar dalam satu platform untuk UTBK, UTUL UGM, dan SIMAK
-            UI.
+            UI, dengan fondasi kategori CPNS.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button

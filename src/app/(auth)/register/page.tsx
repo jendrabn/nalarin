@@ -1,5 +1,15 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+import type { Metadata } from "next";
+
+import { AuthPage } from "@/features/auth/pages/auth-page";
+
+export const metadata: Metadata = {
+  title: "Daftar",
+  description: "Daftar akun Nalarin.id dengan Google dan mulai latihan gratis.",
+  alternates: {
+    canonical: "/register",
+  },
+};
 
 export default function Page() {
-  return <RoutePlaceholder section="Auth" route="/register" />;
+  return <AuthPage />;
 }

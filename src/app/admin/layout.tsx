@@ -1,7 +1,11 @@
-export default function AdminLayout({
+import { requireAdmin } from "@/features/auth/services/session";
+
+export default async function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  await requireAdmin();
+
   return children;
 }

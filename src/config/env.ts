@@ -22,6 +22,8 @@ const booleanFromString = z
   .enum(['true', 'false'])
   .transform((value) => value === 'true');
 
+const GOOGLE_CALLBACK_PATH = '/api/auth/google/callback';
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -114,6 +116,19 @@ const envSchema = z
           message: 'SMTP_PASSWORD is required when EMAIL_PROVIDER=smtp.',
         });
       }
+    }
+
+    const expectedGoogleRedirectUri = new URL(
+      GOOGLE_CALLBACK_PATH,
+      value.APP_URL,
+    ).toString();
+
+    if (value.GOOGLE_REDIRECT_URI !== expectedGoogleRedirectUri) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['GOOGLE_REDIRECT_URI'],
+        message: `GOOGLE_REDIRECT_URI harus sama persis dengan ${expectedGoogleRedirectUri}.`,
+      });
     }
   });
 

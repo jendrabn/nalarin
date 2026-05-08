@@ -10,7 +10,7 @@ export function MarketingFooter() {
         <div>
           <SiteLogo />
           <p className="mt-4 max-w-sm text-sm leading-6 text-muted-foreground">
-            Platform persiapan UTBK, UTUL UGM, dan SIMAK UI dengan latihan
+            Platform persiapan UTBK, UTUL UGM, SIMAK UI, dan CPNS dengan latihan
             soal, tryout, ranking, pembahasan, dan progress belajar.
           </p>
         </div>

@@ -24,12 +24,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { logoutAction } from "@/features/auth/actions/logout";
 import { navLinks } from "@/features/marketing/data/landing-content";
 
 export type MarketingUser = {
   name: string;
   email?: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
 } | null;
 
 type MarketingNavbarProps = {
@@ -90,7 +91,7 @@ export function MarketingNavbar({ user }: MarketingNavbarProps) {
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center gap-3 rounded-2xl bg-secondary/65 p-4 ring-1 ring-border/70">
                         <Avatar className="size-10">
-                          <AvatarImage src={user.avatarUrl} alt={user.name} />
+                          <AvatarImage src={user.avatarUrl ?? undefined} alt={user.name} />
                           <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
@@ -107,6 +108,16 @@ export function MarketingNavbar({ user }: MarketingNavbarProps) {
                           <Link href="/account/profile">Profil</Link>
                         </Button>
                       </SheetClose>
+                      <SheetClose asChild>
+                        <Button className="h-11 w-full" variant="outline" asChild>
+                          <Link href="/account/security">Ubah Password</Link>
+                        </Button>
+                      </SheetClose>
+                      <form action={logoutAction}>
+                        <Button className="h-11 w-full" variant="ghost" type="submit">
+                          Logout
+                        </Button>
+                      </form>
                     </div>
                   ) : (
                     <GuestActions stacked />
@@ -148,7 +159,7 @@ function UserMenu({ user }: { user: NonNullable<MarketingUser> }) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-10 gap-2 px-2">
           <Avatar className="size-8">
-            <AvatarImage src={user.avatarUrl} alt={user.name} />
+            <AvatarImage src={user.avatarUrl ?? undefined} alt={user.name} />
             <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
           </Avatar>
           <span className="max-w-32 truncate text-sm">{user.name}</span>
@@ -167,9 +178,13 @@ function UserMenu({ user }: { user: NonNullable<MarketingUser> }) {
           <DropdownMenuItem asChild>
             <Link href="/account/security">Ubah Password</Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/logout">Logout</Link>
-          </DropdownMenuItem>
+          <form action={logoutAction}>
+            <DropdownMenuItem asChild>
+              <button type="submit" className="w-full">
+                Logout
+              </button>
+            </DropdownMenuItem>
+          </form>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
