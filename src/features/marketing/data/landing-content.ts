@@ -1,12 +1,8 @@
 import {
   BarChart3Icon,
   BookOpenCheckIcon,
-  BrainCircuitIcon,
   CheckCircle2Icon,
-  ClipboardListIcon,
-  GraduationCapIcon,
   Layers3Icon,
-  MedalIcon,
   PenLineIcon,
   RotateCcwIcon,
   SparklesIcon,
@@ -19,27 +15,6 @@ export const navLinks = [
   { label: "Premium", href: "#pricing" },
   { label: "Blog", href: "/blog" },
 ];
-
-export const testCategories = [
-  {
-    name: "UTBK",
-    description: "TPS, literasi, penalaran, dan latihan lintas subtest untuk jalur SNBT.",
-    meta: "PTN Nasional",
-    icon: GraduationCapIcon,
-  },
-  {
-    name: "UTUL UGM",
-    description: "Paket soal dan simulasi untuk mengukur kesiapan masuk Universitas Gadjah Mada.",
-    meta: "Mandiri UGM",
-    icon: MedalIcon,
-  },
-  {
-    name: "SIMAK UI",
-    description: "Latihan bertahap untuk pola soal seleksi mandiri Universitas Indonesia.",
-    meta: "Mandiri UI",
-    icon: BrainCircuitIcon,
-  },
-  ];
 
 export const featureHighlights = [
   {

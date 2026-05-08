@@ -1,3 +1,4 @@
+@import url("https://api.fontshare.com/v2/css?f[]=satoshi@700,900&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -6,8 +7,10 @@
 
 @theme inline {
   --color-background: var(--background);
+  --color-brand-ink: var(--brand-ink);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
+  --font-logo: "Satoshi", var(--font-sans);
   --font-mono: var(--font-inter);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -50,6 +53,7 @@
 
 :root {
   --background: oklch(1 0 0);
+  --brand-ink: oklch(0.26 0.05 255);
   --foreground: oklch(0.19 0.04 255);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.19 0.04 255);
@@ -85,6 +89,7 @@
 
 .dark {
   --background: oklch(0.16 0.035 255);
+  --brand-ink: oklch(0.82 0.03 250);
   --foreground: oklch(0.97 0.01 247);
   --card: oklch(0.2 0.04 255);
   --card-foreground: oklch(0.97 0.01 247);

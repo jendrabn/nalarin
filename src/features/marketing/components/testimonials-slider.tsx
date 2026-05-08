@@ -38,7 +38,7 @@ export function TestimonialsSlider() {
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold text-primary">Ulasan pengguna</p>
+            <p className="text-sm font-semibold text-primary">Ulasan Pejuang PTN</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-normal sm:text-4xl">
               Belajar Terasa Lebih Terarah
             </h2>

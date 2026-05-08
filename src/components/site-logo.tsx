@@ -11,11 +11,14 @@ export function SiteLogo({ className }: SiteLogoProps) {
     <Link
       href="/"
       className={cn(
-        "font-heading text-[2rem] font-bold leading-none tracking-normal text-primary",
+        "inline-flex items-baseline font-logo text-[2rem] font-bold leading-none tracking-normal text-primary",
         className
       )}
     >
-      nalarin
+      <span>nalarin</span>
+      <span className="text-[0.52em] leading-none font-semibold text-brand-ink">
+        .ID
+      </span>
     </Link>
   );
 }

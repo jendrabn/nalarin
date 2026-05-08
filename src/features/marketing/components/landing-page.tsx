@@ -32,7 +32,6 @@ import {
   footerGroups,
   howItWorks,
   pricingBullets,
-  testCategories,
   trustBadges,
 } from "@/features/marketing/data/landing-content";
 
@@ -46,7 +45,6 @@ export function LandingPage() {
       <MarketingNavbar user={currentUser} />
       <main>
         <HeroSection />
-        <TestCategoriesSection />
         <FeatureHighlightsSection />
         <TestimonialsSlider />
         <HowItWorksSection />
@@ -61,34 +59,41 @@ export function LandingPage() {
 
 function HeroSection() {
   return (
-    <section className="relative isolate overflow-hidden border-b">
-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:44px_44px] opacity-45" />
-      <div className="absolute inset-x-0 top-0 -z-10 h-40 bg-gradient-to-b from-primary/12 to-transparent" />
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-7xl flex-col items-center justify-center gap-10 px-4 py-20 text-center sm:px-6 lg:px-8 lg:py-24">
-        <div className="flex flex-wrap items-center justify-center gap-2">
+    <section className="relative isolate overflow-hidden border-b bg-background">
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(255,255,255,0.68)_18%,transparent_42%,transparent_76%,rgba(255,255,255,0.5))] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.02)_18%,transparent_42%,transparent_76%,rgba(255,255,255,0.02))]" />
+      <div className="absolute left-[-18rem] top-[-8rem] -z-10 h-[26rem] w-[38rem] rotate-[-8deg] rounded-[999px] bg-primary/8 blur-3xl sm:h-[30rem] sm:w-[46rem]" />
+      <div className="absolute right-[-20rem] top-[-5rem] -z-10 h-[24rem] w-[36rem] rotate-[10deg] rounded-[999px] bg-accent/18 blur-3xl sm:h-[28rem] sm:w-[44rem]" />
+      <div className="absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      <div className="absolute bottom-12 left-8 top-24 -z-10 hidden w-px bg-gradient-to-b from-transparent via-border/80 to-transparent xl:block" />
+      <div className="absolute bottom-12 right-8 top-24 -z-10 hidden w-px bg-gradient-to-b from-transparent via-border/80 to-transparent xl:block" />
+      <div className="absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-b from-transparent via-background/70 to-background" />
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-7xl flex-col items-center justify-center gap-12 px-4 py-20 text-center sm:px-6 lg:px-8 lg:py-24">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground sm:text-[0.76rem]">
           {trustBadges.map((badge) => (
-            <Badge
+            <div
               key={badge.label}
-              variant="secondary"
-              className="gap-1 rounded-full px-3 py-1 shadow-sm ring-1 ring-foreground/5"
+              className={cn(
+                "inline-flex items-center gap-2",
+                "after:ml-4 after:hidden after:h-px after:w-6 after:bg-border sm:after:block last:after:hidden"
+              )}
             >
-              <badge.icon />
+              <badge.icon className="size-3.5 text-primary" />
               {badge.label}
-            </Badge>
+            </div>
           ))}
         </div>
 
-        <div className="mx-auto max-w-3xl">
-          <h1 className="mx-auto max-w-3xl text-balance text-[3.35rem] font-extrabold leading-[1.05] tracking-tight sm:text-[4.1rem] lg:text-[4.9rem]">
+        <div className="mx-auto max-w-4xl">
+          <h1 className="mx-auto max-w-4xl text-balance text-[3.25rem] font-extrabold leading-[1.05] tracking-tight sm:text-[3.95rem] lg:text-[4.45rem]">
             Belajar Pakai Nalar, Siap Hadapi{" "}
             <span className="text-primary">Seleksi PTN</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg">
+          <p className="mx-auto mt-6 max-w-xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg">
             Latihan soal, quiz bertimer, tryout rutin, pembahasan, ranking, dan
             progress belajar dalam satu platform untuk UTBK, UTUL UGM, dan SIMAK
             UI.
           </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button
               variant="cta"
               className="h-12 px-5 text-base has-data-[icon=inline-end]:pr-5"
@@ -99,7 +104,7 @@ function HeroSection() {
                 <ArrowRightIcon data-icon="inline-end" />
               </Link>
             </Button>
-            <Button className="h-12 px-5 text-base" variant="outline" asChild>
+            <Button className="hidden h-12 px-5 text-base sm:inline-flex" variant="outline" asChild>
               <Link href="/tryouts">Lihat Tryout</Link>
             </Button>
           </div>
@@ -109,59 +114,28 @@ function HeroSection() {
   );
 }
 
-function TestCategoriesSection() {
-  return (
-    <section id="kategori" className="bg-background py-20 sm:py-24">
-      <SectionHeading
-        eyebrow="Kategori tes"
-        title="Satu Ruang Belajar Untuk Target Seleksi Yang Berbeda"
-        description="Pilih jalur yang paling relevan lalu fokus pada materi yang perlu dikuasai."
-      />
-      <div className="mx-auto mt-10 grid w-full max-w-7xl grid-cols-1 gap-5 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
-        {testCategories.map((category) => (
-          <Card
-            key={category.name}
-            className={softCardClass}
-          >
-            <CardHeader className="min-h-64 gap-3 p-6">
-              <div className="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
-                <category.icon />
-              </div>
-              <Badge variant="secondary" className="mt-2 w-fit">
-                {category.meta}
-              </Badge>
-              <CardTitle className="text-xl">{category.name}</CardTitle>
-              <CardDescription className="leading-6">
-                {category.description}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function FeatureHighlightsSection() {
   return (
     <section id="fitur" className="border-y bg-secondary/60 py-20 sm:py-24">
       <SectionHeading
-        eyebrow="Highlight fitur"
+        eyebrow="Fitur Utama"
         title="Belajar Dengan Alur Yang Bisa Diukur"
         description="Nalarin menyatukan latihan, quiz, tryout, review, dan progres agar setiap sesi belajar punya tindak lanjut."
       />
-      <div className="mx-auto mt-10 grid w-full max-w-7xl grid-cols-1 gap-5 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-8">
+      <div className="mx-auto mt-10 grid w-full max-w-7xl grid-cols-1 gap-4 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-8">
         {featureHighlights.map((feature) => (
           <Card
             key={feature.title}
             className={softCardClass}
           >
-            <CardHeader className="min-h-56 gap-3 p-6">
-              <div className="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
+            <CardHeader className="min-h-48 gap-2.5 p-5 sm:p-6">
+              <div className="mb-1 flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
                 <feature.icon />
               </div>
-              <CardTitle>{feature.title}</CardTitle>
-              <CardDescription className="leading-6">
+              <CardTitle className="text-[1.05rem] leading-snug">
+                {feature.title}
+              </CardTitle>
+              <CardDescription className="text-sm leading-6">
                 {feature.description}
               </CardDescription>
             </CardHeader>
@@ -176,7 +150,7 @@ function HowItWorksSection() {
   return (
     <section id="cara-kerja" className="border-y bg-secondary/60 py-20 sm:py-24">
       <SectionHeading
-        eyebrow="Cara kerja"
+        eyebrow="Cara Kerja"
         title="Dari Target Tes Ke Review Yang Bisa Ditindaklanjuti"
         description="Pilih target, mulai latihan, lalu gunakan hasil review untuk menentukan prioritas belajar berikutnya."
       />
@@ -208,7 +182,7 @@ function PricingSection() {
   return (
     <section id="pricing" className="bg-background py-20 sm:py-24">
       <SectionHeading
-        eyebrow="Plan harga"
+        eyebrow="Paket Belajar"
         title="Mulai Gratis, Upgrade Saat Butuh Akses Lebih Luas"
         description="Pilih akses belajar sesuai ritme persiapanmu, dari latihan dasar sampai tryout intensif dengan pembahasan penuh."
       />
