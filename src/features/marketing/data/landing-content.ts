@@ -101,6 +101,6 @@ export const pricingBullets = {
 
 export const trustBadges = [
   { label: "Autosave Jawaban", icon: CheckCircle2Icon },
-  { label: "Pembahasan Bertahap", icon: SparklesIcon },
+  { label: "Pembahasan AI", icon: SparklesIcon },
   { label: "Progress Tracking", icon: BarChart3Icon },
 ];

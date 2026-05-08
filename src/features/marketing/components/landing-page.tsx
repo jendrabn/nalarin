@@ -1,12 +1,7 @@
 import Link from "next/link";
-import {
-  ArrowRightIcon,
-  CheckIcon,
-  ShieldCheckIcon,
-} from "lucide-react";
+import { ArrowRightIcon, CheckIcon, ShieldCheckIcon } from "lucide-react";
 
 import { PLAN_CONFIG, type PlanCode } from "@/config/plans";
-import { SiteLogo } from "@/components/site-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,11 +20,11 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { MarketingNavbar, type MarketingUser } from "./marketing-navbar";
+import { MarketingFooter } from "./marketing-footer";
 import { TestimonialsSlider } from "./testimonials-slider";
 import faqs from "@/features/marketing/data/faqs.json";
 import {
   featureHighlights,
-  footerGroups,
   howItWorks,
   pricingBullets,
   trustBadges,
@@ -68,7 +63,7 @@ function HeroSection() {
       <div className="absolute bottom-12 right-8 top-24 -z-10 hidden w-px bg-gradient-to-b from-transparent via-border/80 to-transparent xl:block" />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-b from-transparent via-background/70 to-background" />
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-7xl flex-col items-center justify-center gap-12 px-4 py-20 text-center sm:px-6 lg:px-8 lg:py-24">
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground sm:text-[0.76rem]">
+        <div className="hidden flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground sm:flex sm:text-[0.76rem]">
           {trustBadges.map((badge) => (
             <div
               key={badge.label}
@@ -265,7 +260,7 @@ function FaqSection() {
         <Accordion
           type="single"
           collapsible
-          className="flex flex-col"
+          className="flex flex-col rounded-2xl bg-card/85 px-5 shadow-lg shadow-primary/5 ring-1 ring-foreground/5 backdrop-blur-sm sm:px-6"
         >
           {faqs.map((faq, index) => (
             <AccordionItem
@@ -314,57 +309,6 @@ function FinalCtaSection() {
         </div>
       </div>
     </section>
-  );
-}
-
-function MarketingFooter() {
-  return (
-    <footer className="border-t bg-secondary/50">
-      <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.2fr_2fr] lg:px-8">
-        <div>
-          <SiteLogo />
-          <p className="mt-4 max-w-sm text-sm leading-6 text-muted-foreground">
-            Platform persiapan UTBK, UTUL UGM, dan SIMAK UI dengan latihan
-            soal, tryout, ranking, pembahasan, dan progress belajar.
-          </p>
-        </div>
-        <div className="grid gap-8 sm:grid-cols-3">
-          {footerGroups.map((group) => (
-            <div key={group.title}>
-              <h3 className="text-sm font-semibold">{group.title}</h3>
-              <ul className="mt-4 flex flex-col gap-3">
-                {group.links.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="border-t">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <p>&copy; 2026 Nalarin.id. Semua hak dilindungi.</p>
-          <div className="flex gap-4">
-            <Link href="/terms" className="hover:text-foreground">
-              Syarat
-            </Link>
-            <Link href="/privacy" className="hover:text-foreground">
-              Privasi
-            </Link>
-            <Link href="/contact" className="hover:text-foreground">
-              Kontak
-            </Link>
-          </div>
-        </div>
-      </div>
-    </footer>
   );
 }
 
