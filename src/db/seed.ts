@@ -21,12 +21,7 @@ const examTypeSeeds = [
     slug: 'simak-ui',
     description: 'Seleksi Masuk Universitas Indonesia untuk berbagai jenjang.',
   },
-  {
-    name: 'CPNS',
-    slug: 'cpns',
-    description: 'Latihan seleksi Calon Pegawai Negeri Sipil.',
-  },
-];
+  ];
 
 async function seedExamTypes() {
   await db

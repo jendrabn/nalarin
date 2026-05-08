@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Alya Ramadhani",
+    "role": "Siswa kelas 12, target FK UI",
+    "avatar": "AR",
+    "rating": 5,
+    "quote": "Mode quiz bikin aku sadar bagian mana yang sering lambat. Setelah review pembahasan, strategi ngerjain TPS jadi lebih rapi."
+  },
+  {
+    "name": "Dimas Prakasa",
+    "role": "Gap year, target Teknik UGM",
+    "avatar": "DP",
+    "rating": 5,
+    "quote": "Tryout multi-section terasa dekat dengan simulasi asli. Ranking dan analisisnya membantu aku membandingkan progres tanpa harus menebak."
+  },
+  {
+    "name": "Naya Putri",
+    "role": "Siswa kelas 11, mulai UTBK awal",
+    "avatar": "NP",
+    "rating": 5,
+    "quote": "Bank soal per topik enak buat nyicil. Aku bisa fokus ke kelemahan dulu sebelum masuk paket soal yang lebih berat."
+  },
+  {
+    "name": "Rafi Maulana",
+    "role": "Pejuang SIMAK UI",
+    "avatar": "RM",
+    "rating": 5,
+    "quote": "Pembahasan lengkapnya bukan cuma kasih jawaban, tapi jelasin kenapa opsi lain kurang tepat. Itu yang paling ngebantu."
+  },
+  {
+    "name": "Salsa Kirana",
+    "role": "Target UTUL UGM",
+    "avatar": "SK",
+    "rating": 5,
+    "quote": "Progress tracking bikin latihan terasa terarah. Setiap minggu aku tahu subtest mana yang harus diprioritaskan."
+  }
+]
