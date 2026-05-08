@@ -71,7 +71,7 @@ export function TestimonialsSlider() {
 
         <div
           ref={trackRef}
-          className="-mx-4 grid auto-cols-[82%] grid-flow-col gap-4 overflow-x-auto scroll-smooth px-4 pb-4 [scrollbar-width:none] sm:auto-cols-[46%] lg:auto-cols-[calc((100%-3rem)/4)] [&::-webkit-scrollbar]:hidden"
+          className="-mx-4 grid auto-cols-[82%] grid-flow-col gap-4 overflow-x-auto scroll-smooth px-4 pb-4 [scrollbar-width:none] sm:auto-cols-[46%] lg:auto-cols-[calc((100%-1rem)/2)] xl:auto-cols-[calc((100%-2rem)/3)] [&::-webkit-scrollbar]:hidden"
         >
           {testimonials.map((testimonial) => (
             <Card
