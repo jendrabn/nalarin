@@ -1,5 +1,13 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+import { redirect } from "next/navigation"
 
-export default function Page() {
-  return <RoutePlaceholder section="Admin" route="/admin/blog/[postId]" />;
+type BlogPostRouteProps = {
+  params: Promise<{
+    postId: string
+  }>
 }
+
+export default async function Page({ params }: BlogPostRouteProps) {
+  const { postId } = await params
+  redirect(`/admin/blog/${postId}/edit`)
+}
+

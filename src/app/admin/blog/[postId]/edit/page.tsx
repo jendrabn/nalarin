@@ -1,5 +1,66 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
 
-export default function Page() {
-  return <RoutePlaceholder section="Admin" route="/admin/blog/[postId]/edit" />;
+import { BlogPostFormPage } from "@/features/admin/blog/components/blog-post-form-page"
+import { getBlogCategories } from "@/features/admin/blog/queries/blog-categories"
+import { getBlogPostById } from "@/features/admin/blog/queries/blog-posts"
+
+type EditPageProps = {
+  params: Promise<{
+    postId: string
+  }>
 }
+
+export async function generateMetadata({
+  params,
+}: EditPageProps): Promise<Metadata> {
+  const { postId } = await params
+  const id = Number(postId)
+
+  if (!Number.isFinite(id)) {
+    return {
+      title: "Edit Blog Post",
+      description: "Edit a blog post from the admin panel.",
+    }
+  }
+
+  const post = await getBlogPostById(id)
+
+  return {
+    title: post ? `Edit ${post.title}` : "Edit Blog Post",
+    description:
+      post?.excerpt ?? "Edit a blog post from the admin panel.",
+  }
+}
+
+export default async function Page({ params }: EditPageProps) {
+  const { postId } = await params
+  const id = Number(postId)
+
+  if (!Number.isFinite(id)) {
+    notFound()
+  }
+
+  const [categories, post] = await Promise.all([
+    getBlogCategories(),
+    getBlogPostById(id),
+  ])
+
+  if (!post) {
+    notFound()
+  }
+
+  return (
+    <BlogPostFormPage
+      mode="edit"
+      postId={id}
+      title={`Edit ${post.title}`}
+      description="Update article content, status, thumbnail, and SEO metadata."
+      submitLabel="Save changes"
+      backHref="/admin/blog"
+      categories={categories}
+      initialValues={post}
+    />
+  )
+}
+

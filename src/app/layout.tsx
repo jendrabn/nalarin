@@ -24,7 +24,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className="h-full antialiased"
     >
-      <body className="flex min-h-full flex-col">
+      <body
+        suppressHydrationWarning
+        className="flex min-h-full flex-col"
+      >
         <TooltipProvider>
           {children}
           <Toaster richColors />
