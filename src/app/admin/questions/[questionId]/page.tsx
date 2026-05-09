@@ -1,5 +1,12 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+import { redirect } from "next/navigation"
 
-export default function Page() {
-  return <RoutePlaceholder section="Admin" route="/admin/questions/[questionId]" />;
+type QuestionDetailPageProps = {
+  params: Promise<{
+    questionId: string
+  }>
+}
+
+export default async function Page({ params }: QuestionDetailPageProps) {
+  const { questionId } = await params
+  redirect(`/admin/questions/${questionId}/edit`)
 }

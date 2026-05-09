@@ -1,5 +1,16 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+import type { Metadata } from "next"
 
-export default function Page() {
-  return <RoutePlaceholder section="Admin" route="/admin/questions" />;
+import { QuestionsPage } from "@/features/admin/questions/components/questions-page"
+import { getQuestions } from "@/features/admin/questions/queries/questions"
+
+export const metadata: Metadata = {
+  title: "Questions",
+  description:
+    "Manage the question bank, import questions from Excel, and generate draft questions with AI.",
+}
+
+export default async function Page() {
+  const questions = await getQuestions()
+
+  return <QuestionsPage questions={questions} />
 }
