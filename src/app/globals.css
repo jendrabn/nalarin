@@ -134,3 +134,11 @@
     scroll-behavior: smooth;
   }
 }
+
+@layer components {
+  .required::after {
+    content: "*";
+    margin-left: 0.125rem;
+    color: var(--destructive);
+  }
+}
