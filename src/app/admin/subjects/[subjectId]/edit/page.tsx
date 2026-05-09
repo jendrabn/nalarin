@@ -1,5 +1,65 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
 
-export default function Page() {
-  return <RoutePlaceholder section="Admin" route="/admin/subjects/[subjectId]/edit" />;
+import { SubjectsPage } from "@/features/admin/academics/components/subjects-page"
+import {
+  getAdminAcademicLookups,
+  getSubjectById,
+  getSubjects,
+} from "@/features/admin/academics/queries"
+
+type EditPageProps = {
+  params: Promise<{
+    subjectId: string
+  }>
+}
+
+export async function generateMetadata({
+  params,
+}: EditPageProps): Promise<Metadata> {
+  const { subjectId } = await params
+  const id = Number(subjectId)
+
+  if (!Number.isFinite(id)) {
+    return {
+      title: "Edit Subject",
+      description: "Edit a subject from the admin panel.",
+    }
+  }
+
+  const subject = await getSubjectById(id)
+
+  return {
+    title: subject ? `Edit ${subject.name}` : "Edit Subject",
+    description:
+      subject?.description ?? "Edit a subject from the admin panel.",
+  }
+}
+
+export default async function Page({ params }: EditPageProps) {
+  const { subjectId } = await params
+  const id = Number(subjectId)
+
+  if (!Number.isFinite(id)) {
+    notFound()
+  }
+
+  const [subjects, lookups, subject] = await Promise.all([
+    getSubjects(),
+    getAdminAcademicLookups(),
+    getSubjectById(id),
+  ])
+
+  if (!subject) {
+    notFound()
+  }
+
+  return (
+    <SubjectsPage
+      subjects={subjects}
+      examTypes={lookups.examTypes}
+      defaultEditSubject={subject}
+      closeDestination="/admin/subjects"
+    />
+  )
 }

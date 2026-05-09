@@ -1,5 +1,19 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+import type { Metadata } from "next"
 
-export default function Page() {
-  return <RoutePlaceholder section="Admin" route="/admin/subjects" />;
+import { SubjectsPage } from "@/features/admin/academics/components/subjects-page"
+import { getAdminAcademicLookups, getSubjects } from "@/features/admin/academics/queries"
+
+export const metadata: Metadata = {
+  title: "Subjects",
+  description:
+    "Manage subjects under each exam type using modal-based create and edit flows.",
+}
+
+export default async function Page() {
+  const [subjects, lookups] = await Promise.all([
+    getSubjects(),
+    getAdminAcademicLookups(),
+  ])
+
+  return <SubjectsPage subjects={subjects} examTypes={lookups.examTypes} />
 }

@@ -1,5 +1,16 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+import type { Metadata } from "next"
 
-export default function Page() {
-  return <RoutePlaceholder section="Admin" route="/admin/exam-types" />;
+import { ExamTypesPage } from "@/features/admin/academics/components/exam-types-page"
+import { getExamTypes } from "@/features/admin/academics/queries"
+
+export const metadata: Metadata = {
+  title: "Exam Types",
+  description:
+    "Edit seeded exam types that drive subjects, topics, practices, tryouts, and question filters.",
+}
+
+export default async function Page() {
+  const examTypes = await getExamTypes()
+
+  return <ExamTypesPage examTypes={examTypes} />
 }

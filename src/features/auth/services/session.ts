@@ -102,51 +102,55 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     return null;
   }
 
-  const now = new Date();
-  const [record] = await db
-    .select({
-      sessionId: schema.userSessions.id,
-      userId: schema.users.id,
-      name: schema.users.name,
-      email: schema.users.email,
-      avatarUrl: schema.users.avatarUrl,
-      role: schema.users.role,
-      status: schema.users.status,
-      emailVerifiedAt: schema.users.emailVerifiedAt,
-    })
-    .from(schema.userSessions)
-    .innerJoin(schema.users, eq(schema.userSessions.userId, schema.users.id))
-    .where(
-      and(
-        eq(schema.userSessions.id, session.sessionId),
-        eq(schema.userSessions.userId, session.userId),
-        eq(schema.userSessions.sessionTokenHash, hashToken(session.sessionToken)),
-        isNull(schema.userSessions.revokedAt),
-        gt(schema.userSessions.expiresAt, now),
-      ),
-    )
-    .limit(1);
+  try {
+    const now = new Date();
+    const [record] = await db
+      .select({
+        sessionId: schema.userSessions.id,
+        userId: schema.users.id,
+        name: schema.users.name,
+        email: schema.users.email,
+        avatarUrl: schema.users.avatarUrl,
+        role: schema.users.role,
+        status: schema.users.status,
+        emailVerifiedAt: schema.users.emailVerifiedAt,
+      })
+      .from(schema.userSessions)
+      .innerJoin(schema.users, eq(schema.userSessions.userId, schema.users.id))
+      .where(
+        and(
+          eq(schema.userSessions.id, session.sessionId),
+          eq(schema.userSessions.userId, session.userId),
+          eq(schema.userSessions.sessionTokenHash, hashToken(session.sessionToken)),
+          isNull(schema.userSessions.revokedAt),
+          gt(schema.userSessions.expiresAt, now),
+        ),
+      )
+      .limit(1);
 
-  if (!record || record.status !== "active") {
+    if (!record || record.status !== "active") {
+      return null;
+    }
+
+    await db
+      .update(schema.userSessions)
+      .set({
+        lastActiveAt: now,
+        updatedAt: now,
+      })
+      .where(eq(schema.userSessions.id, record.sessionId));
+
+    return {
+      id: record.userId,
+      name: record.name,
+      email: record.email,
+      avatarUrl: record.avatarUrl,
+      role: record.role,
+      emailVerifiedAt: record.emailVerifiedAt,
+    };
+  } catch {
     return null;
   }
-
-  await db
-    .update(schema.userSessions)
-    .set({
-      lastActiveAt: now,
-      updatedAt: now,
-    })
-    .where(eq(schema.userSessions.id, record.sessionId));
-
-  return {
-    id: record.userId,
-    name: record.name,
-    email: record.email,
-    avatarUrl: record.avatarUrl,
-    role: record.role,
-    emailVerifiedAt: record.emailVerifiedAt,
-  };
 });
 
 export async function requireUser() {

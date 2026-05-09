@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { FileDownIcon, FileQuestionIcon, PlusIcon, SparklesIcon } from "lucide-react"
+import { FileDownIcon, PlusIcon, SparklesIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/page-header"
@@ -85,30 +85,6 @@ export function QuestionsPage({ questions }: QuestionsPageProps) {
           </div>
         }
       />
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm md:col-span-2">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-primary/10 p-2 text-primary">
-              <FileQuestionIcon />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">Question bank</p>
-              <p className="text-sm text-muted-foreground">
-                Search, sort, and manage questions from one place.
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
-          <p className="text-sm font-medium text-foreground">Content rules</p>
-          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li>Multiple answer requires a scoring rule.</li>
-            <li>True/False uses lowercase correct answer values.</li>
-            <li>Used questions are protected from destructive changes.</li>
-          </ul>
-        </div>
-      </div>
 
       <QuestionsTable
         data={questions}
