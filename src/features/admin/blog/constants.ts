@@ -1,16 +1,11 @@
-export const blogPostStatusValues = [
-  "draft",
-  "published",
-  "archived",
-] as const
+import type { ModelEnumValue } from "@/lib/model-enums"
+import { modelEnums } from "@/lib/model-enums"
 
-export type BlogPostStatus = (typeof blogPostStatusValues)[number]
+export const blogPostStatusValues = modelEnums.contentStatus.values
 
-export const blogPostStatusLabels: Record<BlogPostStatus, string> = {
-  draft: "Draft",
-  published: "Published",
-  archived: "Archived",
-}
+export type BlogPostStatus = ModelEnumValue<"contentStatus">
+
+export const blogPostStatusLabels = modelEnums.contentStatus.labels
 
 export const blogPostColumnLabels = {
   id: "ID",
@@ -26,4 +21,3 @@ export const blogPostColumnLabels = {
   createdAt: "Created At",
   updatedAt: "Updated At",
 } as const
-

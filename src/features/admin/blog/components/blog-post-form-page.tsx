@@ -6,10 +6,10 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { ArrowLeftIcon, UploadIcon } from "lucide-react"
+import { UploadIcon } from "lucide-react"
 import { toast } from "sonner"
 
-import { PageHeader } from "@/components/page-header"
+import { AdminFormPage } from "@/components/admin-form-page"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -174,20 +174,22 @@ export function BlogPostFormPage({
   })
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title={title}
-        subtitle={description}
-        actions={
-          <Button asChild variant="outline">
-            <Link href={backHref}>
-              <ArrowLeftIcon data-icon="inline-start" />
-              Back to Blog
-            </Link>
+    <AdminFormPage
+      title={title}
+      subtitle={description}
+      backHref={backHref}
+      backLabel="Back to Blog Posts"
+      footer={
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" asChild>
+            <Link href={backHref}>Cancel</Link>
           </Button>
-        }
-      />
-
+          <Button type="submit" form={formId} disabled={isSubmitting}>
+            {isSubmitting ? (mode === "create" ? "Creating..." : "Saving...") : submitLabel}
+          </Button>
+        </div>
+      }
+    >
       <form id={formId} onSubmit={handleSubmit}>
         <div className="flex flex-col gap-4">
           <Card>
@@ -210,9 +212,6 @@ export function BlogPostFormPage({
                     <FieldLabel htmlFor={`${formId}-title`} className="required">
                       Title
                     </FieldLabel>
-                    <FieldDescription>
-                      Keep the title clear and SEO-friendly.
-                    </FieldDescription>
                   </FieldContent>
                   <div className="flex flex-col gap-1.5">
                     <Input
@@ -221,22 +220,22 @@ export function BlogPostFormPage({
                       aria-invalid={Boolean(form.formState.errors.title)}
                       {...form.register("title")}
                     />
+                    <FieldDescription>
+                      Keep the title clear and SEO-friendly.
+                    </FieldDescription>
                     <FieldError>{form.formState.errors.title?.message}</FieldError>
                   </div>
                 </Field>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field data-invalid={Boolean(form.formState.errors.categoryId)}>
-                    <FieldContent>
-                      <FieldLabel htmlFor={`${formId}-category`}>
-                        Category
-                      </FieldLabel>
-                      <FieldDescription>
-                        Optional. Blog posts can be saved without a category.
-                      </FieldDescription>
-                    </FieldContent>
-                    <div className="flex flex-col gap-1.5">
-                      <Select
+                  <FieldContent>
+                    <FieldLabel htmlFor={`${formId}-category`}>
+                      Category
+                    </FieldLabel>
+                  </FieldContent>
+                  <div className="flex flex-col gap-1.5">
+                    <Select
                         value={watchedCategoryId || CATEGORY_NONE_VALUE}
                         onValueChange={(value) =>
                           form.setValue(
@@ -263,24 +262,26 @@ export function BlogPostFormPage({
                             <SelectItem key={category.id} value={String(category.id)}>
                               {category.name}
                             </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FieldError>
-                        {form.formState.errors.categoryId?.message}
-                      </FieldError>
-                    </div>
-                  </Field>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>
+                      Optional. Blog posts can be saved without a category.
+                    </FieldDescription>
+                    <FieldError>
+                      {form.formState.errors.categoryId?.message}
+                    </FieldError>
+                  </div>
+                </Field>
 
                   <Field data-invalid={Boolean(form.formState.errors.status)}>
-                    <FieldContent>
-                      <FieldLabel htmlFor={`${formId}-status`} className="required">
-                        Status
-                      </FieldLabel>
-                      <FieldDescription>{statusDescription(watchedStatus)}</FieldDescription>
-                    </FieldContent>
-                    <div className="flex flex-col gap-1.5">
-                      <Select
+                  <FieldContent>
+                    <FieldLabel htmlFor={`${formId}-status`} className="required">
+                      Status
+                    </FieldLabel>
+                  </FieldContent>
+                  <div className="flex flex-col gap-1.5">
+                    <Select
                         value={watchedStatus}
                         onValueChange={(value) =>
                           form.setValue("status", value as BlogPostStatus)
@@ -300,6 +301,7 @@ export function BlogPostFormPage({
                           ))}
                         </SelectContent>
                       </Select>
+                      <FieldDescription>{statusDescription(watchedStatus)}</FieldDescription>
                       <FieldError>{form.formState.errors.status?.message}</FieldError>
                     </div>
                   </Field>
@@ -310,9 +312,6 @@ export function BlogPostFormPage({
                     <FieldLabel htmlFor={`${formId}-excerpt`}>
                       Excerpt
                     </FieldLabel>
-                    <FieldDescription>
-                      Optional summary used in listings and previews.
-                    </FieldDescription>
                   </FieldContent>
                   <div className="flex flex-col gap-1.5">
                     <Textarea
@@ -322,6 +321,9 @@ export function BlogPostFormPage({
                       aria-invalid={Boolean(form.formState.errors.excerpt)}
                       {...form.register("excerpt")}
                     />
+                    <FieldDescription>
+                      Optional summary used in listings and previews.
+                    </FieldDescription>
                     <FieldError>{form.formState.errors.excerpt?.message}</FieldError>
                   </div>
                 </Field>
@@ -331,9 +333,6 @@ export function BlogPostFormPage({
                     <FieldLabel htmlFor={`${formId}-thumbnail`}>
                       Thumbnail
                     </FieldLabel>
-                    <FieldDescription>
-                      Optional cover image for the article card and editor preview.
-                    </FieldDescription>
                   </FieldContent>
                   <div className="flex flex-col gap-3">
                     {watchedThumbnailUrl ? (
@@ -344,11 +343,11 @@ export function BlogPostFormPage({
                         height={540}
                         className="aspect-video w-full rounded-xl border border-border/60 object-cover"
                       />
-                    ) : (
-                      <div className="flex aspect-video items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/30 text-sm text-muted-foreground">
-                        No thumbnail selected.
-                      </div>
-                    )}
+                      ) : (
+                        <div className="flex aspect-video items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/30 text-sm text-muted-foreground">
+                          No thumbnail selected.
+                        </div>
+                      )}
 
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -400,6 +399,9 @@ export function BlogPostFormPage({
                         })()
                       }}
                     />
+                    <FieldDescription>
+                      Optional cover image for the article card and editor preview.
+                    </FieldDescription>
                     <FieldError>
                       {form.formState.errors.thumbnailUrl?.message}
                     </FieldError>
@@ -411,9 +413,6 @@ export function BlogPostFormPage({
                     <FieldLabel htmlFor={`${formId}-tags`}>
                       Tags
                     </FieldLabel>
-                    <FieldDescription>
-                      Separate tags with commas.
-                    </FieldDescription>
                   </FieldContent>
                   <div className="flex flex-col gap-1.5">
                     <Input
@@ -422,6 +421,9 @@ export function BlogPostFormPage({
                       aria-invalid={Boolean(form.formState.errors.tagsInput)}
                       {...form.register("tagsInput")}
                     />
+                    <FieldDescription>
+                      Separate tags with commas.
+                    </FieldDescription>
                     <FieldError>{form.formState.errors.tagsInput?.message}</FieldError>
                   </div>
                 </Field>
@@ -442,9 +444,6 @@ export function BlogPostFormPage({
                   <FieldLabel htmlFor={`${formId}-content`} className="required">
                     Article Body
                   </FieldLabel>
-                  <FieldDescription>
-                    Use the toolbar to format text or upload images directly into the content.
-                  </FieldDescription>
                 </FieldContent>
                 <div className="flex flex-col gap-1.5">
                   <Controller
@@ -457,6 +456,9 @@ export function BlogPostFormPage({
                       />
                     )}
                   />
+                  <FieldDescription>
+                    Use the toolbar to format text or upload images directly into the content.
+                  </FieldDescription>
                   <FieldError>{form.formState.errors.content?.message}</FieldError>
                 </div>
               </Field>
@@ -474,74 +476,68 @@ export function BlogPostFormPage({
               <FieldGroup>
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field data-invalid={Boolean(form.formState.errors.seoTitle)}>
-                    <FieldContent>
-                      <FieldLabel htmlFor={`${formId}-seo-title`}>
-                        SEO Title
-                      </FieldLabel>
-                      <FieldDescription>
-                        Optional title shown in search engines and social previews.
-                      </FieldDescription>
-                    </FieldContent>
-                    <div className="flex flex-col gap-1.5">
-                      <Input
-                        id={`${formId}-seo-title`}
-                        placeholder="SEO-friendly title"
-                        aria-invalid={Boolean(form.formState.errors.seoTitle)}
-                        {...form.register("seoTitle")}
-                      />
-                      <FieldError>{form.formState.errors.seoTitle?.message}</FieldError>
-                    </div>
-                  </Field>
+                  <FieldContent>
+                    <FieldLabel htmlFor={`${formId}-seo-title`}>
+                      SEO Title
+                    </FieldLabel>
+                  </FieldContent>
+                  <div className="flex flex-col gap-1.5">
+                    <Input
+                      id={`${formId}-seo-title`}
+                      placeholder="SEO-friendly title"
+                      aria-invalid={Boolean(form.formState.errors.seoTitle)}
+                      {...form.register("seoTitle")}
+                    />
+                    <FieldDescription>
+                      Optional title shown in search engines and social previews.
+                    </FieldDescription>
+                    <FieldError>{form.formState.errors.seoTitle?.message}</FieldError>
+                  </div>
+                </Field>
 
                   <Field data-invalid={Boolean(form.formState.errors.metaDescription)}>
-                    <FieldContent>
-                      <FieldLabel htmlFor={`${formId}-meta-description`}>
-                        Meta Description
-                      </FieldLabel>
-                      <FieldDescription>
-                        Keep it concise and actionable.
-                      </FieldDescription>
-                    </FieldContent>
-                    <div className="flex flex-col gap-1.5">
-                      <Textarea
-                        id={`${formId}-meta-description`}
-                        rows={4}
-                        placeholder="Short page description."
-                        aria-invalid={Boolean(form.formState.errors.metaDescription)}
-                        {...form.register("metaDescription")}
-                      />
-                      <FieldError>
-                        {form.formState.errors.metaDescription?.message}
-                      </FieldError>
-                    </div>
-                  </Field>
+                  <FieldContent>
+                    <FieldLabel htmlFor={`${formId}-meta-description`}>
+                      Meta Description
+                    </FieldLabel>
+                  </FieldContent>
+                  <div className="flex flex-col gap-1.5">
+                    <Textarea
+                      id={`${formId}-meta-description`}
+                      rows={4}
+                      placeholder="Short page description."
+                      aria-invalid={Boolean(form.formState.errors.metaDescription)}
+                      {...form.register("metaDescription")}
+                    />
+                    <FieldDescription>
+                      Keep it concise and actionable.
+                    </FieldDescription>
+                    <FieldError>
+                      {form.formState.errors.metaDescription?.message}
+                    </FieldError>
+                  </div>
+                </Field>
                 </div>
 
                 <Field>
                   <FieldContent>
                     <FieldLabel>Slug Preview</FieldLabel>
+                  </FieldContent>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                      {slugPreview || "slug-preview"}
+                    </div>
                     <FieldDescription>
                       Slug is generated automatically and cannot be edited manually.
                     </FieldDescription>
-                  </FieldContent>
-                  <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                    {slugPreview || "slug-preview"}
                   </div>
                 </Field>
               </FieldGroup>
             </CardContent>
           </Card>
 
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <Button type="button" variant="outline" asChild>
-              <Link href={backHref}>Cancel</Link>
-            </Button>
-            <Button type="submit" form={formId} disabled={isSubmitting}>
-              {isSubmitting ? (mode === "create" ? "Creating..." : "Saving...") : submitLabel}
-            </Button>
-          </div>
         </div>
       </form>
-    </div>
+    </AdminFormPage>
   )
 }

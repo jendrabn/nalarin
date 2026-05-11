@@ -1,49 +1,21 @@
-export const questionTypeValues = [
-  "multiple_choice",
-  "multiple_answer",
-  "short_answer",
-  "essay",
-  "true_false",
-] as const
+import type { ModelEnumValue } from "@/lib/model-enums"
+import { modelEnums } from "@/lib/model-enums"
 
-export type QuestionType = (typeof questionTypeValues)[number]
+export const questionTypeValues = modelEnums.questionType.values
+export type QuestionType = ModelEnumValue<"questionType">
+export const questionTypeLabels = modelEnums.questionType.labels
 
-export const questionDifficultyValues = ["easy", "medium", "hard"] as const
+export const questionDifficultyValues = modelEnums.questionDifficulty.values
+export type QuestionDifficulty = ModelEnumValue<"questionDifficulty">
+export const questionDifficultyLabels = modelEnums.questionDifficulty.labels
 
-export type QuestionDifficulty = (typeof questionDifficultyValues)[number]
+export const questionScoringRuleValues = modelEnums.scoringRule.values
+export type QuestionScoringRule = ModelEnumValue<"scoringRule">
+export const questionScoringRuleLabels = modelEnums.scoringRule.labels
 
-export const questionScoringRuleValues = ["all_or_nothing", "partial"] as const
-
-export type QuestionScoringRule = (typeof questionScoringRuleValues)[number]
-
-export const questionStatusValues = ["draft", "published", "archived"] as const
-
-export type QuestionStatus = (typeof questionStatusValues)[number]
-
-export const questionTypeLabels: Record<QuestionType, string> = {
-  multiple_choice: "Multiple Choice",
-  multiple_answer: "Multiple Answer",
-  short_answer: "Short Answer",
-  essay: "Essay",
-  true_false: "True / False",
-}
-
-export const questionDifficultyLabels: Record<QuestionDifficulty, string> = {
-  easy: "Easy",
-  medium: "Medium",
-  hard: "Hard",
-}
-
-export const questionScoringRuleLabels: Record<QuestionScoringRule, string> = {
-  all_or_nothing: "All or Nothing",
-  partial: "Partial",
-}
-
-export const questionStatusLabels: Record<QuestionStatus, string> = {
-  draft: "Draft",
-  published: "Published",
-  archived: "Archived",
-}
+export const questionStatusValues = modelEnums.contentStatus.values
+export type QuestionStatus = ModelEnumValue<"contentStatus">
+export const questionStatusLabels = modelEnums.contentStatus.labels
 
 export const questionColumnLabels = {
   id: "ID",

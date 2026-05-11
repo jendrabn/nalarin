@@ -1,12 +1,22 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { FileDownIcon, PlusIcon, SparklesIcon } from "lucide-react"
+import type { ColumnDef, VisibilityState } from "@tanstack/react-table"
+import {
+  FileDownIcon,
+  PencilLineIcon,
+  PlusIcon,
+  SparklesIcon,
+  Trash2Icon,
+  EllipsisVerticalIcon,
+} from "lucide-react"
 import { toast } from "sonner"
 
+import { AdminDataTable, SortableHeader } from "@/components/admin-data-table"
 import { PageHeader } from "@/components/page-header"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -18,26 +28,221 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 
 import { deleteQuestionAction } from "../actions/questions"
-import type { QuestionRow } from "../queries/questions"
-import { QuestionsTable } from "./questions-table"
+import {
+  questionColumnLabels,
+  type QuestionRow,
+} from "../constants"
+import { previewQuestionContent } from "../utils/question"
 
 type QuestionsPageProps = {
   questions: QuestionRow[]
+}
+
+const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
+  createdAt: false,
+  updatedAt: false,
+}
+
+function formatDateTime(value: Date) {
+  return new Intl.DateTimeFormat("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(value)
+}
+
+function createColumns({
+  onEdit,
+  onGenerateExplanation,
+  onDelete,
+}: {
+  onEdit: (question: QuestionRow) => void
+  onGenerateExplanation: (question: QuestionRow) => void
+  onDelete: (question: QuestionRow) => void
+}): ColumnDef<QuestionRow>[] {
+  return [
+    {
+      accessorKey: "title",
+      meta: { label: questionColumnLabels.title },
+      header: ({ column }) => <SortableHeader column={column}>Title</SortableHeader>,
+      cell: ({ row }) => (
+        <div className="flex flex-col gap-1">
+          <span className="font-medium text-foreground">
+            {row.original.title || "Untitled question"}
+          </span>
+          <p className="line-clamp-2 max-w-[34rem] whitespace-normal text-sm text-muted-foreground">
+            {previewQuestionContent(row.original.content)}
+          </p>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "examTypeName",
+      meta: { label: questionColumnLabels.examType },
+      header: ({ column }) => <SortableHeader column={column}>Exam Type</SortableHeader>,
+      cell: ({ row }) => <span>{row.original.examTypeName}</span>,
+    },
+    {
+      accessorKey: "subjectName",
+      meta: { label: questionColumnLabels.subject },
+      header: ({ column }) => <SortableHeader column={column}>Subject</SortableHeader>,
+      cell: ({ row }) => <span>{row.original.subjectName}</span>,
+    },
+    {
+      accessorKey: "topicName",
+      meta: { label: questionColumnLabels.topic },
+      header: ({ column }) => <SortableHeader column={column}>Topic</SortableHeader>,
+      cell: ({ row }) => <span>{row.original.topicName ?? "-"}</span>,
+    },
+    {
+      accessorKey: "type",
+      meta: { label: questionColumnLabels.type },
+      header: ({ column }) => <SortableHeader column={column}>Type</SortableHeader>,
+      cell: ({ row }) => {
+        const badge = getModelEnumBadgeMeta("questionType", row.original.type)
+
+        return (
+          <Badge variant="soft" className={badge.className}>
+            {badge.label}
+          </Badge>
+        )
+      },
+    },
+    {
+      accessorKey: "difficulty",
+      meta: { label: questionColumnLabels.difficulty },
+      header: ({ column }) => <SortableHeader column={column}>Difficulty</SortableHeader>,
+      cell: ({ row }) => {
+        const badge = getModelEnumBadgeMeta("questionDifficulty", row.original.difficulty)
+
+        return (
+          <Badge variant="soft" className={badge.className}>
+            {badge.label}
+          </Badge>
+        )
+      },
+    },
+    {
+      accessorKey: "status",
+      meta: { label: questionColumnLabels.status },
+      header: ({ column }) => <SortableHeader column={column}>Status</SortableHeader>,
+      cell: ({ row }) => {
+        const badge = getModelEnumBadgeMeta("contentStatus", row.original.status)
+
+        return (
+          <Badge variant="soft" className={badge.className}>
+            {badge.label}
+          </Badge>
+        )
+      },
+    },
+    {
+      accessorKey: "points",
+      meta: { label: questionColumnLabels.points },
+      header: ({ column }) => <SortableHeader column={column}>Points</SortableHeader>,
+      cell: ({ row }) => <span className="tabular-nums">{row.original.points}</span>,
+    },
+    {
+      accessorKey: "year",
+      meta: { label: questionColumnLabels.year },
+      header: ({ column }) => <SortableHeader column={column}>Year</SortableHeader>,
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {row.original.year ?? "-"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "optionCount",
+      meta: { label: questionColumnLabels.optionCount },
+      header: ({ column }) => <SortableHeader column={column}>Options</SortableHeader>,
+      cell: ({ row }) => <span className="tabular-nums">{row.original.optionCount}</span>,
+    },
+    {
+      accessorKey: "createdAt",
+      meta: { label: questionColumnLabels.createdAt },
+      header: ({ column }) => <SortableHeader column={column}>Created At</SortableHeader>,
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {formatDateTime(row.original.createdAt)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "updatedAt",
+      meta: { label: questionColumnLabels.updatedAt },
+      header: ({ column }) => <SortableHeader column={column}>Updated At</SortableHeader>,
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {formatDateTime(row.original.updatedAt)}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      meta: { label: "Actions" },
+      header: () => null,
+      enableHiding: false,
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="rounded-full"
+                aria-label={`Open actions for ${row.original.title || "question"}`}
+              >
+                <EllipsisVerticalIcon />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => onEdit(row.original)}>
+                <PencilLineIcon />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onGenerateExplanation(row.original)}>
+                <SparklesIcon />
+                AI Explanation
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={() => onDelete(row.original)}>
+                <Trash2Icon />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
+    },
+  ]
 }
 
 export function QuestionsPage({ questions }: QuestionsPageProps) {
   const router = useRouter()
   const [deleteTarget, setDeleteTarget] = useState<QuestionRow | null>(null)
 
-  function handleEdit(question: QuestionRow) {
-    router.push(`/admin/questions/${question.id}/edit`)
-  }
-
-  function handleGenerateExplanation(question: QuestionRow) {
-    router.push(`/admin/questions/${question.id}/ai-explanation`)
-  }
+  const columns = useMemo(
+    () =>
+      createColumns({
+        onEdit: (question) => router.push(`/admin/questions/${question.id}/edit`),
+        onGenerateExplanation: (question) =>
+          router.push(`/admin/questions/${question.id}/ai-explanation`),
+        onDelete: setDeleteTarget,
+      }),
+    [router],
+  )
 
   async function handleDelete() {
     if (!deleteTarget) {
@@ -61,7 +266,7 @@ export function QuestionsPage({ questions }: QuestionsPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Questions"
-        subtitle="Manage the question bank, import from Excel, and generate draft questions with AI."
+        subtitle="Manage the question bank from the admin panel."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline">
@@ -86,11 +291,13 @@ export function QuestionsPage({ questions }: QuestionsPageProps) {
         }
       />
 
-      <QuestionsTable
+      <AdminDataTable
         data={questions}
-        onEdit={handleEdit}
-        onGenerateExplanation={handleGenerateExplanation}
-        onDelete={setDeleteTarget}
+        columns={columns}
+        searchPlaceholder="Search questions..."
+        emptyMessage="No questions found."
+        defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
+        defaultPageSize="10"
       />
 
       <AlertDialog

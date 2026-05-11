@@ -5,8 +5,7 @@ import { getBlogCategories } from "@/features/admin/blog/queries/blog-categories
 
 export const metadata: Metadata = {
   title: "Create Blog Post",
-  description:
-    "Create a new blog post with rich text content, SEO metadata, and image upload support.",
+  description: "Create a blog post from the admin panel.",
 }
 
 export default async function Page() {
@@ -16,11 +15,10 @@ export default async function Page() {
     <BlogPostFormPage
       mode="create"
       title="Create Blog Post"
-      description="Create a new blog post with Tiptap content, thumbnail upload, and SEO metadata."
+      description="Create a blog post with rich text content, a thumbnail, and SEO metadata."
       submitLabel="Create post"
       backHref="/admin/blog"
       categories={categories}
     />
   )
 }
-

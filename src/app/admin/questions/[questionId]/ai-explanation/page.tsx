@@ -65,11 +65,11 @@ export default async function Page({ params }: AiExplanationPageProps) {
       />
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex flex-wrap items-center gap-2">
-            {question.title || `Question ${question.id}`}
-            <Badge variant="outline">{questionTypeLabels[question.type]}</Badge>
-          </CardTitle>
+          <CardHeader>
+            <CardTitle className="flex flex-wrap items-center gap-2">
+              {question.title || `Question ${question.id}`}
+              <Badge variant="outline">{questionTypeLabels[question.type]}</Badge>
+            </CardTitle>
           <CardDescription>{previewQuestionContent(stripHtml(question.content), 180)}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">

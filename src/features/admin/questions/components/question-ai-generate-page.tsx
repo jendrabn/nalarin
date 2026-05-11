@@ -416,9 +416,6 @@ export function QuestionAiGeneratePage({ lookups }: QuestionAiGeneratePageProps)
                 <Field data-invalid={Boolean(form.formState.errors.prompt)}>
                   <FieldContent>
                     <FieldLabel className="required">Prompt</FieldLabel>
-                    <FieldDescription>
-                      Describe the pattern, topic emphasis, and difficulty you want.
-                    </FieldDescription>
                   </FieldContent>
                   <div className="flex flex-col gap-1.5">
                     <Textarea
@@ -426,6 +423,9 @@ export function QuestionAiGeneratePage({ lookups }: QuestionAiGeneratePageProps)
                       placeholder="Generate questions about algebraic inequalities with realistic UTBK style."
                       {...form.register("prompt")}
                     />
+                    <FieldDescription>
+                      Describe the pattern, topic emphasis, and difficulty you want.
+                    </FieldDescription>
                     <FieldError>{form.formState.errors.prompt?.message}</FieldError>
                   </div>
                 </Field>

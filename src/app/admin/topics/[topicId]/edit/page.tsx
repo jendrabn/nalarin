@@ -1,12 +1,10 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { TopicsPage } from "@/features/admin/academics/components/topics-page"
-import {
-  getAdminAcademicLookups,
-  getTopicById,
-  getTopics,
-} from "@/features/admin/academics/queries"
+import { TopicsPage } from "@/features/admin/topics/components/topics-page"
+import { getTopicById, getTopics } from "@/features/admin/topics/queries"
+import { getExamTypeLookups } from "@/features/admin/exam-types/queries"
+import { getSubjectLookups } from "@/features/admin/subjects/queries"
 
 type EditPageProps = {
   params: Promise<{
@@ -44,9 +42,10 @@ export default async function Page({ params }: EditPageProps) {
     notFound()
   }
 
-  const [topics, lookups, topic] = await Promise.all([
+  const [topics, examTypes, subjects, topic] = await Promise.all([
     getTopics(),
-    getAdminAcademicLookups(),
+    getExamTypeLookups(),
+    getSubjectLookups(),
     getTopicById(id),
   ])
 
@@ -57,8 +56,8 @@ export default async function Page({ params }: EditPageProps) {
   return (
     <TopicsPage
       topics={topics}
-      examTypes={lookups.examTypes}
-      subjects={lookups.subjects}
+      examTypes={examTypes}
+      subjects={subjects}
       defaultEditTopic={topic}
       closeDestination="/admin/topics"
     />

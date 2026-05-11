@@ -5,8 +5,7 @@ import { getAdminQuestionLookups } from "@/features/admin/questions/queries/ques
 
 export const metadata: Metadata = {
   title: "Create Question",
-  description:
-    "Create a new question with rich content, structured options, and validation.",
+  description: "Create a question from the admin panel.",
 }
 
 export default async function Page() {
@@ -16,7 +15,7 @@ export default async function Page() {
     <QuestionFormPage
       mode="create"
       title="Create Question"
-      description="Create a new question bank entry with taxonomy, content, and explanation fields."
+      description="Create a question bank entry with content, options, and explanation fields."
       submitLabel="Create question"
       backHref="/admin/questions"
       lookups={lookups}

@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { ExamTypesPage } from "@/features/admin/academics/components/exam-types-page"
-import { getExamTypeById, getExamTypes } from "@/features/admin/academics/queries"
+import { ExamTypesPage } from "@/features/admin/exam-types/components/exam-types-page"
+import { getExamTypeById, getExamTypes } from "@/features/admin/exam-types/queries"
 
 type EditPageProps = {
   params: Promise<{

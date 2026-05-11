@@ -1,7 +1,9 @@
 import type { Metadata } from "next"
 
-import { TopicsPage } from "@/features/admin/academics/components/topics-page"
-import { getAdminAcademicLookups, getTopics } from "@/features/admin/academics/queries"
+import { TopicsPage } from "@/features/admin/topics/components/topics-page"
+import { getTopics } from "@/features/admin/topics/queries"
+import { getExamTypeLookups } from "@/features/admin/exam-types/queries"
+import { getSubjectLookups } from "@/features/admin/subjects/queries"
 
 export const metadata: Metadata = {
   title: "Topics",
@@ -10,16 +12,17 @@ export const metadata: Metadata = {
 }
 
 export default async function Page() {
-  const [topics, lookups] = await Promise.all([
+  const [topics, examTypes, subjects] = await Promise.all([
     getTopics(),
-    getAdminAcademicLookups(),
+    getExamTypeLookups(),
+    getSubjectLookups(),
   ])
 
   return (
     <TopicsPage
       topics={topics}
-      examTypes={lookups.examTypes}
-      subjects={lookups.subjects}
+      examTypes={examTypes}
+      subjects={subjects}
     />
   )
 }

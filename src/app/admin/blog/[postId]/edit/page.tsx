@@ -28,8 +28,7 @@ export async function generateMetadata({
 
   return {
     title: post ? `Edit ${post.title}` : "Edit Blog Post",
-    description:
-      post?.excerpt ?? "Edit a blog post from the admin panel.",
+    description: post?.excerpt ?? "Edit a blog post from the admin panel.",
   }
 }
 
@@ -55,7 +54,7 @@ export default async function Page({ params }: EditPageProps) {
       mode="edit"
       postId={id}
       title={`Edit ${post.title}`}
-      description="Update article content, status, thumbnail, and SEO metadata."
+      description="Update post content, publication status, thumbnail, and SEO metadata."
       submitLabel="Save changes"
       backHref="/admin/blog"
       categories={categories}
@@ -63,4 +62,3 @@ export default async function Page({ params }: EditPageProps) {
     />
   )
 }
-

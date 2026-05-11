@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useId, useMemo } from "react"
-import { useForm, useWatch } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 
@@ -16,57 +16,54 @@ import {
 import {
   Field,
   FieldContent,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 
-import type { TaxonomyActionResult } from "../actions"
-import { subjectFormSchema, type SubjectFormValues } from "../schemas"
-import type { ExamTypeLookup } from "../queries"
+import {
+  examTypeFormSchema,
+  type ExamTypeFormValues,
+} from "../schemas"
+import type { ExamTypeActionResult } from "../actions"
 
-type SubjectFormDialogProps = {
+type ExamTypeFormDialogProps = {
   open: boolean
   mode: "create" | "edit"
   title: string
   description: string
   submitLabel: string
-  examTypes: ExamTypeLookup[]
-  initialValues?: SubjectFormValues
+  initialValues?: ExamTypeFormValues
   onOpenChange: (open: boolean) => void
-  onSubmit: (values: SubjectFormValues) => Promise<TaxonomyActionResult<SubjectFormValues, { id: number }>>
+  onSubmit: (values: ExamTypeFormValues) => Promise<ExamTypeActionResult<ExamTypeFormValues, { id: number }>>
   onSuccess: () => Promise<void> | void
 }
 
-function buildDefaultValues(initialValues?: SubjectFormValues): SubjectFormValues {
+function buildDefaultValues(initialValues?: ExamTypeFormValues): ExamTypeFormValues {
   return {
-    examTypeId: initialValues?.examTypeId ?? "",
     name: initialValues?.name ?? "",
     description: initialValues?.description ?? "",
   }
 }
 
-export function SubjectFormDialog({
+export function ExamTypeFormDialog({
   open,
   mode,
   title,
   description,
   submitLabel,
-  examTypes,
   initialValues,
   onOpenChange,
   onSubmit,
   onSuccess,
-}: SubjectFormDialogProps) {
+}: ExamTypeFormDialogProps) {
   const formId = useId()
   const defaultValues = useMemo(() => buildDefaultValues(initialValues), [initialValues])
 
-  const form = useForm<SubjectFormValues>({
-    resolver: zodResolver(subjectFormSchema),
+  const form = useForm<ExamTypeFormValues>({
+    resolver: zodResolver(examTypeFormSchema),
     defaultValues,
   })
 
@@ -76,7 +73,6 @@ export function SubjectFormDialog({
     }
   }, [defaultValues, form, open])
 
-  const watchedExamTypeId = useWatch({ control: form.control, name: "examTypeId" })
   const rootError = form.formState.errors.root?.message
   const isSubmitting = form.formState.isSubmitting
 
@@ -85,7 +81,7 @@ export function SubjectFormDialog({
 
     if (!result.success) {
       if (result.fieldErrors) {
-        (Object.keys(result.fieldErrors) as Array<keyof SubjectFormValues>).forEach((fieldName) => {
+        (Object.keys(result.fieldErrors) as Array<keyof ExamTypeFormValues>).forEach((fieldName) => {
           const message = result.fieldErrors?.[fieldName]?.[0]
 
           if (message) {
@@ -128,38 +124,6 @@ export function SubjectFormDialog({
               </p>
             ) : null}
 
-            <Field data-invalid={Boolean(form.formState.errors.examTypeId)}>
-              <FieldContent>
-                <FieldLabel htmlFor={`${formId}-exam-type`} className="required">
-                  Exam Type
-                </FieldLabel>
-                <FieldDescription>Pick the parent exam type for this subject.</FieldDescription>
-              </FieldContent>
-              <div className="flex flex-col gap-1.5">
-                <Select
-                  value={watchedExamTypeId || ""}
-                  onValueChange={(value) =>
-                    form.setValue("examTypeId", value, {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    })
-                  }
-                >
-                  <SelectTrigger id={`${formId}-exam-type`}>
-                    <SelectValue placeholder="Select exam type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {examTypes.map((examType) => (
-                      <SelectItem key={examType.id} value={String(examType.id)}>
-                        {examType.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FieldError>{form.formState.errors.examTypeId?.message}</FieldError>
-              </div>
-            </Field>
-
             <Field data-invalid={Boolean(form.formState.errors.name)}>
               <FieldContent>
                 <FieldLabel htmlFor={`${formId}-name`} className="required">
@@ -169,7 +133,7 @@ export function SubjectFormDialog({
               <div className="flex flex-col gap-1.5">
                 <Input
                   id={`${formId}-name`}
-                  placeholder="Mathematics"
+                  placeholder="Computer Based Test"
                   aria-invalid={Boolean(form.formState.errors.name)}
                   {...form.register("name")}
                 />
@@ -185,7 +149,7 @@ export function SubjectFormDialog({
                 <Textarea
                   id={`${formId}-description`}
                   rows={4}
-                  placeholder="Short subject description."
+                  placeholder="Short description for the exam type."
                   aria-invalid={Boolean(form.formState.errors.description)}
                   {...form.register("description")}
                 />

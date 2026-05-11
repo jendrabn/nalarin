@@ -11,10 +11,10 @@ import {
   useWatch,
 } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { ArrowLeftIcon, UploadIcon } from "lucide-react"
+import { UploadIcon } from "lucide-react"
 import { toast } from "sonner"
 
-import { PageHeader } from "@/components/page-header"
+import { AdminFormPage } from "@/components/admin-form-page"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -286,20 +286,26 @@ export function QuestionFormPage({
   })
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title={title}
-        subtitle={description}
-        actions={
-          <Button asChild variant="outline">
-            <Link href={backHref}>
-              <ArrowLeftIcon data-icon="inline-start" />
-              Back to Questions
-            </Link>
+    <AdminFormPage
+      title={title}
+      subtitle={description}
+      backHref={backHref}
+      backLabel="Back to Questions"
+      footer={
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" asChild>
+            <Link href={backHref}>Cancel</Link>
           </Button>
-        }
-      />
-
+          <Button type="submit" form={formId} disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting
+              ? mode === "create"
+                ? "Creating..."
+                : "Saving..."
+              : submitLabel}
+          </Button>
+        </div>
+      }
+    >
       <form id={formId} onSubmit={handleSubmit}>
         <div className="flex flex-col gap-4">
           <Card>
@@ -323,9 +329,6 @@ export function QuestionFormPage({
                       <FieldLabel htmlFor={`${formId}-exam-type`} className="required">
                         Exam Type
                       </FieldLabel>
-                      <FieldDescription>
-                        Select the exam family that owns this question.
-                      </FieldDescription>
                     </FieldContent>
                     <div className="flex flex-col gap-1.5">
                       <Select
@@ -347,6 +350,9 @@ export function QuestionFormPage({
                           ))}
                         </SelectContent>
                       </Select>
+                      <FieldDescription>
+                        Select the exam family that owns this question.
+                      </FieldDescription>
                       <FieldError>{form.formState.errors.examTypeId?.message}</FieldError>
                     </div>
                   </Field>
@@ -356,9 +362,6 @@ export function QuestionFormPage({
                       <FieldLabel htmlFor={`${formId}-subject`} className="required">
                         Subject
                       </FieldLabel>
-                      <FieldDescription>
-                        Subjects are filtered by the selected exam type.
-                      </FieldDescription>
                     </FieldContent>
                     <div className="flex flex-col gap-1.5">
                       <Select
@@ -380,6 +383,9 @@ export function QuestionFormPage({
                           ))}
                         </SelectContent>
                       </Select>
+                      <FieldDescription>
+                        Subjects are filtered by the selected exam type.
+                      </FieldDescription>
                       <FieldError>{form.formState.errors.subjectId?.message}</FieldError>
                     </div>
                   </Field>
@@ -391,9 +397,6 @@ export function QuestionFormPage({
                       <FieldLabel htmlFor={`${formId}-topic`}>
                         Topic
                       </FieldLabel>
-                      <FieldDescription>
-                        Optional. Filter question lists and practice metadata.
-                      </FieldDescription>
                     </FieldContent>
                     <div className="flex flex-col gap-1.5">
                       <Select
@@ -418,6 +421,9 @@ export function QuestionFormPage({
                           ))}
                         </SelectContent>
                       </Select>
+                      <FieldDescription>
+                        Optional. Filter question lists and practice metadata.
+                      </FieldDescription>
                       <FieldError>{form.formState.errors.topicId?.message}</FieldError>
                     </div>
                   </Field>
@@ -427,7 +433,6 @@ export function QuestionFormPage({
                       <FieldLabel htmlFor={`${formId}-status`} className="required">
                         Status
                       </FieldLabel>
-                      <FieldDescription>{getStatusDescription(watchedStatus)}</FieldDescription>
                     </FieldContent>
                     <div className="flex flex-col gap-1.5">
                       <Select
@@ -450,6 +455,7 @@ export function QuestionFormPage({
                           ))}
                         </SelectContent>
                       </Select>
+                      <FieldDescription>{getStatusDescription(watchedStatus)}</FieldDescription>
                       <FieldError>{form.formState.errors.status?.message}</FieldError>
                     </div>
                   </Field>
@@ -461,7 +467,6 @@ export function QuestionFormPage({
                       <FieldLabel htmlFor={`${formId}-type`} className="required">
                         Question Type
                       </FieldLabel>
-                      <FieldDescription>{getQuestionTypeDescription(watchedType)}</FieldDescription>
                     </FieldContent>
                     <div className="flex flex-col gap-1.5">
                       <Select
@@ -500,6 +505,7 @@ export function QuestionFormPage({
                           ))}
                         </SelectContent>
                       </Select>
+                      <FieldDescription>{getQuestionTypeDescription(watchedType)}</FieldDescription>
                       <FieldError>{form.formState.errors.type?.message}</FieldError>
                     </div>
                   </Field>
@@ -561,9 +567,6 @@ export function QuestionFormPage({
                       <FieldLabel htmlFor={`${formId}-title`}>
                         Title
                       </FieldLabel>
-                      <FieldDescription>
-                        Optional internal title for admin readability.
-                      </FieldDescription>
                     </FieldContent>
                     <div className="flex flex-col gap-1.5">
                       <Input
@@ -572,6 +575,9 @@ export function QuestionFormPage({
                         aria-invalid={Boolean(form.formState.errors.title)}
                         {...form.register("title")}
                       />
+                      <FieldDescription>
+                        Optional internal title for admin readability.
+                      </FieldDescription>
                       <FieldError>{form.formState.errors.title?.message}</FieldError>
                     </div>
                   </Field>
@@ -599,9 +605,6 @@ export function QuestionFormPage({
                     <FieldLabel htmlFor={`${formId}-question-image`}>
                       Question Image
                     </FieldLabel>
-                    <FieldDescription>
-                      Optional cover image for the question stem.
-                    </FieldDescription>
                   </FieldContent>
                   <div className="flex flex-col gap-3">
                     {watchedImageUrl ? (
@@ -674,6 +677,9 @@ export function QuestionFormPage({
                         })()
                       }}
                     />
+                    <FieldDescription>
+                      Optional cover image for the question stem.
+                    </FieldDescription>
                     <FieldError>{form.formState.errors.imageUrl?.message}</FieldError>
                   </div>
                 </Field>
@@ -828,9 +834,6 @@ export function QuestionFormPage({
                       <FieldLabel htmlFor={`${formId}-scoring-rule`}>
                         Scoring Rule
                       </FieldLabel>
-                      <FieldDescription>
-                        Required only for multiple answer questions.
-                      </FieldDescription>
                     </FieldContent>
                     <div className="flex flex-col gap-1.5">
                       <Select
@@ -855,6 +858,9 @@ export function QuestionFormPage({
                           ))}
                         </SelectContent>
                       </Select>
+                      <FieldDescription>
+                        Required only for multiple answer questions.
+                      </FieldDescription>
                       <FieldError>{form.formState.errors.scoringRule?.message}</FieldError>
                     </div>
                   </Field>
@@ -877,9 +883,6 @@ export function QuestionFormPage({
                     <FieldLabel htmlFor={`${formId}-correct-answer`}>
                       Correct Answer
                     </FieldLabel>
-                    <FieldDescription>
-                      Optional for subjective questions, required for true / false.
-                    </FieldDescription>
                   </FieldContent>
                   <div className="flex flex-col gap-1.5">
                     <Textarea
@@ -889,6 +892,9 @@ export function QuestionFormPage({
                       aria-invalid={Boolean(form.formState.errors.correctAnswerText)}
                       {...form.register("correctAnswerText")}
                     />
+                    <FieldDescription>
+                      Optional for subjective questions, required for true / false.
+                    </FieldDescription>
                     <FieldError>{form.formState.errors.correctAnswerText?.message}</FieldError>
                   </div>
                 </Field>
@@ -898,9 +904,6 @@ export function QuestionFormPage({
                     <FieldLabel htmlFor={`${formId}-grading-rubric`}>
                       Grading Rubric
                     </FieldLabel>
-                    <FieldDescription>
-                      Use this for short answers and essays when subjective grading is needed.
-                    </FieldDescription>
                   </FieldContent>
                   <div className="flex flex-col gap-1.5">
                     <Textarea
@@ -909,6 +912,9 @@ export function QuestionFormPage({
                       placeholder="Rubric or marking guidance."
                       {...form.register("gradingRubric")}
                     />
+                    <FieldDescription>
+                      Use this for short answers and essays when subjective grading is needed.
+                    </FieldDescription>
                     <FieldError>{form.formState.errors.gradingRubric?.message}</FieldError>
                   </div>
                 </Field>
@@ -952,20 +958,8 @@ export function QuestionFormPage({
             </CardContent>
           </Card>
 
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <Button type="button" variant="outline" asChild>
-              <Link href={backHref}>Cancel</Link>
-            </Button>
-            <Button type="submit" form={formId} disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting
-                ? mode === "create"
-                  ? "Creating..."
-                  : "Saving..."
-                : submitLabel}
-            </Button>
-          </div>
         </div>
       </form>
-    </div>
+    </AdminFormPage>
   )
 }

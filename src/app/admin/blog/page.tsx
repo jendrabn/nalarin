@@ -4,9 +4,8 @@ import { BlogPostsPage } from "@/features/admin/blog/components/blog-posts-page"
 import { getBlogPosts } from "@/features/admin/blog/queries/blog-posts"
 
 export const metadata: Metadata = {
-  title: "Blog",
-  description:
-    "Manage blog posts, SEO metadata, thumbnails, and article publishing from the admin panel.",
+  title: "Blog Posts",
+  description: "Manage blog posts from the admin panel.",
 }
 
 export default async function Page() {
@@ -14,4 +13,3 @@ export default async function Page() {
 
   return <BlogPostsPage posts={posts} />
 }
-

@@ -29,7 +29,7 @@ export async function generateMetadata({
     title: question ? `Edit ${question.title || `Question ${question.id}`}` : "Edit Question",
     description:
       question?.content
-        ? "Update question metadata, options, and explanation fields."
+        ? "Update question content, options, and explanation fields."
         : "Edit a question from the admin panel.",
   }
 }
@@ -56,7 +56,7 @@ export default async function Page({ params }: EditPageProps) {
       mode="edit"
       questionId={id}
       title={`Edit ${question.title || `Question ${question.id}`}`}
-      description="Update taxonomy, content, options, and explanation metadata."
+      description="Update question content, options, and explanation metadata."
       submitLabel="Save changes"
       backHref="/admin/questions"
       lookups={lookups}

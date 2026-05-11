@@ -22,7 +22,7 @@ export async function generateMetadata({
   if (!Number.isFinite(id)) {
     return {
       title: "Edit Blog Category",
-      description: "Edit an existing blog category from the admin panel.",
+      description: "Edit a blog category from the admin panel.",
     }
   }
 
@@ -31,8 +31,7 @@ export async function generateMetadata({
   return {
     title: category ? `Edit ${category.name}` : "Edit Blog Category",
     description:
-      category?.description ??
-      "Edit an existing blog category from the admin panel.",
+      category?.description ?? "Edit a blog category from the admin panel.",
   }
 }
 

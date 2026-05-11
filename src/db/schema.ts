@@ -15,21 +15,21 @@ import {
   varchar,
 } from 'drizzle-orm/mysql-core';
 
-const userRoleValues = ['user', 'admin'] as const;
-const userStatusValues = ['active', 'inactive', 'suspended'] as const;
-const genderValues = ['male', 'female'] as const;
-const planCodeValues = ['free', 'pro', 'max'] as const;
-const questionTypeValues = [
+export const userRoleValues = ['user', 'admin'] as const;
+export const userStatusValues = ['active', 'inactive', 'suspended'] as const;
+export const genderValues = ['male', 'female'] as const;
+export const planCodeValues = ['free', 'pro', 'max'] as const;
+export const questionTypeValues = [
   'multiple_choice',
   'multiple_answer',
   'short_answer',
   'essay',
   'true_false',
 ] as const;
-const questionDifficultyValues = ['easy', 'medium', 'hard'] as const;
-const scoringRuleValues = ['all_or_nothing', 'partial'] as const;
-const contentStatusValues = ['draft', 'published', 'archived'] as const;
-const sessionStatusValues = [
+export const questionDifficultyValues = ['easy', 'medium', 'hard'] as const;
+export const scoringRuleValues = ['all_or_nothing', 'partial'] as const;
+export const contentStatusValues = ['draft', 'published', 'archived'] as const;
+export const sessionStatusValues = [
   'pending',
   'in_progress',
   'submitted',
@@ -37,16 +37,16 @@ const sessionStatusValues = [
   'graded',
   'cancelled',
 ] as const;
-const practiceModeValues = ['practice', 'quiz'] as const;
-const navigationModeValues = ['free', 'sequential'] as const;
-const answerGradingStatusValues = [
+export const practiceModeValues = ['practice', 'quiz'] as const;
+export const navigationModeValues = ['free', 'sequential'] as const;
+export const answerGradingStatusValues = [
   'not_required',
   'pending',
   'graded',
   'needs_review',
 ] as const;
-const gradingSourceValues = ['manual', 'ai', 'auto'] as const;
-const paymentStatusValues = [
+export const gradingSourceValues = ['manual', 'ai', 'auto'] as const;
+export const paymentStatusValues = [
   'pending',
   'paid',
   'failed',
@@ -54,8 +54,8 @@ const paymentStatusValues = [
   'cancelled',
   'refunded',
 ] as const;
-const paymentGatewayValues = ['midtrans', 'manual'] as const;
-const paymentMethodValues = [
+export const paymentGatewayValues = ['midtrans', 'manual'] as const;
+export const paymentMethodValues = [
   'bank_transfer',
   'e_wallet',
   'qris',
@@ -64,13 +64,13 @@ const paymentMethodValues = [
   'manual_transfer',
   'other',
 ] as const;
-const transactionSourceValues = [
+export const transactionSourceValues = [
   'midtrans_webhook',
   'user_checkout',
   'admin_manual',
 ] as const;
-const subscriptionStatusValues = ['active', 'expired', 'cancelled'] as const;
-const subscriptionSourceValues = ['midtrans', 'manual', 'admin_grant'] as const;
+export const subscriptionStatusValues = ['active', 'expired', 'cancelled'] as const;
+export const subscriptionSourceValues = ['midtrans', 'manual', 'admin_grant'] as const;
 
 export const userRoleEnum = mysqlEnum('role', userRoleValues);
 export const userStatusEnum = mysqlEnum('status', userStatusValues);

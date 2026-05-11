@@ -5,8 +5,7 @@ import { getQuestions } from "@/features/admin/questions/queries/questions"
 
 export const metadata: Metadata = {
   title: "Questions",
-  description:
-    "Manage the question bank, import questions from Excel, and generate draft questions with AI.",
+  description: "Manage the question bank from the admin panel.",
 }
 
 export default async function Page() {

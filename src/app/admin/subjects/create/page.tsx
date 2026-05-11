@@ -1,7 +1,8 @@
 import type { Metadata } from "next"
 
-import { SubjectsPage } from "@/features/admin/academics/components/subjects-page"
-import { getAdminAcademicLookups, getSubjects } from "@/features/admin/academics/queries"
+import { SubjectsPage } from "@/features/admin/subjects/components/subjects-page"
+import { getSubjects } from "@/features/admin/subjects/queries"
+import { getExamTypeLookups } from "@/features/admin/exam-types/queries"
 
 export const metadata: Metadata = {
   title: "Create Subject",
@@ -9,15 +10,12 @@ export const metadata: Metadata = {
 }
 
 export default async function Page() {
-  const [subjects, lookups] = await Promise.all([
-    getSubjects(),
-    getAdminAcademicLookups(),
-  ])
+  const [subjects, examTypes] = await Promise.all([getSubjects(), getExamTypeLookups()])
 
   return (
     <SubjectsPage
       subjects={subjects}
-      examTypes={lookups.examTypes}
+      examTypes={examTypes}
       defaultCreateOpen
       closeDestination="/admin/subjects"
     />

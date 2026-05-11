@@ -5,8 +5,7 @@ import { getBlogCategories } from "@/features/admin/blog/queries/blog-categories
 
 export const metadata: Metadata = {
   title: "Create Blog Category",
-  description:
-    "Open the create blog category modal from the admin panel and add a new category.",
+  description: "Create a blog category from the admin panel.",
 }
 
 export default async function Page() {

@@ -1,10 +1,12 @@
 "use client"
 
-import { useState } from "react"
-import { PlusIcon } from "lucide-react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import type { ColumnDef, VisibilityState } from "@tanstack/react-table"
+import { EllipsisVerticalIcon, PencilLineIcon, PlusIcon, Trash2Icon } from "lucide-react"
 import { toast } from "sonner"
 
+import { AdminDataTable, SortableHeader } from "@/components/admin-data-table"
 import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,6 +19,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 import {
   createBlogCategoryAction,
@@ -28,13 +37,133 @@ import type {
   BlogCategoryRow,
 } from "../queries/blog-categories"
 import { BlogCategoryFormDialog } from "./blog-category-form-dialog"
-import { BlogCategoriesTable } from "./blog-categories-table"
 
 type BlogCategoriesPageProps = {
   categories: BlogCategoryRow[]
   defaultCreateOpen?: boolean
   defaultEditCategory?: BlogCategoryDetails | null
   closeDestination?: string
+}
+
+const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
+  slug: false,
+  createdAt: false,
+  updatedAt: false,
+}
+
+function formatDateTime(value: Date) {
+  return new Intl.DateTimeFormat("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(value)
+}
+
+function createColumns({
+  onEdit,
+  onDelete,
+}: {
+  onEdit: (category: BlogCategoryRow) => void
+  onDelete: (category: BlogCategoryRow) => void
+}): ColumnDef<BlogCategoryRow>[] {
+  return [
+    {
+      accessorKey: "name",
+      meta: { label: "Name" },
+      header: ({ column }) => <SortableHeader column={column}>Name</SortableHeader>,
+      cell: ({ row }) => <div className="font-medium text-foreground">{row.original.name}</div>,
+    },
+    {
+      accessorKey: "slug",
+      meta: { label: "Slug" },
+      header: ({ column }) => <SortableHeader column={column}>Slug</SortableHeader>,
+      cell: ({ row }) => <span>{row.original.slug}</span>,
+    },
+    {
+      accessorKey: "blogCount",
+      meta: { label: "Blog Count" },
+      header: ({ column }) => <SortableHeader column={column}>Blog Count</SortableHeader>,
+      cell: ({ row }) => (
+        <span className="font-medium tabular-nums">
+          {row.original.blogCount.toLocaleString("id-ID")}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "viewCount",
+      meta: { label: "View Count" },
+      header: ({ column }) => <SortableHeader column={column}>View Count</SortableHeader>,
+      cell: ({ row }) => (
+        <span className="font-medium tabular-nums">
+          {row.original.viewCount.toLocaleString("id-ID")}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "description",
+      meta: { label: "Description" },
+      header: ({ column }) => <SortableHeader column={column}>Description</SortableHeader>,
+      cell: ({ row }) => (
+        <p className="max-w-[28rem] whitespace-normal text-sm text-muted-foreground">
+          {row.original.description}
+        </p>
+      ),
+    },
+    {
+      accessorKey: "createdAt",
+      meta: { label: "Created At" },
+      header: ({ column }) => <SortableHeader column={column}>Created At</SortableHeader>,
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {formatDateTime(row.original.createdAt)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "updatedAt",
+      meta: { label: "Updated At" },
+      header: ({ column }) => <SortableHeader column={column}>Updated At</SortableHeader>,
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {formatDateTime(row.original.updatedAt)}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      meta: { label: "Actions" },
+      header: () => null,
+      enableHiding: false,
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="rounded-full"
+                aria-label={`Open actions for ${row.original.name}`}
+              >
+                <EllipsisVerticalIcon />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onClick={() => onEdit(row.original)}>
+                <PencilLineIcon />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={() => onDelete(row.original)}>
+                <Trash2Icon />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
+    },
+  ]
 }
 
 export function BlogCategoriesPage({
@@ -49,6 +178,15 @@ export function BlogCategoriesPage({
     defaultEditCategory,
   )
   const [deleteTarget, setDeleteTarget] = useState<BlogCategoryRow | null>(null)
+
+  const columns = useMemo(
+    () =>
+      createColumns({
+        onEdit: setEditingCategory,
+        onDelete: setDeleteTarget,
+      }),
+    [],
+  )
 
   async function handleCreate(values: {
     name: string
@@ -98,7 +236,7 @@ export function BlogCategoriesPage({
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Blog Categories"
-        subtitle="Manage editorial categories, autogenerated slugs, and aggregated blog analytics from one academic admin workspace."
+        subtitle="Manage blog categories from the admin panel."
         actions={
           <Button
             type="button"
@@ -111,10 +249,13 @@ export function BlogCategoriesPage({
         }
       />
 
-      <BlogCategoriesTable
+      <AdminDataTable
         data={categories}
-        onEdit={setEditingCategory}
-        onDelete={setDeleteTarget}
+        columns={columns}
+        searchPlaceholder="Search categories..."
+        emptyMessage="No blog categories found."
+        defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
+        defaultPageSize="10"
       />
 
       <BlogCategoryFormDialog

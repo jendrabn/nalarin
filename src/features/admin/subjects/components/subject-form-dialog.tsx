@@ -25,50 +25,48 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 
-import type { TaxonomyActionResult } from "../actions"
-import { topicFormSchema, type TopicFormValues } from "../schemas"
-import type { ExamTypeLookup, SubjectLookup } from "../queries"
+import type { SubjectActionResult } from "../actions"
+import { subjectFormSchema, type SubjectFormValues } from "../schemas"
+import type { ExamTypeLookup } from "../queries"
 
-type TopicFormDialogProps = {
+type SubjectFormDialogProps = {
   open: boolean
   mode: "create" | "edit"
   title: string
   description: string
   submitLabel: string
   examTypes: ExamTypeLookup[]
-  subjects: SubjectLookup[]
-  initialValues?: TopicFormValues
+  initialValues?: SubjectFormValues
   onOpenChange: (open: boolean) => void
-  onSubmit: (values: TopicFormValues) => Promise<TaxonomyActionResult<TopicFormValues, { id: number }>>
+  onSubmit: (values: SubjectFormValues) => Promise<SubjectActionResult<SubjectFormValues, { id: number }>>
   onSuccess: () => Promise<void> | void
 }
 
-function buildDefaultValues(initialValues?: TopicFormValues): TopicFormValues {
+function buildDefaultValues(initialValues?: SubjectFormValues): SubjectFormValues {
   return {
-    subjectId: initialValues?.subjectId ?? "",
+    examTypeId: initialValues?.examTypeId ?? "",
     name: initialValues?.name ?? "",
     description: initialValues?.description ?? "",
   }
 }
 
-export function TopicFormDialog({
+export function SubjectFormDialog({
   open,
   mode,
   title,
   description,
   submitLabel,
   examTypes,
-  subjects,
   initialValues,
   onOpenChange,
   onSubmit,
   onSuccess,
-}: TopicFormDialogProps) {
+}: SubjectFormDialogProps) {
   const formId = useId()
   const defaultValues = useMemo(() => buildDefaultValues(initialValues), [initialValues])
 
-  const form = useForm<TopicFormValues>({
-    resolver: zodResolver(topicFormSchema),
+  const form = useForm<SubjectFormValues>({
+    resolver: zodResolver(subjectFormSchema),
     defaultValues,
   })
 
@@ -78,7 +76,7 @@ export function TopicFormDialog({
     }
   }, [defaultValues, form, open])
 
-  const watchedSubjectId = useWatch({ control: form.control, name: "subjectId" })
+  const watchedExamTypeId = useWatch({ control: form.control, name: "examTypeId" })
   const rootError = form.formState.errors.root?.message
   const isSubmitting = form.formState.isSubmitting
 
@@ -87,7 +85,7 @@ export function TopicFormDialog({
 
     if (!result.success) {
       if (result.fieldErrors) {
-        (Object.keys(result.fieldErrors) as Array<keyof TopicFormValues>).forEach((fieldName) => {
+        (Object.keys(result.fieldErrors) as Array<keyof SubjectFormValues>).forEach((fieldName) => {
           const message = result.fieldErrors?.[fieldName]?.[0]
 
           if (message) {
@@ -130,40 +128,35 @@ export function TopicFormDialog({
               </p>
             ) : null}
 
-            <Field data-invalid={Boolean(form.formState.errors.subjectId)}>
+            <Field data-invalid={Boolean(form.formState.errors.examTypeId)}>
               <FieldContent>
-                <FieldLabel htmlFor={`${formId}-subject`} className="required">
-                  Subject
+                <FieldLabel htmlFor={`${formId}-exam-type`} className="required">
+                  Exam Type
                 </FieldLabel>
-                <FieldDescription>Pick the subject that owns this topic.</FieldDescription>
               </FieldContent>
               <div className="flex flex-col gap-1.5">
                 <Select
-                  value={watchedSubjectId || ""}
+                  value={watchedExamTypeId || ""}
                   onValueChange={(value) =>
-                    form.setValue("subjectId", value, {
+                    form.setValue("examTypeId", value, {
                       shouldDirty: true,
                       shouldValidate: true,
                     })
                   }
                 >
-                  <SelectTrigger id={`${formId}-subject`}>
-                    <SelectValue placeholder="Select subject" />
+                  <SelectTrigger id={`${formId}-exam-type`}>
+                    <SelectValue placeholder="Select exam type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {subjects.map((subject) => {
-                      const examType = examTypes.find((item) => item.id === subject.examTypeId)
-
-                      return (
-                        <SelectItem key={subject.id} value={String(subject.id)}>
-                          {subject.name}
-                          {examType ? ` · ${examType.name}` : ""}
-                        </SelectItem>
-                      )
-                    })}
+                    {examTypes.map((examType) => (
+                      <SelectItem key={examType.id} value={String(examType.id)}>
+                        {examType.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                <FieldError>{form.formState.errors.subjectId?.message}</FieldError>
+                <FieldDescription>Pick the parent exam type for this subject.</FieldDescription>
+                <FieldError>{form.formState.errors.examTypeId?.message}</FieldError>
               </div>
             </Field>
 
@@ -176,7 +169,7 @@ export function TopicFormDialog({
               <div className="flex flex-col gap-1.5">
                 <Input
                   id={`${formId}-name`}
-                  placeholder="Polynomial"
+                  placeholder="Mathematics"
                   aria-invalid={Boolean(form.formState.errors.name)}
                   {...form.register("name")}
                 />
@@ -192,7 +185,7 @@ export function TopicFormDialog({
                 <Textarea
                   id={`${formId}-description`}
                   rows={4}
-                  placeholder="Short topic description."
+                  placeholder="Short subject description."
                   aria-invalid={Boolean(form.formState.errors.description)}
                   {...form.register("description")}
                 />

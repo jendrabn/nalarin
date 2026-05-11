@@ -6,7 +6,6 @@ import { EllipsisVerticalIcon, PlusIcon, Trash2Icon } from "lucide-react"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/page-header"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -25,53 +24,51 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { AdminDataTable, SortableHeader } from "@/components/admin-data-table"
 
 import {
-  createTopicAction,
-  deleteTopicAction,
-  updateTopicAction,
+  createSubjectAction,
+  deleteSubjectAction,
+  updateSubjectAction,
 } from "../actions"
-import type { TopicFormValues } from "../schemas"
-import type { ExamTypeLookup, SubjectLookup, TopicRow } from "../queries"
-import { previewText } from "../utils"
-import { AdminDataTable, SortableHeader } from "./admin-data-table"
-import { TopicFormDialog } from "./topic-form-dialog"
+import type { SubjectFormValues } from "../schemas"
+import type { ExamTypeLookup, SubjectRow } from "../queries"
+import { previewText } from "@/lib/utils"
+import { SubjectFormDialog } from "./subject-form-dialog"
 
-type TopicsPageProps = {
-  topics: TopicRow[]
+type SubjectsPageProps = {
+  subjects: SubjectRow[]
   examTypes: ExamTypeLookup[]
-  subjects: SubjectLookup[]
   defaultCreateOpen?: boolean
-  defaultEditTopic?: TopicRow | null
+  defaultEditSubject?: SubjectRow | null
   closeDestination?: string
 }
 
-export function TopicsPage({
-  topics,
-  examTypes,
+export function SubjectsPage({
   subjects,
+  examTypes,
   defaultCreateOpen = false,
-  defaultEditTopic = null,
+  defaultEditSubject = null,
   closeDestination,
-}: TopicsPageProps) {
+}: SubjectsPageProps) {
   const router = useRouter()
   const [createOpen, setCreateOpen] = useState(defaultCreateOpen)
-  const [editingTopic, setEditingTopic] = useState<TopicRow | null>(defaultEditTopic)
-  const [deleteTarget, setDeleteTarget] = useState<TopicRow | null>(null)
+  const [editingSubject, setEditingSubject] = useState<SubjectRow | null>(defaultEditSubject)
+  const [deleteTarget, setDeleteTarget] = useState<SubjectRow | null>(null)
 
-  async function handleCreate(values: TopicFormValues) {
-    return createTopicAction(values)
+  async function handleCreate(values: SubjectFormValues) {
+    return createSubjectAction(values)
   }
 
-  async function handleUpdate(values: TopicFormValues) {
-    if (!editingTopic) {
+  async function handleUpdate(values: SubjectFormValues) {
+    if (!editingSubject) {
       return {
         success: false as const,
-        message: "No topic is currently selected.",
+        message: "No subject is currently selected.",
       }
     }
 
-    return updateTopicAction(editingTopic.id, values)
+    return updateSubjectAction(editingSubject.id, values)
   }
 
   async function handleDelete() {
@@ -79,10 +76,10 @@ export function TopicsPage({
       return
     }
 
-    const result = await deleteTopicAction(deleteTarget.id)
+    const result = await deleteSubjectAction(deleteTarget.id)
 
     if (result.success) {
-      toast.success("Topic deleted.")
+      toast.success("Subject deleted.")
       setDeleteTarget(null)
 
       if (closeDestination) {
@@ -100,8 +97,8 @@ export function TopicsPage({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Topics"
-        subtitle="Manage the topic layer under subjects. Slugs are automatic and unique within each subject."
+        title="Subjects"
+        subtitle="Manage subjects under each exam type. Slugs are generated automatically from the name."
         actions={
           <Button
             type="button"
@@ -109,48 +106,31 @@ export function TopicsPage({
             className="shadow-sm shadow-primary/15"
           >
             <PlusIcon data-icon="inline-start" />
-            Create Topic
+            Create Subject
           </Button>
         }
       />
 
       <AdminDataTable
-        data={topics}
-        searchPlaceholder="Search topics..."
-        emptyMessage="No topics found."
-        getSearchText={(row) =>
-          [
-            row.name,
-            row.slug,
-            row.description ?? "",
-            row.examTypeName,
-            row.subjectName,
-            row.subjectSlug,
-          ].join(" ")
-        }
+        data={subjects}
+        searchPlaceholder="Search subjects..."
+        emptyMessage="No subjects found."
         columns={[
           {
             accessorKey: "name",
+            meta: { label: "Name" },
             header: ({ column }) => <SortableHeader column={column}>Name</SortableHeader>,
-            cell: ({ row }) => (
-              <div className="flex flex-col gap-1">
-                <span className="font-medium text-foreground">{row.original.name}</span>
-                <span className="text-sm text-muted-foreground">{row.original.slug}</span>
-              </div>
-            ),
-          },
-          {
-            accessorKey: "subjectName",
-            header: ({ column }) => <SortableHeader column={column}>Subject</SortableHeader>,
-            cell: ({ row }) => <Badge variant="outline">{row.original.subjectName}</Badge>,
+            cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
           },
           {
             accessorKey: "examTypeName",
+            meta: { label: "Exam Type" },
             header: ({ column }) => <SortableHeader column={column}>Exam Type</SortableHeader>,
-            cell: ({ row }) => <Badge variant="secondary">{row.original.examTypeName}</Badge>,
+            cell: ({ row }) => <span>{row.original.examTypeName}</span>,
           },
           {
             accessorKey: "description",
+            meta: { label: "Description" },
             header: ({ column }) => <SortableHeader column={column}>Description</SortableHeader>,
             cell: ({ row }) => (
               <span className="line-clamp-2 text-sm text-muted-foreground">
@@ -159,14 +139,22 @@ export function TopicsPage({
             ),
           },
           {
+            accessorKey: "topicCount",
+            meta: { label: "Topics" },
+            header: ({ column }) => <SortableHeader column={column}>Topics</SortableHeader>,
+            cell: ({ row }) => <span className="tabular-nums">{row.original.topicCount}</span>,
+          },
+          {
             accessorKey: "questionCount",
+            meta: { label: "Questions" },
             header: ({ column }) => <SortableHeader column={column}>Questions</SortableHeader>,
-            cell: ({ row }) => <Badge variant="outline">{row.original.questionCount}</Badge>,
+            cell: ({ row }) => <span className="tabular-nums">{row.original.questionCount}</span>,
           },
           {
             id: "actions",
             header: () => null,
             enableSorting: false,
+            enableHiding: false,
             cell: ({ row }) => (
               <div className="flex justify-end">
                 <DropdownMenu>
@@ -182,7 +170,7 @@ export function TopicsPage({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-40">
-                    <DropdownMenuItem onClick={() => setEditingTopic(row.original)}>
+                    <DropdownMenuItem onClick={() => setEditingSubject(row.original)}>
                       Edit
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -201,14 +189,13 @@ export function TopicsPage({
         ]}
       />
 
-      <TopicFormDialog
+      <SubjectFormDialog
         open={createOpen}
         mode="create"
-        title="Create Topic"
-        description="Create a new topic under a subject."
-        submitLabel="Create topic"
+        title="Create Subject"
+        description="Create a new subject under an exam type."
+        submitLabel="Create subject"
         examTypes={examTypes}
-        subjects={subjects}
         onOpenChange={(open) => {
           setCreateOpen(open)
 
@@ -218,7 +205,7 @@ export function TopicsPage({
         }}
         onSubmit={handleCreate}
         onSuccess={async () => {
-          toast.success("Topic created.")
+          toast.success("Subject created.")
           setCreateOpen(false)
 
           if (closeDestination && defaultCreateOpen) {
@@ -230,38 +217,37 @@ export function TopicsPage({
         }}
       />
 
-      <TopicFormDialog
-        open={Boolean(editingTopic)}
+      <SubjectFormDialog
+        open={Boolean(editingSubject)}
         mode="edit"
-        title="Edit Topic"
-        description="Update the topic name, description, or subject."
+        title="Edit Subject"
+        description="Update the subject name, description, or exam type."
         submitLabel="Save changes"
         examTypes={examTypes}
-        subjects={subjects}
         initialValues={
-          editingTopic
+          editingSubject
             ? {
-                subjectId: String(editingTopic.subjectId),
-                name: editingTopic.name,
-                description: editingTopic.description ?? "",
+                examTypeId: String(editingSubject.examTypeId),
+                name: editingSubject.name,
+                description: editingSubject.description ?? "",
               }
             : undefined
         }
         onOpenChange={(open) => {
           if (!open) {
-            setEditingTopic(null)
+            setEditingSubject(null)
 
-            if (closeDestination && defaultEditTopic) {
+            if (closeDestination && defaultEditSubject) {
               router.push(closeDestination)
             }
           }
         }}
         onSubmit={handleUpdate}
         onSuccess={async () => {
-          toast.success("Topic updated.")
-          setEditingTopic(null)
+          toast.success("Subject updated.")
+          setEditingSubject(null)
 
-          if (closeDestination && defaultEditTopic) {
+          if (closeDestination && defaultEditSubject) {
             router.push(closeDestination)
             return
           }
@@ -280,10 +266,10 @@ export function TopicsPage({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete topic?</AlertDialogTitle>
+            <AlertDialogTitle>Delete subject?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. The topic can only be deleted when it is no longer used
-              by questions or practices.
+              This action cannot be undone. The subject can only be deleted when it no longer has
+              topics, questions, practices, or tryout sections attached to it.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

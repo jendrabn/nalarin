@@ -6,7 +6,6 @@ import { EllipsisVerticalIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/page-header"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -14,12 +13,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { AdminDataTable, SortableHeader } from "@/components/admin-data-table"
 
 import { updateExamTypeAction } from "../actions"
 import type { ExamTypeFormValues } from "../schemas"
 import type { ExamTypeRow } from "../queries"
-import { previewText } from "../utils"
-import { AdminDataTable, SortableHeader } from "./admin-data-table"
+import { previewText } from "@/lib/utils"
 import { ExamTypeFormDialog } from "./exam-type-form-dialog"
 
 type ExamTypesPageProps = {
@@ -53,20 +52,16 @@ export function ExamTypesPage({
         data={examTypes}
         searchPlaceholder="Search exam types..."
         emptyMessage="No exam types found."
-        getSearchText={(row) => [row.name, row.slug, row.description ?? ""].join(" ")}
         columns={[
           {
             accessorKey: "name",
+            meta: { label: "Name" },
             header: ({ column }) => <SortableHeader column={column}>Name</SortableHeader>,
-            cell: ({ row }) => (
-              <div className="flex flex-col gap-1">
-                <span className="font-medium text-foreground">{row.original.name}</span>
-                <span className="text-sm text-muted-foreground">{row.original.slug}</span>
-              </div>
-            ),
+            cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
           },
           {
             accessorKey: "description",
+            meta: { label: "Description" },
             header: ({ column }) => <SortableHeader column={column}>Description</SortableHeader>,
             cell: ({ row }) => (
               <span className="line-clamp-2 text-sm text-muted-foreground">
@@ -76,23 +71,27 @@ export function ExamTypesPage({
           },
           {
             accessorKey: "subjectCount",
+            meta: { label: "Subjects" },
             header: ({ column }) => <SortableHeader column={column}>Subjects</SortableHeader>,
-            cell: ({ row }) => <Badge variant="outline">{row.original.subjectCount}</Badge>,
+            cell: ({ row }) => <span className="tabular-nums">{row.original.subjectCount}</span>,
           },
           {
             accessorKey: "topicCount",
+            meta: { label: "Topics" },
             header: ({ column }) => <SortableHeader column={column}>Topics</SortableHeader>,
-            cell: ({ row }) => <Badge variant="outline">{row.original.topicCount}</Badge>,
+            cell: ({ row }) => <span className="tabular-nums">{row.original.topicCount}</span>,
           },
           {
             accessorKey: "questionCount",
+            meta: { label: "Questions" },
             header: ({ column }) => <SortableHeader column={column}>Questions</SortableHeader>,
-            cell: ({ row }) => <Badge variant="secondary">{row.original.questionCount}</Badge>,
+            cell: ({ row }) => <span className="tabular-nums">{row.original.questionCount}</span>,
           },
           {
             id: "actions",
             header: () => null,
             enableSorting: false,
+            enableHiding: false,
             cell: ({ row }) => (
               <div className="flex justify-end">
                 <DropdownMenu>
