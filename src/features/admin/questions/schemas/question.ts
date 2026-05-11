@@ -154,31 +154,29 @@ export const questionImportRowSchema = z.object({
   topicSlug: z.string().trim().default(""),
   questionType: z.enum(questionTypeValues),
   difficulty: z.enum(questionDifficultyValues),
+  title: z.string().trim().default(""),
   questionContent: z.string().trim().min(20, "question_content is required."),
+  imageUrl: z.string().trim().default(""),
   optionA: z.string().trim().default(""),
   optionB: z.string().trim().default(""),
   optionC: z.string().trim().default(""),
   optionD: z.string().trim().default(""),
   optionE: z.string().trim().default(""),
+  optionF: z.string().trim().default(""),
+  optionG: z.string().trim().default(""),
+  optionH: z.string().trim().default(""),
+  optionI: z.string().trim().default(""),
+  optionJ: z.string().trim().default(""),
   correctAnswer: z.string().trim().default(""),
+  correctAnswerText: z.string().trim().default(""),
   scoringRule: z.string().trim().default(""),
-  explanation: z.string().trim().default(""),
+  gradingRubric: z.string().trim().default(""),
+  manualExplanation: z.string().trim().default(""),
+  aiExplanation: z.string().trim().default(""),
   year: z.string().trim().default(""),
   points: z.string().trim().default(""),
+  status: z.enum(questionStatusValues).default("draft"),
 })
 
 export type QuestionImportRowValues = z.infer<typeof questionImportRowSchema>
 
-export const questionAiGenerateFormSchema = z.object({
-  examTypeId: z.string().trim().min(1, "Select an exam type."),
-  subjectId: z.string().trim().min(1, "Select a subject."),
-  topicId: z.string().trim().default(""),
-  type: z.enum(questionTypeValues),
-  difficulty: z.enum(questionDifficultyValues),
-  questionCount: z.string().trim().min(1, "Question count is required."),
-  prompt: z.string().trim().min(20, "Prompt must be at least 20 characters."),
-  points: z.string().trim().min(1, "Points are required."),
-  status: z.enum(questionStatusValues).default("draft"),
-})
-
-export type QuestionAiGenerateFormValues = z.infer<typeof questionAiGenerateFormSchema>

@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import type { QuestionImportRowValues } from "../schemas"
 import { importQuestionRowsAction } from "../actions"
 import {
+  downloadQuestionImportTemplate,
   parseQuestionImportWorkbook,
   type ParsedQuestionImportWorkbook,
 } from "../utils/question-import"
@@ -126,13 +127,17 @@ export function QuestionImportWorkspace({ mode }: QuestionImportWorkspaceProps) 
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Import Questions"
-        subtitle="Upload an Excel workbook, review validation issues, and import only the valid rows."
+        subtitle="Upload an Excel workbook, review validation issues, and import rows that mirror the create/edit form fields."
         actions={
-          <Button asChild variant="outline">
-            <Link href="/admin/questions">
-              Back to Questions
-            </Link>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="outline" onClick={() => downloadQuestionImportTemplate()}>
+              <FileDownIcon data-icon="inline-start" />
+              Download template
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/admin/questions">Back to Questions</Link>
+            </Button>
+          </div>
         }
       />
 
@@ -140,7 +145,7 @@ export function QuestionImportWorkspace({ mode }: QuestionImportWorkspaceProps) 
         <CardHeader>
           <CardTitle>{mode === "upload" ? "Upload Workbook" : "Preview Import"}</CardTitle>
           <CardDescription>
-            Use the official template columns from the PRD: exam_type_slug, subject_slug, topic_slug, question_type, difficulty, question_content, option_a to option_e, correct_answer, scoring_rule, explanation, year, and points.
+            This template includes the following fields: exam_type_slug, subject_slug, topic_slug, question_type, difficulty, title, question_content, image_url, option_a to option_j, correct_answer, correct_answer_text, scoring_rule, grading_rubric, manual_explanation, ai_explanation, year, points, and status.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -162,12 +167,14 @@ export function QuestionImportWorkspace({ mode }: QuestionImportWorkspaceProps) 
                 />
               </label>
 
-              <Button asChild variant="outline" className="w-fit">
-                <Link href="/admin/questions/import/preview">
-                  <FileDownIcon data-icon="inline-start" />
-                  Open preview
-                </Link>
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild variant="outline" className="w-fit">
+                  <Link href="/admin/questions/import/preview">
+                    <FileDownIcon data-icon="inline-start" />
+                    Open preview
+                  </Link>
+                </Button>
+              </div>
             </div>
           ) : payload ? (
             <div className="flex flex-col gap-4">

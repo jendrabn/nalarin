@@ -275,12 +275,6 @@ export function QuestionsPage({ questions }: QuestionsPageProps) {
                 Import
               </Link>
             </Button>
-            <Button asChild variant="outline">
-              <Link href="/admin/questions/ai-generate">
-                <SparklesIcon data-icon="inline-start" />
-                AI Generate
-              </Link>
-            </Button>
             <Button asChild>
               <Link href="/admin/questions/create">
                 <PlusIcon data-icon="inline-start" />

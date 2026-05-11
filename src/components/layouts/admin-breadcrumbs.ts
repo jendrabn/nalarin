@@ -19,7 +19,6 @@ const adminRouteLabels: Record<string, string> = {
   questions: "Questions",
   import: "Import",
   preview: "Preview",
-  "ai-generate": "AI Generate",
   "ai-explanation": "AI Explanation",
   "practice-sessions": "Practice Sessions",
   subjects: "Subjects",

@@ -13,6 +13,10 @@ import {
   type QuestionImportRowValues,
 } from "../schemas"
 import {
+  questionOptionLabelValues,
+  questionTrueFalseLabels,
+} from "../constants"
+import {
   ensureQuestionOptions,
   isChoiceQuestionType,
   isSubjectiveQuestionType,
@@ -108,7 +112,6 @@ function revalidateQuestionRoutes(questionId?: number) {
   revalidatePath("/admin/questions/create")
   revalidatePath("/admin/questions/import")
   revalidatePath("/admin/questions/import/preview")
-  revalidatePath("/admin/questions/ai-generate")
 
   if (questionId) {
     revalidatePath(`/admin/questions/${questionId}`)
@@ -451,13 +454,12 @@ export async function importQuestionRowsAction(
     }
 
     const type = row.questionType
-    const options: QuestionOptionInput[] = [
-      { label: "A", content: row.optionA, imageUrl: "", isCorrect: false },
-      { label: "B", content: row.optionB, imageUrl: "", isCorrect: false },
-      { label: "C", content: row.optionC, imageUrl: "", isCorrect: false },
-      { label: "D", content: row.optionD, imageUrl: "", isCorrect: false },
-      { label: "E", content: row.optionE, imageUrl: "", isCorrect: false },
-    ]
+    const options: QuestionOptionInput[] = questionOptionLabelValues.map((label) => ({
+      label,
+      content: row[`option${label}` as keyof QuestionImportRowValues],
+      imageUrl: "",
+      isCorrect: false,
+    }))
 
     if (type === "multiple_choice") {
       const correctLabel = row.correctAnswer.toUpperCase()
@@ -480,13 +482,13 @@ export async function importQuestionRowsAction(
 
     if (type === "true_false") {
       options[0] = {
-        label: "True",
+        label: questionTrueFalseLabels[0],
         content: row.optionA || "True",
         imageUrl: "",
         isCorrect: false,
       }
       options[1] = {
-        label: "False",
+        label: questionTrueFalseLabels[1],
         content: row.optionB || "False",
         imageUrl: "",
         isCorrect: false,
@@ -500,16 +502,17 @@ export async function importQuestionRowsAction(
       type,
       difficulty: row.difficulty,
       scoringRule: row.scoringRule,
-      title: "",
+      title: row.title,
       content: row.questionContent,
-      imageUrl: "",
-      correctAnswerText: row.correctAnswer,
-      gradingRubric: row.explanation,
-      manualExplanation: row.explanation,
-      aiExplanation: "",
+      imageUrl: row.imageUrl,
+      correctAnswerText:
+        row.correctAnswerText || (row.questionType === "true_false" ? row.correctAnswer : ""),
+      gradingRubric: row.gradingRubric,
+      manualExplanation: row.manualExplanation,
+      aiExplanation: row.aiExplanation,
       year: row.year,
       points: row.points || "1",
-      status: "draft",
+      status: row.status,
       options,
     })
 

@@ -44,7 +44,6 @@ function revalidateExamTypeRoutes() {
   revalidatePath("/admin/topics/create")
   revalidatePath("/admin/questions")
   revalidatePath("/admin/questions/create")
-  revalidatePath("/admin/questions/ai-generate")
 }
 
 async function examTypeSlugExists(slug: string, excludedId?: number) {

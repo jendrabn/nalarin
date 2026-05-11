@@ -58,7 +58,6 @@ function revalidateSubjectRoutes() {
   revalidatePath("/admin/topics/create")
   revalidatePath("/admin/questions")
   revalidatePath("/admin/questions/create")
-  revalidatePath("/admin/questions/ai-generate")
 }
 
 async function subjectSlugExists(examTypeId: number, slug: string, excludedId?: number) {
