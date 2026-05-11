@@ -6,7 +6,6 @@ import {
   sessionOptions,
 } from "@/features/auth/services/session-config";
 
-const authRoutes = ["/login", "/register"];
 const adminPrefix = "/admin";
 const protectedPrefixes = [
   "/account",
@@ -36,10 +35,6 @@ export async function proxy(request: NextRequest) {
     sessionOptions,
   );
   const isAuthenticated = Boolean(session.userId && session.sessionToken);
-
-  if (authRoutes.includes(pathname) && isAuthenticated) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
 
   if (pathname === adminPrefix || pathname.startsWith(`${adminPrefix}/`)) {
     if (!isAuthenticated) {

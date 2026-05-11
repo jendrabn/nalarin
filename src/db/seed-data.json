@@ -1,0 +1,1107 @@
+{
+  "exam_types": [
+    {
+      "name": "UTBK",
+      "slug": "utbk",
+      "description": "Seleksi Nasional Berdasarkan Tes untuk masuk perguruan tinggi negeri.",
+      "order_index": 1
+    },
+    {
+      "name": "UTUL UGM",
+      "slug": "utul-ugm",
+      "description": "Ujian mandiri UGM / UM-CBT UGM untuk program sarjana dan sarjana terapan.",
+      "order_index": 2
+    },
+    {
+      "name": "SIMAK UI",
+      "slug": "simak-ui",
+      "description": "Seleksi Masuk Universitas Indonesia untuk berbagai program pendidikan.",
+      "order_index": 3
+    },
+    {
+      "name": "CPNS",
+      "slug": "cpns",
+      "description": "Seleksi Calon Pegawai Negeri Sipil, terutama Seleksi Kompetensi Dasar.",
+      "order_index": 4
+    }
+  ],
+  "subjects": [
+    {
+      "exam_type_slug": "utbk",
+      "name": "Penalaran Umum",
+      "slug": "penalaran-umum",
+      "description": "Subtes TPS UTBK untuk mengukur kemampuan bernalar secara logis dan analitis.",
+      "order_index": 1
+    },
+    {
+      "exam_type_slug": "utbk",
+      "name": "Pengetahuan dan Pemahaman Umum",
+      "slug": "pengetahuan-pemahaman-umum",
+      "description": "Subtes TPS UTBK untuk mengukur pemahaman informasi, konsep, dan konteks umum.",
+      "order_index": 2
+    },
+    {
+      "exam_type_slug": "utbk",
+      "name": "Pemahaman Bacaan dan Menulis",
+      "slug": "pemahaman-bacaan-menulis",
+      "description": "Subtes TPS UTBK untuk mengukur kemampuan memahami bacaan dan kaidah penulisan.",
+      "order_index": 3
+    },
+    {
+      "exam_type_slug": "utbk",
+      "name": "Pengetahuan Kuantitatif",
+      "slug": "pengetahuan-kuantitatif",
+      "description": "Subtes TPS UTBK untuk mengukur kemampuan kuantitatif dasar.",
+      "order_index": 4
+    },
+    {
+      "exam_type_slug": "utbk",
+      "name": "Literasi Bahasa Indonesia",
+      "slug": "literasi-bahasa-indonesia",
+      "description": "Tes Literasi UTBK dalam teks berbahasa Indonesia.",
+      "order_index": 5
+    },
+    {
+      "exam_type_slug": "utbk",
+      "name": "Literasi Bahasa Inggris",
+      "slug": "literasi-bahasa-inggris",
+      "description": "Tes Literasi UTBK dalam teks berbahasa Inggris.",
+      "order_index": 6
+    },
+    {
+      "exam_type_slug": "utbk",
+      "name": "Penalaran Matematika",
+      "slug": "penalaran-matematika",
+      "description": "Tes Literasi UTBK untuk mengukur penalaran matematika dalam konteks kehidupan.",
+      "order_index": 7
+    },
+    {
+      "exam_type_slug": "utul-ugm",
+      "name": "Tes Potensi Akademik",
+      "slug": "tes-potensi-akademik",
+      "description": "Mata uji UM-CBT UGM untuk mengukur potensi kognitif dan akademik.",
+      "order_index": 8
+    },
+    {
+      "exam_type_slug": "utul-ugm",
+      "name": "Tes Kemampuan Dasar Umum",
+      "slug": "tes-kemampuan-dasar-umum",
+      "description": "Mata uji UM-CBT UGM mencakup Matematika Dasar, Bahasa Indonesia, dan Bahasa Inggris.",
+      "order_index": 9
+    },
+    {
+      "exam_type_slug": "utul-ugm",
+      "name": "TKA Saintek",
+      "slug": "tka-saintek",
+      "description": "Tes Kemampuan Akademik Saintek UM-CBT UGM.",
+      "order_index": 10
+    },
+    {
+      "exam_type_slug": "utul-ugm",
+      "name": "TKA Soshum",
+      "slug": "tka-soshum",
+      "description": "Tes Kemampuan Akademik Soshum UM-CBT UGM.",
+      "order_index": 11
+    },
+    {
+      "exam_type_slug": "simak-ui",
+      "name": "Kemampuan Dasar",
+      "slug": "kemampuan-dasar",
+      "description": "Materi SIMAK UI mencakup Matematika Dasar, Bahasa Indonesia, dan Bahasa Inggris.",
+      "order_index": 12
+    },
+    {
+      "exam_type_slug": "simak-ui",
+      "name": "Kemampuan IPA",
+      "slug": "kemampuan-ipa",
+      "description": "Materi SIMAK UI rumpun IPA mencakup Matematika IPA, Fisika, Kimia, dan Biologi.",
+      "order_index": 13
+    },
+    {
+      "exam_type_slug": "simak-ui",
+      "name": "Kemampuan IPS",
+      "slug": "kemampuan-ips",
+      "description": "Materi SIMAK UI rumpun IPS mencakup Ekonomi, Sejarah, Geografi, dan Sosiologi.",
+      "order_index": 14
+    },
+    {
+      "exam_type_slug": "cpns",
+      "name": "Tes Wawasan Kebangsaan",
+      "slug": "tes-wawasan-kebangsaan",
+      "description": "SKD CPNS untuk menilai penguasaan pengetahuan dan kemampuan implementasi nasionalisme, integritas, bela negara, pilar negara, dan bahasa negara.",
+      "order_index": 15
+    },
+    {
+      "exam_type_slug": "cpns",
+      "name": "Tes Intelegensia Umum",
+      "slug": "tes-intelegensia-umum",
+      "description": "SKD CPNS untuk menilai kemampuan verbal, numerik, dan figural.",
+      "order_index": 16
+    },
+    {
+      "exam_type_slug": "cpns",
+      "name": "Tes Karakteristik Pribadi",
+      "slug": "tes-karakteristik-pribadi",
+      "description": "SKD CPNS untuk menilai karakteristik pribadi dalam pelayanan publik, jejaring kerja, sosial budaya, TIK, profesionalisme, dan anti-radikalisme.",
+      "order_index": 17
+    }
+  ],
+  "topics": [
+    {
+      "subject_slug": "penalaran-umum",
+      "name": "Penalaran Deduktif",
+      "slug": "penalaran-deduktif",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "penalaran-umum",
+      "name": "Penalaran Induktif",
+      "slug": "penalaran-induktif",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "penalaran-umum",
+      "name": "Penalaran Analitik",
+      "slug": "penalaran-analitik",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "penalaran-umum",
+      "name": "Kesimpulan Logis",
+      "slug": "kesimpulan-logis",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "penalaran-umum",
+      "name": "Sebab Akibat",
+      "slug": "sebab-akibat",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "penalaran-umum",
+      "name": "Konsistensi Pernyataan",
+      "slug": "konsistensi-pernyataan",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "penalaran-umum",
+      "name": "Argumen dan Asumsi",
+      "slug": "argumen-asumsi",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "penalaran-umum",
+      "name": "Pola dan Hubungan",
+      "slug": "pola-hubungan",
+      "order_index": 8
+    },
+    {
+      "subject_slug": "pengetahuan-pemahaman-umum",
+      "name": "Ide Pokok dan Gagasan Utama",
+      "slug": "ide-pokok-gagasan-utama",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "pengetahuan-pemahaman-umum",
+      "name": "Makna Kata dan Istilah",
+      "slug": "makna-kata-istilah",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "pengetahuan-pemahaman-umum",
+      "name": "Hubungan Antarparagraf",
+      "slug": "hubungan-antarparagraf",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "pengetahuan-pemahaman-umum",
+      "name": "Informasi Tersurat dan Tersirat",
+      "slug": "informasi-tersurat-tersirat",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "pengetahuan-pemahaman-umum",
+      "name": "Simpulan Bacaan",
+      "slug": "simpulan-bacaan",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "pengetahuan-pemahaman-umum",
+      "name": "Konteks Sosial dan Humaniora",
+      "slug": "konteks-sosial-humaniora",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "pengetahuan-pemahaman-umum",
+      "name": "Konteks Sains dan Teknologi",
+      "slug": "konteks-sains-teknologi",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "pengetahuan-pemahaman-umum",
+      "name": "Konteks Personal dan Umum",
+      "slug": "konteks-personal-umum",
+      "order_index": 8
+    },
+    {
+      "subject_slug": "pemahaman-bacaan-menulis",
+      "name": "Kalimat Efektif",
+      "slug": "kalimat-efektif",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "pemahaman-bacaan-menulis",
+      "name": "Ejaan dan Tanda Baca",
+      "slug": "ejaan-tanda-baca",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "pemahaman-bacaan-menulis",
+      "name": "Diksi dan Pilihan Kata",
+      "slug": "diksi-pilihan-kata",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "pemahaman-bacaan-menulis",
+      "name": "Kohesi dan Koherensi",
+      "slug": "kohesi-koherensi",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "pemahaman-bacaan-menulis",
+      "name": "Perbaikan Kalimat",
+      "slug": "perbaikan-kalimat",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "pemahaman-bacaan-menulis",
+      "name": "Struktur Paragraf",
+      "slug": "struktur-paragraf",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "pemahaman-bacaan-menulis",
+      "name": "Pernyataan yang Sesuai Bacaan",
+      "slug": "pernyataan-sesuai-bacaan",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "pemahaman-bacaan-menulis",
+      "name": "Tujuan dan Nada Penulis",
+      "slug": "tujuan-nada-penulis",
+      "order_index": 8
+    },
+    {
+      "subject_slug": "pengetahuan-kuantitatif",
+      "name": "Bilangan dan Operasi Hitung",
+      "slug": "bilangan-operasi-hitung",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "pengetahuan-kuantitatif",
+      "name": "Pecahan, Rasio, dan Persentase",
+      "slug": "pecahan-rasio-persentase",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "pengetahuan-kuantitatif",
+      "name": "Aljabar Dasar",
+      "slug": "aljabar-dasar",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "pengetahuan-kuantitatif",
+      "name": "Persamaan dan Pertidaksamaan",
+      "slug": "persamaan-pertidaksamaan",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "pengetahuan-kuantitatif",
+      "name": "Fungsi dan Grafik",
+      "slug": "fungsi-grafik",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "pengetahuan-kuantitatif",
+      "name": "Geometri Dasar",
+      "slug": "geometri-dasar",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "pengetahuan-kuantitatif",
+      "name": "Statistika Dasar",
+      "slug": "statistika-dasar",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "pengetahuan-kuantitatif",
+      "name": "Peluang Dasar",
+      "slug": "peluang-dasar",
+      "order_index": 8
+    },
+    {
+      "subject_slug": "literasi-bahasa-indonesia",
+      "name": "Pemahaman Teks Saintek",
+      "slug": "pemahaman-teks-saintek",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "literasi-bahasa-indonesia",
+      "name": "Pemahaman Teks Sosial Humaniora",
+      "slug": "pemahaman-teks-sosial-humaniora",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "literasi-bahasa-indonesia",
+      "name": "Pemahaman Teks Personal",
+      "slug": "pemahaman-teks-personal",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "literasi-bahasa-indonesia",
+      "name": "Evaluasi Argumen",
+      "slug": "evaluasi-argumen",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "literasi-bahasa-indonesia",
+      "name": "Refleksi Isi Bacaan",
+      "slug": "refleksi-isi-bacaan",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "literasi-bahasa-indonesia",
+      "name": "Tujuan Komunikatif Teks",
+      "slug": "tujuan-komunikatif-teks",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "literasi-bahasa-indonesia",
+      "name": "Inferensi Bacaan",
+      "slug": "inferensi-bacaan",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "literasi-bahasa-inggris",
+      "name": "Main Idea",
+      "slug": "main-idea",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "literasi-bahasa-inggris",
+      "name": "Specific Information",
+      "slug": "specific-information",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "literasi-bahasa-inggris",
+      "name": "Inference",
+      "slug": "inference",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "literasi-bahasa-inggris",
+      "name": "Vocabulary in Context",
+      "slug": "vocabulary-in-context",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "literasi-bahasa-inggris",
+      "name": "Author's Purpose",
+      "slug": "authors-purpose",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "literasi-bahasa-inggris",
+      "name": "Text Structure",
+      "slug": "text-structure",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "literasi-bahasa-inggris",
+      "name": "Reference and Cohesion",
+      "slug": "reference-cohesion",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "penalaran-matematika",
+      "name": "Pemodelan Matematika",
+      "slug": "pemodelan-matematika",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "penalaran-matematika",
+      "name": "Aritmetika Sosial",
+      "slug": "aritmetika-sosial",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "penalaran-matematika",
+      "name": "Data dan Grafik",
+      "slug": "data-grafik",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "penalaran-matematika",
+      "name": "Statistika Kontekstual",
+      "slug": "statistika-kontekstual",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "penalaran-matematika",
+      "name": "Peluang Kontekstual",
+      "slug": "peluang-kontekstual",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "penalaran-matematika",
+      "name": "Geometri Kontekstual",
+      "slug": "geometri-kontekstual",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "penalaran-matematika",
+      "name": "Fungsi dalam Konteks",
+      "slug": "fungsi-dalam-konteks",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "penalaran-matematika",
+      "name": "Perbandingan dan Skala",
+      "slug": "perbandingan-skala",
+      "order_index": 8
+    },
+    {
+      "subject_slug": "tes-potensi-akademik",
+      "name": "Verbal: Sinonim dan Antonim",
+      "slug": "verbal-sinonim-antonim",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "tes-potensi-akademik",
+      "name": "Verbal: Analogi Kata",
+      "slug": "verbal-analogi-kata",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "tes-potensi-akademik",
+      "name": "Verbal: Pemahaman Wacana",
+      "slug": "verbal-pemahaman-wacana",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "tes-potensi-akademik",
+      "name": "Numerik: Deret Angka",
+      "slug": "numerik-deret-angka",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "tes-potensi-akademik",
+      "name": "Numerik: Aritmetika",
+      "slug": "numerik-aritmetika",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "tes-potensi-akademik",
+      "name": "Numerik: Perbandingan Kuantitatif",
+      "slug": "numerik-perbandingan-kuantitatif",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "tes-potensi-akademik",
+      "name": "Figural: Pola Gambar",
+      "slug": "figural-pola-gambar",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "tes-potensi-akademik",
+      "name": "Figural: Rotasi dan Refleksi",
+      "slug": "figural-rotasi-refleksi",
+      "order_index": 8
+    },
+    {
+      "subject_slug": "tes-kemampuan-dasar-umum",
+      "name": "Matematika Dasar",
+      "slug": "matematika-dasar",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "tes-kemampuan-dasar-umum",
+      "name": "Aljabar",
+      "slug": "aljabar",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "tes-kemampuan-dasar-umum",
+      "name": "Fungsi",
+      "slug": "fungsi",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "tes-kemampuan-dasar-umum",
+      "name": "Statistika dan Peluang",
+      "slug": "statistika-peluang",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "tes-kemampuan-dasar-umum",
+      "name": "Bahasa Indonesia: Pemahaman Bacaan",
+      "slug": "bahasa-indonesia-pemahaman-bacaan",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "tes-kemampuan-dasar-umum",
+      "name": "Bahasa Indonesia: Tata Bahasa",
+      "slug": "bahasa-indonesia-tata-bahasa",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "tes-kemampuan-dasar-umum",
+      "name": "Bahasa Inggris: Reading Comprehension",
+      "slug": "bahasa-inggris-reading-comprehension",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "tes-kemampuan-dasar-umum",
+      "name": "Bahasa Inggris: Grammar and Vocabulary",
+      "slug": "bahasa-inggris-grammar-vocabulary",
+      "order_index": 8
+    },
+    {
+      "subject_slug": "tka-saintek",
+      "name": "Matematika IPA: Fungsi dan Limit",
+      "slug": "matematika-ipa-fungsi-limit",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "tka-saintek",
+      "name": "Matematika IPA: Turunan dan Integral",
+      "slug": "matematika-ipa-turunan-integral",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "tka-saintek",
+      "name": "Matematika IPA: Trigonometri",
+      "slug": "matematika-ipa-trigonometri",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "tka-saintek",
+      "name": "Fisika: Mekanika",
+      "slug": "fisika-mekanika",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "tka-saintek",
+      "name": "Fisika: Gelombang dan Optik",
+      "slug": "fisika-gelombang-optik",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "tka-saintek",
+      "name": "Fisika: Listrik dan Magnet",
+      "slug": "fisika-listrik-magnet",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "tka-saintek",
+      "name": "Kimia: Stoikiometri",
+      "slug": "kimia-stoikiometri",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "tka-saintek",
+      "name": "Kimia: Struktur Atom dan Ikatan Kimia",
+      "slug": "kimia-struktur-atom-ikatan",
+      "order_index": 8
+    },
+    {
+      "subject_slug": "tka-saintek",
+      "name": "Kimia: Kesetimbangan dan Asam Basa",
+      "slug": "kimia-kesetimbangan-asam-basa",
+      "order_index": 9
+    },
+    {
+      "subject_slug": "tka-saintek",
+      "name": "Biologi: Sel dan Biomolekul",
+      "slug": "biologi-sel-biomolekul",
+      "order_index": 10
+    },
+    {
+      "subject_slug": "tka-saintek",
+      "name": "Biologi: Genetika",
+      "slug": "biologi-genetika",
+      "order_index": 11
+    },
+    {
+      "subject_slug": "tka-saintek",
+      "name": "Biologi: Ekologi dan Evolusi",
+      "slug": "biologi-ekologi-evolusi",
+      "order_index": 12
+    },
+    {
+      "subject_slug": "tka-soshum",
+      "name": "Sejarah Indonesia",
+      "slug": "sejarah-indonesia",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "tka-soshum",
+      "name": "Sejarah Dunia",
+      "slug": "sejarah-dunia",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "tka-soshum",
+      "name": "Geografi Fisik",
+      "slug": "geografi-fisik",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "tka-soshum",
+      "name": "Geografi Manusia dan Wilayah",
+      "slug": "geografi-manusia-wilayah",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "tka-soshum",
+      "name": "Ekonomi Mikro",
+      "slug": "ekonomi-mikro",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "tka-soshum",
+      "name": "Ekonomi Makro",
+      "slug": "ekonomi-makro",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "tka-soshum",
+      "name": "Akuntansi Dasar",
+      "slug": "akuntansi-dasar",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "tka-soshum",
+      "name": "Sosiologi: Interaksi Sosial",
+      "slug": "sosiologi-interaksi-sosial",
+      "order_index": 8
+    },
+    {
+      "subject_slug": "tka-soshum",
+      "name": "Sosiologi: Kelompok dan Lembaga Sosial",
+      "slug": "sosiologi-kelompok-lembaga-sosial",
+      "order_index": 9
+    },
+    {
+      "subject_slug": "tka-soshum",
+      "name": "Sosiologi: Perubahan Sosial",
+      "slug": "sosiologi-perubahan-sosial",
+      "order_index": 10
+    },
+    {
+      "subject_slug": "kemampuan-dasar",
+      "name": "Matematika Dasar: Aljabar",
+      "slug": "matematika-dasar-aljabar",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "kemampuan-dasar",
+      "name": "Matematika Dasar: Fungsi dan Grafik",
+      "slug": "matematika-dasar-fungsi-grafik",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "kemampuan-dasar",
+      "name": "Matematika Dasar: Statistika dan Peluang",
+      "slug": "matematika-dasar-statistika-peluang",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "kemampuan-dasar",
+      "name": "Bahasa Indonesia: Pemahaman Bacaan",
+      "slug": "bahasa-indonesia-pemahaman-bacaan-simak",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "kemampuan-dasar",
+      "name": "Bahasa Indonesia: Ejaan dan Kalimat Efektif",
+      "slug": "bahasa-indonesia-ejaan-kalimat-efektif",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "kemampuan-dasar",
+      "name": "Bahasa Inggris: Reading Comprehension",
+      "slug": "bahasa-inggris-reading-comprehension-simak",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "kemampuan-dasar",
+      "name": "Bahasa Inggris: Structure and Vocabulary",
+      "slug": "bahasa-inggris-structure-vocabulary",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "kemampuan-ipa",
+      "name": "Matematika IPA: Limit dan Turunan",
+      "slug": "matematika-ipa-limit-turunan",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "kemampuan-ipa",
+      "name": "Matematika IPA: Integral",
+      "slug": "matematika-ipa-integral",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "kemampuan-ipa",
+      "name": "Matematika IPA: Vektor dan Geometri",
+      "slug": "matematika-ipa-vektor-geometri",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "kemampuan-ipa",
+      "name": "Fisika: Kinematika dan Dinamika",
+      "slug": "fisika-kinematika-dinamika",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "kemampuan-ipa",
+      "name": "Fisika: Usaha dan Energi",
+      "slug": "fisika-usaha-energi",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "kemampuan-ipa",
+      "name": "Fisika: Listrik Dinamis dan Statis",
+      "slug": "fisika-listrik-dinamis-statis",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "kemampuan-ipa",
+      "name": "Kimia: Konsep Mol dan Stoikiometri",
+      "slug": "kimia-konsep-mol-stoikiometri",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "kemampuan-ipa",
+      "name": "Kimia: Termokimia dan Laju Reaksi",
+      "slug": "kimia-termokimia-laju-reaksi",
+      "order_index": 8
+    },
+    {
+      "subject_slug": "kemampuan-ipa",
+      "name": "Kimia: Larutan dan Kesetimbangan",
+      "slug": "kimia-larutan-kesetimbangan",
+      "order_index": 9
+    },
+    {
+      "subject_slug": "kemampuan-ipa",
+      "name": "Biologi: Struktur dan Fungsi Sel",
+      "slug": "biologi-struktur-fungsi-sel",
+      "order_index": 10
+    },
+    {
+      "subject_slug": "kemampuan-ipa",
+      "name": "Biologi: Sistem Organ Manusia",
+      "slug": "biologi-sistem-organ-manusia",
+      "order_index": 11
+    },
+    {
+      "subject_slug": "kemampuan-ipa",
+      "name": "Biologi: Genetika dan Bioteknologi",
+      "slug": "biologi-genetika-bioteknologi",
+      "order_index": 12
+    },
+    {
+      "subject_slug": "kemampuan-ips",
+      "name": "Ekonomi: Permintaan, Penawaran, dan Pasar",
+      "slug": "ekonomi-permintaan-penawaran-pasar",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "kemampuan-ips",
+      "name": "Ekonomi: Pendapatan Nasional",
+      "slug": "ekonomi-pendapatan-nasional",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "kemampuan-ips",
+      "name": "Ekonomi: Uang, Bank, dan Kebijakan Moneter",
+      "slug": "ekonomi-uang-bank-moneter",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "kemampuan-ips",
+      "name": "Sejarah: Indonesia Masa Kolonial",
+      "slug": "sejarah-indonesia-kolonial",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "kemampuan-ips",
+      "name": "Sejarah: Pergerakan Nasional",
+      "slug": "sejarah-pergerakan-nasional",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "kemampuan-ips",
+      "name": "Sejarah: Dunia Modern",
+      "slug": "sejarah-dunia-modern",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "kemampuan-ips",
+      "name": "Geografi: Litosfer, Atmosfer, dan Hidrosfer",
+      "slug": "geografi-litosfer-atmosfer-hidrosfer",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "kemampuan-ips",
+      "name": "Geografi: Kependudukan dan Wilayah",
+      "slug": "geografi-kependudukan-wilayah",
+      "order_index": 8
+    },
+    {
+      "subject_slug": "kemampuan-ips",
+      "name": "Sosiologi: Nilai dan Norma Sosial",
+      "slug": "sosiologi-nilai-norma-sosial",
+      "order_index": 9
+    },
+    {
+      "subject_slug": "kemampuan-ips",
+      "name": "Sosiologi: Konflik dan Integrasi Sosial",
+      "slug": "sosiologi-konflik-integrasi-sosial",
+      "order_index": 10
+    },
+    {
+      "subject_slug": "tes-wawasan-kebangsaan",
+      "name": "Nasionalisme",
+      "slug": "nasionalisme",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "tes-wawasan-kebangsaan",
+      "name": "Integritas",
+      "slug": "integritas",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "tes-wawasan-kebangsaan",
+      "name": "Bela Negara",
+      "slug": "bela-negara",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "tes-wawasan-kebangsaan",
+      "name": "Pilar Negara",
+      "slug": "pilar-negara",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "tes-wawasan-kebangsaan",
+      "name": "Bahasa Negara",
+      "slug": "bahasa-negara",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "tes-wawasan-kebangsaan",
+      "name": "Pancasila",
+      "slug": "pancasila",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "tes-wawasan-kebangsaan",
+      "name": "Undang-Undang Dasar 1945",
+      "slug": "uud-1945",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "tes-wawasan-kebangsaan",
+      "name": "Bhinneka Tunggal Ika",
+      "slug": "bhinneka-tunggal-ika",
+      "order_index": 8
+    },
+    {
+      "subject_slug": "tes-wawasan-kebangsaan",
+      "name": "Negara Kesatuan Republik Indonesia",
+      "slug": "nkri",
+      "order_index": 9
+    },
+    {
+      "subject_slug": "tes-intelegensia-umum",
+      "name": "Kemampuan Verbal: Analogi",
+      "slug": "kemampuan-verbal-analogi",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "tes-intelegensia-umum",
+      "name": "Kemampuan Verbal: Silogisme",
+      "slug": "kemampuan-verbal-silogisme",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "tes-intelegensia-umum",
+      "name": "Kemampuan Verbal: Analitis",
+      "slug": "kemampuan-verbal-analitis",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "tes-intelegensia-umum",
+      "name": "Kemampuan Numerik: Berhitung",
+      "slug": "kemampuan-numerik-berhitung",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "tes-intelegensia-umum",
+      "name": "Kemampuan Numerik: Deret Angka",
+      "slug": "kemampuan-numerik-deret-angka",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "tes-intelegensia-umum",
+      "name": "Kemampuan Numerik: Perbandingan Kuantitatif",
+      "slug": "kemampuan-numerik-perbandingan-kuantitatif",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "tes-intelegensia-umum",
+      "name": "Kemampuan Numerik: Soal Cerita",
+      "slug": "kemampuan-numerik-soal-cerita",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "tes-intelegensia-umum",
+      "name": "Kemampuan Figural: Analogi",
+      "slug": "kemampuan-figural-analogi",
+      "order_index": 8
+    },
+    {
+      "subject_slug": "tes-intelegensia-umum",
+      "name": "Kemampuan Figural: Ketidaksamaan",
+      "slug": "kemampuan-figural-ketidaksamaan",
+      "order_index": 9
+    },
+    {
+      "subject_slug": "tes-intelegensia-umum",
+      "name": "Kemampuan Figural: Serial",
+      "slug": "kemampuan-figural-serial",
+      "order_index": 10
+    },
+    {
+      "subject_slug": "tes-karakteristik-pribadi",
+      "name": "Pelayanan Publik",
+      "slug": "pelayanan-publik",
+      "order_index": 1
+    },
+    {
+      "subject_slug": "tes-karakteristik-pribadi",
+      "name": "Jejaring Kerja",
+      "slug": "jejaring-kerja",
+      "order_index": 2
+    },
+    {
+      "subject_slug": "tes-karakteristik-pribadi",
+      "name": "Sosial Budaya",
+      "slug": "sosial-budaya",
+      "order_index": 3
+    },
+    {
+      "subject_slug": "tes-karakteristik-pribadi",
+      "name": "Teknologi Informasi dan Komunikasi",
+      "slug": "teknologi-informasi-komunikasi",
+      "order_index": 4
+    },
+    {
+      "subject_slug": "tes-karakteristik-pribadi",
+      "name": "Profesionalisme",
+      "slug": "profesionalisme",
+      "order_index": 5
+    },
+    {
+      "subject_slug": "tes-karakteristik-pribadi",
+      "name": "Anti-Radikalisme",
+      "slug": "anti-radikalisme",
+      "order_index": 6
+    },
+    {
+      "subject_slug": "tes-karakteristik-pribadi",
+      "name": "Orientasi pada Hasil",
+      "slug": "orientasi-pada-hasil",
+      "order_index": 7
+    },
+    {
+      "subject_slug": "tes-karakteristik-pribadi",
+      "name": "Kemampuan Beradaptasi",
+      "slug": "kemampuan-beradaptasi",
+      "order_index": 8
+    },
+    {
+      "subject_slug": "tes-karakteristik-pribadi",
+      "name": "Pengambilan Keputusan",
+      "slug": "pengambilan-keputusan",
+      "order_index": 9
+    }
+  ],
+  "blog_categories": [
+    {
+      "name": "Panduan UTBK",
+      "slug": "panduan-utbk",
+      "description": "Artikel panduan strategi, jadwal, materi, dan persiapan UTBK/SNBT.",
+      "order_index": 1
+    },
+    {
+      "name": "Panduan UTUL UGM",
+      "slug": "panduan-utul-ugm",
+      "description": "Artikel panduan persiapan UM-CBT/UTUL UGM.",
+      "order_index": 2
+    },
+    {
+      "name": "Panduan SIMAK UI",
+      "slug": "panduan-simak-ui",
+      "description": "Artikel panduan persiapan SIMAK UI.",
+      "order_index": 3
+    },
+    {
+      "name": "Panduan CPNS",
+      "slug": "panduan-cpns",
+      "description": "Artikel panduan persiapan SKD CPNS.",
+      "order_index": 4
+    },
+    {
+      "name": "Strategi Belajar",
+      "slug": "strategi-belajar",
+      "description": "Tips belajar efektif, manajemen waktu, dan perencanaan latihan.",
+      "order_index": 5
+    },
+    {
+      "name": "Pembahasan Soal",
+      "slug": "pembahasan-soal",
+      "description": "Artikel pembahasan konsep dan contoh soal.",
+      "order_index": 6
+    },
+    {
+      "name": "Tryout dan Evaluasi",
+      "slug": "tryout-evaluasi",
+      "description": "Tips mengikuti tryout, membaca hasil, ranking, dan progress belajar.",
+      "order_index": 7
+    },
+    {
+      "name": "Info Seleksi dan Jadwal",
+      "slug": "info-seleksi-jadwal",
+      "description": "Informasi jadwal, ketentuan, dan update seleksi.",
+      "order_index": 8
+    },
+    {
+      "name": "Motivasi dan Produktivitas",
+      "slug": "motivasi-produktivitas",
+      "description": "Artikel motivasi, disiplin belajar, dan produktivitas siswa.",
+      "order_index": 9
+    },
+    {
+      "name": "Pengumuman Nalarin.id",
+      "slug": "pengumuman-nalarin",
+      "description": "Pengumuman fitur, event tryout, promo, dan update platform.",
+      "order_index": 10
+    }
+  ]
+}

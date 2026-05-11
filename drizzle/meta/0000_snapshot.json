@@ -1153,8 +1153,8 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "practice_answers_practice_session_question_id_practice_session_questions_id_fk": {
-          "name": "practice_answers_practice_session_question_id_practice_session_questions_id_fk",
+        "practice_answers_psq_fk": {
+          "name": "practice_answers_psq_fk",
           "tableFrom": "practice_answers",
           "tableTo": "practice_session_questions",
           "columnsFrom": [
@@ -1390,8 +1390,8 @@
         }
       },
       "foreignKeys": {
-        "practice_session_questions_practice_session_id_practice_sessions_id_fk": {
-          "name": "practice_session_questions_practice_session_id_practice_sessions_id_fk",
+        "practice_session_questions_ps_fk": {
+          "name": "practice_session_questions_ps_fk",
           "tableFrom": "practice_session_questions",
           "tableTo": "practice_sessions",
           "columnsFrom": [
@@ -1403,8 +1403,8 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "practice_session_questions_practice_question_id_practice_questions_id_fk": {
-          "name": "practice_session_questions_practice_question_id_practice_questions_id_fk",
+        "practice_session_questions_pq_fk": {
+          "name": "practice_session_questions_pq_fk",
           "tableFrom": "practice_session_questions",
           "tableTo": "practice_questions",
           "columnsFrom": [
@@ -2817,8 +2817,8 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "tryout_answers_tryout_section_session_id_tryout_section_sessions_id_fk": {
-          "name": "tryout_answers_tryout_section_session_id_tryout_section_sessions_id_fk",
+        "tryout_answers_tss_fk": {
+          "name": "tryout_answers_tss_fk",
           "tableFrom": "tryout_answers",
           "tableTo": "tryout_section_sessions",
           "columnsFrom": [
@@ -2830,8 +2830,8 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "tryout_answers_tryout_session_question_id_tryout_session_questions_id_fk": {
-          "name": "tryout_answers_tryout_session_question_id_tryout_session_questions_id_fk",
+        "tryout_answers_tsq_fk": {
+          "name": "tryout_answers_tsq_fk",
           "tableFrom": "tryout_answers",
           "tableTo": "tryout_session_questions",
           "columnsFrom": [
@@ -3441,8 +3441,8 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "tryout_session_questions_tryout_section_session_id_tryout_section_sessions_id_fk": {
-          "name": "tryout_session_questions_tryout_section_session_id_tryout_section_sessions_id_fk",
+        "tryout_session_questions_tss_fk": {
+          "name": "tryout_session_questions_tss_fk",
           "tableFrom": "tryout_session_questions",
           "tableTo": "tryout_section_sessions",
           "columnsFrom": [
@@ -3454,8 +3454,8 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "tryout_session_questions_tryout_question_id_tryout_questions_id_fk": {
-          "name": "tryout_session_questions_tryout_question_id_tryout_questions_id_fk",
+        "tryout_session_questions_tq_fk": {
+          "name": "tryout_session_questions_tq_fk",
           "tableFrom": "tryout_session_questions",
           "tableTo": "tryout_questions",
           "columnsFrom": [

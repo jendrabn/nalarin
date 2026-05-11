@@ -1,36 +1,180 @@
 import 'dotenv/config';
 
+import { readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { sql } from 'drizzle-orm';
+import { z } from 'zod';
 
 import { db, pool, schema } from '@/db';
 import { hashPassword } from '@/lib/password';
 
-const examTypeSeeds = [
-  {
-    name: 'UTBK',
-    slug: 'utbk',
-    description: 'Ujian Tulis Berbasis Komputer untuk persiapan masuk PTN.',
-  },
-  {
-    name: 'UTUL UGM',
-    slug: 'utul-ugm',
-    description: 'Jalur ujian mandiri Universitas Gadjah Mada.',
-  },
-  {
-    name: 'SIMAK UI',
-    slug: 'simak-ui',
-    description: 'Seleksi Masuk Universitas Indonesia untuk berbagai jenjang.',
-  },
-  ];
+const taxonomySeedItemSchema = z.object({
+  name: z.string().trim().min(1),
+  slug: z.string().trim().min(1),
+  description: z.string().trim().nullable().optional(),
+  order_index: z.number().int().positive().optional(),
+});
 
-async function seedExamTypes() {
+const subjectSeedItemSchema = taxonomySeedItemSchema.extend({
+  exam_type_slug: z.string().trim().min(1),
+});
+
+const topicSeedItemSchema = taxonomySeedItemSchema.extend({
+  subject_slug: z.string().trim().min(1),
+});
+
+const seedDataSchema = z.object({
+  exam_types: z.array(taxonomySeedItemSchema).min(1),
+  subjects: z.array(subjectSeedItemSchema).min(1),
+  topics: z.array(topicSeedItemSchema).min(1),
+  blog_categories: z.array(taxonomySeedItemSchema).min(1),
+});
+
+type SeedData = z.infer<typeof seedDataSchema>;
+
+async function loadSeedData(): Promise<SeedData> {
+  const seedPath = join(dirname(fileURLToPath(import.meta.url)), 'seed-data.json');
+  const rawSeedData = await readFile(seedPath, 'utf8');
+  const parsedSeedData = JSON.parse(rawSeedData) as unknown;
+
+  return seedDataSchema.parse(parsedSeedData);
+}
+
+async function seedExamTypes(seedData: SeedData) {
   await db
     .insert(schema.examTypes)
-    .values(examTypeSeeds)
+    .values(
+      seedData.exam_types.map((examType) => ({
+        name: examType.name,
+        slug: examType.slug,
+        description: examType.description ?? null,
+      })),
+    )
     .onDuplicateKeyUpdate({
       set: {
         name: sql`values(${schema.examTypes.name})`,
         description: sql`values(${schema.examTypes.description})`,
+        updatedAt: new Date(),
+      },
+    });
+}
+
+async function getExamTypeIdBySlug() {
+  const rows = await db
+    .select({
+      id: schema.examTypes.id,
+      slug: schema.examTypes.slug,
+    })
+    .from(schema.examTypes);
+
+  return new Map(rows.map((row) => [row.slug, row.id]));
+}
+
+async function getSubjectIdBySlug() {
+  const rows = await db
+    .select({
+      id: schema.subjects.id,
+      slug: schema.subjects.slug,
+    })
+    .from(schema.subjects);
+
+  const subjectIds = new Map<string, number>();
+  const duplicateSlugs = new Set<string>();
+
+  rows.forEach((row) => {
+    if (subjectIds.has(row.slug)) {
+      duplicateSlugs.add(row.slug);
+      return;
+    }
+
+    subjectIds.set(row.slug, row.id);
+  });
+
+  if (duplicateSlugs.size > 0) {
+    throw new Error(
+      `Cannot seed topics because subject_slug is ambiguous: ${Array.from(duplicateSlugs).join(', ')}`,
+    );
+  }
+
+  return subjectIds;
+}
+
+async function seedSubjects(seedData: SeedData) {
+  const examTypeIds = await getExamTypeIdBySlug();
+  const subjectValues = seedData.subjects.map((subject) => {
+    const examTypeId = examTypeIds.get(subject.exam_type_slug);
+
+    if (!examTypeId) {
+      throw new Error(`Exam type not found for subject seed: ${subject.exam_type_slug}`);
+    }
+
+    return {
+      examTypeId,
+      name: subject.name,
+      slug: subject.slug,
+      description: subject.description ?? null,
+    };
+  });
+
+  await db
+    .insert(schema.subjects)
+    .values(subjectValues)
+    .onDuplicateKeyUpdate({
+      set: {
+        examTypeId: sql`values(${schema.subjects.examTypeId})`,
+        name: sql`values(${schema.subjects.name})`,
+        description: sql`values(${schema.subjects.description})`,
+        updatedAt: new Date(),
+      },
+    });
+}
+
+async function seedTopics(seedData: SeedData) {
+  const subjectIds = await getSubjectIdBySlug();
+  const topicValues = seedData.topics.map((topic) => {
+    const subjectId = subjectIds.get(topic.subject_slug);
+
+    if (!subjectId) {
+      throw new Error(`Subject not found for topic seed: ${topic.subject_slug}`);
+    }
+
+    return {
+      subjectId,
+      name: topic.name,
+      slug: topic.slug,
+      description: topic.description ?? null,
+    };
+  });
+
+  await db
+    .insert(schema.topics)
+    .values(topicValues)
+    .onDuplicateKeyUpdate({
+      set: {
+        subjectId: sql`values(${schema.topics.subjectId})`,
+        name: sql`values(${schema.topics.name})`,
+        description: sql`values(${schema.topics.description})`,
+        updatedAt: new Date(),
+      },
+    });
+}
+
+async function seedBlogCategories(seedData: SeedData) {
+  await db
+    .insert(schema.blogCategories)
+    .values(
+      seedData.blog_categories.map((category) => ({
+        name: category.name,
+        slug: category.slug,
+        description: category.description ?? null,
+      })),
+    )
+    .onDuplicateKeyUpdate({
+      set: {
+        name: sql`values(${schema.blogCategories.name})`,
+        description: sql`values(${schema.blogCategories.description})`,
         updatedAt: new Date(),
       },
     });
@@ -77,13 +221,18 @@ async function seedUsers() {
 }
 
 async function main() {
-  await seedExamTypes();
+  const seedData = await loadSeedData();
+
+  await seedExamTypes(seedData);
+  await seedSubjects(seedData);
+  await seedTopics(seedData);
+  await seedBlogCategories(seedData);
   await seedUsers();
 }
 
 main()
   .then(async () => {
-    console.log('Seed completed: exam_types and users upserted.');
+    console.log('Seed completed: exam_types, subjects, topics, blog_categories, and users upserted.');
     await pool.end();
   })
   .catch(async (error) => {
