@@ -24,7 +24,7 @@ export const PLAN_CONFIG = {
     code: "pro",
     name: "Pro",
     price: 50000,
-    discountPercent: 0,
+    discountPercent: 25,
     durationDays: 30,
     description: "Akses lebih luas untuk latihan rutin dan tryout bulanan.",
     limits: {
@@ -45,7 +45,7 @@ export const PLAN_CONFIG = {
     code: "max",
     name: "Max",
     price: 100000,
-    discountPercent: 0,
+    discountPercent: 50,
     durationDays: 30,
     description: "Akses lengkap untuk persiapan intensif lintas tes.",
     limits: {
@@ -65,4 +65,3 @@ export const PLAN_CONFIG = {
 } as const;
 
 export type PlanCode = keyof typeof PLAN_CONFIG;
-

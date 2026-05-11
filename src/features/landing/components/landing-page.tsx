@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRightIcon, CheckIcon, ShieldCheckIcon } from "lucide-react";
 
-import { PLAN_CONFIG, type PlanCode } from "@/config/plans";
+import { PLAN_CONFIG } from "@/config/plans";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { getPlanFinalPrice } from "@/lib/billing";
 import { cn } from "@/lib/utils";
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar";
 import { SiteFooter } from "@/components/site-footer";
@@ -26,12 +27,13 @@ import { faqs } from "@/features/landing/data";
 import {
   featureHighlights,
   howItWorks,
-  pricingBullets,
   trustBadges,
 } from "@/features/landing/data";
 
 const softCardClass =
   "rounded-lg bg-card shadow-lg shadow-primary/5 ring-1 ring-foreground/5 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/10";
+
+type Plan = (typeof PLAN_CONFIG)[keyof typeof PLAN_CONFIG];
 
 export function LandingPage({ user }: { user: SiteUser }) {
   return (
@@ -183,7 +185,9 @@ function PricingSection() {
       <div className="mx-auto mt-10 grid w-full max-w-7xl grid-cols-1 gap-5 px-4 sm:px-6 lg:grid-cols-3 lg:px-8">
         {plans.map((plan) => {
           const isFeatured = plan.code === "pro";
-          const bullets = pricingBullets[plan.code as PlanCode];
+          const hasDiscount = plan.discountPercent > 0;
+          const finalPrice = getPlanFinalPrice(plan.code);
+          const bullets = getPlanBullets(plan);
 
           return (
             <Card
@@ -197,6 +201,11 @@ function PricingSection() {
               <CardHeader className="gap-4 p-6">
                 <div className="flex items-center justify-between gap-3">
                   <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+                  {hasDiscount ? (
+                    <Badge variant="soft" className="rounded-full px-2.5 py-1">
+                      Diskon {plan.discountPercent}%
+                    </Badge>
+                  ) : null}
                 </div>
                 <CardDescription className="min-h-10 leading-6">
                   {plan.description}
@@ -205,8 +214,13 @@ function PricingSection() {
               <CardContent className="flex flex-1 flex-col gap-6 px-6 pb-6">
                 <div>
                   <p className="text-4xl font-bold tracking-normal">
-                    {formatPrice(plan.price)}
+                    {formatPrice(finalPrice)}
                   </p>
+                  {hasDiscount ? (
+                    <p className="mt-1 text-sm text-muted-foreground line-through">
+                      {formatPrice(plan.price)}
+                    </p>
+                  ) : null}
                   <p className="mt-2 text-sm text-muted-foreground">
                     {plan.durationDays ? "per bulan" : "permanen"}
                   </p>
@@ -331,6 +345,39 @@ function SectionHeading({
       </p>
     </div>
   );
+}
+
+function getPlanBullets(plan: Plan) {
+  const bullets = [
+    formatPlanLimit(plan.limits.practiceSessionsPerMonth, "latihan"),
+    formatPlanLimit(plan.limits.quizSessionsPerMonth, "quiz"),
+    formatPlanLimit(
+      plan.limits.tryoutSessionsPerMonth,
+      plan.code === "free" ? "tryout gratis" : "tryout"
+    ),
+  ];
+
+  if (plan.access.ranking && plan.access.fullExplanation) {
+    bullets.push(
+      plan.limits.practiceSessionsPerMonth === null
+        ? "Akses paling lengkap"
+        : "Ranking dan pembahasan penuh"
+    );
+  }
+
+  return bullets;
+}
+
+function formatPlanLimit(limit: number | null, label: string) {
+  if (limit === null) {
+    return `${capitalize(label)} tanpa batas`;
+  }
+
+  return `${limit} ${label} per bulan`;
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function formatPrice(price: number) {

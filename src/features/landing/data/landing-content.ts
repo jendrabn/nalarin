@@ -127,12 +127,6 @@ export const footerGroups = [
   },
 ];
 
-export const pricingBullets = {
-  free: ["5 latihan per bulan", "2 quiz per bulan", "1 tryout gratis per bulan"],
-  pro: ["50 latihan per bulan", "20 quiz per bulan", "5 tryout per bulan", "Ranking dan pembahasan penuh"],
-  max: ["Latihan tanpa batas", "Quiz tanpa batas", "Tryout tanpa batas", "Akses paling lengkap"],
-} as const;
-
 export const trustBadges = [
   { label: "Autosave Jawaban", icon: CheckCircle2Icon },
   { label: "Pembahasan AI", icon: SparklesIcon },
