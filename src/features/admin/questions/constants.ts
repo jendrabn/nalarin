@@ -33,6 +33,20 @@ export const questionColumnLabels = {
   updatedAt: "Updated At",
 } as const
 
-export const questionOptionLabelValues = ["A", "B", "C", "D", "E"] as const
+export const questionOptionLabelValues = [
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+] as const
+
+export const questionOptionMinCount = 2
+export const questionOptionMaxCount = questionOptionLabelValues.length
 
 export const questionTrueFalseLabels = ["True", "False"] as const

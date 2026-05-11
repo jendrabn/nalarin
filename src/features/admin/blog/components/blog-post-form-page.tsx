@@ -331,19 +331,21 @@ export function BlogPostFormPage({
                     </FieldLabel>
                   </FieldContent>
                   <div className="flex flex-col gap-3">
-                    {watchedThumbnailUrl ? (
-                      <Image
-                        src={watchedThumbnailUrl}
-                        alt="Blog thumbnail preview"
-                        width={960}
-                        height={540}
-                        className="aspect-video w-full rounded-xl border border-border/60 object-cover"
-                      />
+                    <div className="mx-auto w-full max-w-sm">
+                      {watchedThumbnailUrl ? (
+                        <Image
+                          src={watchedThumbnailUrl}
+                          alt="Blog thumbnail preview"
+                          width={960}
+                          height={540}
+                          className="h-auto w-full rounded-xl border border-border/60 object-cover"
+                        />
                       ) : (
                         <div className="flex aspect-video items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/30 text-sm text-muted-foreground">
                           No thumbnail selected.
                         </div>
                       )}
+                    </div>
 
                     <div className="flex flex-wrap gap-2">
                       <Button

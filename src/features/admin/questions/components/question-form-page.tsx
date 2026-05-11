@@ -11,7 +11,7 @@ import {
   useWatch,
 } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { UploadIcon } from "lucide-react"
+import { PlusIcon, Trash2Icon, UploadIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { AdminFormPage } from "@/components/admin-form-page"
@@ -38,6 +38,7 @@ import {
   questionDifficultyValues,
   questionScoringRuleLabels,
   questionScoringRuleValues,
+  questionOptionMaxCount,
   questionStatusLabels,
   questionStatusValues,
   questionTypeLabels,
@@ -58,6 +59,8 @@ import {
   getDefaultQuestionOptions,
   isChoiceQuestionType,
   isSubjectiveQuestionType,
+  getNextQuestionOptionLabel,
+  normalizeQuestionChoiceOptions,
 } from "../utils/question"
 import { uploadQuestionImage } from "../utils/upload"
 import { QuestionRichTextEditor } from "./question-rich-text-editor"
@@ -79,6 +82,24 @@ type QuestionFormPageProps = {
 
 function buildDefaultValues(initialValues?: QuestionDetails | null) {
   const type = initialValues?.type ?? "multiple_choice"
+  const options =
+    initialValues?.options?.length > 0
+      ? type === "multiple_choice" || type === "multiple_answer"
+        ? normalizeQuestionChoiceOptions(
+            initialValues.options.map((option) => ({
+              label: option.label,
+              content: option.content,
+              imageUrl: option.imageUrl ?? "",
+              isCorrect: option.isCorrect,
+            })),
+          )
+        : initialValues.options.map((option) => ({
+            label: option.label,
+            content: option.content,
+            imageUrl: option.imageUrl ?? "",
+            isCorrect: option.isCorrect,
+          }))
+      : getDefaultQuestionOptions(type)
 
   return {
     examTypeId: initialValues?.examTypeId ? String(initialValues.examTypeId) : "",
@@ -97,15 +118,7 @@ function buildDefaultValues(initialValues?: QuestionDetails | null) {
     year: initialValues?.year ? String(initialValues.year) : "",
     points: String(initialValues?.points ?? 1),
     status: initialValues?.status ?? "draft",
-    options:
-      initialValues?.options?.length > 0
-        ? initialValues.options.map((option) => ({
-            label: option.label,
-            content: option.content,
-            imageUrl: option.imageUrl ?? "",
-            isCorrect: option.isCorrect,
-          }))
-        : getDefaultQuestionOptions(type),
+    options,
   }
 }
 
@@ -161,7 +174,7 @@ export function QuestionFormPage({
     defaultValues,
   })
 
-  const { fields, replace } = useFieldArray({
+  const { fields, replace, append } = useFieldArray({
     control: form.control,
     name: "options",
   })
@@ -226,6 +239,32 @@ export function QuestionFormPage({
   const filteredTopics = lookups.topics.filter(
     (topic) => topic.subjectId === selectedSubjectId,
   )
+
+  function handleAddChoiceOption() {
+    const nextLabel = getNextQuestionOptionLabel(fields.length)
+
+    if (!nextLabel) {
+      return
+    }
+
+    append({
+      label: nextLabel,
+      content: "",
+      imageUrl: "",
+      isCorrect: false,
+    })
+  }
+
+  function handleRemoveChoiceOption(index: number) {
+    if (index < 2) {
+      return
+    }
+
+    const nextOptions = form.getValues("options").filter((_, optionIndex) => optionIndex !== index)
+
+    replace(normalizeQuestionChoiceOptions(nextOptions))
+    form.clearErrors("options")
+  }
 
   useEffect(() => {
     if (watchedType === "multiple_choice" || watchedType === "multiple_answer" || watchedType === "true_false") {
@@ -607,19 +646,21 @@ export function QuestionFormPage({
                     </FieldLabel>
                   </FieldContent>
                   <div className="flex flex-col gap-3">
-                    {watchedImageUrl ? (
-                      <Image
-                        src={watchedImageUrl}
-                        alt="Question image preview"
-                        width={960}
-                        height={540}
-                        className="aspect-video w-full rounded-xl border border-border/60 object-cover"
-                      />
-                    ) : (
-                      <div className="flex aspect-video items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/30 text-sm text-muted-foreground">
-                        No image selected.
-                      </div>
-                    )}
+                    <div className="mx-auto w-full max-w-sm">
+                      {watchedImageUrl ? (
+                        <Image
+                          src={watchedImageUrl}
+                          alt="Question image preview"
+                          width={960}
+                          height={540}
+                          className="h-auto w-full rounded-xl border border-border/60 object-cover"
+                        />
+                      ) : (
+                        <div className="flex aspect-video items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/30 text-sm text-muted-foreground">
+                          No image selected.
+                        </div>
+                      )}
+                    </div>
 
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -780,21 +821,34 @@ export function QuestionFormPage({
                             key={field.id}
                             className="rounded-xl border border-border/60 p-4"
                           >
-                            <div className="mb-3 flex items-center justify-between gap-3">
+                            <div className="mb-3 flex items-start justify-between gap-3">
                               <div className="flex items-center gap-2">
                                 <Badge variant="outline">{field.label}</Badge>
                                 <span className="text-sm text-muted-foreground">
                                   Option {index + 1}
                                 </span>
                               </div>
-                              <label className="flex items-center gap-2 text-sm text-foreground">
-                                <input
-                                  type="checkbox"
-                                  className="size-4 rounded border-border text-primary focus:ring-primary"
-                                  {...form.register(`options.${index}.isCorrect` as const)}
-                                />
-                                Correct
-                              </label>
+                              <div className="flex items-center gap-2">
+                                <label className="flex items-center gap-2 text-sm text-foreground">
+                                  <input
+                                    type="checkbox"
+                                    className="size-4 rounded border-border text-primary focus:ring-primary"
+                                    {...form.register(`options.${index}.isCorrect` as const)}
+                                  />
+                                  Correct
+                                </label>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  className="text-destructive hover:bg-destructive/10 hover:text-destructive disabled:text-muted-foreground disabled:hover:bg-transparent"
+                                  onClick={() => handleRemoveChoiceOption(index)}
+                                  disabled={index < 2}
+                                  aria-label={`Remove option ${field.label}`}
+                                >
+                                  <Trash2Icon />
+                                </Button>
+                              </div>
                             </div>
 
                             <div className="grid gap-3 md:grid-cols-2">
@@ -826,6 +880,14 @@ export function QuestionFormPage({
                           </div>
                         ))}
                       </div>
+                      {fields.length < questionOptionMaxCount ? (
+                        <div className="mt-4 flex justify-center">
+                          <Button type="button" variant="outline" onClick={handleAddChoiceOption}>
+                            <PlusIcon data-icon="inline-start" />
+                            Tambah Opsi
+                          </Button>
+                        </div>
+                      ) : null}
                     </FieldSet>
                   )}
 

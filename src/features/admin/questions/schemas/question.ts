@@ -48,7 +48,7 @@ export const questionFormSchema = z
     year: z.string().trim().max(4, "Year is too long.").default(""),
     points: z.string().trim().min(1, "Points are required."),
     status: z.enum(questionStatusValues),
-    options: z.array(questionOptionFormSchema).default([]),
+    options: z.array(questionOptionFormSchema).max(10, "A maximum of 10 options is allowed.").default([]),
   })
   .superRefine((value, ctx) => {
     if (value.type === "multiple_answer" && !value.scoringRule) {

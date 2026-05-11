@@ -1,4 +1,6 @@
 import {
+  questionOptionMaxCount,
+  questionOptionMinCount,
   questionOptionLabelValues,
   questionTypeValues,
   questionTrueFalseLabels,
@@ -79,6 +81,19 @@ export function isSubjectiveQuestionType(type: QuestionType) {
   return type === "short_answer" || type === "essay"
 }
 
+export function getNextQuestionOptionLabel(index: number) {
+  return questionOptionLabelValues[index] ?? null
+}
+
+export function normalizeQuestionChoiceOptions(options: QuestionOptionInput[]) {
+  return options.slice(0, questionOptionMaxCount).map((option, index) => ({
+    label: questionOptionLabelValues[index],
+    content: option.content,
+    imageUrl: option.imageUrl,
+    isCorrect: option.isCorrect,
+  }))
+}
+
 export function getDefaultQuestionOptions(type: QuestionType): QuestionOptionInput[] {
   if (type === "true_false") {
     return questionTrueFalseLabels.map((label) => ({
@@ -90,7 +105,7 @@ export function getDefaultQuestionOptions(type: QuestionType): QuestionOptionInp
   }
 
   if (type === "multiple_choice" || type === "multiple_answer") {
-    return questionOptionLabelValues.map((label) => ({
+    return questionOptionLabelValues.slice(0, questionOptionMinCount).map((label) => ({
       label,
       content: "",
       imageUrl: "",
@@ -112,11 +127,11 @@ export function ensureQuestionOptions(options: QuestionOptionInput[], type: Ques
   }
 
   if (type === "multiple_choice" || type === "multiple_answer") {
-    return questionOptionLabelValues.map((label, index) => ({
-      label,
-      content: options[index]?.content?.trim() || "",
-      imageUrl: options[index]?.imageUrl?.trim() || "",
-      isCorrect: Boolean(options[index]?.isCorrect),
+    return options.slice(0, questionOptionMaxCount).map((option, index) => ({
+      label: questionOptionLabelValues[index],
+      content: option.content.trim(),
+      imageUrl: option.imageUrl.trim(),
+      isCorrect: Boolean(option.isCorrect),
     }))
   }
 
