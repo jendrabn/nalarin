@@ -1,4 +1,5 @@
 # PRD Nalarin.id
+
 ## 1. Ringkasan Produk
 
 **Nalarin.id** adalah platform persiapan tes online untuk **UTBK**, **UTUL UGM**, **SIMAK UI**, dan **CPNS**. Produk menyediakan bank soal, latihan dengan **Mode Latihan** dan **Mode Quiz**, tryout rutin, review jawaban, pembahasan, progress tracking, blog edukasi, serta subscription Free, Pro, dan Max.
@@ -42,7 +43,7 @@ Produk mengambil inspirasi dari pola fitur aimasukptn: landing page, bank soal, 
 - Admin panel.
 - Import soal via Excel.
 - Generate soal dengan AI dari halaman create question (modal parameter + autofill form).
-- Generate pembahasan dengan AI.
+- Generate explanation dengan AI dari field explanation di halaman create/edit question (autofill langsung, tanpa modal, syarat semua field wajib terisi).
 - Koreksi manual dan AI untuk isian singkat dan esai.
 
 ### 3.2 Out of Scope
@@ -103,8 +104,8 @@ Admin dapat:
 - Manage topics.
 - Manage questions.
 - Import questions via Excel.
-- Generate questions dengan AI.
-- Generate pembahasan dengan AI.
+- Generate questions dengan AI dari halaman create question.
+- Generate explanation dengan AI dari field explanation di halaman create/edit question (syarat semua field wajib terisi).
 - Manage practices.
 - Manage tryouts.
 - Melihat hasil tryout user.
@@ -556,7 +557,150 @@ Admin dapat:
 - Menambah opsi jawaban.
 - Menentukan kunci jawaban.
 - Mengatur scoring rule untuk multiple answer.
-- Mengisi pembahasan manual.
+- Mengisi pembahasan manual atau generate dengan AI dari field explanation (lihat subseksi AI Generate Explanation).
+- Generate soal dengan AI langsung dari halaman create question (lihat subseksi AI Generate Soal).
+- Import soal via Excel.
+
+#### AI Generate Soal
+
+Fitur ini tersedia di halaman **Create Question** melalui tombol **"AI Generate"**.
+
+**Flow:**
+
+1. Admin membuka halaman Create Question.
+2. Admin mengklik tombol **"AI Generate"**.
+3. Muncul modal form berisi parameter yang harus diisi sebagai bahan instruksi ke AI.
+4. Admin mengisi parameter dan mengklik **"Generate"**.
+5. AI memproses permintaan. Selama proses berjalan, tombol Generate menampilkan indikator loading.
+6. Setelah AI selesai, modal tertutup otomatis dan semua field di form Create Question ter-autofill dengan hasil generate: konten soal, opsi jawaban, kunci jawaban, dan explanation.
+7. Admin memeriksa dan menyesuaikan hasil sebelum menyimpan soal.
+
+**Parameter modal AI Generate:**
+
+| Parameter | Keterangan |
+|---|---|
+| Bahasa | Pilihan: **Bahasa Indonesia** atau **English** — menentukan bahasa soal yang dihasilkan |
+| Tipe soal | Diambil dari pilihan tipe soal yang sudah dipilih admin di form utama (pre-filled, bisa diubah) |
+| Tingkat kesulitan | Pilihan: Easy, Medium, Hard |
+| Format soal | Pilihan: **Soal Mandiri** (pertanyaan langsung tanpa teks pengantar), **Berbasis Teks Bacaan** (disertai paragraf/wacana), **Berbasis Kasus/Skenario** (disertai narasi situasi), **Berbasis Data/Tabel** (disertai tabel atau data statistik) |
+| Jumlah opsi | Hanya muncul jika tipe soal adalah `multiple_choice` atau `multiple_answer`. Pilihan: 2, 3, 4, atau 5 opsi |
+| Topik/Materi | Teks bebas — admin mendeskripsikan materi atau topik spesifik yang ingin dibuatkan soalnya |
+| Konteks tambahan | Teks bebas opsional — instruksi atau konteks khusus yang ingin disertakan ke AI |
+
+**Catatan:** Field exam type, subject, dan topic yang sudah dipilih di form utama dikirim ke AI secara otomatis sebagai konteks, tanpa perlu diisi ulang di modal.
+
+#### Prompt Template AI Generate Soal
+
+Prompt berikut digunakan sistem untuk menginstruksikan AI membuat soal. Parameter dalam kurung kurawal digantikan dengan nilai dari form sebelum dikirim.
+
+```
+You are an expert question writer specializing in high-quality exam preparation content for competitive academic and civil service tests.
+
+Create ONE exam question based on the following parameters:
+- Exam Type: {exam_type}
+- Subject/Subtest: {subject}
+- Topic: {topic}
+- Question Type: {question_type}
+- Question Format: {question_format}
+- Difficulty: {difficulty}
+- Language: {language}
+- Number of Options: {option_count} (only applicable for multiple_choice and multiple_answer; omit this line for other question types)
+- Additional Context: {additional_context}
+
+Question Format guidance:
+- standalone: a direct question with no accompanying text or stimulus
+- reading_passage: include a paragraph or short text as stimulus before the question; the question must require reading and understanding the passage
+- case_scenario: include a realistic situation or narrative as stimulus; the question must require reasoning about the case
+- data_table: include a table, chart description, or statistical data as stimulus; the question must require interpreting the data
+
+Difficulty guidance:
+- easy: tests direct recall of facts or definitions, or single-step straightforward reasoning
+- medium: requires understanding, application of a concept to a new situation, or two-step reasoning
+- hard: requires multi-step analysis, synthesis across concepts, or evaluation — not merely obscure memorization
+
+Quality requirements:
+- The question must be factually accurate, unambiguous, and clearly relevant to the subject matter
+- For multiple_choice: exactly one correct answer; distractors must be plausible, structurally parallel, and not obviously wrong
+- For multiple_answer: at least 2 correct options; all options must be structurally parallel and homogeneous in length and form
+- For true_false: the statement must be definitively true or false with absolutely no grey area
+- For short_answer and essay: include a clear and specific grading rubric as the correct answer reference
+- Do not include any clues in the question stem that hint at the correct answer
+- Write the explanation as a clear educational justification that teaches the underlying concept, not just restates the answer
+
+Respond ONLY with a valid JSON object in the following format, with no additional text, no markdown, and no code fences:
+{
+  "question_content": "Full question text here, including any stimulus (passage, scenario, or data table) if applicable",
+  "options": [
+    { "label": "A", "content": "Option text", "is_correct": false },
+    { "label": "B", "content": "Option text", "is_correct": true }
+  ],
+  "correct_answer_text": "",
+  "explanation": "Clear and thorough educational explanation here"
+}
+
+Output rules:
+- "options": fill only for multiple_choice, multiple_answer, and true_false. For true_false, always produce exactly 2 options with labels "True" and "False"; set is_correct to false on both (is_correct is not used as the source of truth for true_false).
+- "correct_answer_text": fill only for true_false ("true" or "false" in lowercase), short_answer (reference answer), and essay (grading rubric). Use empty string for multiple_choice and multiple_answer.
+- "explanation": always fill with a thorough explanation regardless of question type.
+- Produce valid JSON only. Do not wrap in markdown code blocks.
+```
+
+#### AI Generate Explanation
+
+Fitur ini tersedia di halaman **Create Question** dan **Edit Question** pada field explanation melalui tombol **"AI Generate"** di samping field tersebut.
+
+**Flow:**
+
+1. Admin mengisi semua field wajib di form terlebih dahulu: exam type, subject, tipe soal, konten soal, dan kunci jawaban (untuk MC/MA: minimal satu opsi ditandai benar; untuk true_false: `correct_answer_text` sudah diisi; untuk short_answer/essay: tidak ada syarat kunci jawaban tambahan).
+2. Jika ada field wajib yang belum terisi, tombol "AI Generate" di field explanation dinonaktifkan (disabled) dan menampilkan tooltip yang menjelaskan field mana saja yang masih kosong.
+3. Setelah semua field wajib terisi, tombol menjadi aktif.
+4. Admin mengklik tombol **"AI Generate"** di samping field explanation.
+5. Tidak ada modal — AI langsung diproses menggunakan data dari form yang sudah terisi.
+6. Selama proses berjalan, tombol menampilkan indikator loading dan field explanation dinonaktifkan sementara.
+7. Setelah AI selesai, hasil explanation langsung mengisi field explanation. Admin dapat mengedit hasilnya sebelum menyimpan.
+
+**Field wajib yang harus terisi sebelum tombol aktif:**
+
+| Field | Syarat |
+|---|---|
+| Exam type | Sudah dipilih |
+| Subject | Sudah dipilih |
+| Tipe soal | Sudah dipilih |
+| Konten soal | Tidak kosong |
+| Opsi jawaban | Minimal 2 opsi terisi (untuk `multiple_choice`, `multiple_answer`, `true_false`) |
+| Kunci jawaban | Minimal satu opsi ditandai benar (untuk `multiple_choice`, `multiple_answer`); `correct_answer_text` terisi (untuk `true_false`) |
+
+Untuk `short_answer` dan `essay`, field kunci jawaban tidak wajib terisi sebelum generate explanation dapat dilakukan.
+
+#### Prompt Template AI Generate Explanation
+
+Prompt berikut digunakan sistem untuk menginstruksikan AI membuat explanation. Semua parameter diambil langsung dari isi form, tanpa input tambahan dari admin.
+
+```
+You are an expert educator writing high-quality explanations for exam preparation questions.
+
+Write a clear, thorough, and educational explanation for the following question. The explanation must help students understand the underlying concept, not just confirm the correct answer.
+
+Question details:
+- Exam Type: {exam_type}
+- Subject/Subtest: {subject}
+- Topic: {topic}
+- Question Type: {question_type}
+- Question Content: {question_content}
+- Answer Options: {options_with_correct_flag} (omit this line for short_answer and essay; for true_false, list both options with the correct one marked)
+- Correct Answer: {correct_answer} (for short_answer and essay, this may be empty — infer what a good answer should cover from the question content)
+
+Explanation requirements:
+- Start by briefly explaining why the correct answer is correct, grounded in the relevant concept or principle
+- For multiple_choice and multiple_answer: explain why each incorrect option (distractor) is wrong — this is critical for learning
+- For true_false: explain the principle or fact that makes the statement definitively true or false
+- For short_answer and essay: explain the key concepts that a good answer must cover, and describe what distinguishes a complete answer from an incomplete one
+- Use clear, plain language appropriate for the exam level implied by the exam type
+- Do not use phrases like "the answer is" or "the correct option is" as the opening — lead with the concept instead
+- The explanation must be self-contained and understandable without any external reference
+
+Respond ONLY with the explanation text. No JSON, no markdown formatting, no headers, no labels. Plain text only.
+```
 
 #### Penanganan Soal Berdasarkan Tipe
 
@@ -726,6 +870,7 @@ Admin dapat:
 - `cancelled`: session dibatalkan, tidak menghasilkan skor.
 
 **Status awal session:**
+
 - `practice_sessions`: status awal **selalu `in_progress`** saat session dibuat — user telah memulai mengerjakan.
 - `tryout_sessions`: status awal **selalu `in_progress`** saat session dibuat — user telah memulai tryout.
 - `tryout_section_sessions`: status awal **selalu `pending`** saat dibuat — semua section di-pre-create secara bersamaan; section belum tentu langsung dibuka user. Status berubah menjadi `in_progress` ketika user pertama kali membuka section tersebut.
@@ -1434,7 +1579,7 @@ Catatan: karena MySQL tidak mendukung partial unique index sederhana untuk semua
 | Forgot password request | Maks 3 request per jam per email |
 | Resend email verification | Maks 3 request per jam per user |
 | AI generate soal | Maks 50 request per hari per admin |
-| AI generate pembahasan | Maks 100 request per hari per admin |
+| AI generate explanation | Maks 100 request per hari per admin |
 | AI grading jawaban (practice + tryout gabungan) | Maks 200 request per hari per admin |
 
 Nilai batas di atas adalah acuan awal dan dapat disesuaikan berdasarkan monitoring produksi.
@@ -1476,11 +1621,13 @@ Nilai batas di atas adalah acuan awal dan dapat disesuaikan berdasarkan monitori
 
 **Cleanup tryout session terbengkalai (tanpa `enforce_end_time`):**
 Untuk tryout dengan `enforce_end_time = false` atau `ends_at = null`, jika `tryout_session` masih `in_progress` dan tidak ada aktivitas selama lebih dari **72 jam**, background job melakukan auto-submit. Aktivitas terakhir ditentukan dari nilai **terbaru** di antara:
+
 - `tryout_sessions.last_saved_at` (autosave di level session)
 - `last_saved_at` dari semua `tryout_section_sessions` milik session tersebut (autosave di level section/jawaban)
 - Jika semua nilai di atas null (belum pernah ada autosave sama sekali), gunakan `tryout_sessions.started_at` sebagai waktu referensi.
 
 Background job mengambil max dari semua nilai ini sebagai "waktu aktivitas terakhir". Jika `NOW() - waktu_aktivitas_terakhir > 72 jam`, jalankan auto-submit:
+
 1. Section yang masih `in_progress` di-submit dengan jawaban terakhir yang tersimpan.
 2. Section berstatus `pending` di-submit langsung dengan skor 0.
 3. `tryout_session` diubah menjadi `submitted` dengan `auto_submitted = true`.
@@ -1543,6 +1690,7 @@ Setelah seluruh tryout session di-submit (semua section selesai):
 
 **Validasi pada saat create dan update (early feedback):**
 Service layer memvalidasi konsistensi relasi pada saat operasi create dan update, bukan hanya saat publish. Validasi yang dijalankan pada create/update:
+
 - Subject harus berasal dari exam type yang sama dengan practice/tryout.
 - Topic (jika diisi) harus berasal dari subject yang dipilih.
 - Jika `starts_at` dan `ends_at` keduanya diisi, `ends_at` harus lebih besar dari `starts_at`.
@@ -1551,6 +1699,7 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 - Jika validasi gagal, operasi ditolak dengan pesan error yang jelas. Admin tidak perlu menunggu proses publish untuk menemukan inkonsistensi relasi.
 
 **Validasi tambahan pada saat publish:**
+
 - Practice tidak boleh dipublish jika tidak punya soal.
 - Practice tidak boleh dipublish jika `has_practice_mode = false` dan `has_quiz_mode = false`. Minimal satu mode harus aktif.
 - Practice tidak boleh dipublish jika `has_quiz_mode = true` tetapi `quiz_duration_minutes` kosong atau kurang dari/sama dengan 0.
@@ -1692,7 +1841,7 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 - CRUD questions (termasuk penanganan true_false, multiple_answer dengan scoring_rule wajib).
 - Question options.
 - Import Excel via **SheetJS** (`xlsx`).
-- Generate soal dan pembahasan AI (via Route Handler ke AI provider).
+- Generate soal dan explanation AI (via Route Handler ke AI provider).
 - Practices dan practice questions (slug scoped per exam_type_id, URL `/latihan/{exam_type_slug}/{practice_slug}`, field published_at).
 
 ### Phase 3 — Practice dan Quiz
@@ -1756,4 +1905,3 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 - Distribusi `grading_source` (manual vs AI) untuk monitoring kualitas grading.
 
 ---
-
