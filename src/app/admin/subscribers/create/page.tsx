@@ -1,5 +1,5 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+import { redirect } from "next/navigation"
 
 export default function Page() {
-  return <RoutePlaceholder section="Admin" route="/admin/subscribers/create" />;
+  redirect("/admin/payments")
 }

@@ -34,6 +34,7 @@ export type SiteUser = {
   name: string;
   email?: string;
   avatarUrl?: string | null;
+  role?: "user" | "admin";
 } | null;
 
 type SiteNavbarProps = {
@@ -111,6 +112,13 @@ export function SiteNavbar({ user }: SiteNavbarProps) {
                           ) : null}
                         </div>
                       </div>
+                      {user.role === "admin" ? (
+                        <SheetClose asChild>
+                          <Button className="h-11 w-full" variant="outline" asChild>
+                            <Link href="/admin">Dashboard</Link>
+                          </Button>
+                        </SheetClose>
+                      ) : null}
                       <SheetClose asChild>
                         <Button className="h-11 w-full" variant="outline" asChild>
                           <Link href="/account/profile">Profil</Link>
@@ -176,6 +184,14 @@ function UserMenu({ user }: { user: NonNullable<SiteUser> }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44 rounded-2xl p-2">
         <DropdownMenuGroup>
+          {user.role === "admin" ? (
+            <DropdownMenuItem
+              asChild
+              className="h-10 rounded-xl px-3 focus:bg-secondary/70 focus:text-foreground hover:bg-secondary/70 hover:text-foreground"
+            >
+              <Link href="/admin">Dashboard</Link>
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem
             asChild
             className="h-10 rounded-xl px-3 focus:bg-secondary/70 focus:text-foreground hover:bg-secondary/70 hover:text-foreground"
