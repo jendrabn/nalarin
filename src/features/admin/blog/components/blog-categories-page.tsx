@@ -43,7 +43,6 @@ type BlogCategoriesPageProps = {
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
-  slug: false,
   createdAt: false,
   updatedAt: false,
 }
@@ -68,12 +67,6 @@ function createColumns({
       meta: { label: "Name" },
       header: ({ column }) => <SortableHeader column={column}>Name</SortableHeader>,
       cell: ({ row }) => <div className="font-medium text-foreground">{row.original.name}</div>,
-    },
-    {
-      accessorKey: "slug",
-      meta: { label: "Slug" },
-      header: ({ column }) => <SortableHeader column={column}>Slug</SortableHeader>,
-      cell: ({ row }) => <span>{row.original.slug}</span>,
     },
     {
       accessorKey: "blogCount",

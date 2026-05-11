@@ -44,14 +44,14 @@ async function buildSubjectCountMaps() {
     db
       .select({
         subjectId: schema.topics.subjectId,
-        topicCount: sql<number>`count(${schema.topics.id})`,
+        topicCount: sql<number>`count(*)`,
       })
       .from(schema.topics)
       .groupBy(schema.topics.subjectId),
     db
       .select({
         subjectId: schema.questions.subjectId,
-        questionCount: sql<number>`count(${schema.questions.id})`,
+        questionCount: sql<number>`count(*)`,
       })
       .from(schema.questions)
       .groupBy(schema.questions.subjectId),

@@ -27,6 +27,11 @@ type ExamTypesPageProps = {
   closeDestination?: string
 }
 
+const DEFAULT_COLUMN_VISIBILITY = {
+  createdAt: false,
+  updatedAt: false,
+}
+
 export function ExamTypesPage({
   examTypes,
   defaultEditExamType = null,
@@ -52,6 +57,7 @@ export function ExamTypesPage({
         data={examTypes}
         searchPlaceholder="Search exam types..."
         emptyMessage="No exam types found."
+        defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
         columns={[
           {
             accessorKey: "name",
@@ -86,6 +92,32 @@ export function ExamTypesPage({
             meta: { label: "Questions" },
             header: ({ column }) => <SortableHeader column={column}>Questions</SortableHeader>,
             cell: ({ row }) => <span className="tabular-nums">{row.original.questionCount}</span>,
+          },
+          {
+            accessorKey: "createdAt",
+            meta: { label: "Created At" },
+            header: ({ column }) => <SortableHeader column={column}>Created At</SortableHeader>,
+            cell: ({ row }) => (
+              <span className="text-sm text-muted-foreground">
+                {new Intl.DateTimeFormat("id-ID", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                }).format(row.original.createdAt)}
+              </span>
+            ),
+          },
+          {
+            accessorKey: "updatedAt",
+            meta: { label: "Updated At" },
+            header: ({ column }) => <SortableHeader column={column}>Updated At</SortableHeader>,
+            cell: ({ row }) => (
+              <span className="text-sm text-muted-foreground">
+                {new Intl.DateTimeFormat("id-ID", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                }).format(row.original.updatedAt)}
+              </span>
+            ),
           },
           {
             id: "actions",

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { AuthPage } from "@/features/auth/pages/auth-page";
+import { AuthPage } from "@/features/auth/components/auth-page";
 
 export const metadata: Metadata = {
   title: "Daftar",

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
-import { LandingPage } from "@/features/marketing/components/landing-page";
-import faqs from "@/features/marketing/data/faqs.json";
+import { LandingPage } from "@/features/landing/components/landing-page";
+import { faqs } from "@/features/landing/data";
 import { getCurrentUser } from "@/features/auth/services/session";
 
 export const metadata: Metadata = {

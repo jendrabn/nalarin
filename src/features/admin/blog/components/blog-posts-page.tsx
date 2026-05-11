@@ -39,7 +39,6 @@ type BlogPostsPageProps = {
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
-  slug: false,
   thumbnailUrl: false,
   publishedAt: false,
   createdAt: false,
@@ -75,12 +74,6 @@ function createColumns({
           ) : null}
         </div>
       ),
-    },
-    {
-      accessorKey: "slug",
-      meta: { label: "Slug" },
-      header: ({ column }) => <SortableHeader column={column}>Slug</SortableHeader>,
-      cell: ({ row }) => <span>{row.original.slug}</span>,
     },
     {
       accessorKey: "categoryName",

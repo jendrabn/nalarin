@@ -39,7 +39,7 @@ async function buildTopicCountMap() {
   const questionCounts = await db
     .select({
       topicId: schema.questions.topicId,
-      questionCount: sql<number>`count(${schema.questions.id})`,
+      questionCount: sql<number>`count(*)`,
     })
     .from(schema.questions)
     .groupBy(schema.questions.topicId)

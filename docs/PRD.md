@@ -1,5 +1,4 @@
 # PRD Nalarin.id
-
 ## 1. Ringkasan Produk
 
 **Nalarin.id** adalah platform persiapan tes online untuk **UTBK**, **UTUL UGM**, **SIMAK UI**, dan **CPNS**. Produk menyediakan bank soal, latihan dengan **Mode Latihan** dan **Mode Quiz**, tryout rutin, review jawaban, pembahasan, progress tracking, blog edukasi, serta subscription Free, Pro, dan Max.
@@ -42,7 +41,7 @@ Produk mengambil inspirasi dari pola fitur aimasukptn: landing page, bank soal, 
 - Payment Midtrans.
 - Admin panel.
 - Import soal via Excel.
-- Generate soal dengan AI.
+- Generate soal dengan AI dari halaman create question (modal parameter + autofill form).
 - Generate pembahasan dengan AI.
 - Koreksi manual dan AI untuk isian singkat dan esai.
 
@@ -93,7 +92,7 @@ User dapat:
 
 Admin dapat:
 
-- Manage users CRUD.
+- Melihat dan mencari daftar user, melihat detail user, mengubah role dan status user, serta menghapus user. Admin tidak dapat membuat user baru dari panel admin.
 - Manage subscribers dan payment.
 - Approve payment manual.
 - Cancel subscription.
@@ -523,12 +522,16 @@ User dapat:
 
 Admin dapat:
 
-- Melihat daftar user.
-- Melihat detail user.
-- Mengubah data user.
-- Mengubah status user.
-- Melihat riwayat subscription dan payment.
-- Melihat riwayat practice dan tryout.
+- Melihat daftar user beserta informasi ringkas (nama, email, role, status, tanggal daftar).
+- Mencari user berdasarkan nama atau email.
+- Melihat detail user lengkap.
+- Mengubah **role** user (`user` ↔ `admin`).
+- Mengubah **status** user (`active`, `inactive`, `suspended`).
+- Menghapus user — hanya diperbolehkan jika user belum memiliki riwayat data apapun (transaksi, subscription, practice session, maupun tryout session). Jika user sudah memiliki riwayat data, admin tidak dapat menghapus akun dan sebagai gantinya dapat menonaktifkan user melalui perubahan status menjadi `inactive` atau `suspended`.
+- Melihat riwayat subscription dan payment milik user.
+- Melihat riwayat practice dan tryout milik user.
+
+Admin **tidak dapat** membuat user baru dari panel admin. Pembuatan akun hanya melalui alur register di aplikasi.
 
 ### 8.2 Manage Subscribers dan Payment
 
@@ -554,9 +557,79 @@ Admin dapat:
 - Menentukan kunci jawaban.
 - Mengatur scoring rule untuk multiple answer.
 - Mengisi pembahasan manual.
-- Generate soal dengan AI.
+- Generate soal dengan AI langsung dari halaman create question (lihat subseksi di bawah).
 - Generate pembahasan dengan AI.
 - Import soal via Excel.
+
+#### AI Generate Soal
+
+Fitur ini tersedia di halaman **Create Question** melalui tombol **"AI Generate"**.
+
+**Flow:**
+1. Admin membuka halaman Create Question.
+2. Admin mengklik tombol **"AI Generate"**.
+3. Muncul modal form berisi parameter yang harus diisi sebagai bahan instruksi ke AI.
+4. Admin mengisi parameter dan mengklik **"Generate"**.
+5. AI memproses permintaan. Selama proses berjalan, tombol Generate menampilkan indikator loading.
+6. Setelah AI selesai, modal tertutup otomatis dan semua field di form Create Question ter-autofill dengan hasil generate: konten soal, opsi jawaban, kunci jawaban, dan pembahasan.
+7. Admin memeriksa dan menyesuaikan hasil sebelum menyimpan soal.
+
+**Parameter modal AI Generate:**
+
+| Parameter | Keterangan |
+|---|---|
+| Bahasa | Pilihan: **Bahasa Indonesia** atau **English** — menentukan bahasa soal yang dihasilkan |
+| Tipe soal | Diambil dari pilihan tipe soal yang sudah dipilih admin di form utama (pre-filled, bisa diubah) |
+| Tingkat kesulitan | Pilihan: Easy, Medium, Hard |
+| Jumlah opsi | Hanya muncul jika tipe soal adalah `multiple_choice` atau `multiple_answer`. Pilihan: 2, 3, 4, atau 5 opsi |
+| Topik/Materi | Teks bebas — admin mendeskripsikan materi atau topik spesifik yang ingin dibuatkan soalnya |
+| Konteks tambahan | Teks bebas opsional — instruksi atau konteks khusus yang ingin disertakan ke AI |
+
+**Catatan:** Field exam type, subject, dan topic yang sudah dipilih di form utama digunakan sebagai konteks tambahan yang dikirim ke AI secara otomatis, tanpa perlu diisi ulang di modal.
+
+#### Prompt Template AI Generate Soal
+
+Prompt berikut digunakan sistem untuk menginstruksikan AI membuat soal. Parameter dalam kurung kurawal digantikan dengan nilai dari form sebelum dikirim.
+
+```
+You are an expert question writer specializing in high-quality exam preparation content for competitive academic and civil service tests.
+
+Create ONE exam question based on the following parameters:
+- Exam Type: {exam_type}
+- Subject/Subtest: {subject}
+- Topic: {topic}
+- Question Type: {question_type}
+- Difficulty: {difficulty}
+- Language: {language}
+- Number of Options: {option_count} (only for multiple_choice and multiple_answer)
+- Additional Context: {additional_context}
+
+Quality requirements:
+- The question must be factually accurate, unambiguous, and relevant to the subject matter
+- For multiple_choice: exactly one correct answer; distractors must be plausible and not obviously wrong
+- For multiple_answer: at least 2 correct options; all options must be structurally parallel and homogeneous
+- For true_false: the statement must be definitively true or false with no grey area
+- For short_answer and essay: include a clear and specific grading rubric
+- Difficulty must match the requested level: easy = straightforward recall or single-step reasoning; medium = requires application or multi-step reasoning; hard = requires analysis, synthesis, or complex problem-solving
+- Do not include any hidden clues in the question stem that reveal the answer
+- Write the explanation as a clear, educational justification that teaches the concept, not just states the answer
+
+Respond ONLY with a valid JSON object in the following format, no additional text:
+{
+  "question_content": "Full question text here",
+  "options": [
+    { "label": "A", "content": "Option text", "is_correct": false },
+    { "label": "B", "content": "Option text", "is_correct": true }
+  ],
+  "correct_answer_text": "",
+  "explanation": "Clear and educational explanation here"
+}
+
+Rules:
+- "options": fill only for multiple_choice, multiple_answer, and true_false. For true_false, always create exactly 2 options with labels "True" and "False"; do not set is_correct on either option (leave both false).
+- "correct_answer_text": fill only for true_false ("true" or "false" lowercase), short_answer (reference answer), and essay (grading rubric). Leave empty string for multiple_choice and multiple_answer.
+- "explanation": always fill with a thorough explanation.
+```
 
 #### Penanganan Soal Berdasarkan Tipe
 
@@ -726,7 +799,6 @@ Admin dapat:
 - `cancelled`: session dibatalkan, tidak menghasilkan skor.
 
 **Status awal session:**
-
 - `practice_sessions`: status awal **selalu `in_progress`** saat session dibuat — user telah memulai mengerjakan.
 - `tryout_sessions`: status awal **selalu `in_progress`** saat session dibuat — user telah memulai tryout.
 - `tryout_section_sessions`: status awal **selalu `pending`** saat dibuat — semua section di-pre-create secara bersamaan; section belum tentu langsung dibuka user. Status berubah menjadi `in_progress` ketika user pertama kali membuka section tersebut.
@@ -1477,13 +1549,11 @@ Nilai batas di atas adalah acuan awal dan dapat disesuaikan berdasarkan monitori
 
 **Cleanup tryout session terbengkalai (tanpa `enforce_end_time`):**
 Untuk tryout dengan `enforce_end_time = false` atau `ends_at = null`, jika `tryout_session` masih `in_progress` dan tidak ada aktivitas selama lebih dari **72 jam**, background job melakukan auto-submit. Aktivitas terakhir ditentukan dari nilai **terbaru** di antara:
-
 - `tryout_sessions.last_saved_at` (autosave di level session)
 - `last_saved_at` dari semua `tryout_section_sessions` milik session tersebut (autosave di level section/jawaban)
 - Jika semua nilai di atas null (belum pernah ada autosave sama sekali), gunakan `tryout_sessions.started_at` sebagai waktu referensi.
 
 Background job mengambil max dari semua nilai ini sebagai "waktu aktivitas terakhir". Jika `NOW() - waktu_aktivitas_terakhir > 72 jam`, jalankan auto-submit:
-
 1. Section yang masih `in_progress` di-submit dengan jawaban terakhir yang tersimpan.
 2. Section berstatus `pending` di-submit langsung dengan skor 0.
 3. `tryout_session` diubah menjadi `submitted` dengan `auto_submitted = true`.
@@ -1546,7 +1616,6 @@ Setelah seluruh tryout session di-submit (semua section selesai):
 
 **Validasi pada saat create dan update (early feedback):**
 Service layer memvalidasi konsistensi relasi pada saat operasi create dan update, bukan hanya saat publish. Validasi yang dijalankan pada create/update:
-
 - Subject harus berasal dari exam type yang sama dengan practice/tryout.
 - Topic (jika diisi) harus berasal dari subject yang dipilih.
 - Jika `starts_at` dan `ends_at` keduanya diisi, `ends_at` harus lebih besar dari `starts_at`.
@@ -1555,7 +1624,6 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 - Jika validasi gagal, operasi ditolak dengan pesan error yang jelas. Admin tidak perlu menunggu proses publish untuk menemukan inkonsistensi relasi.
 
 **Validasi tambahan pada saat publish:**
-
 - Practice tidak boleh dipublish jika tidak punya soal.
 - Practice tidak boleh dipublish jika `has_practice_mode = false` dan `has_quiz_mode = false`. Minimal satu mode harus aktif.
 - Practice tidak boleh dipublish jika `has_quiz_mode = true` tetapi `quiz_duration_minutes` kosong atau kurang dari/sama dengan 0.

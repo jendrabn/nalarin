@@ -38,14 +38,14 @@ async function buildExamTypeCountMaps() {
     db
       .select({
         examTypeId: schema.subjects.examTypeId,
-        subjectCount: sql<number>`count(${schema.subjects.id})`,
+        subjectCount: sql<number>`count(*)`,
       })
       .from(schema.subjects)
       .groupBy(schema.subjects.examTypeId),
     db
       .select({
         examTypeId: schema.subjects.examTypeId,
-        topicCount: sql<number>`count(${schema.topics.id})`,
+        topicCount: sql<number>`count(*)`,
       })
       .from(schema.topics)
       .innerJoin(schema.subjects, eq(schema.topics.subjectId, schema.subjects.id))
@@ -53,7 +53,7 @@ async function buildExamTypeCountMaps() {
     db
       .select({
         examTypeId: schema.subjects.examTypeId,
-        questionCount: sql<number>`count(${schema.questions.id})`,
+        questionCount: sql<number>`count(*)`,
       })
       .from(schema.questions)
       .innerJoin(schema.subjects, eq(schema.questions.subjectId, schema.subjects.id))

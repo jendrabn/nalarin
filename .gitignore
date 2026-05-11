@@ -44,3 +44,4 @@ next-env.d.ts
 PROMPT.txt
 
 /public/uploads/
+.playwright-mcp
