@@ -1,5 +1,58 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
 
-export default function Page() {
-  return <RoutePlaceholder section="Admin" route="/admin/users/[userId]/edit" />;
+import { UserDetailPage } from "@/features/admin/users/components/user-detail-page"
+import { getAdminUserById } from "@/features/admin/users/queries"
+
+type EditUserPageProps = {
+  params: Promise<{
+    userId: string
+  }>
+}
+
+export async function generateMetadata({
+  params,
+}: EditUserPageProps): Promise<Metadata> {
+  const { userId } = await params
+  const id = Number(userId)
+
+  if (!Number.isFinite(id)) {
+    return {
+      title: "Edit User",
+      description: "Edit user role and status from the admin panel.",
+    }
+  }
+
+  const user = await getAdminUserById(id)
+
+  return {
+    title: user ? `Edit ${user.name}` : "Edit User",
+    description: user
+      ? `Edit role and status for ${user.name} in a modal dialog.`
+      : "Edit user role and status from the admin panel.",
+  }
+}
+
+export default async function Page({ params }: EditUserPageProps) {
+  const { userId } = await params
+  const id = Number(userId)
+
+  if (!Number.isFinite(id)) {
+    notFound()
+  }
+
+  const user = await getAdminUserById(id)
+
+  if (!user) {
+    notFound()
+  }
+
+  return (
+    <UserDetailPage
+      user={user}
+      backHref="/admin/users"
+      detailHref={`/admin/users/${id}`}
+      openEditOnMount
+    />
+  )
 }

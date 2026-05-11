@@ -1,5 +1,16 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+import type { Metadata } from "next"
 
-export default function Page() {
-  return <RoutePlaceholder section="Admin" route="/admin/users" />;
+import { UsersPage } from "@/features/admin/users/components/users-page"
+import { getAdminUsers } from "@/features/admin/users/queries"
+import { requireAdmin } from "@/features/auth/services/session"
+
+export const metadata: Metadata = {
+  title: "Users",
+  description: "Manage user accounts, roles, statuses, and access.",
+}
+
+export default async function Page() {
+  const [currentUser, users] = await Promise.all([requireAdmin(), getAdminUsers()])
+
+  return <UsersPage users={users} currentUserId={currentUser.id} />
 }
