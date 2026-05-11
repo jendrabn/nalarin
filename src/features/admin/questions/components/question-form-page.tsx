@@ -32,7 +32,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 
-import { createQuestionAction, updateQuestionAction } from "../actions/questions"
+import { createQuestionAction, updateQuestionAction } from "../actions"
 import {
   questionDifficultyLabels,
   questionDifficultyValues,
@@ -47,13 +47,13 @@ import {
   type QuestionStatus,
   type QuestionType,
 } from "../constants"
-import { questionFormSchema } from "../schemas/question"
+import { questionFormSchema } from "../schemas"
 import type {
   QuestionDetails,
   QuestionLookupOption,
   SubjectLookupOption,
   TopicLookupOption,
-} from "../queries/questions"
+} from "../queries"
 import {
   getDefaultQuestionOptions,
   isChoiceQuestionType,

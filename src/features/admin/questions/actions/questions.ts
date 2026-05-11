@@ -11,7 +11,7 @@ import {
   questionFormSchema,
   type QuestionFormValues,
   type QuestionImportRowValues,
-} from "../schemas/question"
+} from "../schemas"
 import {
   ensureQuestionOptions,
   isChoiceQuestionType,
@@ -20,7 +20,7 @@ import {
   parseOptionalDecimal,
   parseOptionalInteger,
 } from "../utils/question"
-import { getQuestionById } from "../queries/questions"
+import { getQuestionById } from "../queries"
 import type { QuestionOptionInput } from "../utils/question"
 import type { QuestionType } from "../constants"
 

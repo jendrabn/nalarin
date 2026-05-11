@@ -29,16 +29,12 @@ import {
   blogPostStatusLabels,
   blogPostStatusValues,
 } from "../constants"
-import {
-  createBlogPostAction,
-  updateBlogPostAction,
-} from "../actions/blog-posts"
-import type { BlogPostDetails } from "../queries/blog-posts"
-import type { BlogCategoryRow } from "../queries/blog-categories"
+import { createBlogPostAction, updateBlogPostAction } from "../actions"
+import type { BlogPostDetails, BlogCategoryRow } from "../queries"
 import {
   blogPostFormSchema,
   type BlogPostFormValues,
-} from "../schemas/blog-post"
+} from "../schemas"
 import { BlogRichTextEditor } from "./blog-rich-text-editor"
 import { formatTagsInput, previewBlogPostSlug } from "../utils/blog-post"
 import { uploadBlogImage } from "../utils/upload"

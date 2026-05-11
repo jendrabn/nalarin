@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 import { BlogPostFormPage } from "@/features/admin/blog/components/blog-post-form-page"
-import { getBlogCategories } from "@/features/admin/blog/queries/blog-categories"
+import { getBlogCategories } from "@/features/admin/blog/queries"
 
 export const metadata: Metadata = {
   title: "Create Blog Post",

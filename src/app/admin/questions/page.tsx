@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 import { QuestionsPage } from "@/features/admin/questions/components/questions-page"
-import { getQuestions } from "@/features/admin/questions/queries/questions"
+import { getQuestions } from "@/features/admin/questions/queries"
 
 export const metadata: Metadata = {
   title: "Questions",

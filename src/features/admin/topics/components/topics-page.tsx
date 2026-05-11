@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { EllipsisVerticalIcon, PlusIcon, Trash2Icon } from "lucide-react"
+import { EllipsisVerticalIcon, PencilLineIcon, PlusIcon, Trash2Icon } from "lucide-react"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/page-header"
@@ -174,6 +174,7 @@ export function TopicsPage({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-40">
                     <DropdownMenuItem onClick={() => setEditingTopic(row.original)}>
+                      <PencilLineIcon />
                       Edit
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />

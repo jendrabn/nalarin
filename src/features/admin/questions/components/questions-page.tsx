@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 
-import { deleteQuestionAction } from "../actions/questions"
+import { deleteQuestionAction } from "../actions"
 import {
   questionColumnLabels,
   type QuestionRow,

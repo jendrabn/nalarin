@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx"
 import { z } from "zod"
 
-import { questionImportRowSchema, type QuestionImportRowValues } from "../schemas/question"
+import { questionImportRowSchema, type QuestionImportRowValues } from "../schemas"
 import { questionTypeValues } from "../constants"
 
 export type QuestionImportRowError = {

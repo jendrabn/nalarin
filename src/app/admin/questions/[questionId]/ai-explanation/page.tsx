@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { questionTypeLabels } from "@/features/admin/questions/constants"
-import { getQuestionById } from "@/features/admin/questions/queries/questions"
+import { getQuestionById } from "@/features/admin/questions/queries"
 import { previewQuestionContent, stripHtml } from "@/features/admin/questions/utils/question"
 
 type AiExplanationPageProps = {

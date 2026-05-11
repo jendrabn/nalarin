@@ -31,8 +31,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 
-import { deleteBlogPostAction } from "../actions/blog-posts"
-import type { BlogPostRow } from "../queries/blog-posts"
+import { deleteBlogPostAction } from "../actions"
+import type { BlogPostRow } from "../queries"
 
 type BlogPostsPageProps = {
   posts: BlogPostRow[]

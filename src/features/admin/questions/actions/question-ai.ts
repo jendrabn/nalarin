@@ -11,7 +11,7 @@ import {
   questionAiGenerateFormSchema,
   type QuestionAiGenerateFormValues,
   type QuestionFormValues,
-} from "../schemas/question"
+} from "../schemas"
 import { generateQuestionDrafts } from "../services/question-ai"
 
 function flattenZodError(error: z.ZodError<QuestionAiGenerateFormValues>) {

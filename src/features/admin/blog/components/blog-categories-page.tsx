@@ -31,11 +31,8 @@ import {
   createBlogCategoryAction,
   deleteBlogCategoryAction,
   updateBlogCategoryAction,
-} from "../actions/blog-categories"
-import type {
-  BlogCategoryDetails,
-  BlogCategoryRow,
-} from "../queries/blog-categories"
+} from "../actions"
+import type { BlogCategoryDetails, BlogCategoryRow } from "../queries"
 import { BlogCategoryFormDialog } from "./blog-category-form-dialog"
 
 type BlogCategoriesPageProps = {

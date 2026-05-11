@@ -7,11 +7,8 @@ import { z } from "zod"
 import { db, schema } from "@/db"
 import { requireAdmin } from "@/features/auth/services/session"
 
-import {
-  blogCategoryFormSchema,
-  type BlogCategoryFormValues,
-} from "../schemas/blog-category"
-import { getBlogCategoryById } from "../queries/blog-categories"
+import { blogCategoryFormSchema, type BlogCategoryFormValues } from "../schemas"
+import { getBlogCategoryById } from "../queries"
 import { slugify } from "../utils/slug"
 
 type ActionError = {

@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { QuestionFormPage } from "@/features/admin/questions/components/question-form-page"
-import { getAdminQuestionLookups, getQuestionById } from "@/features/admin/questions/queries/questions"
+import { getAdminQuestionLookups, getQuestionById } from "@/features/admin/questions/queries"
 
 type EditPageProps = {
   params: Promise<{

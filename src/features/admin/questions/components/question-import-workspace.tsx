@@ -12,8 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
-import type { QuestionImportRowValues } from "../schemas/question"
-import { importQuestionRowsAction } from "../actions/questions"
+import type { QuestionImportRowValues } from "../schemas"
+import { importQuestionRowsAction } from "../actions"
 import {
   parseQuestionImportWorkbook,
   type ParsedQuestionImportWorkbook,

@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 import { QuestionAiGeneratePage } from "@/features/admin/questions/components/question-ai-generate-page"
-import { getAdminQuestionLookups } from "@/features/admin/questions/queries/questions"
+import { getAdminQuestionLookups } from "@/features/admin/questions/queries"
 
 export const metadata: Metadata = {
   title: "AI Generate Questions",

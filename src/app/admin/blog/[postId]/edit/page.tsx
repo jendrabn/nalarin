@@ -2,8 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { BlogPostFormPage } from "@/features/admin/blog/components/blog-post-form-page"
-import { getBlogCategories } from "@/features/admin/blog/queries/blog-categories"
-import { getBlogPostById } from "@/features/admin/blog/queries/blog-posts"
+import { getBlogCategories, getBlogPostById } from "@/features/admin/blog/queries"
 
 type EditPageProps = {
   params: Promise<{

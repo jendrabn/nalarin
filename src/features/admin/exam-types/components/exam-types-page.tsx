@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { EllipsisVerticalIcon } from "lucide-react"
+import { EllipsisVerticalIcon, PencilLineIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/page-header"
@@ -108,6 +108,7 @@ export function ExamTypesPage({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-40">
                     <DropdownMenuItem onClick={() => setEditingExamType(row.original)}>
+                      <PencilLineIcon />
                       Edit
                     </DropdownMenuItem>
                   </DropdownMenuContent>

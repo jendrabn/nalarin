@@ -23,13 +23,12 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 
-import { generateQuestionDraftsAction } from "../actions/question-ai"
-import { saveQuestionDraftsAction } from "../actions/questions"
+import { generateQuestionDraftsAction, saveQuestionDraftsAction } from "../actions"
 import {
   questionAiGenerateFormSchema,
   type QuestionAiGenerateFormValues,
   type QuestionFormValues,
-} from "../schemas/question"
+} from "../schemas"
 import {
   questionDifficultyLabels,
   questionDifficultyValues,
@@ -42,7 +41,7 @@ import type {
   QuestionLookupOption,
   SubjectLookupOption,
   TopicLookupOption,
-} from "../queries/questions"
+} from "../queries"
 
 type QuestionAiGeneratePageProps = {
   lookups: {

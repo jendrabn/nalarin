@@ -6,7 +6,7 @@ import {
   questionDifficultyValues,
   questionTypeValues,
 } from "../constants"
-import { questionOptionFormSchema } from "../schemas/question"
+import { questionOptionFormSchema } from "../schemas"
 
 const questionAiDraftSchema = z.object({
   title: z.string().trim().max(255).default(""),

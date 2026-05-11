@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 import { QuestionFormPage } from "@/features/admin/questions/components/question-form-page"
-import { getAdminQuestionLookups } from "@/features/admin/questions/queries/questions"
+import { getAdminQuestionLookups } from "@/features/admin/questions/queries"
 
 export const metadata: Metadata = {
   title: "Create Question",

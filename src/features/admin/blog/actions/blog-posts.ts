@@ -8,16 +8,13 @@ import { db, schema } from "@/db"
 import { requireAdmin } from "@/features/auth/services/session"
 
 import type { BlogPostStatus } from "../constants"
-import {
-  blogPostFormSchema,
-  type BlogPostFormValues,
-} from "../schemas/blog-post"
+import { blogPostFormSchema, type BlogPostFormValues } from "../schemas"
 import {
   estimateReadTimeMinutes,
   parseTagsInput,
 } from "../utils/blog-post"
 import { slugify } from "../utils/slug"
-import { getBlogPostById } from "../queries/blog-posts"
+import { getBlogPostById } from "../queries"
 
 type ActionError = {
   success: false

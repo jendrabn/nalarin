@@ -24,11 +24,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 
-import {
-  blogCategoryFormSchema,
-  type BlogCategoryFormValues,
-} from "../schemas/blog-category"
-import type { BlogCategoryActionResult } from "../actions/blog-categories"
+import { blogCategoryFormSchema, type BlogCategoryFormValues } from "../schemas"
+import type { BlogCategoryActionResult } from "../actions"
 
 type BlogCategoryFormDialogProps = {
   open: boolean
