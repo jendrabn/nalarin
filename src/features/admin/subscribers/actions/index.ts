@@ -1,6 +1,6 @@
 "use server"
 
-import { and, eq, gt } from "drizzle-orm"
+import { and, eq, gt, inArray } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 import { db, schema } from "@/db"
@@ -113,6 +113,7 @@ function parseGrantValues(values: SubscriberGrantFormValues) {
 
 function revalidateSubscriberRoutes(subscriptionId?: number, userId?: number) {
   revalidatePath("/admin/subscribers")
+  revalidatePath("/admin/payments")
   revalidatePath("/admin/subscribers/create")
   revalidatePath("/admin/users")
 
@@ -279,4 +280,61 @@ export async function forceDowngradeSubscriptionAction(
     admin.id,
     "Force downgraded to Free by admin.",
   )
+}
+
+export async function deleteSubscribersAction(
+  subscriptionIds: number[],
+): Promise<SubscriberActionResult<{ deletedCount: number }>> {
+  await requireAdmin()
+
+  const uniqueSubscriptionIds = [...new Set(subscriptionIds)].filter(
+    (id) => Number.isInteger(id) && id > 0,
+  )
+
+  if (uniqueSubscriptionIds.length === 0) {
+    return {
+      success: false,
+      message: "No subscriptions were selected.",
+    }
+  }
+
+  const existingSubscriptions = await db
+    .select({
+      id: schema.subscriptions.id,
+      userId: schema.subscriptions.userId,
+    })
+    .from(schema.subscriptions)
+    .where(inArray(schema.subscriptions.id, uniqueSubscriptionIds))
+
+  if (existingSubscriptions.length !== uniqueSubscriptionIds.length) {
+    return {
+      success: false,
+      message: "Some selected subscriptions were not found.",
+    }
+  }
+
+  const affectedUserIds = [...new Set(existingSubscriptions.map((row) => row.userId))]
+
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(schema.payments)
+      .where(inArray(schema.payments.subscriptionId, uniqueSubscriptionIds))
+
+    await tx
+      .delete(schema.subscriptions)
+      .where(inArray(schema.subscriptions.id, uniqueSubscriptionIds))
+  })
+
+  revalidateSubscriberRoutes()
+  uniqueSubscriptionIds.forEach((subscriptionId) => {
+    revalidateSubscriberRoutes(subscriptionId)
+  })
+  affectedUserIds.forEach((userId) => {
+    revalidateSubscriberRoutes(undefined, userId)
+  })
+
+  return {
+    success: true,
+    data: { deletedCount: uniqueSubscriptionIds.length },
+  }
 }

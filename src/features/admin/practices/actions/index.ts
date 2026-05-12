@@ -1,6 +1,6 @@
 "use server"
 
-import { and, eq, ne } from "drizzle-orm"
+import { and, eq, inArray, ne } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
@@ -586,5 +586,79 @@ export async function deletePracticeAction(
   return {
     success: true,
     data: { id: practiceId },
+  }
+}
+
+export async function deletePracticesAction(
+  practiceIds: number[],
+): Promise<PracticeActionResult<{ deletedCount: number }>> {
+  await requireAdmin()
+
+  const uniquePracticeIds = [...new Set(practiceIds)].filter(
+    (id) => Number.isInteger(id) && id > 0,
+  )
+
+  if (uniquePracticeIds.length === 0) {
+    return {
+      success: false,
+      message: "No practices were selected.",
+    }
+  }
+
+  const [existingPractices, sessionUsageRows] = await Promise.all([
+    db
+      .select({
+        id: schema.practices.id,
+        slug: schema.practices.slug,
+        status: schema.practices.status,
+      })
+      .from(schema.practices)
+      .where(inArray(schema.practices.id, uniquePracticeIds)),
+    db
+      .select({
+        practiceId: schema.practiceSessions.practiceId,
+      })
+      .from(schema.practiceSessions)
+      .where(inArray(schema.practiceSessions.practiceId, uniquePracticeIds))
+      .groupBy(schema.practiceSessions.practiceId),
+  ])
+
+  if (existingPractices.length !== uniquePracticeIds.length) {
+    return {
+      success: false,
+      message: "Some selected practices were not found.",
+    }
+  }
+
+  if (existingPractices.some((practice) => practice.status !== "draft")) {
+    return {
+      success: false,
+      message: "Only draft practices can be deleted.",
+    }
+  }
+
+  if (sessionUsageRows.length > 0) {
+    return {
+      success: false,
+      message: "One or more selected practices cannot be deleted because they already have sessions.",
+    }
+  }
+
+  await db.transaction(async (tx) => {
+    await tx.delete(schema.practiceQuestions).where(inArray(schema.practiceQuestions.practiceId, uniquePracticeIds))
+    await tx.delete(schema.practices).where(inArray(schema.practices.id, uniquePracticeIds))
+  })
+
+  revalidatePracticeRoutes()
+  existingPractices.forEach((practice) => {
+    revalidatePath(`/admin/practices/${practice.id}`)
+    revalidatePath(`/admin/practices/${practice.id}/edit`)
+    revalidatePath(`/admin/practices/${practice.id}/questions`)
+    revalidatePath(`/practice/${practice.slug}`)
+  })
+
+  return {
+    success: true,
+    data: { deletedCount: uniquePracticeIds.length },
   }
 }

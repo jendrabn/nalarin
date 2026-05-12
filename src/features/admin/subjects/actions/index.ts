@@ -1,6 +1,6 @@
 "use server"
 
-import { and, eq } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 import { db, schema } from "@/db"
@@ -240,5 +240,92 @@ export async function deleteSubjectAction(
   return {
     success: true,
     data: { id: subjectId },
+  }
+}
+
+export async function deleteSubjectsAction(
+  subjectIds: number[],
+): Promise<ActionResult<unknown, { deletedCount: number }>> {
+  await requireAdmin()
+
+  const uniqueSubjectIds = [...new Set(subjectIds)].filter(
+    (id) => Number.isInteger(id) && id > 0,
+  )
+
+  if (uniqueSubjectIds.length === 0) {
+    return {
+      success: false,
+      message: "No subjects were selected.",
+    }
+  }
+
+  const [existingSubjects, topicUsageRows, questionUsageRows, practiceUsageRows, tryoutSectionUsageRows] =
+    await Promise.all([
+      db
+        .select({
+          id: schema.subjects.id,
+        })
+        .from(schema.subjects)
+        .where(inArray(schema.subjects.id, uniqueSubjectIds)),
+      db
+        .select({
+          subjectId: schema.topics.subjectId,
+        })
+        .from(schema.topics)
+        .where(inArray(schema.topics.subjectId, uniqueSubjectIds))
+        .groupBy(schema.topics.subjectId),
+      db
+        .select({
+          subjectId: schema.questions.subjectId,
+        })
+        .from(schema.questions)
+        .where(inArray(schema.questions.subjectId, uniqueSubjectIds))
+        .groupBy(schema.questions.subjectId),
+      db
+        .select({
+          subjectId: schema.practices.subjectId,
+        })
+        .from(schema.practices)
+        .where(inArray(schema.practices.subjectId, uniqueSubjectIds))
+        .groupBy(schema.practices.subjectId),
+      db
+        .select({
+          subjectId: schema.tryoutSections.subjectId,
+        })
+        .from(schema.tryoutSections)
+        .where(inArray(schema.tryoutSections.subjectId, uniqueSubjectIds))
+        .groupBy(schema.tryoutSections.subjectId),
+    ])
+
+  if (existingSubjects.length !== uniqueSubjectIds.length) {
+    return {
+      success: false,
+      message: "Some selected subjects were not found.",
+    }
+  }
+
+  if (
+    topicUsageRows.length > 0 ||
+    questionUsageRows.length > 0 ||
+    practiceUsageRows.length > 0 ||
+    tryoutSectionUsageRows.length > 0
+  ) {
+    return {
+      success: false,
+      message:
+        "One or more selected subjects cannot be deleted because they are still used by topics, questions, practices, or tryout sections.",
+    }
+  }
+
+  await db.delete(schema.subjects).where(inArray(schema.subjects.id, uniqueSubjectIds))
+
+  revalidateSubjectRoutes()
+  uniqueSubjectIds.forEach((subjectId) => {
+    revalidatePath(`/admin/subjects/${subjectId}/edit`)
+  })
+
+  return {
+    success: true,
+    data: { deletedCount: uniqueSubjectIds.length },
   }
 }

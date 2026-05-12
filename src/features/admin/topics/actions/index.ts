@@ -1,6 +1,6 @@
 "use server"
 
-import { and, eq } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 import { db, schema } from "@/db"
@@ -232,5 +232,70 @@ export async function deleteTopicAction(
   return {
     success: true,
     data: { id: topicId },
+  }
+}
+
+export async function deleteTopicsAction(
+  topicIds: number[],
+): Promise<ActionResult<unknown, { deletedCount: number }>> {
+  await requireAdmin()
+
+  const uniqueTopicIds = [...new Set(topicIds)].filter((id) => Number.isInteger(id) && id > 0)
+
+  if (uniqueTopicIds.length === 0) {
+    return {
+      success: false,
+      message: "No topics were selected.",
+    }
+  }
+
+  const [existingTopics, questionUsageRows, practiceUsageRows] = await Promise.all([
+    db
+      .select({
+        id: schema.topics.id,
+      })
+      .from(schema.topics)
+      .where(inArray(schema.topics.id, uniqueTopicIds)),
+    db
+      .select({
+        topicId: schema.questions.topicId,
+      })
+      .from(schema.questions)
+      .where(inArray(schema.questions.topicId, uniqueTopicIds))
+      .groupBy(schema.questions.topicId),
+    db
+      .select({
+        topicId: schema.practices.topicId,
+      })
+      .from(schema.practices)
+      .where(inArray(schema.practices.topicId, uniqueTopicIds))
+      .groupBy(schema.practices.topicId),
+  ])
+
+  if (existingTopics.length !== uniqueTopicIds.length) {
+    return {
+      success: false,
+      message: "Some selected topics were not found.",
+    }
+  }
+
+  if (questionUsageRows.length > 0 || practiceUsageRows.length > 0) {
+    return {
+      success: false,
+      message:
+        "One or more selected topics cannot be deleted because they are still used by questions or practices.",
+    }
+  }
+
+  await db.delete(schema.topics).where(inArray(schema.topics.id, uniqueTopicIds))
+
+  revalidateTopicRoutes()
+  uniqueTopicIds.forEach((topicId) => {
+    revalidatePath(`/admin/topics/${topicId}/edit`)
+  })
+
+  return {
+    success: true,
+    data: { deletedCount: uniqueTopicIds.length },
   }
 }

@@ -29,6 +29,7 @@ import { AdminDataTable, SortableHeader } from "@/components/admin-data-table"
 import {
   createTopicAction,
   deleteTopicAction,
+  deleteTopicsAction,
   updateTopicAction,
 } from "../actions"
 import type { TopicFormValues } from "../schemas"
@@ -124,6 +125,22 @@ export function TopicsPage({
         searchPlaceholder="Search topics..."
         emptyMessage="No topics found."
         defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
+        enableRowSelection
+        getRowId={(topic) => String(topic.id)}
+        onDeleteSelected={async (selectedTopics) => {
+          const result = await deleteTopicsAction(
+            selectedTopics.map((topic) => topic.id),
+          )
+
+          if (result.success) {
+            toast.success(`${result.data.deletedCount} topics deleted.`)
+            router.refresh()
+            return true
+          }
+
+          toast.error(result.message)
+          return false
+        }}
         columns={[
           {
             accessorKey: "name",

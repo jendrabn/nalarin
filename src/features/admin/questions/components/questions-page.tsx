@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 
-import { deleteQuestionAction } from "../actions"
+import { deleteQuestionAction, deleteQuestionsAction } from "../actions"
 import {
   questionColumnLabels,
   type QuestionRow,
@@ -292,6 +292,22 @@ export function QuestionsPage({ questions }: QuestionsPageProps) {
         emptyMessage="No questions found."
         defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
         defaultPageSize="10"
+        enableRowSelection
+        getRowId={(question) => String(question.id)}
+        onDeleteSelected={async (selectedQuestions) => {
+          const result = await deleteQuestionsAction(
+            selectedQuestions.map((question) => question.id),
+          )
+
+          if (result.success) {
+            toast.success(`${result.data.deletedCount} questions deleted.`)
+            router.refresh()
+            return true
+          }
+
+          toast.error(result.message)
+          return false
+        }}
       />
 
       <AlertDialog

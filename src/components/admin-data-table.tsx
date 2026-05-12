@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import type {
   Column,
   ColumnDef,
+  RowSelectionState,
   SortingState,
   VisibilityState,
 } from "@tanstack/react-table"
@@ -20,9 +21,11 @@ import {
   ArrowUpDownIcon,
   ArrowUpIcon,
   SlidersHorizontalIcon,
+  Trash2Icon,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -65,6 +68,10 @@ type AdminDataTableProps<TData> = {
   emptyMessage: string
   defaultColumnVisibility?: VisibilityState
   defaultPageSize?: string
+  enableRowSelection?: boolean
+  getRowId?: (row: TData, index: number) => string
+  getRowCanSelect?: (row: TData) => boolean
+  onDeleteSelected?: (rows: TData[]) => Promise<boolean> | boolean
 }
 
 const PAGE_SIZE_OPTIONS = ["10", "25", "50", "100", "-1"] as const
@@ -121,13 +128,19 @@ export function AdminDataTable<TData>({
   emptyMessage,
   defaultColumnVisibility = {},
   defaultPageSize = DEFAULT_PAGE_SIZE,
+  enableRowSelection = false,
+  getRowId,
+  getRowCanSelect,
+  onDeleteSelected,
 }: AdminDataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] =
     useState<VisibilityState>(defaultColumnVisibility)
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [globalFilter, setGlobalFilter] = useState("")
   const [pageIndex, setPageIndex] = useState(0)
   const [pageSizeValue, setPageSizeValue] = useState(defaultPageSize)
+  const [isDeletingSelected, setIsDeletingSelected] = useState(false)
 
   const pageSize =
     pageSizeValue === ALL_PAGE_SIZE ? Math.max(data.length, 1) : Number(pageSizeValue)
@@ -136,21 +149,65 @@ export function AdminDataTable<TData>({
     setPageIndex(0)
   }, [data.length])
 
+  useEffect(() => {
+    setRowSelection({})
+  }, [data.length])
+
+  const tableColumns = enableRowSelection
+    ? [
+        {
+          id: "select",
+          header: ({ table }) => (
+            <Checkbox
+              checked={
+                table.getIsAllPageRowsSelected()
+                  ? true
+                  : table.getIsSomePageRowsSelected()
+                    ? "indeterminate"
+                    : false
+              }
+              onCheckedChange={(checked) => table.toggleAllPageRowsSelected(checked === true)}
+              aria-label="Select all rows"
+              className="translate-y-[1px]"
+            />
+          ),
+          cell: ({ row }) => (
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(checked) => row.toggleSelected(checked === true)}
+              disabled={!row.getCanSelect()}
+              aria-label={`Select row ${row.id}`}
+              className="translate-y-[1px]"
+            />
+          ),
+          enableSorting: false,
+          enableHiding: false,
+        } as ColumnDef<TData>,
+        ...columns,
+      ]
+    : columns
+
   const table = useReactTable({
     data,
-    columns,
+    columns: tableColumns,
     state: {
       sorting,
       columnVisibility,
+      rowSelection,
       globalFilter,
       pagination: {
         pageIndex,
         pageSize,
       },
     },
+    enableRowSelection: enableRowSelection
+      ? (row) => (getRowCanSelect ? getRowCanSelect(row.original as TData) : true)
+      : false,
+    getRowId: getRowId ? (row, index) => getRowId(row as TData, index) : undefined,
     globalFilterFn: "includesString",
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: (updater) => {
       const next =
@@ -172,6 +229,28 @@ export function AdminDataTable<TData>({
   const hideableColumns = table
     .getAllLeafColumns()
     .filter((column) => column.getCanHide())
+  const selectedRows = enableRowSelection
+    ? table.getSelectedRowModel().rows.map((row) => row.original)
+    : []
+  const selectedCount = selectedRows.length
+
+  async function handleDeleteSelected() {
+    if (!onDeleteSelected || selectedCount === 0) {
+      return
+    }
+
+    setIsDeletingSelected(true)
+
+    try {
+      const success = await onDeleteSelected(selectedRows)
+
+      if (success) {
+        setRowSelection({})
+      }
+    } finally {
+      setIsDeletingSelected(false)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -188,27 +267,41 @@ export function AdminDataTable<TData>({
           />
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button type="button" variant="outline" className="sm:ml-auto">
-              <SlidersHorizontalIcon data-icon="inline-start" />
-              View
+        <div className="flex items-center gap-2 sm:ml-auto">
+          {enableRowSelection && onDeleteSelected && selectedCount > 0 ? (
+            <Button
+              type="button"
+              variant="destructive-solid"
+              onClick={() => void handleDeleteSelected()}
+              disabled={isDeletingSelected}
+            >
+              <Trash2Icon data-icon="inline-start" />
+              Delete ({selectedCount})
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            {hideableColumns.map((column) => (
-              <DropdownMenuCheckboxItem
-                key={column.id}
-                checked={column.getIsVisible()}
-                onCheckedChange={(checked) =>
-                  column.toggleVisibility(checked === true)
-                }
-              >
-                {column.columnDef.meta?.label ?? column.id}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          ) : null}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="outline">
+                <SlidersHorizontalIcon data-icon="inline-start" />
+                View
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {hideableColumns.map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={column.id}
+                  checked={column.getIsVisible()}
+                  onCheckedChange={(checked) =>
+                    column.toggleVisibility(checked === true)
+                  }
+                >
+                  {column.columnDef.meta?.label ?? column.id}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-border/60">
@@ -220,7 +313,9 @@ export function AdminDataTable<TData>({
                   <TableHead
                     key={header.id}
                     className={cn(
+                      header.column.id === "select" && "w-12",
                       "uppercase tracking-[0.16em] text-[0.64rem] text-muted-foreground",
+                      header.column.id === "select" && "text-center",
                       header.column.id === "actions" && "w-16 text-right",
                     )}
                   >
@@ -239,7 +334,10 @@ export function AdminDataTable<TData>({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className={cn(cell.column.id === "actions" && "text-right")}
+                      className={cn(
+                        cell.column.id === "select" && "w-12 text-center",
+                        cell.column.id === "actions" && "text-right",
+                      )}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
@@ -319,7 +417,10 @@ export function AdminDataTable<TData>({
                     aria-current={item === currentPage ? "page" : undefined}
                     onClick={(event) => {
                       event.preventDefault()
-                      table.setPageIndex(item - 1)
+
+                      if (typeof item === "number") {
+                        table.setPageIndex(item - 1)
+                      }
                     }}
                   >
                     {item}

@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { eq } from "drizzle-orm"
+import { eq, inArray } from "drizzle-orm"
 import { z } from "zod"
 
 import { db, schema } from "@/db"
@@ -234,5 +234,66 @@ export async function deleteBlogCategoryAction(
   return {
     success: true,
     data: { id: categoryId },
+  }
+}
+
+export async function deleteBlogCategoriesAction(
+  categoryIds: number[],
+): Promise<BlogCategoryActionResult<{ deletedCount: number }>> {
+  await requireAdmin()
+
+  const uniqueCategoryIds = [...new Set(categoryIds)].filter(
+    (id) => Number.isInteger(id) && id > 0,
+  )
+
+  if (uniqueCategoryIds.length === 0) {
+    return {
+      success: false,
+      message: "No blog categories were selected.",
+    }
+  }
+
+  const [existingCategories, relatedPosts] = await Promise.all([
+    db
+      .select({
+        id: schema.blogCategories.id,
+      })
+      .from(schema.blogCategories)
+      .where(inArray(schema.blogCategories.id, uniqueCategoryIds)),
+    db
+      .select({
+        categoryId: schema.blogPosts.categoryId,
+      })
+      .from(schema.blogPosts)
+      .where(inArray(schema.blogPosts.categoryId, uniqueCategoryIds))
+      .groupBy(schema.blogPosts.categoryId),
+  ])
+
+  if (existingCategories.length !== uniqueCategoryIds.length) {
+    return {
+      success: false,
+      message: "Some selected blog categories were not found.",
+    }
+  }
+
+  if (relatedPosts.length > 0) {
+    return {
+      success: false,
+      message: "One or more selected categories cannot be deleted because they still have blog posts.",
+    }
+  }
+
+  await db
+    .delete(schema.blogCategories)
+    .where(inArray(schema.blogCategories.id, uniqueCategoryIds))
+
+  revalidateBlogCategoryRoutes()
+  uniqueCategoryIds.forEach((categoryId) => {
+    revalidateBlogCategoryRoutes(categoryId)
+  })
+
+  return {
+    success: true,
+    data: { deletedCount: uniqueCategoryIds.length },
   }
 }

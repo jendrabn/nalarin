@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 
-import { deleteBlogPostAction } from "../actions"
+import { deleteBlogPostAction, deleteBlogPostsAction } from "../actions"
 import type { BlogPostRow } from "../queries"
 
 type BlogPostsPageProps = {
@@ -255,6 +255,20 @@ export function BlogPostsPage({ posts }: BlogPostsPageProps) {
         emptyMessage="No blog posts found."
         defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
         defaultPageSize="10"
+        enableRowSelection
+        getRowId={(post) => String(post.id)}
+        onDeleteSelected={async (selectedPosts) => {
+          const result = await deleteBlogPostsAction(selectedPosts.map((post) => post.id))
+
+          if (result.success) {
+            toast.success(`${result.data.deletedCount} blog posts deleted.`)
+            router.refresh()
+            return true
+          }
+
+          toast.error(result.message)
+          return false
+        }}
       />
 
       <AlertDialog

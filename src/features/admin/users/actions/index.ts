@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { and, eq, ne, sql } from "drizzle-orm"
+import { and, eq, inArray, ne, sql } from "drizzle-orm"
 import { z } from "zod"
 
 import { db, schema } from "@/db"
@@ -52,6 +52,8 @@ function parseValues(values: UserRoleStatusFormValues) {
 
 function revalidateUserRoutes(userId?: number) {
   revalidatePath("/admin/users")
+  revalidatePath("/admin/payments")
+  revalidatePath("/admin/subscribers")
 
   if (userId) {
     revalidatePath(`/admin/users/${userId}`)
@@ -152,5 +154,85 @@ export async function deleteUserAction(
   return {
     success: true,
     data: { id: userId },
+  }
+}
+
+export async function deleteUsersAction(
+  userIds: number[],
+): Promise<UserActionResult<{ deletedCount: number }>> {
+  const currentUser = await requireAdmin()
+
+  const uniqueUserIds = [...new Set(userIds)].filter((id) => Number.isInteger(id) && id > 0)
+
+  if (uniqueUserIds.length === 0) {
+    return {
+      success: false,
+      message: "No users were selected.",
+    }
+  }
+
+  if (uniqueUserIds.includes(currentUser.id)) {
+    return {
+      success: false,
+      message: "You cannot delete your own account.",
+    }
+  }
+
+  const existingUsers = await db
+    .select({
+      id: schema.users.id,
+      role: schema.users.role,
+      status: schema.users.status,
+    })
+    .from(schema.users)
+    .where(inArray(schema.users.id, uniqueUserIds))
+
+  if (existingUsers.length !== uniqueUserIds.length) {
+    return {
+      success: false,
+      message: "Some selected users were not found.",
+    }
+  }
+
+  const selectedHasActiveAdmin = existingUsers.some(
+    (user) => user.role === "admin" && user.status === "active",
+  )
+
+  if (selectedHasActiveAdmin) {
+    const remainingAdminRows = await db
+      .select({
+        id: schema.users.id,
+      })
+      .from(schema.users)
+      .where(and(eq(schema.users.role, "admin"), eq(schema.users.status, "active")))
+
+    const remainingActiveAdminCount = remainingAdminRows.filter(
+      (row) => !uniqueUserIds.includes(row.id),
+    ).length
+
+    if (remainingActiveAdminCount === 0) {
+      return {
+        success: false,
+        message: "At least one admin account must remain active.",
+      }
+    }
+  }
+
+  await db.transaction(async (tx) => {
+    for (const userId of uniqueUserIds) {
+      await detachUserReferences(tx, userId)
+      await deleteUserData(tx, userId)
+      await tx.delete(schema.users).where(eq(schema.users.id, userId))
+    }
+  })
+
+  revalidateUserRoutes()
+  uniqueUserIds.forEach((userId) => {
+    revalidateUserRoutes(userId)
+  })
+
+  return {
+    success: true,
+    data: { deletedCount: uniqueUserIds.length },
   }
 }

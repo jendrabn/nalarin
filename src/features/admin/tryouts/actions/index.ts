@@ -580,3 +580,93 @@ export async function deleteTryoutAction(
     data: { id: tryoutId },
   }
 }
+
+export async function deleteTryoutsAction(
+  tryoutIds: number[],
+): Promise<TryoutActionResult<{ deletedCount: number }>> {
+  await requireAdmin()
+
+  const uniqueTryoutIds = [...new Set(tryoutIds)].filter(
+    (id) => Number.isInteger(id) && id > 0,
+  )
+
+  if (uniqueTryoutIds.length === 0) {
+    return {
+      success: false,
+      message: "No tryouts were selected.",
+    }
+  }
+
+  const [existingTryouts, sessionUsageRows, sectionRows] = await Promise.all([
+    db
+      .select({
+        id: schema.tryouts.id,
+        slug: schema.tryouts.slug,
+        status: schema.tryouts.status,
+      })
+      .from(schema.tryouts)
+      .where(inArray(schema.tryouts.id, uniqueTryoutIds)),
+    db
+      .select({
+        tryoutId: schema.tryoutSessions.tryoutId,
+      })
+      .from(schema.tryoutSessions)
+      .where(inArray(schema.tryoutSessions.tryoutId, uniqueTryoutIds))
+      .groupBy(schema.tryoutSessions.tryoutId),
+    db
+      .select({
+        id: schema.tryoutSections.id,
+        tryoutId: schema.tryoutSections.tryoutId,
+      })
+      .from(schema.tryoutSections)
+      .where(inArray(schema.tryoutSections.tryoutId, uniqueTryoutIds)),
+  ])
+
+  if (existingTryouts.length !== uniqueTryoutIds.length) {
+    return {
+      success: false,
+      message: "Some selected tryouts were not found.",
+    }
+  }
+
+  if (existingTryouts.some((tryout) => tryout.status !== "draft")) {
+    return {
+      success: false,
+      message: "Only draft tryouts can be deleted.",
+    }
+  }
+
+  if (sessionUsageRows.length > 0) {
+    return {
+      success: false,
+      message: "One or more selected tryouts cannot be deleted because they already have sessions.",
+    }
+  }
+
+  const sectionIds = sectionRows.map((section) => section.id)
+
+  await db.transaction(async (tx) => {
+    if (sectionIds.length > 0) {
+      await tx
+        .delete(schema.tryoutQuestions)
+        .where(inArray(schema.tryoutQuestions.tryoutSectionId, sectionIds))
+    }
+
+    await tx.delete(schema.tryoutSections).where(inArray(schema.tryoutSections.tryoutId, uniqueTryoutIds))
+    await tx.delete(schema.tryouts).where(inArray(schema.tryouts.id, uniqueTryoutIds))
+  })
+
+  revalidateTryoutRoutes()
+  existingTryouts.forEach((tryout) => {
+    revalidatePath(`/admin/tryouts/${tryout.id}`)
+    revalidatePath(`/admin/tryouts/${tryout.id}/edit`)
+    revalidatePath(`/admin/tryouts/${tryout.id}/sections`)
+    revalidatePath(`/admin/tryouts/${tryout.id}/sessions`)
+    revalidatePath(`/tryout/${tryout.slug}`)
+  })
+
+  return {
+    success: true,
+    data: { deletedCount: uniqueTryoutIds.length },
+  }
+}

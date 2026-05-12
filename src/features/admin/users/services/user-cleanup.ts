@@ -4,7 +4,9 @@ import { eq, inArray, or } from "drizzle-orm"
 
 import { db, schema } from "@/db"
 
-async function getSessionIds(tx: typeof db, userId: number) {
+type CleanupTx = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+async function getSessionIds(tx: CleanupTx, userId: number) {
   const practiceSessions = await tx
     .select({
       id: schema.practiceSessions.id,
@@ -25,7 +27,7 @@ async function getSessionIds(tx: typeof db, userId: number) {
   }
 }
 
-export async function detachUserReferences(tx: typeof db, userId: number) {
+export async function detachUserReferences(tx: CleanupTx, userId: number) {
   await Promise.all([
     tx
       .update(schema.questions)
@@ -58,7 +60,7 @@ export async function detachUserReferences(tx: typeof db, userId: number) {
   ])
 }
 
-export async function deleteUserData(tx: typeof db, userId: number) {
+export async function deleteUserData(tx: CleanupTx, userId: number) {
   const { practiceSessionIds, tryoutSessionIds } = await getSessionIds(tx, userId)
 
   await Promise.all([

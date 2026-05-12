@@ -41,6 +41,7 @@ import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 import {
   archiveTryoutAction,
   deleteTryoutAction,
+  deleteTryoutsAction,
   publishTryoutAction,
 } from "../actions"
 import { tryoutColumnLabels, type TryoutStatus } from "../constants"
@@ -349,6 +350,22 @@ export function TryoutsPage({ tryouts }: TryoutsPageProps) {
         emptyMessage="No tryouts found."
         defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
         defaultPageSize="10"
+        enableRowSelection
+        getRowId={(tryout) => String(tryout.id)}
+        onDeleteSelected={async (selectedTryouts) => {
+          const result = await deleteTryoutsAction(
+            selectedTryouts.map((tryout) => tryout.id),
+          )
+
+          if (result.success) {
+            toast.success(`${result.data.deletedCount} tryouts deleted.`)
+            router.refresh()
+            return true
+          }
+
+          toast.error(result.message)
+          return false
+        }}
       />
 
       <AlertDialog

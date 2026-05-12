@@ -30,6 +30,7 @@ import { formatAdminDateTime } from "@/lib/format"
 
 import {
   cancelSubscriptionAction,
+  deleteSubscribersAction,
   forceDowngradeSubscriptionAction,
 } from "../actions"
 import type { AdminSubscriptionRow } from "../queries"
@@ -100,6 +101,22 @@ export function SubscribersPage({ subscriptions }: SubscribersPageProps) {
             cancellationReason: false,
             activatedByAdminId: false,
             cancelledByAdminId: false,
+          }}
+          enableRowSelection
+          getRowId={(subscription) => String(subscription.id)}
+          onDeleteSelected={async (selectedSubscriptions) => {
+            const result = await deleteSubscribersAction(
+              selectedSubscriptions.map((subscription) => subscription.id),
+            )
+
+            if (result.success) {
+              toast.success(`${result.data.deletedCount} subscriptions deleted.`)
+              router.refresh()
+              return true
+            }
+
+            toast.error(result.message)
+            return false
           }}
           columns={[
           {
@@ -267,17 +284,19 @@ export function SubscribersPage({ subscriptions }: SubscribersPageProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Close</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={isPending}
-              onClick={(event) => {
-                event.preventDefault()
-                if (cancelTargetId) {
-                  void handleCancel(cancelTargetId)
-                }
-              }}
-            >
-              {isPending ? "Cancelling..." : "Cancel Subscription"}
+            <AlertDialogAction asChild disabled={isPending}>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={(event) => {
+                  event.preventDefault()
+                  if (cancelTargetId) {
+                    void handleCancel(cancelTargetId)
+                  }
+                }}
+              >
+                {isPending ? "Cancelling..." : "Cancel Subscription"}
+              </Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -296,17 +315,19 @@ export function SubscribersPage({ subscriptions }: SubscribersPageProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Close</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={isPending}
-              onClick={(event) => {
-                event.preventDefault()
-                if (downgradeTargetId) {
-                  void handleForceDowngrade(downgradeTargetId)
-                }
-              }}
-            >
-              {isPending ? "Updating..." : "Force Downgrade"}
+            <AlertDialogAction asChild disabled={isPending}>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={(event) => {
+                  event.preventDefault()
+                  if (downgradeTargetId) {
+                    void handleForceDowngrade(downgradeTargetId)
+                  }
+                }}
+              >
+                {isPending ? "Updating..." : "Force Downgrade"}
+              </Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

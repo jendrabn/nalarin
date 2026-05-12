@@ -1,6 +1,6 @@
 "use server"
 
-import { and, eq, ne } from "drizzle-orm"
+import { and, eq, inArray, ne } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
@@ -113,6 +113,7 @@ async function findUniqueBlogPostSlug(title: string, excludedPostId?: number) {
 
 function revalidateBlogRoutes(slug?: string, previousSlug?: string) {
   revalidatePath("/admin/blog")
+  revalidatePath("/admin/blog-categories")
   revalidatePath("/blog")
 
   if (slug) {
@@ -318,5 +319,49 @@ export async function deleteBlogPostAction(
   return {
     success: true,
     data: { id: postId },
+  }
+}
+
+export async function deleteBlogPostsAction(
+  postIds: number[],
+): Promise<BlogPostActionResult<{ deletedCount: number }>> {
+  await requireAdmin()
+
+  const uniquePostIds = [...new Set(postIds)].filter((id) => Number.isInteger(id) && id > 0)
+
+  if (uniquePostIds.length === 0) {
+    return {
+      success: false,
+      message: "No blog posts were selected.",
+    }
+  }
+
+  const existingPosts = await db
+    .select({
+      id: schema.blogPosts.id,
+      slug: schema.blogPosts.slug,
+    })
+    .from(schema.blogPosts)
+    .where(inArray(schema.blogPosts.id, uniquePostIds))
+
+  if (existingPosts.length !== uniquePostIds.length) {
+    return {
+      success: false,
+      message: "Some selected blog posts were not found.",
+    }
+  }
+
+  await db
+    .delete(schema.blogPosts)
+    .where(inArray(schema.blogPosts.id, uniquePostIds))
+
+  revalidateBlogRoutes()
+  existingPosts.forEach((post) => {
+    revalidateBlogRoutes(undefined, post.slug)
+  })
+
+  return {
+    success: true,
+    data: { deletedCount: uniquePostIds.length },
   }
 }

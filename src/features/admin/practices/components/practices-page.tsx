@@ -41,6 +41,7 @@ import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 import {
   archivePracticeAction,
   deletePracticeAction,
+  deletePracticesAction,
   publishPracticeAction,
 } from "../actions"
 import { practiceColumnLabels, type PracticeStatus } from "../constants"
@@ -351,6 +352,22 @@ export function PracticesPage({ practices }: PracticesPageProps) {
         emptyMessage="No practices found."
         defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
         defaultPageSize="10"
+        enableRowSelection
+        getRowId={(practice) => String(practice.id)}
+        onDeleteSelected={async (selectedPractices) => {
+          const result = await deletePracticesAction(
+            selectedPractices.map((practice) => practice.id),
+          )
+
+          if (result.success) {
+            toast.success(`${result.data.deletedCount} practices deleted.`)
+            router.refresh()
+            return true
+          }
+
+          toast.error(result.message)
+          return false
+        }}
       />
 
       <AlertDialog

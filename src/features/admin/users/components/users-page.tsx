@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 
-import { deleteUserAction } from "../actions"
+import { deleteUserAction, deleteUsersAction } from "../actions"
 import { userColumnLabels } from "../constants"
 import type { AdminUserRow } from "../queries"
 
@@ -274,6 +274,21 @@ export function UsersPage({ users, currentUserId }: UsersPageProps) {
         emptyMessage="No users found."
         defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
         defaultPageSize="25"
+        enableRowSelection
+        getRowId={(user) => String(user.id)}
+        getRowCanSelect={(user) => user.id !== currentUserId}
+        onDeleteSelected={async (selectedUsers) => {
+          const result = await deleteUsersAction(selectedUsers.map((user) => user.id))
+
+          if (result.success) {
+            toast.success(`${result.data.deletedCount} users deleted.`)
+            router.refresh()
+            return true
+          }
+
+          toast.error(result.message)
+          return false
+        }}
       />
 
       <AlertDialog

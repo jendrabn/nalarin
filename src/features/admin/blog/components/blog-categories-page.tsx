@@ -30,6 +30,7 @@ import {
 import {
   createBlogCategoryAction,
   deleteBlogCategoryAction,
+  deleteBlogCategoriesAction,
   updateBlogCategoryAction,
 } from "../actions"
 import type { BlogCategoryDetails, BlogCategoryRow } from "../queries"
@@ -246,6 +247,22 @@ export function BlogCategoriesPage({
         emptyMessage="No blog categories found."
         defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
         defaultPageSize="10"
+        enableRowSelection
+        getRowId={(category) => String(category.id)}
+        onDeleteSelected={async (selectedCategories) => {
+          const result = await deleteBlogCategoriesAction(
+            selectedCategories.map((category) => category.id),
+          )
+
+          if (result.success) {
+            toast.success(`${result.data.deletedCount} blog categories deleted.`)
+            router.refresh()
+            return true
+          }
+
+          toast.error(result.message)
+          return false
+        }}
       />
 
       <BlogCategoryFormDialog

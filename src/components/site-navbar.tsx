@@ -44,99 +44,103 @@ type SiteNavbarProps = {
 export function SiteNavbar({ user }: SiteNavbarProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/78 shadow-sm shadow-primary/5 backdrop-blur-xl">
-      <nav className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div className="flex min-w-0 items-center gap-7">
+      <nav className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between md:hidden">
           <SiteLogo />
-          <div className="hidden items-center gap-1.5 md:flex">
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon-lg" aria-label="Buka navigasi">
+                  <MenuIcon />
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-[min(22rem,90vw)] gap-0 p-0">
+                <SheetHeader className="sr-only">
+                  <SheetTitle>Menu</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-1 flex-col px-4 pb-4 pt-16">
+                  <div className="rounded-2xl bg-secondary/65 p-2 ring-1 ring-border/70">
+                    {navLinks.map((link) => (
+                      <SheetClose key={link.href} asChild>
+                        <Button
+                          variant="ghost"
+                          className="h-12 w-full justify-between rounded-xl px-4 text-base font-medium"
+                          asChild
+                        >
+                          <Link href={link.href}>
+                            {link.label}
+                            <ChevronRightIcon data-icon="inline-end" />
+                          </Link>
+                        </Button>
+                      </SheetClose>
+                    ))}
+                  </div>
+                  <div className="mt-4 border-t border-border/70 pt-4">
+                    {user ? (
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-3 rounded-2xl bg-secondary/65 p-4 ring-1 ring-border/70">
+                          <Avatar className="size-10">
+                            <AvatarImage src={user.avatarUrl ?? undefined} alt={user.name} />
+                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold">{user.name}</p>
+                            {user.email ? (
+                              <p className="truncate text-xs text-muted-foreground">
+                                {user.email}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                        {user.role === "admin" ? (
+                          <SheetClose asChild>
+                            <Button className="h-11 w-full" variant="outline" asChild>
+                              <Link href="/admin">Dashboard</Link>
+                            </Button>
+                          </SheetClose>
+                        ) : null}
+                        <SheetClose asChild>
+                          <Button className="h-11 w-full" variant="outline" asChild>
+                            <Link href="/account/profile">Profil</Link>
+                          </Button>
+                        </SheetClose>
+                        <form action={logoutAction}>
+                          <Button className="h-11 w-full" variant="ghost" type="submit">
+                            Logout
+                          </Button>
+                        </form>
+                      </div>
+                    ) : (
+                      <GuestActions stacked />
+                    )}
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+
+        <div className="hidden h-16 grid-cols-[1fr_auto_1fr] items-center md:grid">
+          <div className="flex min-w-0 items-center">
+            <SiteLogo />
+          </div>
+          <div className="flex items-center justify-center gap-2.5">
             {navLinks.map((link) => (
               <Button
                 key={link.href}
                 variant="ghost"
-                className="h-9 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground"
+                className="h-9 rounded-full px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground"
                 asChild
               >
                 <Link href={link.href}>{link.label}</Link>
               </Button>
             ))}
           </div>
-        </div>
-
-        <div className="hidden items-center gap-2 md:flex">
-          <ThemeToggle />
-          {user ? <UserMenu user={user} /> : <GuestActions />}
-        </div>
-
-        <div className="flex items-center gap-1 md:hidden">
-          <ThemeToggle />
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon-lg" aria-label="Buka navigasi">
-                <MenuIcon />
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="w-[min(22rem,90vw)] gap-0 p-0">
-              <SheetHeader className="sr-only">
-                <SheetTitle>Menu</SheetTitle>
-              </SheetHeader>
-              <div className="flex flex-1 flex-col px-4 pb-4 pt-16">
-                <div className="rounded-2xl bg-secondary/65 p-2 ring-1 ring-border/70">
-                  {navLinks.map((link) => (
-                    <SheetClose key={link.href} asChild>
-                      <Button
-                        variant="ghost"
-                        className="h-12 w-full justify-between rounded-xl px-4 text-base font-medium"
-                        asChild
-                      >
-                        <Link href={link.href}>
-                          {link.label}
-                          <ChevronRightIcon data-icon="inline-end" />
-                        </Link>
-                      </Button>
-                    </SheetClose>
-                  ))}
-                </div>
-                <div className="mt-4 border-t border-border/70 pt-4">
-                  {user ? (
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center gap-3 rounded-2xl bg-secondary/65 p-4 ring-1 ring-border/70">
-                        <Avatar className="size-10">
-                          <AvatarImage src={user.avatarUrl ?? undefined} alt={user.name} />
-                          <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">{user.name}</p>
-                          {user.email ? (
-                            <p className="truncate text-xs text-muted-foreground">
-                              {user.email}
-                            </p>
-                          ) : null}
-                        </div>
-                      </div>
-                      {user.role === "admin" ? (
-                        <SheetClose asChild>
-                          <Button className="h-11 w-full" variant="outline" asChild>
-                            <Link href="/admin">Dashboard</Link>
-                          </Button>
-                        </SheetClose>
-                      ) : null}
-                      <SheetClose asChild>
-                        <Button className="h-11 w-full" variant="outline" asChild>
-                          <Link href="/account/profile">Profil</Link>
-                        </Button>
-                      </SheetClose>
-                      <form action={logoutAction}>
-                        <Button className="h-11 w-full" variant="ghost" type="submit">
-                          Logout
-                        </Button>
-                      </form>
-                    </div>
-                  ) : (
-                    <GuestActions stacked />
-                  )}
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+          <div className="flex items-center justify-end gap-2">
+            <ThemeToggle />
+            {user ? <UserMenu user={user} /> : <GuestActions />}
+          </div>
         </div>
       </nav>
     </header>

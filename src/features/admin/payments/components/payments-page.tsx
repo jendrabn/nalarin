@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { EllipsisVerticalIcon, EyeIcon } from "lucide-react"
+import { toast } from "sonner"
 
 import { AdminDataTable, SortableHeader } from "@/components/admin-data-table"
 import { PageHeader } from "@/components/page-header"
@@ -16,6 +17,7 @@ import {
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 import { formatAdminDateTime, formatCurrencyIDR } from "@/lib/format"
 
+import { deletePaymentsAction } from "../actions"
 import type { AdminPaymentRow } from "../queries"
 import { ManualSubscriptionDialog } from "./manual-subscription-dialog"
 
@@ -51,6 +53,22 @@ export function PaymentsPage({ payments, users }: PaymentsPageProps) {
           paymentUrl: false,
           proofUrl: false,
           notes: false,
+        }}
+        enableRowSelection
+        getRowId={(payment) => String(payment.id)}
+        onDeleteSelected={async (selectedPayments) => {
+          const result = await deletePaymentsAction(
+            selectedPayments.map((payment) => payment.id),
+          )
+
+          if (result.success) {
+            toast.success(`${result.data.deletedCount} payments deleted.`)
+            router.refresh()
+            return true
+          }
+
+          toast.error(result.message)
+          return false
         }}
         columns={[
           {

@@ -29,10 +29,12 @@ import { AdminDataTable, SortableHeader } from "@/components/admin-data-table"
 import {
   createSubjectAction,
   deleteSubjectAction,
+  deleteSubjectsAction,
   updateSubjectAction,
 } from "../actions"
 import type { SubjectFormValues } from "../schemas"
-import type { ExamTypeLookup, SubjectRow } from "../queries"
+import type { SubjectRow } from "../queries"
+import type { ExamTypeLookup } from "../../exam-types/queries"
 import { previewText } from "@/lib/utils"
 import { SubjectFormDialog } from "./subject-form-dialog"
 
@@ -121,6 +123,22 @@ export function SubjectsPage({
         searchPlaceholder="Search subjects..."
         emptyMessage="No subjects found."
         defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
+        enableRowSelection
+        getRowId={(subject) => String(subject.id)}
+        onDeleteSelected={async (selectedSubjects) => {
+          const result = await deleteSubjectsAction(
+            selectedSubjects.map((subject) => subject.id),
+          )
+
+          if (result.success) {
+            toast.success(`${result.data.deletedCount} subjects deleted.`)
+            router.refresh()
+            return true
+          }
+
+          toast.error(result.message)
+          return false
+        }}
         columns={[
           {
             accessorKey: "name",

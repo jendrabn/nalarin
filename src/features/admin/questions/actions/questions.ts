@@ -1,6 +1,6 @@
 "use server"
 
-import { and, eq } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
@@ -404,6 +404,105 @@ export async function deleteQuestionAction(
   return {
     success: true,
     data: { id: questionId },
+  }
+}
+
+export async function deleteQuestionsAction(
+  questionIds: number[],
+): Promise<QuestionActionResult<{ deletedCount: number }>> {
+  await requireAdmin()
+
+  const uniqueQuestionIds = [...new Set(questionIds)].filter(
+    (id) => Number.isInteger(id) && id > 0,
+  )
+
+  if (uniqueQuestionIds.length === 0) {
+    return {
+      success: false,
+      message: "No questions were selected.",
+    }
+  }
+
+  const [
+    existingQuestions,
+    practiceQuestionRows,
+    tryoutQuestionRows,
+    practiceSessionQuestionRows,
+    tryoutSessionQuestionRows,
+  ] = await Promise.all([
+    db
+      .select({
+        id: schema.questions.id,
+      })
+      .from(schema.questions)
+      .where(inArray(schema.questions.id, uniqueQuestionIds)),
+    db
+      .select({
+        questionId: schema.practiceQuestions.questionId,
+      })
+      .from(schema.practiceQuestions)
+      .where(inArray(schema.practiceQuestions.questionId, uniqueQuestionIds))
+      .groupBy(schema.practiceQuestions.questionId),
+    db
+      .select({
+        questionId: schema.tryoutQuestions.questionId,
+      })
+      .from(schema.tryoutQuestions)
+      .where(inArray(schema.tryoutQuestions.questionId, uniqueQuestionIds))
+      .groupBy(schema.tryoutQuestions.questionId),
+    db
+      .select({
+        questionId: schema.practiceSessionQuestions.questionId,
+      })
+      .from(schema.practiceSessionQuestions)
+      .where(inArray(schema.practiceSessionQuestions.questionId, uniqueQuestionIds))
+      .groupBy(schema.practiceSessionQuestions.questionId),
+    db
+      .select({
+        questionId: schema.tryoutSessionQuestions.questionId,
+      })
+      .from(schema.tryoutSessionQuestions)
+      .where(inArray(schema.tryoutSessionQuestions.questionId, uniqueQuestionIds))
+      .groupBy(schema.tryoutSessionQuestions.questionId),
+  ])
+
+  if (existingQuestions.length !== uniqueQuestionIds.length) {
+    return {
+      success: false,
+      message: "Some selected questions were not found.",
+    }
+  }
+
+  if (
+    practiceQuestionRows.length > 0 ||
+    tryoutQuestionRows.length > 0 ||
+    practiceSessionQuestionRows.length > 0 ||
+    tryoutSessionQuestionRows.length > 0
+  ) {
+    return {
+      success: false,
+      message: "One or more selected questions cannot be deleted because they are already used.",
+    }
+  }
+
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(schema.questionOptions)
+      .where(inArray(schema.questionOptions.questionId, uniqueQuestionIds))
+
+    await tx.delete(schema.questions).where(inArray(schema.questions.id, uniqueQuestionIds))
+  })
+
+  revalidateQuestionRoutes()
+  uniqueQuestionIds.forEach((questionId) => {
+    revalidatePath(`/admin/questions/${questionId}`)
+    revalidatePath(`/admin/questions/${questionId}/edit`)
+    revalidatePath(`/admin/questions/${questionId}/ai-explanation`)
+  })
+
+  return {
+    success: true,
+    data: { deletedCount: uniqueQuestionIds.length },
   }
 }
 

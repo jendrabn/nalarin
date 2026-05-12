@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { and, desc, eq, gt } from "drizzle-orm"
+import { and, desc, eq, gt, inArray } from "drizzle-orm"
 
 import { db, schema } from "@/db"
 import { requireAdmin } from "@/features/auth/services/session"
@@ -329,5 +329,67 @@ export async function createManualSubscriptionAction(
       previousSubscriptionId: result.previousSubscriptionId,
       action: result.action,
     },
+  }
+}
+
+export async function deletePaymentsAction(
+  paymentIds: number[],
+): Promise<PaymentActionResult<{ deletedCount: number }>> {
+  await requireAdmin()
+
+  const uniquePaymentIds = [...new Set(paymentIds)].filter(
+    (id) => Number.isInteger(id) && id > 0,
+  )
+
+  if (uniquePaymentIds.length === 0) {
+    return {
+      success: false,
+      message: "No payments were selected.",
+    }
+  }
+
+  const existingPayments = await db
+    .select({
+      id: schema.payments.id,
+      userId: schema.payments.userId,
+      subscriptionId: schema.payments.subscriptionId,
+    })
+    .from(schema.payments)
+    .where(inArray(schema.payments.id, uniquePaymentIds))
+
+  if (existingPayments.length !== uniquePaymentIds.length) {
+    return {
+      success: false,
+      message: "Some selected payments were not found.",
+    }
+  }
+
+  const affectedUserIds = [...new Set(existingPayments.map((row) => row.userId))]
+  const affectedSubscriptionIds = [
+    ...new Set(
+      existingPayments
+        .map((row) => row.subscriptionId)
+        .filter((subscriptionId): subscriptionId is number => subscriptionId !== null),
+    ),
+  ]
+
+  await db
+    .delete(schema.payments)
+    .where(inArray(schema.payments.id, uniquePaymentIds))
+
+  revalidatePaymentRoutes()
+  uniquePaymentIds.forEach((paymentId) => {
+    revalidatePaymentRoutes(paymentId)
+  })
+  affectedSubscriptionIds.forEach((subscriptionId) => {
+    revalidatePaymentRoutes(undefined, undefined, subscriptionId)
+  })
+  affectedUserIds.forEach((userId) => {
+    revalidatePaymentRoutes(undefined, userId)
+  })
+
+  return {
+    success: true,
+    data: { deletedCount: uniquePaymentIds.length },
   }
 }
