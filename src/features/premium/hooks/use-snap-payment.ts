@@ -22,9 +22,30 @@ export function useSnapPayment() {
   const router = useRouter()
 
   return {
-    openSnapPayment(snapToken: string) {
+    openSnapPayment({
+      snapToken,
+      paymentUrl,
+    }: {
+      snapToken: string | null
+      paymentUrl?: string | null
+    }) {
+      if (!snapToken && paymentUrl) {
+        window.location.assign(paymentUrl)
+        return
+      }
+
       if (!window.snap) {
+        if (paymentUrl) {
+          window.location.assign(paymentUrl)
+          return
+        }
+
         toast.error("Layanan pembayaran belum siap. Muat ulang halaman lalu coba lagi.")
+        return
+      }
+
+      if (!snapToken) {
+        toast.error("Data pembayaran tidak lengkap. Batalkan lalu buat transaksi baru.")
         return
       }
 

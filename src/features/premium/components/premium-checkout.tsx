@@ -100,10 +100,13 @@ export function PremiumCheckout({
           return
         }
 
-        if (result.code === "pending_exists" && result.data?.snapToken) {
+        if (result.code === "pending_exists" && result.data) {
           toast.message(result.message)
           setSelectedPlan(null)
-          openSnapPayment(result.data.snapToken)
+          openSnapPayment({
+            snapToken: result.data.snapToken,
+            paymentUrl: result.data.paymentUrl,
+          })
           router.refresh()
           return
         }
@@ -114,7 +117,10 @@ export function PremiumCheckout({
       }
 
       setSelectedPlan(null)
-      openSnapPayment(result.data.snapToken)
+      openSnapPayment({
+        snapToken: result.data.snapToken,
+        paymentUrl: result.data.paymentUrl,
+      })
       router.refresh()
     } finally {
       setProcessing(null)
@@ -142,7 +148,10 @@ export function PremiumCheckout({
         return
       }
 
-      openSnapPayment(result.data.snapToken)
+      openSnapPayment({
+        snapToken: result.data.snapToken,
+        paymentUrl: result.data.paymentUrl,
+      })
       router.refresh()
     } finally {
       setProcessing(null)

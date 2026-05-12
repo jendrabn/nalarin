@@ -93,7 +93,7 @@ export async function startPremiumCheckoutAction(
     } else {
       const payload = toPremiumPaymentPayload(pendingPayment)
 
-      if (!payload.snapToken) {
+      if (!payload.snapToken && !payload.paymentUrl) {
         return {
           success: false,
           code: "pending_exists",
@@ -109,6 +109,7 @@ export async function startPremiumCheckoutAction(
         data: {
           payment: payload,
           snapToken: payload.snapToken,
+          paymentUrl: payload.paymentUrl,
         },
       }
     }
@@ -222,6 +223,7 @@ export async function startPremiumCheckoutAction(
       data: {
         payment,
         snapToken: snap.token,
+        paymentUrl: snap.redirect_url,
       },
     }
   } catch (error) {
@@ -284,10 +286,21 @@ export async function continuePremiumPaymentAction(
   const payload = toPremiumPaymentPayload(payment)
 
   if (!payload.snapToken) {
+    if (payload.paymentUrl) {
+      return {
+        success: true,
+        data: {
+          payment: payload,
+          snapToken: null,
+          paymentUrl: payload.paymentUrl,
+        },
+      }
+    }
+
     return {
       success: false,
       code: "not_found",
-      message: "Token pembayaran Midtrans tidak ditemukan.",
+      message: "Data pembayaran tidak lengkap. Batalkan lalu buat transaksi baru.",
     }
   }
 
@@ -296,6 +309,7 @@ export async function continuePremiumPaymentAction(
     data: {
       payment: payload,
       snapToken: payload.snapToken,
+      paymentUrl: payload.paymentUrl,
     },
   }
 }

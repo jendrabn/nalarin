@@ -51,5 +51,6 @@ export type PremiumActionResult<T = undefined> =
 
 export type PremiumPaymentPayload = {
   payment: NonNullable<PremiumPendingPayment>
-  snapToken: string
+  snapToken: string | null
+  paymentUrl: string | null
 }

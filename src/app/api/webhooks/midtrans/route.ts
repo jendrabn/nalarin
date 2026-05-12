@@ -24,6 +24,16 @@ function toJsonObject(payload: unknown) {
   return null
 }
 
+function mergeMidtransNotificationPayload(
+  currentPayload: Record<string, unknown> | null,
+  notificationPayload: Record<string, unknown> | null,
+) {
+  return {
+    ...(currentPayload ?? {}),
+    midtransNotification: notificationPayload,
+  }
+}
+
 export async function POST(request: Request) {
   let payload: MidtransNotificationPayload
 
@@ -62,6 +72,7 @@ export async function POST(request: Request) {
   const nextStatus = mapMidtransStatusToPaymentStatus(payload.transaction_status)
   const paymentMethod = mapMidtransPaymentMethod(payload.payment_type)
   const rawPayload = toJsonObject(payload)
+  const mergedRawPayload = mergeMidtransNotificationPayload(payment.rawPayload, rawPayload)
   const paidAt =
     payload.settlement_time || payload.transaction_time
       ? new Date(payload.settlement_time ?? payload.transaction_time ?? new Date())
@@ -74,7 +85,7 @@ export async function POST(request: Request) {
       gatewayTransactionId: payload.transaction_id ?? payment.gatewayTransactionId,
       gatewayOrderId: payload.order_id,
       paymentMethod,
-      rawPayload,
+      rawPayload: mergedRawPayload,
       allowAttachToExistingActiveSubscription: true,
     })
 
@@ -110,7 +121,7 @@ export async function POST(request: Request) {
       status: nextStatus,
       gatewayTransactionId: payload.transaction_id ?? payment.gatewayTransactionId,
       paymentMethod: paymentMethod ?? payment.paymentMethod,
-      rawPayload,
+      rawPayload: mergedRawPayload,
       expiredAt: payload.expiry_time ? new Date(payload.expiry_time) : payment.expiredAt,
       updatedAt: new Date(),
     })
