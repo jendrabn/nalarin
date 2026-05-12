@@ -9,7 +9,6 @@ import {
 const adminPrefix = "/admin";
 const protectedPrefixes = [
   "/account",
-  "/checkout",
   "/dashboard",
   "/practice",
   "/practice-sessions",

@@ -29,6 +29,35 @@ export type MidtransStatusResponse = MidtransNotificationPayload & {
   bca_va_number?: string
 }
 
+export type MidtransSnapTransactionPayload = {
+  transaction_details: {
+    order_id: string
+    gross_amount: number
+  }
+  item_details?: Array<{
+    id: string
+    price: number
+    quantity: number
+    name: string
+  }>
+  customer_details?: {
+    first_name?: string
+    email?: string
+  }
+  callbacks?: {
+    finish?: string
+  }
+  expiry?: {
+    unit: "minute" | "hour" | "day"
+    duration: number
+  }
+}
+
+export type MidtransSnapTransactionResponse = {
+  token: string
+  redirect_url: string
+}
+
 export type MidtransPaymentMethod = (typeof paymentMethodValues)[number]
 
 function buildBasicAuthValue() {
@@ -39,6 +68,16 @@ export function getMidtransBaseUrl() {
   return env.MIDTRANS_IS_PRODUCTION
     ? "https://api.midtrans.com"
     : "https://api.sandbox.midtrans.com"
+}
+
+export function getMidtransSnapBaseUrl() {
+  return env.MIDTRANS_IS_PRODUCTION
+    ? "https://app.midtrans.com"
+    : "https://app.sandbox.midtrans.com"
+}
+
+export function getMidtransSnapScriptUrl() {
+  return `${getMidtransSnapBaseUrl()}/snap/snap.js`
 }
 
 export function verifyMidtransSignature(payload: MidtransNotificationPayload) {
@@ -94,6 +133,27 @@ export function mapMidtransPaymentMethod(
   }
 
   return "other"
+}
+
+export async function createMidtransSnapTransaction(
+  payload: MidtransSnapTransactionPayload,
+) {
+  const response = await fetch(`${getMidtransSnapBaseUrl()}/snap/v1/transactions`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Basic ${buildBasicAuthValue()}`,
+    },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  })
+
+  if (!response.ok) {
+    throw new Error(`Midtrans Snap request failed with ${response.status}.`)
+  }
+
+  return (await response.json()) as MidtransSnapTransactionResponse
 }
 
 export async function fetchMidtransTransactionStatus(orderId: string) {

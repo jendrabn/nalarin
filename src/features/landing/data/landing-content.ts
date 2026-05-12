@@ -17,7 +17,7 @@ import {
 export const navLinks = [
   { label: "Latihan", href: "/practices" },
   { label: "Tryout", href: "/tryouts" },
-  { label: "Premium", href: "#pricing" },
+  { label: "Premium", href: "/pricing" },
   { label: "Blog", href: "/blog" },
 ];
 
@@ -103,7 +103,7 @@ export const footerGroups = [
     links: [
       { label: "Latihan", href: "/practices" },
       { label: "Tryout", href: "/tryouts" },
-      { label: "Harga", href: "#pricing" },
+      { label: "Harga", href: "/pricing" },
       { label: "Progress", href: "/progress" },
     ],
   },

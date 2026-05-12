@@ -3,6 +3,16 @@ import { paymentStatusValues } from "@/db/schema"
 
 export type PaymentStatus = (typeof paymentStatusValues)[number]
 
+const PLAN_RANK: Record<PlanCode, number> = {
+  free: 0,
+  pro: 1,
+  max: 2,
+}
+
+export function getPlanRank(planCode: PlanCode) {
+  return PLAN_RANK[planCode]
+}
+
 export function getPlanDurationDays(planCode: PlanCode) {
   return PLAN_CONFIG[planCode].durationDays ?? 0
 }

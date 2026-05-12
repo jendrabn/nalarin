@@ -3,7 +3,7 @@ import "server-only"
 import { and, eq, gt } from "drizzle-orm"
 
 import { db, schema } from "@/db"
-import { getPlanEndDate } from "@/lib/billing"
+import { getPlanEndDate, getPlanRank } from "@/lib/billing"
 import { mapMidtransPaymentMethod, type MidtransNotificationPayload } from "@/lib/midtrans"
 
 import type { AdminPaymentDetails } from "../queries"
@@ -150,24 +150,60 @@ export async function activatePaymentSubscription(
       }
     }
 
-    const targetSubscriptionId = activeSubscription
-      ? activeSubscription.id
-      : await (async () => {
-          const [created] = await tx
-            .insert(schema.subscriptions)
-            .values({
-              userId: currentPayment.userId,
-              planCode: currentPayment.planCode,
-              status: "active",
-              source: options.mode === "manual" ? "manual" : "midtrans",
-              startsAt: now,
-              endsAt: getPlanEndDate(now, currentPayment.planCode),
-              activatedByAdminId: options.adminId ?? null,
-            })
-            .$returningId()
+    const shouldReplaceSubscription =
+      activeSubscription &&
+      getPlanRank(currentPayment.planCode) > getPlanRank(activeSubscription.planCode)
 
-          return created.id
-        })()
+    if (activeSubscription && !shouldReplaceSubscription) {
+      await tx
+        .update(schema.payments)
+        .set({
+          status: "paid",
+          paidAt: now,
+          gatewayTransactionId:
+            options.gatewayTransactionId ?? currentPayment.gatewayTransactionId,
+          gatewayOrderId: options.gatewayOrderId ?? currentPayment.gatewayOrderId,
+          paymentMethod: options.paymentMethod ?? currentPayment.paymentMethod,
+          rawPayload: options.rawPayload ?? currentPayment.rawPayload,
+          updatedAt: now,
+        })
+        .where(eq(schema.payments.id, currentPayment.id))
+
+      return {
+        success: true as const,
+        data: {
+          subscriptionId: activeSubscription.id,
+          createdSubscription: false,
+          attachedExistingSubscription: false,
+        },
+      }
+    }
+
+    if (activeSubscription && shouldReplaceSubscription) {
+      await tx
+        .update(schema.subscriptions)
+        .set({
+          status: "expired",
+          endsAt: now,
+          updatedAt: now,
+        })
+        .where(eq(schema.subscriptions.id, activeSubscription.id))
+    }
+
+    const [createdSubscription] = await tx
+      .insert(schema.subscriptions)
+      .values({
+        userId: currentPayment.userId,
+        planCode: currentPayment.planCode,
+        status: "active",
+        source: options.mode === "manual" ? "manual" : "midtrans",
+        startsAt: now,
+        endsAt: getPlanEndDate(now, currentPayment.planCode),
+        activatedByAdminId: options.adminId ?? null,
+      })
+      .$returningId()
+
+    const targetSubscriptionId = createdSubscription.id
 
     await tx
       .update(schema.payments)
@@ -188,8 +224,8 @@ export async function activatePaymentSubscription(
       success: true as const,
       data: {
         subscriptionId: targetSubscriptionId,
-        createdSubscription: !activeSubscription,
-        attachedExistingSubscription: Boolean(activeSubscription),
+        createdSubscription: true,
+        attachedExistingSubscription: false,
       },
     }
   })

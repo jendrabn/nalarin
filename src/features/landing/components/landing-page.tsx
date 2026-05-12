@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { ArrowRightIcon, CheckIcon, ShieldCheckIcon } from "lucide-react";
+import { ArrowRightIcon, ShieldCheckIcon } from "lucide-react";
 
-import { PLAN_CONFIG } from "@/config/plans";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,13 +11,12 @@ import {
 } from "@/components/ui/accordion";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { getPlanFinalPrice } from "@/lib/billing";
+import { PricingPlanCards } from "@/components/pricing-plan-cards";
+import { getPricingPlanViews } from "@/lib/pricing-plans";
 import { cn } from "@/lib/utils";
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar";
 import { SiteFooter } from "@/components/site-footer";
@@ -32,8 +30,6 @@ import {
 
 const softCardClass =
   "rounded-lg bg-card shadow-lg shadow-primary/5 ring-1 ring-foreground/5 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/10";
-
-type Plan = (typeof PLAN_CONFIG)[keyof typeof PLAN_CONFIG];
 
 export function LandingPage({ user }: { user: SiteUser }) {
   return (
@@ -173,7 +169,15 @@ function HowItWorksSection() {
 }
 
 function PricingSection() {
-  const plans = Object.values(PLAN_CONFIG);
+  const plans = getPricingPlanViews().map((plan) => ({
+    plan,
+    featured: plan.code === "pro",
+    action: {
+      label: plan.code === "free" ? "Mulai Gratis" : `Pilih ${plan.name}`,
+      href: plan.code === "free" ? "/register" : "/pricing",
+      variant: plan.code === "pro" ? "cta" as const : "outline" as const,
+    },
+  }));
 
   return (
     <section id="pricing" className="bg-background py-20 sm:py-24">
@@ -182,76 +186,8 @@ function PricingSection() {
         title="Mulai Gratis, Upgrade Saat Butuh Akses Lebih Luas"
         description="Pilih akses belajar sesuai ritme persiapanmu, dari latihan dasar sampai tryout intensif dengan pembahasan penuh."
       />
-      <div className="mx-auto mt-10 grid w-full max-w-7xl grid-cols-1 gap-5 px-4 sm:px-6 lg:grid-cols-3 lg:px-8">
-        {plans.map((plan) => {
-          const isFeatured = plan.code === "pro";
-          const hasDiscount = plan.discountPercent > 0;
-          const finalPrice = getPlanFinalPrice(plan.code);
-          const bullets = getPlanBullets(plan);
-
-          return (
-            <Card
-              key={plan.code}
-              className={`relative rounded-lg bg-card shadow-xl shadow-primary/5 ring-1 ring-foreground/10 ${
-                isFeatured
-                  ? "scale-[1.02] bg-primary/[0.03] shadow-primary/15 ring-2 ring-primary"
-                  : "transition-all hover:-translate-y-0.5 hover:shadow-primary/10"
-              }`}
-            >
-              <CardHeader className="gap-4 p-6">
-                <div className="flex items-center justify-between gap-3">
-                  <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                  {hasDiscount ? (
-                    <Badge variant="soft" className="rounded-full px-2.5 py-1">
-                      Diskon {plan.discountPercent}%
-                    </Badge>
-                  ) : null}
-                </div>
-                <CardDescription className="min-h-10 leading-6">
-                  {plan.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-1 flex-col gap-6 px-6 pb-6">
-                <div>
-                  <p className="text-4xl font-bold tracking-normal">
-                    {formatPrice(finalPrice)}
-                  </p>
-                  {hasDiscount ? (
-                    <p className="mt-1 text-sm text-muted-foreground line-through">
-                      {formatPrice(plan.price)}
-                    </p>
-                  ) : null}
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {plan.durationDays ? "per bulan" : "permanen"}
-                  </p>
-                </div>
-                <Separator />
-                <ul className="flex flex-col gap-3.5">
-                  {bullets.map((bullet) => (
-                    <li
-                      key={bullet}
-                      className="flex items-start gap-3 text-sm leading-6"
-                    >
-                      <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        <CheckIcon className="size-3.5" />
-                      </span>
-                      <span>{bullet}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  className={cn("mt-auto h-12 w-full px-5 text-base")}
-                  variant={isFeatured ? "cta" : "outline"}
-                  asChild
-                >
-                  <Link href={plan.code === "free" ? "/register" : `/checkout/${plan.code}`}>
-                    {plan.code === "free" ? "Mulai Gratis" : `Pilih ${plan.name}`}
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
+      <div className="mx-auto mt-10 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <PricingPlanCards plans={plans} />
       </div>
     </section>
   );
@@ -347,47 +283,3 @@ function SectionHeading({
   );
 }
 
-function getPlanBullets(plan: Plan) {
-  const bullets = [
-    formatPlanLimit(plan.limits.practiceSessionsPerMonth, "latihan"),
-    formatPlanLimit(plan.limits.quizSessionsPerMonth, "quiz"),
-    formatPlanLimit(
-      plan.limits.tryoutSessionsPerMonth,
-      plan.code === "free" ? "tryout gratis" : "tryout"
-    ),
-  ];
-
-  if (plan.access.ranking && plan.access.fullExplanation) {
-    bullets.push(
-      plan.limits.practiceSessionsPerMonth === null
-        ? "Akses paling lengkap"
-        : "Ranking dan pembahasan penuh"
-    );
-  }
-
-  return bullets;
-}
-
-function formatPlanLimit(limit: number | null, label: string) {
-  if (limit === null) {
-    return `${capitalize(label)} tanpa batas`;
-  }
-
-  return `${limit} ${label} per bulan`;
-}
-
-function capitalize(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function formatPrice(price: number) {
-  if (price === 0) {
-    return "Rp0";
-  }
-
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(price);
-}
