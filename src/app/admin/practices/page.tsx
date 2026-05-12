@@ -1,5 +1,15 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+import type { Metadata } from "next"
 
-export default function Page() {
-  return <RoutePlaceholder section="Admin" route="/admin/practices" />;
+import { PracticesPage } from "@/features/admin/practices/components/practices-page"
+import { getPractices } from "@/features/admin/practices/queries"
+
+export const metadata: Metadata = {
+  title: "Practices",
+  description: "Manage objective-only practices and quizzes from the admin panel.",
+}
+
+export default async function Page() {
+  const practices = await getPractices()
+
+  return <PracticesPage practices={practices} />
 }

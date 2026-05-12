@@ -3,10 +3,16 @@ import { z } from "zod"
 
 import {
   questionOptionLabelValues,
+  questionScoringRuleValues,
   questionTrueFalseLabels,
 } from "../constants"
 import { questionImportRowSchema, type QuestionImportRowValues } from "../schemas"
 import { questionTypeValues } from "../constants"
+import type {
+  QuestionLookupOption,
+  SubjectLookupOption,
+  TopicLookupOption,
+} from "../queries"
 
 export type QuestionImportRowError = {
   rowNumber: number
@@ -18,6 +24,14 @@ export type ParsedQuestionImportWorkbook = {
   rows: QuestionImportRowValues[]
   rowErrors: QuestionImportRowError[]
 }
+
+export type QuestionImportLookupValues = {
+  examTypes: QuestionLookupOption[]
+  subjects: SubjectLookupOption[]
+  topics: TopicLookupOption[]
+}
+
+type QuestionOptionLabel = (typeof questionOptionLabelValues)[number]
 
 export const questionImportTemplateFileName = "question-import-template.xlsx"
 
@@ -52,7 +66,7 @@ function getQuestionImportOptionValues(values: QuestionImportRowValues) {
 
 export function createQuestionImportTemplateWorkbook() {
   const workbook = XLSX.utils.book_new()
-  const questionSheet = XLSX.utils.aoa_to_sheet([questionImportTemplateHeaders])
+  const questionSheet = XLSX.utils.aoa_to_sheet([[...questionImportTemplateHeaders]])
   questionSheet["!cols"] = questionImportTemplateHeaders.map((header) => ({
     wch: Math.max(header.length, 14),
   }))
@@ -124,7 +138,97 @@ function normalizeQuestionType(value: string) {
     : ""
 }
 
-export async function parseQuestionImportWorkbook(file: File): Promise<ParsedQuestionImportWorkbook> {
+function validateImportRowAgainstLookups(
+  values: QuestionImportRowValues,
+  lookups?: QuestionImportLookupValues,
+) {
+  if (!lookups) {
+    return []
+  }
+
+  const errors: string[] = []
+  const examType = lookups.examTypes.find(
+    (item) => item.slug === values.examTypeSlug,
+  )
+
+  if (!examType) {
+    errors.push(`Unknown exam_type_slug: ${values.examTypeSlug}.`)
+    return errors
+  }
+
+  const subject = lookups.subjects.find(
+    (item) =>
+      item.slug === values.subjectSlug &&
+      item.examTypeId === examType.id,
+  )
+
+  if (!subject) {
+    errors.push(
+      `Unknown subject_slug for ${values.examTypeSlug}: ${values.subjectSlug}.`,
+    )
+    return errors
+  }
+
+  if (values.topicSlug.trim().length > 0) {
+    const topic = lookups.topics.find(
+      (item) =>
+        item.slug === values.topicSlug &&
+        item.subjectId === subject.id,
+    )
+
+    if (!topic) {
+      errors.push(
+        `Unknown topic_slug for ${values.subjectSlug}: ${values.topicSlug}.`,
+      )
+    }
+  }
+
+  return errors
+}
+
+function validateImportRowBusinessRules(values: QuestionImportRowValues) {
+  const errors: string[] = []
+  const points = Number(values.points)
+
+  if (!values.points.trim() || !Number.isFinite(points) || points <= 0) {
+    errors.push("points must be greater than 0.")
+  }
+
+  if (
+    values.scoringRule.trim().length > 0 &&
+    !questionScoringRuleValues.includes(
+      values.scoringRule as (typeof questionScoringRuleValues)[number],
+    )
+  ) {
+    errors.push("scoring_rule must be all_or_nothing, partial, or blank.")
+  }
+
+  if (values.questionType === "multiple_answer" && !values.scoringRule.trim()) {
+    errors.push("scoring_rule is required for multiple_answer.")
+  }
+
+  if (
+    values.questionType !== "multiple_answer" &&
+    values.scoringRule.trim().length > 0
+  ) {
+    errors.push("scoring_rule is only used for multiple_answer.")
+  }
+
+  if (values.questionType === "true_false") {
+    const normalizedAnswer = values.correctAnswerText.trim().toLowerCase()
+
+    if (normalizedAnswer !== "true" && normalizedAnswer !== "false") {
+      errors.push("correct_answer_text must be true or false for true_false.")
+    }
+  }
+
+  return errors
+}
+
+export async function parseQuestionImportWorkbook(
+  file: File,
+  lookups?: QuestionImportLookupValues,
+): Promise<ParsedQuestionImportWorkbook> {
   const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" })
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
@@ -172,12 +276,25 @@ export async function parseQuestionImportWorkbook(file: File): Promise<ParsedQue
       rowErrors.push({
         rowNumber,
         errors: z.prettifyError(validated.error).split("\n").filter(Boolean),
-        values: normalized,
+        values: normalized as Partial<QuestionImportRowValues>,
       })
       return
     }
 
     const values = validated.data
+    const businessRuleErrors = [
+      ...validateImportRowAgainstLookups(values, lookups),
+      ...validateImportRowBusinessRules(values),
+    ]
+
+    if (businessRuleErrors.length > 0) {
+      rowErrors.push({
+        rowNumber,
+        errors: businessRuleErrors,
+        values,
+      })
+      return
+    }
 
     const choiceType = values.questionType === "multiple_choice" || values.questionType === "multiple_answer" || values.questionType === "true_false"
 
@@ -187,10 +304,15 @@ export async function parseQuestionImportWorkbook(file: File): Promise<ParsedQue
       const availableLabels = questionOptionLabelValues.filter(
         (_, index) => optionValues[index].trim().length > 0,
       )
-      const correctLabels = values.correctAnswer
+      const rawCorrectLabels = values.correctAnswer
         .split(",")
         .map((item) => item.trim().toUpperCase())
         .filter(Boolean)
+      const correctLabels = rawCorrectLabels
+        .filter((item): item is QuestionOptionLabel =>
+          questionOptionLabelValues.includes(item as QuestionOptionLabel),
+        )
+      const hasInvalidCorrectLabel = rawCorrectLabels.length !== correctLabels.length
 
       if (values.questionType !== "true_false" && availableOptions.length < 2) {
         rowErrors.push({
@@ -202,7 +324,11 @@ export async function parseQuestionImportWorkbook(file: File): Promise<ParsedQue
       }
 
       if (values.questionType === "multiple_choice") {
-        if (correctLabels.length !== 1 || !availableLabels.includes(correctLabels[0])) {
+        if (
+          hasInvalidCorrectLabel ||
+          correctLabels.length !== 1 ||
+          !availableLabels.includes(correctLabels[0])
+        ) {
           rowErrors.push({
             rowNumber,
             errors: ["Multiple choice rows must use one correct answer that matches a filled option."],
@@ -215,6 +341,7 @@ export async function parseQuestionImportWorkbook(file: File): Promise<ParsedQue
       if (values.questionType === "multiple_answer") {
         if (
           correctLabels.length < 2 ||
+          hasInvalidCorrectLabel ||
           correctLabels.some((label) => !availableLabels.includes(label))
         ) {
           rowErrors.push({

@@ -1,5 +1,15 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+import type { Metadata } from "next"
 
-export default function Page() {
-  return <RoutePlaceholder section="Admin" route="/admin/tryouts" />;
+import { TryoutsPage } from "@/features/admin/tryouts/components/tryouts-page"
+import { getTryouts } from "@/features/admin/tryouts/queries"
+
+export const metadata: Metadata = {
+  title: "Tryouts",
+  description: "Manage tryouts from the admin panel.",
+}
+
+export default async function Page() {
+  const tryouts = await getTryouts()
+
+  return <TryoutsPage tryouts={tryouts} />
 }

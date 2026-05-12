@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 
 import { QuestionImportWorkspace } from "@/features/admin/questions/components/question-import-workspace"
+import { getAdminQuestionLookups } from "@/features/admin/questions/queries"
 
 export const metadata: Metadata = {
   title: "Import Questions",
@@ -9,5 +10,7 @@ export const metadata: Metadata = {
 }
 
 export default async function Page() {
-  return <QuestionImportWorkspace mode="upload" />
+  const lookups = await getAdminQuestionLookups()
+
+  return <QuestionImportWorkspace mode="upload" lookups={lookups} />
 }

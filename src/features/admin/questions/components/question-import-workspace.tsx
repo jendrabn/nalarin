@@ -7,6 +7,7 @@ import { FileDownIcon, UploadIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/page-header"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -14,17 +15,34 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 import type { QuestionImportRowValues } from "../schemas"
 import { importQuestionRowsAction } from "../actions"
+import type {
+  QuestionLookupOption,
+  SubjectLookupOption,
+  TopicLookupOption,
+} from "../queries"
 import {
   downloadQuestionImportTemplate,
   parseQuestionImportWorkbook,
   type ParsedQuestionImportWorkbook,
 } from "../utils/question-import"
-import { questionDifficultyLabels, questionTypeLabels } from "../constants"
+import {
+  questionDifficultyLabels,
+  questionDifficultyValues,
+  questionScoringRuleValues,
+  questionStatusValues,
+  questionTypeLabels,
+  questionTypeValues,
+} from "../constants"
 
 const STORAGE_KEY = "nalarin-admin-question-import"
 
 type QuestionImportWorkspaceProps = {
   mode: "upload" | "preview"
+  lookups: {
+    examTypes: QuestionLookupOption[]
+    subjects: SubjectLookupOption[]
+    topics: TopicLookupOption[]
+  }
 }
 
 type StoredImportPayload = ParsedQuestionImportWorkbook & {
@@ -49,7 +67,149 @@ function loadFromStorage() {
   }
 }
 
-export function QuestionImportWorkspace({ mode }: QuestionImportWorkspaceProps) {
+function AvailableValuesReference({
+  lookups,
+}: {
+  lookups: QuestionImportWorkspaceProps["lookups"]
+}) {
+  const examTypeMap = new Map(lookups.examTypes.map((examType) => [examType.id, examType]))
+  const subjectMap = new Map(lookups.subjects.map((subject) => [subject.id, subject]))
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+      <Card>
+        <CardHeader>
+          <CardTitle>Available Enum Values</CardTitle>
+          <CardDescription>
+            Use these exact lowercase values in the Excel columns.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-medium">question_type</p>
+              <div className="flex flex-wrap gap-2">
+                {questionTypeValues.map((value) => (
+                  <Badge key={value} variant="outline">
+                    {value}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-medium">difficulty</p>
+              <div className="flex flex-wrap gap-2">
+                {questionDifficultyValues.map((value) => (
+                  <Badge key={value} variant="outline">
+                    {value}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-medium">scoring_rule</p>
+              <div className="flex flex-wrap gap-2">
+                {questionScoringRuleValues.map((value) => (
+                  <Badge key={value} variant="outline">
+                    {value}
+                  </Badge>
+                ))}
+                <Badge variant="secondary">blank</Badge>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-medium">status</p>
+              <div className="flex flex-wrap gap-2">
+                {questionStatusValues.map((value) => (
+                  <Badge key={value} variant="outline">
+                    {value}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 rounded-lg border border-border/60 p-3 text-sm text-muted-foreground">
+            <p>
+              <span className="font-medium text-foreground">correct_answer</span>{" "}
+              uses option letters: A for single choice, or comma-separated values like A,C for multiple answer.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Available Slugs</CardTitle>
+          <CardDescription>
+            Slugs come from the current database. Topic slug is optional.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-hidden rounded-lg border border-border/60">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>TYPE</TableHead>
+                  <TableHead>NAME</TableHead>
+                  <TableHead>SLUG</TableHead>
+                  <TableHead>PARENT</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {lookups.examTypes.map((examType) => (
+                  <TableRow key={`exam-${examType.id}`}>
+                    <TableCell>exam_type_slug</TableCell>
+                    <TableCell>{examType.name}</TableCell>
+                    <TableCell>
+                      <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+                        {examType.slug}
+                      </code>
+                    </TableCell>
+                    <TableCell>-</TableCell>
+                  </TableRow>
+                ))}
+                {lookups.subjects.map((subject) => {
+                  const examType = examTypeMap.get(subject.examTypeId)
+
+                  return (
+                    <TableRow key={`subject-${subject.id}`}>
+                      <TableCell>subject_slug</TableCell>
+                      <TableCell>{subject.name}</TableCell>
+                      <TableCell>
+                        <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+                          {subject.slug}
+                        </code>
+                      </TableCell>
+                      <TableCell>{examType?.slug ?? "-"}</TableCell>
+                    </TableRow>
+                  )
+                })}
+                {lookups.topics.map((topic) => {
+                  const subject = subjectMap.get(topic.subjectId)
+
+                  return (
+                    <TableRow key={`topic-${topic.id}`}>
+                      <TableCell>topic_slug</TableCell>
+                      <TableCell>{topic.name}</TableCell>
+                      <TableCell>
+                        <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+                          {topic.slug}
+                        </code>
+                      </TableCell>
+                      <TableCell>{subject?.slug ?? "-"}</TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+export function QuestionImportWorkspace({ mode, lookups }: QuestionImportWorkspaceProps) {
   const router = useRouter()
   const [payload] = useState<StoredImportPayload | null>(() => {
     if (typeof window === "undefined" || mode !== "preview") {
@@ -79,7 +239,7 @@ export function QuestionImportWorkspace({ mode }: QuestionImportWorkspaceProps) 
     }
 
     try {
-      const parsed = await parseQuestionImportWorkbook(file)
+      const parsed = await parseQuestionImportWorkbook(file, lookups)
       saveToStorage({
         ...parsed,
         fileName: file.name,
@@ -255,6 +415,8 @@ export function QuestionImportWorkspace({ mode }: QuestionImportWorkspaceProps) 
           )}
         </CardContent>
       </Card>
+
+      <AvailableValuesReference lookups={lookups} />
     </div>
   )
 }

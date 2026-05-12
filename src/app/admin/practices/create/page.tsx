@@ -1,5 +1,23 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+import type { Metadata } from "next"
 
-export default function Page() {
-  return <RoutePlaceholder section="Admin" route="/admin/practices/create" />;
+import { PracticeFormPage } from "@/features/admin/practices/components/practice-form-page"
+import { getAdminPracticeLookups } from "@/features/admin/practices/queries"
+
+export const metadata: Metadata = {
+  title: "Create Practice",
+  description: "Create an objective-only practice or quiz package from the admin panel.",
+}
+
+export default async function Page() {
+  const lookups = await getAdminPracticeLookups()
+
+  return (
+    <PracticeFormPage
+      mode="create"
+      title="Create Practice"
+      description="Build a practice or quiz package using published objective questions only."
+      backHref="/admin/practices"
+      lookups={lookups}
+    />
+  )
 }

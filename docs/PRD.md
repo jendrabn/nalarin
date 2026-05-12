@@ -566,7 +566,6 @@ Admin dapat:
 Fitur ini tersedia di halaman **Create Question** melalui tombol **"AI Generate"**.
 
 **Flow:**
-
 1. Admin membuka halaman Create Question.
 2. Admin mengklik tombol **"AI Generate"**.
 3. Muncul modal form berisi parameter yang harus diisi sebagai bahan instruksi ke AI.
@@ -650,7 +649,6 @@ Output rules:
 Fitur ini tersedia di halaman **Create Question** dan **Edit Question** pada field explanation melalui tombol **"AI Generate"** di samping field tersebut.
 
 **Flow:**
-
 1. Admin mengisi semua field wajib di form terlebih dahulu: exam type, subject, tipe soal, konten soal, dan kunci jawaban (untuk MC/MA: minimal satu opsi ditandai benar; untuk true_false: `correct_answer_text` sudah diisi; untuk short_answer/essay: tidak ada syarat kunci jawaban tambahan).
 2. Jika ada field wajib yang belum terisi, tombol "AI Generate" di field explanation dinonaktifkan (disabled) dan menampilkan tooltip yang menjelaskan field mana saja yang masih kosong.
 3. Setelah semua field wajib terisi, tombol menjadi aktif.
@@ -772,6 +770,7 @@ Admin dapat:
 - Mengatur acak soal, acak opsi, review jawaban, hasil langsung, pembahasan, ranking, mode navigasi, dan enforce end time.
 - **Menentukan nilai skor untuk jawaban salah (`wrong_answer_penalty`) di level tryout.** Nilai ini berlaku untuk semua section. Contoh: `0` = tidak ada penalti, `-1` = dikurangi 1 poin, `-0.25` = dikurangi 0.25 poin. Default `0`.
 - **Menentukan override `wrong_answer_penalty` per section**, jika section tertentu membutuhkan aturan penalti berbeda dari level tryout.
+- Mengubah status tryout: publish, unpublish ke draft, atau archive. Aturan transisi dan edit lengkap ada di Section 9.2a.
 - Melihat peserta dan hasil.
 
 > **Catatan:** Pengaturan acak soal (`shuffle_questions`) dan acak opsi (`shuffle_options`) berlaku secara global untuk semua section dalam satu tryout. Acak per-section tidak didukung pada MVP.
@@ -860,6 +859,41 @@ Admin dapat:
 - `archived`: soal tidak muncul untuk konten baru, tetapi histori tetap aman.
 - Soal yang sudah pernah dipakai dalam session tidak boleh dihapus. Gunakan `archived`.
 
+### 9.2a Tryout Status Lifecycle
+
+#### Transisi Status
+
+| Dari | Ke | Diizinkan? | Syarat |
+|---|---|---|---|
+| `draft` | `published` | ✅ | Melewati semua validasi publish (Section 8.6) |
+| `published` | `draft` | ✅ | **Hanya jika belum ada session apapun** (`tryout_sessions` untuk tryout ini masih kosong). Jika sudah ada session, operasi ditolak dengan pesan error. |
+| `published` | `archived` | ✅ | Kapan saja tanpa syarat tambahan. Session yang sudah ada tetap dapat diakses user untuk review. |
+| `archived` | apapun | ❌ | `archived` bersifat final. Tidak dapat kembali ke `draft` maupun `published`. |
+
+`published_at` diisi saat pertama kali status berubah ke `published` dan tidak pernah berubah meskipun tryout di-unpublish ke `draft` kemudian di-publish ulang.
+
+#### Aturan Edit Berdasarkan Kondisi
+
+**Field yang selalu dapat diedit** (tidak mempengaruhi hasil apapun), tanpa memandang status atau keberadaan session:
+- Judul (`title`) dan deskripsi (`description`)
+
+**Field yang dapat diedit selama belum ada session apapun** (tabel `tryout_sessions` untuk tryout ini masih kosong):
+- Jadwal (`starts_at`, `ends_at`, `enforce_end_time`)
+- Gratis/berbayar (`is_free`)
+- Setting tampilan hasil: `show_result_after_submit`, `result_release_at`
+- Setting tampilan ranking: `show_ranking_after_submit`, `ranking_release_at`
+- Setting tampilan pembahasan: `show_explanation_after_submit`, `explanation_release_at`
+- Mode navigasi (`navigation_mode`)
+- Review sebelum submit (`allow_review_before_submit`)
+
+**Field yang dilarang diedit setelah ada session apapun** (menyentuh fairness langsung — berlaku meski session masih `in_progress`):
+- Tambah, hapus, atau ubah section
+- Tambah, hapus, atau ubah soal dalam section
+- `wrong_answer_penalty` di level tryout maupun per section
+- `shuffle_questions`, `shuffle_options`
+
+Jika admin mencoba mengedit field yang terkunci, sistem menolak operasi dengan pesan error yang menjelaskan alasan penolakan dan menyarankan untuk membuat tryout baru jika perubahan besar diperlukan.
+
 ### 9.3 SessionStatus Semantics
 
 - `pending`: section session sudah dibuat tetapi belum dibuka user. **Hanya digunakan pada `tryout_section_sessions`.**
@@ -870,7 +904,6 @@ Admin dapat:
 - `cancelled`: session dibatalkan, tidak menghasilkan skor.
 
 **Status awal session:**
-
 - `practice_sessions`: status awal **selalu `in_progress`** saat session dibuat — user telah memulai mengerjakan.
 - `tryout_sessions`: status awal **selalu `in_progress`** saat session dibuat — user telah memulai tryout.
 - `tryout_section_sessions`: status awal **selalu `pending`** saat dibuat — semua section di-pre-create secara bersamaan; section belum tentu langsung dibuka user. Status berubah menjadi `in_progress` ketika user pertama kali membuka section tersebut.
@@ -1222,7 +1255,7 @@ Menyimpan master tryout/event yang dibuat admin.
 | enforce_end_time | Boolean. Hanya bermakna jika `ends_at` tidak null. Validasi publish mencegah `enforce_end_time = true` jika `ends_at` null. |
 | wrong_answer_penalty | DECIMAL(5,2), default `0.00`. Nilai skor yang diberikan untuk setiap jawaban **salah** pada soal objektif. Berlaku untuk seluruh section kecuali section yang memiliki override. Nilai harus `≤ 0`. Contoh: `0` = tidak ada penalti, `-1.00` = kurangi 1 poin, `-0.25` = kurangi 0.25 poin. |
 | status | enum ContentStatus |
-| **published_at** | **Waktu pertama kali dipublish, nullable. Diisi saat status pertama berubah ke `published`; tidak berubah jika di-unpublish dan re-publish.** |
+| **published_at** | **Waktu pertama kali dipublish, nullable. Diisi saat status pertama berubah ke `published`; tidak berubah meskipun tryout di-unpublish ke `draft` kemudian di-publish ulang. Lihat aturan transisi di Section 9.2a.** |
 | created_by | FK users, nullable |
 | created_at | Tanggal dibuat |
 | updated_at | Tanggal update |
@@ -1621,13 +1654,11 @@ Nilai batas di atas adalah acuan awal dan dapat disesuaikan berdasarkan monitori
 
 **Cleanup tryout session terbengkalai (tanpa `enforce_end_time`):**
 Untuk tryout dengan `enforce_end_time = false` atau `ends_at = null`, jika `tryout_session` masih `in_progress` dan tidak ada aktivitas selama lebih dari **72 jam**, background job melakukan auto-submit. Aktivitas terakhir ditentukan dari nilai **terbaru** di antara:
-
 - `tryout_sessions.last_saved_at` (autosave di level session)
 - `last_saved_at` dari semua `tryout_section_sessions` milik session tersebut (autosave di level section/jawaban)
 - Jika semua nilai di atas null (belum pernah ada autosave sama sekali), gunakan `tryout_sessions.started_at` sebagai waktu referensi.
 
 Background job mengambil max dari semua nilai ini sebagai "waktu aktivitas terakhir". Jika `NOW() - waktu_aktivitas_terakhir > 72 jam`, jalankan auto-submit:
-
 1. Section yang masih `in_progress` di-submit dengan jawaban terakhir yang tersimpan.
 2. Section berstatus `pending` di-submit langsung dengan skor 0.
 3. `tryout_session` diubah menjadi `submitted` dengan `auto_submitted = true`.
@@ -1690,7 +1721,6 @@ Setelah seluruh tryout session di-submit (semua section selesai):
 
 **Validasi pada saat create dan update (early feedback):**
 Service layer memvalidasi konsistensi relasi pada saat operasi create dan update, bukan hanya saat publish. Validasi yang dijalankan pada create/update:
-
 - Subject harus berasal dari exam type yang sama dengan practice/tryout.
 - Topic (jika diisi) harus berasal dari subject yang dipilih.
 - Jika `starts_at` dan `ends_at` keduanya diisi, `ends_at` harus lebih besar dari `starts_at`.
@@ -1699,7 +1729,6 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 - Jika validasi gagal, operasi ditolak dengan pesan error yang jelas. Admin tidak perlu menunggu proses publish untuk menemukan inkonsistensi relasi.
 
 **Validasi tambahan pada saat publish:**
-
 - Practice tidak boleh dipublish jika tidak punya soal.
 - Practice tidak boleh dipublish jika `has_practice_mode = false` dan `has_quiz_mode = false`. Minimal satu mode harus aktif.
 - Practice tidak boleh dipublish jika `has_quiz_mode = true` tetapi `quiz_duration_minutes` kosong atau kurang dari/sama dengan 0.
@@ -1708,6 +1737,11 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 - Tryout tidak boleh dipublish jika section kosong atau durasi section belum diisi.
 - Tryout tidak boleh dipublish jika `enforce_end_time = true` tetapi `ends_at = null`.
 - Soal yang sudah digunakan session tidak boleh diubah pada bagian konten, opsi, atau kunci jawaban. Gunakan `archived` dan buat soal baru jika perlu perubahan besar.
+- **Tryout: aturan edit berdasarkan kondisi session** (lihat Section 9.2a untuk detail lengkap):
+  - `title` dan `description` selalu dapat diedit.
+  - Jadwal, setting tampilan hasil/ranking/pembahasan, mode navigasi, dan `allow_review_before_submit` hanya dapat diedit selama belum ada `tryout_sessions` untuk tryout tersebut.
+  - Section, soal, `wrong_answer_penalty`, `shuffle_questions`, dan `shuffle_options` dilarang diedit setelah ada session apapun.
+  - Transisi `published → draft` hanya diizinkan jika belum ada session. `published → archived` diizinkan kapan saja. `archived` bersifat final.
 - Field `created_by` pada questions, practices, dan tryouts wajib diisi untuk konten yang dibuat melalui admin panel. Nullable hanya untuk data seed, migrasi, atau import sistem lama.
 - Record `practice_questions` tidak boleh dihapus jika sudah direferensikan oleh `practice_session_questions`. Jika soal harus dikeluarkan dari practice, buat versi baru practice.
 - Record `tryout_questions` tidak boleh dihapus jika sudah direferensikan oleh `tryout_session_questions`. Jika soal harus dikeluarkan dari section, buat versi baru tryout.
