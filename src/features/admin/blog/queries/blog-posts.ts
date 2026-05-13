@@ -16,6 +16,7 @@ export type BlogPostRow = {
   slug: string
   excerpt: string | null
   thumbnailUrl: string | null
+  thumbnailCaption: string | null
   tags: string[] | null
   status: BlogPostStatus
   seoTitle: string | null
@@ -41,6 +42,7 @@ function selectBlogPostColumns() {
     slug: schema.blogPosts.slug,
     excerpt: schema.blogPosts.excerpt,
     thumbnailUrl: schema.blogPosts.thumbnailUrl,
+    thumbnailCaption: schema.blogPosts.thumbnailCaption,
     tags: schema.blogPosts.tags,
     status: schema.blogPosts.status,
     seoTitle: schema.blogPosts.seoTitle,
@@ -65,6 +67,7 @@ export async function getBlogPosts() {
     categoryName: row.categoryName ?? null,
     excerpt: row.excerpt ?? null,
     thumbnailUrl: row.thumbnailUrl ?? null,
+    thumbnailCaption: row.thumbnailCaption ?? null,
     tags: row.tags ?? null,
     seoTitle: row.seoTitle ?? null,
     metaDescription: row.metaDescription ?? null,
@@ -96,6 +99,7 @@ export async function getBlogPostById(id: number) {
     categoryName: post.categoryName ?? null,
     excerpt: post.excerpt ?? null,
     thumbnailUrl: post.thumbnailUrl ?? null,
+    thumbnailCaption: post.thumbnailCaption ?? null,
     tags: post.tags ?? null,
     seoTitle: post.seoTitle ?? null,
     metaDescription: post.metaDescription ?? null,
@@ -127,6 +131,7 @@ export async function getBlogPostBySlug(slug: string) {
     categoryName: post.categoryName ?? null,
     excerpt: post.excerpt ?? null,
     thumbnailUrl: post.thumbnailUrl ?? null,
+    thumbnailCaption: post.thumbnailCaption ?? null,
     tags: post.tags ?? null,
     seoTitle: post.seoTitle ?? null,
     metaDescription: post.metaDescription ?? null,
@@ -134,4 +139,3 @@ export async function getBlogPostBySlug(slug: string) {
     publishedAt: post.publishedAt ?? null,
   } satisfies BlogPostDetails
 }
-

@@ -19,6 +19,17 @@ export const blogPostFormSchema = z.object({
     .trim()
     .max(2048, "Thumbnail URL is too long.")
     .default(""),
+  slugSuffix: z
+    .string()
+    .trim()
+    .length(5, "Slug suffix must be exactly 5 characters.")
+    .regex(/^[A-Za-z0-9]{5}$/, "Slug suffix must be alphanumeric.")
+    .default(""),
+  thumbnailCaption: z
+    .string()
+    .trim()
+    .max(255, "Thumbnail caption must be at most 255 characters.")
+    .default(""),
   tagsInput: z.string().trim().max(500, "Tags input is too long.").default(""),
   status: z.enum(blogPostStatusValues),
   seoTitle: z
@@ -34,4 +45,3 @@ export const blogPostFormSchema = z.object({
 })
 
 export type BlogPostFormValues = z.infer<typeof blogPostFormSchema>
-

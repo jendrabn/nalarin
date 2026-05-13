@@ -1,4 +1,7 @@
-import { slugify } from "./slug"
+import {
+  generateStrongSlugSuffix,
+  slugify,
+} from "./slug"
 
 export function stripHtml(value: string) {
   return value
@@ -32,7 +35,24 @@ export function formatTagsInput(tags: string[] | null | undefined) {
   return tags?.join(", ") ?? ""
 }
 
-export function previewBlogPostSlug(title: string) {
-  return slugify(title)
+export function previewBlogPostSlug(title: string, slugSuffix?: string) {
+  const normalizedSuffix = normalizeSlugSuffix(slugSuffix) ?? "xxxxx"
+
+  return `${slugify(title)}-${normalizedSuffix}`
 }
 
+export function createBlogPostSlug(title: string, slugSuffix?: string) {
+  const normalizedSuffix = normalizeSlugSuffix(slugSuffix) ?? generateStrongSlugSuffix(5)
+
+  return `${slugify(title)}-${normalizedSuffix}`
+}
+
+function normalizeSlugSuffix(value?: string) {
+  const trimmed = value?.trim()
+
+  if (!trimmed || trimmed.length !== 5 || !/^[A-Za-z0-9]{5}$/.test(trimmed)) {
+    return null
+  }
+
+  return trimmed
+}

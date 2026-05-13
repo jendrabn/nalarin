@@ -36,7 +36,14 @@ import {
   type BlogPostFormValues,
 } from "../schemas"
 import { BlogRichTextEditor } from "./blog-rich-text-editor"
-import { formatTagsInput, previewBlogPostSlug } from "../utils/blog-post"
+import {
+  formatTagsInput,
+  previewBlogPostSlug,
+} from "../utils/blog-post"
+import {
+  extractSlugSuffix,
+  generateStrongSlugSuffix,
+} from "../utils/slug"
 import { uploadBlogImage } from "../utils/upload"
 
 const CATEGORY_NONE_VALUE = "__none__"
@@ -61,6 +68,9 @@ function buildDefaultValues(
     excerpt: initialValues?.excerpt ?? "",
     content: initialValues?.content ?? "<p></p>",
     thumbnailUrl: initialValues?.thumbnailUrl ?? "",
+    slugSuffix:
+      extractSlugSuffix(initialValues?.slug ?? "") ?? generateStrongSlugSuffix(5),
+    thumbnailCaption: initialValues?.thumbnailCaption ?? "",
     tagsInput: formatTagsInput(initialValues?.tags),
     status: initialValues?.status ?? "draft",
     seoTitle: initialValues?.seoTitle ?? "",
@@ -120,7 +130,11 @@ export function BlogPostFormPage({
     control: form.control,
     name: "thumbnailUrl",
   })
-  const slugPreview = previewBlogPostSlug(watchedTitle)
+  const watchedSlugSuffix = useWatch({
+    control: form.control,
+    name: "slugSuffix",
+  })
+  const slugPreview = previewBlogPostSlug(watchedTitle, watchedSlugSuffix)
   const isSubmitting = form.formState.isSubmitting
   const rootError = form.formState.errors.root?.message
 
@@ -202,6 +216,7 @@ export function BlogPostFormPage({
                     {rootError}
                   </p>
                 ) : null}
+                <input type="hidden" {...form.register("slugSuffix")} />
 
                 <Field data-invalid={Boolean(form.formState.errors.title)}>
                   <FieldContent>
@@ -402,6 +417,28 @@ export function BlogPostFormPage({
                     </FieldDescription>
                     <FieldError>
                       {form.formState.errors.thumbnailUrl?.message}
+                    </FieldError>
+                  </div>
+                </Field>
+
+                <Field data-invalid={Boolean(form.formState.errors.thumbnailCaption)}>
+                  <FieldContent>
+                    <FieldLabel htmlFor={`${formId}-thumbnail-caption`}>
+                      Thumbnail Caption
+                    </FieldLabel>
+                  </FieldContent>
+                  <div className="flex flex-col gap-1.5">
+                    <Input
+                      id={`${formId}-thumbnail-caption`}
+                      placeholder="Short caption shown under the image"
+                      aria-invalid={Boolean(form.formState.errors.thumbnailCaption)}
+                      {...form.register("thumbnailCaption")}
+                    />
+                    <FieldDescription>
+                      Optional. Displayed only on the public article detail page.
+                    </FieldDescription>
+                    <FieldError>
+                      {form.formState.errors.thumbnailCaption?.message}
                     </FieldError>
                   </div>
                 </Field>

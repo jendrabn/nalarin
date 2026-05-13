@@ -12,8 +12,9 @@ import { blogPostFormSchema, type BlogPostFormValues } from "../schemas"
 import {
   estimateReadTimeMinutes,
   parseTagsInput,
+  createBlogPostSlug,
 } from "../utils/blog-post"
-import { slugify } from "../utils/slug"
+import { generateStrongSlugSuffix } from "../utils/slug"
 import { getBlogPostById } from "../queries"
 
 type ActionError = {
@@ -54,6 +55,8 @@ function parseBlogPostValues(values: BlogPostFormValues) {
       excerpt: validated.data.excerpt.trim(),
       content: validated.data.content.trim(),
       thumbnailUrl: validated.data.thumbnailUrl.trim(),
+      slugSuffix: validated.data.slugSuffix.trim(),
+      thumbnailCaption: validated.data.thumbnailCaption.trim(),
       tagsInput: validated.data.tagsInput.trim(),
       status: validated.data.status as BlogPostStatus,
       seoTitle: validated.data.seoTitle.trim(),
@@ -83,10 +86,12 @@ function parseOptionalCategoryId(value: string) {
   return categoryId
 }
 
-async function findUniqueBlogPostSlug(title: string, excludedPostId?: number) {
-  const baseSlug = slugify(title)
-  let candidate = baseSlug
-  let suffix = 2
+async function findUniqueBlogPostSlug(
+  title: string,
+  slugSuffix: string,
+  excludedPostId?: number,
+) {
+  let candidate = createBlogPostSlug(title, slugSuffix)
 
   while (true) {
     const conflict = await db.query.blogPosts.findFirst({
@@ -106,8 +111,7 @@ async function findUniqueBlogPostSlug(title: string, excludedPostId?: number) {
       return candidate
     }
 
-    candidate = `${baseSlug}-${suffix}`
-    suffix += 1
+    candidate = createBlogPostSlug(title, generateStrongSlugSuffix(5))
   }
 }
 
@@ -173,7 +177,10 @@ export async function createBlogPostAction(
     }
   }
 
-  const slug = await findUniqueBlogPostSlug(parsed.data.title)
+  const slug = await findUniqueBlogPostSlug(
+    parsed.data.title,
+    parsed.data.slugSuffix,
+  )
   const tags = parseTagsInput(parsed.data.tagsInput)
   const publishedAt =
     parsed.data.status === "published" ? new Date() : null
@@ -190,6 +197,7 @@ export async function createBlogPostAction(
         excerpt: normalizeNullableText(parsed.data.excerpt),
         content: parsed.data.content,
         thumbnailUrl: normalizeNullableText(parsed.data.thumbnailUrl),
+        thumbnailCaption: normalizeNullableText(parsed.data.thumbnailCaption),
         tags: tags.length > 0 ? tags : null,
         status: parsed.data.status,
         seoTitle: normalizeNullableText(parsed.data.seoTitle),
@@ -256,7 +264,11 @@ export async function updateBlogPostAction(
     }
   }
 
-  const slug = await findUniqueBlogPostSlug(parsed.data.title, postId)
+  const slug = await findUniqueBlogPostSlug(
+    parsed.data.title,
+    parsed.data.slugSuffix,
+    postId,
+  )
 
   const tags = parseTagsInput(parsed.data.tagsInput)
   const readTimeMinutes = estimateReadTimeMinutes(parsed.data.content)
@@ -275,6 +287,7 @@ export async function updateBlogPostAction(
         excerpt: normalizeNullableText(parsed.data.excerpt),
         content: parsed.data.content,
         thumbnailUrl: normalizeNullableText(parsed.data.thumbnailUrl),
+        thumbnailCaption: normalizeNullableText(parsed.data.thumbnailCaption),
         tags: tags.length > 0 ? tags : null,
         status: parsed.data.status,
         seoTitle: normalizeNullableText(parsed.data.seoTitle),

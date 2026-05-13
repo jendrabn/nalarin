@@ -1047,6 +1047,7 @@ export const blogPosts = mysqlTable(
     excerpt: text('excerpt'),
     content: longtext('content').notNull(),
     thumbnailUrl: varchar('thumbnail_url', { length: 2048 }),
+    thumbnailCaption: varchar('thumbnail_caption', { length: 255 }),
     tags: json('tags').$type<string[]>(),
     status: contentStatusEnum.notNull(),
     seoTitle: varchar('seo_title', { length: 255 }),
