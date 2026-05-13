@@ -12,7 +12,6 @@ const protectedPrefixes = [
   "/dashboard",
   "/practice",
   "/practice-sessions",
-  "/practices",
   "/progress",
   "/tryout",
   "/tryout-sessions",
@@ -45,7 +44,11 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  if (startsWithAny(pathname, protectedPrefixes) && !isAuthenticated) {
+  if (
+    (startsWithAny(pathname, protectedPrefixes) ||
+      pathname.startsWith("/practices/")) &&
+    !isAuthenticated
+  ) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
