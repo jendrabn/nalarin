@@ -12,6 +12,7 @@ type PaymentRow = {
   planCode: PlanCode
   amount: number
   status: "pending"
+  gateway: "midtrans" | "manual"
   gatewayOrderId: string | null
   paymentUrl: string | null
   rawPayload: Record<string, unknown> | null
@@ -76,6 +77,7 @@ export async function getVisiblePendingPayment(
       planCode: schema.payments.planCode,
       amount: schema.payments.amount,
       status: schema.payments.status,
+      gateway: schema.payments.gateway,
       gatewayOrderId: schema.payments.gatewayOrderId,
       paymentUrl: schema.payments.paymentUrl,
       rawPayload: schema.payments.rawPayload,
@@ -107,6 +109,7 @@ export function mapPendingPayment(payment: PaymentRow): NonNullable<PremiumPendi
     planName: PLAN_CONFIG[payment.planCode].name,
     amount: payment.amount,
     status: "pending",
+    gateway: payment.gateway,
     gatewayOrderId: payment.gatewayOrderId ?? null,
     paymentUrl: payment.paymentUrl ?? null,
     snapToken: readSnapToken(payment.rawPayload),

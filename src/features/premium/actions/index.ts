@@ -36,6 +36,7 @@ type PendingPaymentRow = {
   planCode: PlanCode
   amount: number
   status: "pending"
+  gateway: "midtrans" | "manual"
   gatewayOrderId: string | null
   paymentUrl: string | null
   rawPayload: Record<string, unknown> | null
@@ -48,6 +49,7 @@ const pendingPaymentColumns = {
   planCode: schema.payments.planCode,
   amount: schema.payments.amount,
   status: schema.payments.status,
+  gateway: schema.payments.gateway,
   gatewayOrderId: schema.payments.gatewayOrderId,
   paymentUrl: schema.payments.paymentUrl,
   rawPayload: schema.payments.rawPayload,
@@ -58,6 +60,14 @@ const pendingPaymentColumns = {
 export async function startPremiumCheckoutAction(
   planCode: PlanCode,
 ): Promise<PremiumActionResult<PremiumPaymentPayload>> {
+  if (!env.PAYMENT_GATEWAY_ENABLED) {
+    return {
+      success: false,
+      code: "gateway_error",
+      message: "Payment gateway sedang dinonaktifkan. Gunakan pembayaran manual.",
+    }
+  }
+
   const user = await getCurrentUser()
 
   if (!user) {
@@ -211,6 +221,7 @@ export async function startPremiumCheckoutAction(
       planName: PLAN_CONFIG[planCode].name,
       amount,
       status: "pending",
+      gateway: "midtrans",
       gatewayOrderId: orderId,
       paymentUrl: snap.redirect_url,
       snapToken: snap.token,
@@ -249,6 +260,143 @@ export async function startPremiumCheckoutAction(
   }
 }
 
+export async function startManualPaymentAction(
+  planCode: PlanCode,
+): Promise<PremiumActionResult<PremiumPaymentPayload>> {
+  if (env.PAYMENT_GATEWAY_ENABLED) {
+    return {
+      success: false,
+      code: "manual_payment_unavailable",
+      message: "Pembayaran manual sedang tidak tersedia.",
+    }
+  }
+
+  const user = await getCurrentUser()
+
+  if (!user) {
+    return {
+      success: false,
+      code: "unauthenticated",
+      message: "Silakan login terlebih dahulu untuk memilih paket.",
+    }
+  }
+
+  if (!user.emailVerifiedAt) {
+    return {
+      success: false,
+      code: "email_unverified",
+      message: "Verifikasi email terlebih dahulu sebelum melakukan pembayaran.",
+    }
+  }
+
+  if (!isPaidPlanCode(planCode)) {
+    return {
+      success: false,
+      code: "invalid_plan",
+      message: "Pilih paket Pro atau Max untuk berlangganan.",
+    }
+  }
+
+  const now = new Date()
+  const pendingPayment = await getLatestPendingPayment(user.id)
+
+  if (pendingPayment) {
+    if (isExpired(pendingPayment.expiredAt, now)) {
+      await markPaymentExpired(pendingPayment.id)
+    } else {
+      const payload = toPremiumPaymentPayload(pendingPayment)
+
+      return {
+        success: false,
+        code: "pending_exists",
+        message:
+          pendingPayment.gateway === "manual"
+            ? "Masih ada pembayaran manual pending. Lanjutkan konfirmasi pembayaran tersebut."
+            : "Masih ada pembayaran pending. Lanjutkan atau batalkan pembayaran tersebut.",
+        data: {
+          payment: payload,
+          snapToken: payload.snapToken,
+          paymentUrl: payload.paymentUrl,
+        },
+      }
+    }
+  }
+
+  const activeSubscription = await getActiveSubscriptionForCheckout(user.id, now)
+
+  if (activeSubscription) {
+    if (activeSubscription.planCode === planCode) {
+      return {
+        success: false,
+        code: "active_plan",
+        message: `Paket ${PLAN_CONFIG[planCode].name} sudah aktif.`,
+      }
+    }
+
+    if (getPlanRank(activeSubscription.planCode) > getPlanRank(planCode)) {
+      return {
+        success: false,
+        code: "downgrade_not_allowed",
+        message: "Downgrade dari Max ke Pro tidak tersedia.",
+      }
+    }
+  }
+
+  const amount = getPlanFinalPrice(planCode)
+  const orderId = createManualOrderId(user.id, planCode)
+  const expiredAt = new Date(now.getTime() + PAYMENT_EXPIRY_MS)
+  const rawPayload = {
+    provider: "manual_ewallet",
+    planCode,
+    amount,
+    createdFrom: "premium_pricing",
+    confirmationTarget: "whatsapp",
+  }
+
+  const [created] = await db
+    .insert(schema.payments)
+    .values({
+      userId: user.id,
+      planCode,
+      amount,
+      status: "pending",
+      gateway: "manual",
+      paymentMethod: "e_wallet",
+      transactionSource: "user_checkout",
+      gatewayOrderId: orderId,
+      expiredAt,
+      notes:
+        "Pembayaran manual e-wallet dari halaman Premium. Menunggu konfirmasi bukti transfer via WhatsApp.",
+      rawPayload,
+    })
+    .$returningId()
+
+  revalidatePremiumPage()
+
+  const payment: NonNullable<PremiumPendingPayment> = {
+    id: created.id,
+    planCode,
+    planName: PLAN_CONFIG[planCode].name,
+    amount,
+    status: "pending",
+    gateway: "manual",
+    gatewayOrderId: orderId,
+    paymentUrl: null,
+    snapToken: null,
+    expiredAt: expiredAt.toISOString(),
+    createdAt: now.toISOString(),
+  }
+
+  return {
+    success: true,
+    data: {
+      payment,
+      snapToken: null,
+      paymentUrl: null,
+    },
+  }
+}
+
 export async function continuePremiumPaymentAction(
   paymentId: number,
 ): Promise<PremiumActionResult<PremiumPaymentPayload>> {
@@ -284,6 +432,17 @@ export async function continuePremiumPaymentAction(
   }
 
   const payload = toPremiumPaymentPayload(payment)
+
+  if (payment.gateway === "manual") {
+    return {
+      success: true,
+      data: {
+        payment: payload,
+        snapToken: null,
+        paymentUrl: null,
+      },
+    }
+  }
 
   if (!payload.snapToken) {
     if (payload.paymentUrl) {
@@ -345,7 +504,7 @@ export async function cancelPremiumPaymentAction(
     })
     .where(eq(schema.payments.id, payment.id))
 
-  if (payment.gatewayOrderId) {
+  if (payment.gateway === "midtrans" && payment.gatewayOrderId) {
     try {
       await cancelMidtransTransaction(payment.gatewayOrderId)
     } catch {
@@ -436,6 +595,11 @@ function isExpired(expiredAt: Date | null, now: Date) {
 function createOrderId(userId: number, planCode: PlanCode) {
   const suffix = crypto.randomBytes(4).toString("hex")
   return `NAL-${userId}-${planCode}-${Date.now()}-${suffix}`
+}
+
+function createManualOrderId(userId: number, planCode: PlanCode) {
+  const suffix = crypto.randomBytes(4).toString("hex")
+  return `MANUAL-${userId}-${planCode}-${Date.now()}-${suffix}`
 }
 
 function revalidatePremiumPage() {

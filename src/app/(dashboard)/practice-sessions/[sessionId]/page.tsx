@@ -1,10 +1,35 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
 
-export default function Page() {
-  return (
-    <RoutePlaceholder
-      section="Dashboard"
-      route="/practice-sessions/[sessionId]"
-    />
-  );
+import { requireUser } from "@/features/auth/services/session"
+import { PracticeRoomPage } from "@/features/practices/components/practice-room-page"
+import { getPracticeSessionRoom } from "@/features/practices/queries/session"
+
+export const metadata: Metadata = {
+  title: "Ruang Latihan",
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
+
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ sessionId: string }>
+}) {
+  const [{ sessionId }, user] = await Promise.all([params, requireUser()])
+  const id = Number(sessionId)
+
+  if (!Number.isInteger(id) || id <= 0) {
+    notFound()
+  }
+
+  const session = await getPracticeSessionRoom(id, user.id)
+
+  if (!session) {
+    notFound()
+  }
+
+  return <PracticeRoomPage session={session} />
 }

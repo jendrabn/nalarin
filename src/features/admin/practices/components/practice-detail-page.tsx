@@ -24,10 +24,6 @@ import { Separator } from "@/components/ui/separator"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 
 import { archivePracticeAction, publishPracticeAction } from "../actions"
-import {
-  practiceNavigationModeLabels,
-  type PracticeNavigationMode,
-} from "../constants"
 import type { PracticeDetails } from "../queries"
 import { previewText } from "../utils/practice"
 
@@ -48,10 +44,6 @@ function formatDateTime(value: Date | null) {
   }).format(value)
 }
 
-function enabledLabel(value: boolean) {
-  return value ? "Enabled" : "Disabled"
-}
-
 function formatModes(practice: PracticeDetails) {
   return [
     practice.hasPracticeMode ? "Practice" : null,
@@ -65,8 +57,6 @@ export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
   const router = useRouter()
   const [dialogType, setDialogType] = useState<DialogType>(null)
   const statusBadge = getModelEnumBadgeMeta("contentStatus", practice.status)
-  const navigationLabel =
-    practiceNavigationModeLabels[practice.navigationMode as PracticeNavigationMode]
 
   async function handleConfirm() {
     if (!dialogType) {
@@ -141,7 +131,7 @@ export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
         <Card>
           <CardHeader>
             <CardTitle>Overview</CardTitle>
-            <CardDescription>Publication, access, mode, and attempt settings.</CardDescription>
+            <CardDescription>Publication, access, mode, and quiz timing.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 text-sm">
@@ -192,35 +182,6 @@ export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
               <div className="flex items-center justify-between gap-4">
                 <span className="text-muted-foreground">Published</span>
                 <span className="text-right">{formatDateTime(practice.publishedAt)}</span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Navigation</span>
-                <span className="font-medium">{navigationLabel}</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Shuffle questions</span>
-                <span className="font-medium">{enabledLabel(practice.shuffleQuestions)}</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Shuffle options</span>
-                <span className="font-medium">{enabledLabel(practice.shuffleOptions)}</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Review before submit</span>
-                <span className="font-medium">
-                  {enabledLabel(practice.allowReviewBeforeSubmit)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Show result</span>
-                <span className="font-medium">{enabledLabel(practice.showResultAfterSubmit)}</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Show explanation</span>
-                <span className="font-medium">
-                  {enabledLabel(practice.showExplanationAfterSubmit)}
-                </span>
               </div>
             </div>
           </CardContent>

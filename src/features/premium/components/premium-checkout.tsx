@@ -6,20 +6,24 @@ import { useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import type { PlanCode } from "@/config/plans"
+import { formatCurrencyIDR } from "@/lib/format"
 import type { PricingPlanView } from "@/lib/pricing-plans"
 import { PricingPlanCards } from "@/components/pricing-plan-cards"
 
 import {
   cancelPremiumPaymentAction,
   continuePremiumPaymentAction,
+  startManualPaymentAction,
   startPremiumCheckoutAction,
 } from "../actions"
 import type {
+  ManualPaymentConfig,
   PremiumPendingPayment,
   PremiumSubscriptionSummary,
   PremiumUser,
 } from "../types"
 import { CheckoutConfirmationDialog } from "./checkout-confirmation-dialog"
+import { ManualPaymentDialog } from "./manual-payment-dialog"
 import { PendingPaymentSection } from "./pending-payment-section"
 import { useSnapPayment } from "../hooks/use-snap-payment"
 import { buildPremiumPlanCards } from "../utils/plan-card-actions"
@@ -29,8 +33,10 @@ type PremiumCheckoutProps = {
   plans: PricingPlanView[]
   currentSubscription: PremiumSubscriptionSummary
   pendingPayment: PremiumPendingPayment
-  midtransClientKey: string
-  midtransSnapScriptUrl: string
+  paymentGatewayEnabled: boolean
+  manualPayment: ManualPaymentConfig
+  midtransClientKey: string | null
+  midtransSnapScriptUrl: string | null
 }
 
 export function PremiumCheckout({
@@ -38,12 +44,15 @@ export function PremiumCheckout({
   plans,
   currentSubscription,
   pendingPayment,
+  paymentGatewayEnabled,
+  manualPayment,
   midtransClientKey,
   midtransSnapScriptUrl,
 }: PremiumCheckoutProps) {
   const router = useRouter()
   const { openSnapPayment } = useSnapPayment()
   const [selectedPlan, setSelectedPlan] = useState<PricingPlanView | null>(null)
+  const [selectedManualPlan, setSelectedManualPlan] = useState<PricingPlanView | null>(null)
   const [processing, setProcessing] = useState<"start" | "continue" | "cancel" | null>(null)
   const currentPlanCode = currentSubscription?.planCode ?? "free"
   const currentPlan = plans.find((plan) => plan.code === currentPlanCode) ?? plans[0]
@@ -77,7 +86,18 @@ export function PremiumCheckout({
     }
 
     if (pendingPayment?.planCode === plan.code) {
-      void handleContinuePayment()
+      if (pendingPayment.gateway === "manual") {
+        setSelectedManualPlan(plan)
+      } else if (paymentGatewayEnabled) {
+        void handleContinuePayment()
+      } else {
+        toast.error("Batalkan pembayaran pending terlebih dahulu sebelum memilih paket ini.")
+      }
+      return
+    }
+
+    if (!paymentGatewayEnabled) {
+      setSelectedManualPlan(plan)
       return
     }
 
@@ -132,6 +152,16 @@ export function PremiumCheckout({
       return
     }
 
+    if (pendingPayment.gateway === "manual") {
+      const plan = plans.find((item) => item.code === pendingPayment.planCode)
+
+      if (plan) {
+        setSelectedManualPlan(plan)
+      }
+
+      return
+    }
+
     setProcessing("continue")
 
     try {
@@ -152,6 +182,56 @@ export function PremiumCheckout({
         snapToken: result.data.snapToken,
         paymentUrl: result.data.paymentUrl,
       })
+      router.refresh()
+    } finally {
+      setProcessing(null)
+    }
+  }
+
+  const handleConfirmManualPayment = async () => {
+    if (!selectedManualPlan || selectedManualPlan.code === "free" || !user) {
+      return
+    }
+
+    setProcessing("start")
+
+    try {
+      const result = await startManualPaymentAction(selectedManualPlan.code)
+
+      if (!result.success) {
+        if (result.code === "unauthenticated") {
+          router.push("/login")
+          return
+        }
+
+        if (
+          result.code === "pending_exists" &&
+          result.data?.payment.gateway === "manual"
+        ) {
+          toast.message(result.message)
+          openManualPaymentWhatsApp({
+            user,
+            plan: selectedManualPlan,
+            payment: result.data.payment,
+            whatsappNumber: manualPayment.whatsappNumber,
+          })
+          setSelectedManualPlan(null)
+          router.refresh()
+          return
+        }
+
+        toast.error(result.message)
+        router.refresh()
+        return
+      }
+
+      openManualPaymentWhatsApp({
+        user,
+        plan: selectedManualPlan,
+        payment: result.data.payment,
+        whatsappNumber: manualPayment.whatsappNumber,
+      })
+      setSelectedManualPlan(null)
       router.refresh()
     } finally {
       setProcessing(null)
@@ -187,11 +267,13 @@ export function PremiumCheckout({
 
   return (
     <>
-      <Script
-        src={midtransSnapScriptUrl}
-        strategy="afterInteractive"
-        data-client-key={midtransClientKey}
-      />
+      {paymentGatewayEnabled && midtransSnapScriptUrl && midtransClientKey ? (
+        <Script
+          src={midtransSnapScriptUrl}
+          strategy="afterInteractive"
+          data-client-key={midtransClientKey}
+        />
+      ) : null}
 
       <div className="mx-auto mt-10 flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
         {pendingPayment ? (
@@ -218,6 +300,48 @@ export function PremiumCheckout({
         }}
         onContinue={handleStartCheckout}
       />
+
+      <ManualPaymentDialog
+        plan={selectedManualPlan}
+        manualPayment={manualPayment}
+        pendingPayment={pendingPayment?.gateway === "manual" ? pendingPayment : null}
+        processing={processing === "start"}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedManualPlan(null)
+          }
+        }}
+        onConfirm={handleConfirmManualPayment}
+      />
     </>
   )
+}
+
+function openManualPaymentWhatsApp({
+  user,
+  plan,
+  payment,
+  whatsappNumber,
+}: {
+  user: PremiumUser
+  plan: PricingPlanView
+  payment: NonNullable<PremiumPendingPayment>
+  whatsappNumber: string
+}) {
+  const number = whatsappNumber.replace(/\D/g, "")
+  const message = [
+    "Halo Admin Nalarin, saya ingin konfirmasi pembayaran.",
+    "",
+    `Nama: ${user.name}`,
+    `Email: ${user.email}`,
+    `Paket: ${plan.name}`,
+    `Total: ${formatCurrencyIDR(payment.amount)}`,
+    payment.gatewayOrderId ? `Kode Pembayaran: ${payment.gatewayOrderId}` : null,
+    "",
+    "Saya akan melampirkan screenshot bukti transfer pada chat ini.",
+  ]
+    .filter((line): line is string => line !== null)
+    .join("\n")
+
+  window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`, "_blank")
 }

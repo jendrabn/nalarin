@@ -42,7 +42,6 @@ import {
   FieldSet,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import {
@@ -59,11 +58,6 @@ import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 import { cn } from "@/lib/utils"
 
 import { createPracticeAction, publishPracticeAction, updatePracticeAction } from "../actions"
-import {
-  practiceNavigationModeLabels,
-  practiceNavigationModeValues,
-  type PracticeNavigationMode,
-} from "../constants"
 import type {
   PracticeDetails,
   PracticeQuestionLookupOption,
@@ -177,13 +171,7 @@ function getStepForErrors(errors: FieldErrors<PracticeFormValues>): WizardStep {
   if (
     errors.hasPracticeMode ||
     errors.hasQuizMode ||
-    errors.quizDurationMinutes ||
-    errors.navigationMode ||
-    errors.shuffleQuestions ||
-    errors.shuffleOptions ||
-    errors.allowReviewBeforeSubmit ||
-    errors.showResultAfterSubmit ||
-    errors.showExplanationAfterSubmit
+    errors.quizDurationMinutes
   ) {
     return "settings"
   }
@@ -719,93 +707,12 @@ export function PracticeFormPage({
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Attempt Settings</CardTitle>
-                  <CardDescription>Navigation, randomization, review, result, and explanation.</CardDescription>
+                  <CardTitle>Behavior</CardTitle>
+                  <CardDescription>
+                    Mode Latihan selalu berurutan dengan feedback instan. Mode Quiz selalu bertimer,
+                    navigasi bebas, dan menampilkan pembahasan setelah submit.
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <FieldGroup>
-                    <Field>
-                      <FieldContent>
-                        <FieldLabel htmlFor={`${formId}-navigation-mode`} className="required">
-                          Navigation Mode
-                        </FieldLabel>
-                      </FieldContent>
-                      <Select
-                        value={(watchedValues.navigationMode ?? "free") as PracticeNavigationMode}
-                        disabled={isLocked}
-                        onValueChange={(value) =>
-                          form.setValue("navigationMode", value as PracticeNavigationMode, {
-                            shouldDirty: true,
-                          })
-                        }
-                      >
-                        <SelectTrigger id={`${formId}-navigation-mode`} className="sm:w-52">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {practiceNavigationModeValues.map((value) => (
-                            <SelectItem key={value} value={value}>
-                              {practiceNavigationModeLabels[value]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </Field>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FieldSwitch
-                        id={`${formId}-shuffle-questions`}
-                        label="Shuffle Questions"
-                        description="Randomize question order when session starts."
-                        checked={Boolean(watchedValues.shuffleQuestions)}
-                        disabled={isLocked}
-                        onCheckedChange={(checked) =>
-                          form.setValue("shuffleQuestions", checked, { shouldDirty: true })
-                        }
-                      />
-                      <FieldSwitch
-                        id={`${formId}-shuffle-options`}
-                        label="Shuffle Options"
-                        description="Randomize objective answer options."
-                        checked={Boolean(watchedValues.shuffleOptions)}
-                        disabled={isLocked}
-                        onCheckedChange={(checked) =>
-                          form.setValue("shuffleOptions", checked, { shouldDirty: true })
-                        }
-                      />
-                      <FieldSwitch
-                        id={`${formId}-review-before-submit`}
-                        label="Review Before Submit"
-                        description="Show answered, unanswered, and marked summary before submit."
-                        checked={Boolean(watchedValues.allowReviewBeforeSubmit)}
-                        disabled={isLocked}
-                        onCheckedChange={(checked) =>
-                          form.setValue("allowReviewBeforeSubmit", checked, { shouldDirty: true })
-                        }
-                      />
-                      <FieldSwitch
-                        id={`${formId}-show-result`}
-                        label="Show Result"
-                        description="Show score immediately after submit."
-                        checked={Boolean(watchedValues.showResultAfterSubmit)}
-                        disabled={isLocked}
-                        onCheckedChange={(checked) =>
-                          form.setValue("showResultAfterSubmit", checked, { shouldDirty: true })
-                        }
-                      />
-                      <FieldSwitch
-                        id={`${formId}-show-explanation`}
-                        label="Show Explanation"
-                        description="Show explanation in review when available."
-                        checked={Boolean(watchedValues.showExplanationAfterSubmit)}
-                        disabled={isLocked}
-                        onCheckedChange={(checked) =>
-                          form.setValue("showExplanationAfterSubmit", checked, { shouldDirty: true })
-                        }
-                      />
-                    </div>
-                  </FieldGroup>
-                </CardContent>
               </Card>
             </div>
           </TabsContent>
@@ -1087,12 +994,6 @@ export function PracticeFormPage({
                       <span className="text-muted-foreground">Topic</span>
                       <p className="font-medium">{selectedTopic?.name ?? "-"}</p>
                     </div>
-                    <div className="rounded-lg border border-border/60 p-3">
-                      <span className="text-muted-foreground">Navigation</span>
-                      <p className="font-medium">
-                        {practiceNavigationModeLabels[(watchedValues.navigationMode ?? "free") as PracticeNavigationMode]}
-                      </p>
-                    </div>
                     <div className="rounded-lg border border-border/60 p-3 md:col-span-2">
                       <span className="text-muted-foreground">Title</span>
                       <p className="font-medium">{watchedValues.title || "-"}</p>
@@ -1110,7 +1011,7 @@ export function PracticeFormPage({
               <Card>
                 <CardHeader>
                   <CardTitle>Settings</CardTitle>
-                  <CardDescription>Modes, timing, randomization, visibility, and navigation.</CardDescription>
+                  <CardDescription>Modes and quiz timing.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-4">
@@ -1129,47 +1030,6 @@ export function PracticeFormPage({
                           {watchedValues.hasQuizMode
                             ? `${formatReviewText(watchedValues.quizDurationMinutes)} minutes`
                             : "-"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    <div className="grid gap-3 text-sm md:grid-cols-3">
-                      <div className="rounded-lg border border-border/60 p-3">
-                        <span className="text-muted-foreground">Shuffle questions</span>
-                        <p className="font-medium">{getEnabledLabel(watchedValues.shuffleQuestions)}</p>
-                      </div>
-                      <div className="rounded-lg border border-border/60 p-3">
-                        <span className="text-muted-foreground">Shuffle options</span>
-                        <p className="font-medium">{getEnabledLabel(watchedValues.shuffleOptions)}</p>
-                      </div>
-                      <div className="rounded-lg border border-border/60 p-3">
-                        <span className="text-muted-foreground">Review before submit</span>
-                        <p className="font-medium">
-                          {getEnabledLabel(watchedValues.allowReviewBeforeSubmit)}
-                        </p>
-                      </div>
-                      <div className="rounded-lg border border-border/60 p-3">
-                        <span className="text-muted-foreground">Show result</span>
-                        <p className="font-medium">
-                          {getEnabledLabel(watchedValues.showResultAfterSubmit)}
-                        </p>
-                      </div>
-                      <div className="rounded-lg border border-border/60 p-3">
-                        <span className="text-muted-foreground">Show explanation</span>
-                        <p className="font-medium">
-                          {getEnabledLabel(watchedValues.showExplanationAfterSubmit)}
-                        </p>
-                      </div>
-                      <div className="rounded-lg border border-border/60 p-3">
-                        <span className="text-muted-foreground">Navigation</span>
-                        <p className="font-medium">
-                          {
-                            practiceNavigationModeLabels[
-                              (watchedValues.navigationMode ?? "free") as PracticeNavigationMode
-                            ]
-                          }
                         </p>
                       </div>
                     </div>

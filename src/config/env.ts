@@ -54,10 +54,15 @@ const envSchema = z
     SMTP_PASSWORD: optionalString,
     SMTP_FROM: optionalString,
 
+    PAYMENT_GATEWAY_ENABLED: booleanFromString,
     MIDTRANS_IS_PRODUCTION: booleanFromString,
-    MIDTRANS_SERVER_KEY: nonEmptyString,
-    MIDTRANS_CLIENT_KEY: nonEmptyString,
-    MIDTRANS_MERCHANT_ID: nonEmptyString,
+    MIDTRANS_SERVER_KEY: optionalString,
+    MIDTRANS_CLIENT_KEY: optionalString,
+    MIDTRANS_MERCHANT_ID: optionalString,
+    MANUAL_PAYMENT_WHATSAPP_NUMBER: optionalString,
+    EWALLET_SHOPEEPAY_PHONE: optionalString,
+    EWALLET_GOPAY_PHONE: optionalString,
+    EWALLET_OVO_PHONE: optionalString,
 
     AI_PROVIDER: z.enum(['openai-compatible']),
     AI_API_KEY: nonEmptyString,
@@ -114,6 +119,65 @@ const envSchema = z
           code: z.ZodIssueCode.custom,
           path: ['SMTP_PASSWORD'],
           message: 'SMTP_PASSWORD is required when EMAIL_PROVIDER=smtp.',
+        });
+      }
+    }
+
+    if (value.PAYMENT_GATEWAY_ENABLED) {
+      if (!value.MIDTRANS_SERVER_KEY) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['MIDTRANS_SERVER_KEY'],
+          message: 'MIDTRANS_SERVER_KEY is required when PAYMENT_GATEWAY_ENABLED=true.',
+        });
+      }
+
+      if (!value.MIDTRANS_CLIENT_KEY) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['MIDTRANS_CLIENT_KEY'],
+          message: 'MIDTRANS_CLIENT_KEY is required when PAYMENT_GATEWAY_ENABLED=true.',
+        });
+      }
+
+      if (!value.MIDTRANS_MERCHANT_ID) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['MIDTRANS_MERCHANT_ID'],
+          message: 'MIDTRANS_MERCHANT_ID is required when PAYMENT_GATEWAY_ENABLED=true.',
+        });
+      }
+    } else {
+      if (!value.MANUAL_PAYMENT_WHATSAPP_NUMBER) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['MANUAL_PAYMENT_WHATSAPP_NUMBER'],
+          message:
+            'MANUAL_PAYMENT_WHATSAPP_NUMBER is required when PAYMENT_GATEWAY_ENABLED=false.',
+        });
+      }
+
+      if (!value.EWALLET_SHOPEEPAY_PHONE) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['EWALLET_SHOPEEPAY_PHONE'],
+          message: 'EWALLET_SHOPEEPAY_PHONE is required when PAYMENT_GATEWAY_ENABLED=false.',
+        });
+      }
+
+      if (!value.EWALLET_GOPAY_PHONE) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['EWALLET_GOPAY_PHONE'],
+          message: 'EWALLET_GOPAY_PHONE is required when PAYMENT_GATEWAY_ENABLED=false.',
+        });
+      }
+
+      if (!value.EWALLET_OVO_PHONE) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['EWALLET_OVO_PHONE'],
+          message: 'EWALLET_OVO_PHONE is required when PAYMENT_GATEWAY_ENABLED=false.',
         });
       }
     }

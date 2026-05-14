@@ -21,12 +21,25 @@ export type PremiumPendingPayment = {
   planName: string
   amount: number
   status: "pending"
+  gateway: "midtrans" | "manual"
   gatewayOrderId: string | null
   paymentUrl: string | null
   snapToken: string | null
   expiredAt: string | null
   createdAt: string
 } | null
+
+export type ManualPaymentMethod = {
+  id: "shopeepay" | "gopay" | "ovo"
+  name: string
+  phone: string
+  logoSrc: string
+}
+
+export type ManualPaymentConfig = {
+  whatsappNumber: string
+  methods: ManualPaymentMethod[]
+}
 
 export type PremiumActionResult<T = undefined> =
   | {
@@ -45,6 +58,7 @@ export type PremiumActionResult<T = undefined> =
         | "not_found"
         | "expired"
         | "gateway_error"
+        | "manual_payment_unavailable"
       message: string
       data?: T
     }

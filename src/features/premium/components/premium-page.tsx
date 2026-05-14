@@ -7,7 +7,7 @@ import type { CurrentUser } from "@/features/auth/services/session"
 
 import { PremiumCheckout } from "./premium-checkout"
 import { getPremiumSubscriptionState } from "../queries"
-import type { PremiumUser } from "../types"
+import type { ManualPaymentConfig, PremiumUser } from "../types"
 
 type PremiumPageProps = {
   user: CurrentUser | null
@@ -34,6 +34,29 @@ export async function PremiumPage({ user }: PremiumPageProps) {
         isEmailVerified: Boolean(user.emailVerifiedAt),
       }
     : null
+  const manualPayment: ManualPaymentConfig = {
+    whatsappNumber: env.MANUAL_PAYMENT_WHATSAPP_NUMBER ?? "",
+    methods: [
+      {
+        id: "shopeepay",
+        name: "ShopeePay",
+        phone: env.EWALLET_SHOPEEPAY_PHONE ?? "",
+        logoSrc: "/images/payments/shopeepay.svg",
+      },
+      {
+        id: "gopay",
+        name: "GoPay",
+        phone: env.EWALLET_GOPAY_PHONE ?? "",
+        logoSrc: "/images/payments/gopay.svg",
+      },
+      {
+        id: "ovo",
+        name: "OVO",
+        phone: env.EWALLET_OVO_PHONE ?? "",
+        logoSrc: "/images/payments/ovo.svg",
+      },
+    ],
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -45,8 +68,12 @@ export async function PremiumPage({ user }: PremiumPageProps) {
             plans={plans}
             currentSubscription={state.currentSubscription}
             pendingPayment={state.pendingPayment}
-            midtransClientKey={env.MIDTRANS_CLIENT_KEY}
-            midtransSnapScriptUrl={getMidtransSnapScriptUrl()}
+            paymentGatewayEnabled={env.PAYMENT_GATEWAY_ENABLED}
+            manualPayment={manualPayment}
+            midtransClientKey={env.MIDTRANS_CLIENT_KEY ?? null}
+            midtransSnapScriptUrl={
+              env.PAYMENT_GATEWAY_ENABLED ? getMidtransSnapScriptUrl() : null
+            }
           />
         </section>
       </main>

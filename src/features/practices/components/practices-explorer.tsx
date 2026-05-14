@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useMemo, useState, type ReactNode } from "react"
+import { useMemo, useState, useTransition, type ReactNode } from "react"
 import {
   BookOpenCheckIcon,
   BookOpenIcon,
@@ -10,7 +10,6 @@ import {
   GraduationCapIcon,
   LayoutListIcon,
   LockIcon,
-  ShieldCheckIcon,
   TargetIcon,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -40,9 +39,20 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -55,6 +65,8 @@ import {
 } from "@/components/ui/empty"
 import { cn } from "@/lib/utils"
 
+import { startPracticeSessionAction } from "../actions"
+import type { PracticeMode } from "../types"
 import type {
   PracticeDiscoveryData,
   PracticeDiscoveryPractice,
@@ -96,6 +108,11 @@ const difficultyBadgeClasses: Record<PracticeDifficulty, string> = {
   hard: "border-chart-4/25 bg-chart-4/10 text-chart-4",
 }
 
+const modeLabels: Record<PracticeMode, string> = {
+  practice: "Mode Latihan",
+  quiz: "Mode Quiz",
+}
+
 export function PracticesExplorer({
   data,
   user,
@@ -112,6 +129,13 @@ export function PracticesExplorer({
   })
   const [selectedPractice, setSelectedPractice] =
     useState<PracticeDiscoveryPractice | null>(null)
+  const [startingMode, setStartingMode] = useState<PracticeMode | null>(null)
+  const [existingSession, setExistingSession] = useState<{
+    practice: PracticeDiscoveryPractice
+    mode: PracticeMode
+    sessionId: number
+  } | null>(null)
+  const [isStarting, startTransition] = useTransition()
 
   const activeExamType = useMemo(
     () => data.examTypes.find((examType) => examType.id === activeExamTypeId) ?? null,
@@ -171,13 +195,71 @@ export function PracticesExplorer({
     setSelectedPractice(practice)
   }
 
-  function handleModeClick(mode: "practice" | "quiz") {
-    toast.info(
-      mode === "practice"
-        ? "Mode Latihan belum dibuka pada tahap ini."
-        : "Mode Quiz belum dibuka pada tahap ini.",
-    )
-    setSelectedPractice(null)
+  function handleModeClick(mode: PracticeMode) {
+    const practice = selectedPractice
+
+    if (!practice) {
+      return
+    }
+
+    setStartingMode(mode)
+    startTransition(async () => {
+      const result = await startPracticeSessionAction({
+        practiceId: practice.id,
+        mode,
+      })
+
+      setStartingMode(null)
+
+      if (!result.success) {
+        toast.error(result.message)
+        return
+      }
+
+      if (result.data.resumed) {
+        if (result.data.needsDecision) {
+          setExistingSession({
+            practice,
+            mode,
+            sessionId: result.data.sessionId,
+          })
+          return
+        }
+
+        toast.info("Sesi sebelumnya dilanjutkan.")
+      }
+
+      setSelectedPractice(null)
+      router.push(`/practice-sessions/${result.data.sessionId}`)
+    })
+  }
+
+  function handleRestartExistingSession() {
+    const pending = existingSession
+
+    if (!pending) {
+      return
+    }
+
+    setStartingMode(pending.mode)
+    startTransition(async () => {
+      const result = await startPracticeSessionAction({
+        practiceId: pending.practice.id,
+        mode: pending.mode,
+        restartExisting: true,
+      })
+
+      setStartingMode(null)
+
+      if (!result.success) {
+        toast.error(result.message)
+        return
+      }
+
+      setExistingSession(null)
+      setSelectedPractice(null)
+      router.push(`/practice-sessions/${result.data.sessionId}`)
+    })
   }
 
   if (data.examTypes.length === 0) {
@@ -281,12 +363,65 @@ export function PracticesExplorer({
       <ModeDialog
         practice={selectedPractice}
         onOpenChange={(open) => {
+          if (isStarting) {
+            return
+          }
+
           if (!open) {
             setSelectedPractice(null)
           }
         }}
         onModeClick={handleModeClick}
+        isStarting={isStarting}
+        startingMode={startingMode}
       />
+
+      <AlertDialog
+        open={Boolean(existingSession)}
+        onOpenChange={(open) => {
+          if (!open && !isStarting) {
+            setExistingSession(null)
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sesi masih berjalan</AlertDialogTitle>
+            <AlertDialogDescription>
+              Kamu punya sesi {existingSession ? modeLabels[existingSession.mode] : "latihan"} yang belum selesai.
+              Lanjutkan sesi tersebut atau mulai baru dengan membatalkan sesi lama.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button type="button" variant="outline" disabled={isStarting}>
+                Batal
+              </Button>
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isStarting}
+              onClick={() => {
+                const sessionId = existingSession?.sessionId
+
+                if (sessionId) {
+                  setExistingSession(null)
+                  setSelectedPractice(null)
+                  router.push(`/practice-sessions/${sessionId}`)
+                }
+              }}
+            >
+              Lanjutkan
+            </Button>
+            <AlertDialogAction asChild>
+              <Button type="button" disabled={isStarting} onClick={handleRestartExistingSession}>
+                Mulai Baru
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   )
 }
@@ -552,73 +687,113 @@ function ModeDialog({
   practice,
   onOpenChange,
   onModeClick,
+  isStarting,
+  startingMode,
 }: {
   practice: PracticeDiscoveryPractice | null
   onOpenChange: (open: boolean) => void
-  onModeClick: (mode: "practice" | "quiz") => void
+  onModeClick: (mode: PracticeMode) => void
+  isStarting: boolean
+  startingMode: PracticeMode | null
 }) {
   return (
     <Dialog open={Boolean(practice)} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Pilih mode latihan</DialogTitle>
-          <DialogDescription>
-            {practice
-              ? `Pilih cara mengerjakan ${practice.title}.`
-              : "Pilih mode yang tersedia."}
-          </DialogDescription>
+          <DialogTitle>Pilih Mode Latihan</DialogTitle>
         </DialogHeader>
 
         {practice ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3">
             {practice.hasPracticeMode ? (
-              <Button
-                type="button"
-                variant="outline-primary"
-                className="h-auto justify-start gap-3 p-4 text-left"
+              <ModeOptionButton
+                title="Mode Latihan"
+                description="Belajar bertahap dengan feedback langsung setelah jawaban dikonfirmasi."
+                icon={<BookOpenCheckIcon />}
+                isLoading={isStarting && startingMode === "practice"}
+                disabled={isStarting}
                 onClick={() => onModeClick("practice")}
-              >
-                <BookOpenCheckIcon className="size-5" />
-                <span>
-                  <span className="block font-semibold">Mode Latihan</span>
-                  <span className="block text-xs font-normal text-muted-foreground">
-                    Belajar tanpa timer.
-                  </span>
-                </span>
-              </Button>
+                tone="study"
+              />
             ) : null}
             {practice.hasQuizMode ? (
-              <Button
-                type="button"
-                variant="outline-primary"
-                className="h-auto justify-start gap-3 p-4 text-left"
+              <ModeOptionButton
+                title="Mode Quiz"
+                description="Simulasi singkat dengan timer, navigasi bebas, dan hasil setelah submit."
+                icon={<ClockIcon />}
+                isLoading={isStarting && startingMode === "quiz"}
+                disabled={isStarting}
                 onClick={() => onModeClick("quiz")}
-              >
-                <ClockIcon className="size-5" />
-                <span>
-                  <span className="block font-semibold">Mode Quiz</span>
-                  <span className="block text-xs font-normal text-muted-foreground">
-                    {practice.quizDurationMinutes
-                      ? `${practice.quizDurationMinutes} menit.`
-                      : "Dengan batas waktu."}
-                  </span>
-                </span>
-              </Button>
+                tone="quiz"
+              />
             ) : null}
           </div>
         ) : null}
 
-        {practice ? (
-          <div className="rounded-xl border bg-muted/40 p-3">
-            <div className="flex items-start gap-2 text-sm text-muted-foreground">
-              <ShieldCheckIcon className="mt-0.5 size-4 text-primary" />
-              <p>
-                Akses latihan mengikuti status konten dan paket aktif akunmu.
-              </p>
-            </div>
-          </div>
-        ) : null}
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" variant="ghost" disabled={isStarting}>
+              Batal
+            </Button>
+          </DialogClose>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
+}
+
+function ModeOptionButton({
+  title,
+  description,
+  icon,
+  tone,
+  isLoading,
+  disabled,
+  onClick,
+}: {
+  title: string
+  description: string
+  icon: ReactNode
+  tone: "study" | "quiz"
+  isLoading: boolean
+  disabled: boolean
+  onClick: () => void
+}) {
+  const styles = modeOptionToneClasses[tone]
+
+  return (
+    <button
+      type="button"
+      className={cn(
+        "group rounded-xl border bg-card p-4 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-60",
+        styles.card,
+      )}
+      disabled={disabled}
+      onClick={onClick}
+      aria-label={`Mulai ${title}`}
+    >
+      <div className="flex items-start gap-4">
+        <span className={cn("grid size-10 shrink-0 place-items-center rounded-lg [&_svg]:size-5", styles.icon)}>
+          {isLoading ? <ClockIcon className="animate-spin" /> : icon}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="text-base font-semibold text-foreground">{title}</span>
+          <span className="mt-1 block text-sm leading-6 text-muted-foreground">
+            {description}
+          </span>
+        </span>
+      </div>
+    </button>
+  )
+}
+
+const modeOptionToneClasses = {
+  study: {
+    card: "hover:border-chart-2/45",
+    icon: "bg-chart-2/10 text-chart-2",
+  },
+  quiz: {
+    card: "hover:border-primary/45",
+    icon: "bg-primary/10 text-primary",
+  },
 }

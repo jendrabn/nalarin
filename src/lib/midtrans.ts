@@ -60,8 +60,16 @@ export type MidtransSnapTransactionResponse = {
 
 export type MidtransPaymentMethod = (typeof paymentMethodValues)[number]
 
+function getMidtransServerKey() {
+  if (!env.MIDTRANS_SERVER_KEY) {
+    throw new Error("MIDTRANS_SERVER_KEY is required for Midtrans requests.")
+  }
+
+  return env.MIDTRANS_SERVER_KEY
+}
+
 function buildBasicAuthValue() {
-  return Buffer.from(`${env.MIDTRANS_SERVER_KEY}:`).toString("base64")
+  return Buffer.from(`${getMidtransServerKey()}:`).toString("base64")
 }
 
 export function getMidtransBaseUrl() {
@@ -84,7 +92,7 @@ export function verifyMidtransSignature(payload: MidtransNotificationPayload) {
   const signature = crypto
     .createHash("sha512")
     .update(
-      `${payload.order_id}${payload.status_code}${payload.gross_amount}${env.MIDTRANS_SERVER_KEY}`,
+      `${payload.order_id}${payload.status_code}${payload.gross_amount}${getMidtransServerKey()}`,
     )
     .digest("hex")
 

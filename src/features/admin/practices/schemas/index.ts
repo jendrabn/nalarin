@@ -25,7 +25,7 @@ export const practiceFormSchema = z
     allowReviewBeforeSubmit: z.boolean().default(true),
     showResultAfterSubmit: z.boolean().default(true),
     showExplanationAfterSubmit: z.boolean().default(true),
-    navigationMode: z.enum(practiceNavigationModeValues),
+    navigationMode: z.enum(practiceNavigationModeValues).default("free"),
     questions: z.array(practiceQuestionFormSchema).default([]),
   })
   .superRefine((value, ctx) => {
