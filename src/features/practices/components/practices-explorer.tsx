@@ -10,7 +10,6 @@ import {
   GraduationCapIcon,
   LayoutListIcon,
   LockIcon,
-  TargetIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -31,13 +30,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,7 +63,6 @@ import type {
   PracticeDiscoveryData,
   PracticeDiscoveryPractice,
   PracticeDiscoverySubject,
-  PracticeDiscoveryTopic,
 } from "../queries"
 import { canAccessPractice } from "../utils/access"
 import {
@@ -150,11 +141,6 @@ export function PracticesExplorer({
   const activeSubject = useMemo(
     () => visibleSubjects.find((subject) => subject.id === activeSubjectId) ?? null,
     [activeSubjectId, visibleSubjects],
-  )
-
-  const visibleTopics = useMemo(
-    () => data.topics.filter((topic) => topic.subjectId === activeSubject?.id),
-    [activeSubject?.id, data.topics],
   )
 
   const visiblePractices = useMemo(
@@ -282,7 +268,7 @@ export function PracticesExplorer({
 
   return (
     <main>
-      <section className="border-b bg-[linear-gradient(180deg,color-mix(in_oklab,var(--secondary)_62%,transparent),transparent)]">
+      <section className="bg-[linear-gradient(180deg,color-mix(in_oklab,var(--secondary)_62%,transparent),transparent)]">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <span className="h-9 w-1.5 rounded-full bg-primary" aria-hidden="true" />
@@ -332,7 +318,15 @@ export function PracticesExplorer({
         />
 
         <div className="min-w-0 space-y-6">
-          <PracticeBreadcrumb examTypeName={activeExamType?.name} subjectName={activeSubject?.name} />
+          <PracticeBreadcrumb
+            examTypeName={activeExamType?.name}
+            subjectName={activeSubject?.name}
+            onExamTypeClick={() => {
+              if (activeExamTypeId !== null) {
+                handleExamTypeChange(String(activeExamTypeId))
+              }
+            }}
+          />
 
           {visibleSubjects.length === 0 ? (
             <Empty className="min-h-72 border bg-card">
@@ -349,13 +343,10 @@ export function PracticesExplorer({
               </EmptyHeader>
             </Empty>
           ) : (
-            <>
-              <TopicSlider topics={visibleTopics} />
-              <PracticeList
-                practices={visiblePractices}
-                onPracticeStart={handlePracticeStart}
-              />
-            </>
+            <PracticeList
+              practices={visiblePractices}
+              onPracticeStart={handlePracticeStart}
+            />
           )}
         </div>
       </section>
@@ -485,21 +476,27 @@ function SubjectSidebar({
 function PracticeBreadcrumb({
   examTypeName,
   subjectName,
+  onExamTypeClick,
 }: {
   examTypeName?: string
   subjectName?: string
+  onExamTypeClick: () => void
 }) {
   return (
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link href="/">Home</Link>
+            <Link href="/practices">Latihan</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <span>{examTypeName ?? "Tipe Ujian"}</span>
+          <BreadcrumbLink asChild>
+            <button type="button" onClick={onExamTypeClick}>
+              {examTypeName ?? "Tipe Ujian"}
+            </button>
+          </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
@@ -507,51 +504,6 @@ function PracticeBreadcrumb({
         </BreadcrumbItem>
       </BreadcrumbList>
     </Breadcrumb>
-  )
-}
-
-function TopicSlider({ topics }: { topics: PracticeDiscoveryTopic[] }) {
-  return (
-    <section>
-      {topics.length === 0 ? (
-        <Empty className="border bg-muted/30 py-8">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <TargetIcon />
-            </EmptyMedia>
-            <EmptyTitle>Belum ada topik</EmptyTitle>
-            <EmptyDescription>
-              Topik akan tampil setelah materi mata pelajaran ditambahkan.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      ) : (
-        <Carousel
-          opts={{
-            align: "start",
-            dragFree: true,
-          }}
-          className="relative"
-        >
-          <div className="absolute -top-12 right-0 hidden items-center gap-2 sm:flex">
-            <CarouselPrevious className="static translate-x-0 translate-y-0" />
-            <CarouselNext className="static translate-x-0 translate-y-0" />
-          </div>
-          <CarouselContent className="-ml-3">
-            {topics.map((topic) => (
-              <CarouselItem
-                key={topic.id}
-                className="basis-[78%] pl-3 min-[480px]:basis-1/2 lg:basis-1/3 xl:basis-1/4"
-              >
-                <div className="flex h-20 items-center rounded-xl border bg-card p-4 shadow-sm transition-colors hover:border-primary/35">
-                  <p className="line-clamp-2 text-sm font-medium">{topic.name}</p>
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
-      )}
-    </section>
   )
 }
 
