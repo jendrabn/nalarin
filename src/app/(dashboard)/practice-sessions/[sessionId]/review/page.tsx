@@ -152,11 +152,8 @@ function ReviewQuestionCard({ question }: { question: PracticeSessionReviewQuest
             <FileTextIcon className="size-4 text-primary" />
             Pembahasan
           </h2>
-          {question.question.explanation ? (
-            <div
-              className="rounded-lg border bg-muted/25 p-4 text-sm leading-7 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
-              dangerouslySetInnerHTML={{ __html: question.question.explanation }}
-            />
+          {hasExplanationContent(question) ? (
+            <ReviewExplanation question={question} />
           ) : (
             <Empty className="border bg-muted/25 py-8">
               <EmptyHeader>
@@ -174,6 +171,52 @@ function ReviewQuestionCard({ question }: { question: PracticeSessionReviewQuest
       </CardContent>
     </Card>
   )
+}
+
+function ReviewExplanation({ question }: { question: PracticeSessionReviewQuestion }) {
+  const explanations = getExplanationItems(question)
+
+  return (
+    <div className="flex flex-col gap-3">
+      {explanations.map((item) => (
+        <section key={item.label} className="rounded-lg border bg-muted/25 p-4">
+          <h3 className="mb-2 text-sm font-semibold">{item.label}</h3>
+          <div
+            className="text-sm leading-7 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
+            dangerouslySetInnerHTML={{ __html: item.content }}
+          />
+        </section>
+      ))}
+    </div>
+  )
+}
+
+function hasExplanationContent(question: PracticeSessionReviewQuestion) {
+  return getExplanationItems(question).length > 0
+}
+
+function getExplanationItems(question: PracticeSessionReviewQuestion) {
+  const items: Array<{ label: string; content: string }> = []
+
+  if (question.question.manualExplanation) {
+    items.push({
+      label: "Pembahasan Manual",
+      content: question.question.manualExplanation,
+    })
+  }
+
+  if (question.question.aiExplanation) {
+    items.push({
+      label: "Pembahasan AI",
+      content: question.question.aiExplanation,
+    })
+  }
+
+  if (items.length === 0 && question.question.explanation) {
+    items.push({ label: "Pembahasan", content: question.question.explanation })
+  }
+
+  return items
 }
 
 function AnswerBox({

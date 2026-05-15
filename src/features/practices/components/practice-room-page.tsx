@@ -59,6 +59,7 @@ import {
 } from "../actions"
 import type {
   PracticeMode,
+  PracticeQuestionSnapshot,
   PracticeQuestionType,
   PracticeRoomAnswer,
   PracticeRoomData,
@@ -365,42 +366,39 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
   return (
     <main className="min-h-svh bg-muted/35">
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className="gap-1.5 bg-primary/10 text-primary">
-                  {session.mode === "practice" ? <BookOpenCheckIcon /> : <AlarmClockIcon />}
-                  {modeLabels[session.mode]}
-                </Badge>
-                <span className="text-xs font-medium text-muted-foreground">
-                  {session.examTypeName} / {session.subjectName}
-                </span>
-              </div>
-              <h1 className="mt-1 line-clamp-1 font-heading text-lg font-semibold tracking-normal sm:text-xl">
-                {session.title}
-              </h1>
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2.5 px-4 py-2.5 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <Badge variant="outline" className="gap-1.5 bg-primary/10 text-primary">
+                {session.mode === "practice" ? <BookOpenCheckIcon /> : <AlarmClockIcon />}
+                {modeLabels[session.mode]}
+              </Badge>
+              <span className="text-xs font-medium text-muted-foreground">
+                {session.examTypeName} / {session.subjectName}
+              </span>
             </div>
+            <h1 className="min-w-0 max-w-full truncate text-left font-heading text-sm font-semibold tracking-normal text-foreground sm:max-w-[52%] sm:text-right sm:text-base">
+              {session.title}
+            </h1>
+          </div>
 
-            {session.mode === "quiz" ? (
-              <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center">
+          <div className="flex items-center gap-2">
+            <Progress value={progressValue} className="h-2 flex-1" />
+            <div className="flex shrink-0 items-center gap-2">
+              <p className="text-xs font-medium text-muted-foreground">{progressValue}%</p>
+              {session.mode === "quiz" ? (
                 <StatusPill icon={<ClockIcon />}>
                   <span suppressHydrationWarning>
                     {remainingSeconds === null ? "--:--" : formatDuration(remainingSeconds)}
                   </span>
                 </StatusPill>
-              </div>
-            ) : null}
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Progress value={progressValue} className="h-2.5" />
-            <p className="text-xs font-medium text-muted-foreground">{progressValue}% Selesai</p>
+              ) : null}
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:px-8">
+      <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start lg:px-8">
         <QuestionNavigation
           mode={session.mode}
           questions={session.questions}
@@ -422,7 +420,6 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
                     <Badge variant="outline">
                       {questionTypeLabels[activeQuestion.question.type]}
                     </Badge>
-                    <Badge variant="outline">{activeQuestion.points} Poin</Badge>
                   </div>
                 </div>
 
@@ -471,7 +468,7 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
             </CardContent>
           </Card>
 
-          <div className="grid gap-3 rounded-xl border bg-card p-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
             <div className="flex justify-start">
               <Button
                 type="button"
@@ -1043,11 +1040,8 @@ function PracticeFeedback({
       </div>
 
       {explanationOpen ? (
-        question.question.explanation ? (
-          <div
-            className="rounded-lg border bg-background p-4 text-sm leading-7 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
-            dangerouslySetInnerHTML={{ __html: question.question.explanation }}
-          />
+        hasExplanationContent(question.question) ? (
+          <ExplanationContent question={question.question} />
         ) : (
           <Empty className="border bg-background py-8">
             <EmptyHeader>
@@ -1064,6 +1058,46 @@ function PracticeFeedback({
       ) : null}
     </div>
   )
+}
+
+function ExplanationContent({ question }: { question: PracticeQuestionSnapshot }) {
+  const explanations = getExplanationItems(question)
+
+  return (
+    <div className="flex flex-col gap-3">
+      {explanations.map((item) => (
+        <section key={item.label} className="rounded-lg border bg-background p-4">
+          <h3 className="mb-2 text-sm font-semibold">{item.label}</h3>
+          <div
+            className="text-sm leading-7 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
+            dangerouslySetInnerHTML={{ __html: item.content }}
+          />
+        </section>
+      ))}
+    </div>
+  )
+}
+
+function hasExplanationContent(question: PracticeQuestionSnapshot) {
+  return getExplanationItems(question).length > 0
+}
+
+function getExplanationItems(question: PracticeQuestionSnapshot) {
+  const items: Array<{ label: string; content: string }> = []
+
+  if (question.manualExplanation) {
+    items.push({ label: "Pembahasan Manual", content: question.manualExplanation })
+  }
+
+  if (question.aiExplanation) {
+    items.push({ label: "Pembahasan AI", content: question.aiExplanation })
+  }
+
+  if (items.length === 0 && question.explanation) {
+    items.push({ label: "Pembahasan", content: question.explanation })
+  }
+
+  return items
 }
 
 function FinishDialog({
@@ -1195,12 +1229,12 @@ function getFeedbackClass({
     return "border-chart-2/35 bg-chart-2/10"
   }
 
-  if (selected && answerIsWrong) {
-    return "border-destructive/35 bg-destructive/10"
+  if (answerIsWrong && isCorrectOption) {
+    return "border-primary/35 bg-primary/10"
   }
 
-  if (isCorrectOption && answerIsWrong) {
-    return "border-primary/35 bg-primary/10"
+  if (selected && answerIsWrong) {
+    return "border-destructive/35 bg-destructive/10"
   }
 
   return "opacity-70"

@@ -932,6 +932,8 @@ function buildSessionQuestions(
           scoringRule: row.scoringRule ?? null,
           imageUrl: row.imageUrl ?? null,
           explanation: row.manualExplanation ?? row.aiExplanation ?? null,
+          manualExplanation: row.manualExplanation ?? null,
+          aiExplanation: row.aiExplanation ?? null,
           year: row.year ?? null,
           points,
         },
