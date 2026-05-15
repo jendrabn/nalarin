@@ -398,7 +398,7 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start lg:px-8">
+      <div className="mx-auto grid w-full max-w-7xl items-start gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:px-8">
         <QuestionNavigation
           mode={session.mode}
           questions={session.questions}
@@ -465,58 +465,58 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
                   }
                 />
               ) : null}
+
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1 sm:gap-4">
+                <div className="flex min-w-fit justify-start">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => moveToQuestion(activeQuestionIndex - 1)}
+                    disabled={activeQuestionIndex === 0 || isPending}
+                  >
+                    <ArrowLeftIcon data-icon="inline-start" />
+                    Sebelumnya
+                  </Button>
+                </div>
+
+                <div className={cn("flex min-w-fit justify-center", session.mode === "practice" && "sm:min-w-8")}>
+                  {session.mode === "practice" && !isAnswerLocked(activeAnswer) ? (
+                    <Button
+                      type="button"
+                      variant="outline-primary"
+                      onClick={() => confirmAnswer(activeQuestion)}
+                      disabled={!isQuestionAnswered(activeAnswer) || isPending}
+                    >
+                      <CheckCircle2Icon data-icon="inline-start" />
+                      Konfirmasi
+                    </Button>
+                  ) : isPending ? (
+                    <Loader2Icon className="animate-spin text-muted-foreground" />
+                  ) : null}
+                </div>
+
+                <div className="flex min-w-fit justify-end">
+                  {session.mode === "practice" || session.mode === "quiz" ? (
+                    <RoomPrimaryActions
+                      mode={session.mode}
+                      showConfirm={false}
+                      activeIndex={activeQuestionIndex}
+                      totalQuestions={session.questions.length}
+                      highestReachableIndex={highestReachableIndex}
+                      activeAnswer={activeAnswer}
+                      canFinish={canFinish}
+                      isPending={isPending}
+                      onConfirm={() => confirmAnswer(activeQuestion)}
+                      onFinish={() => setIsFinishDialogOpen(true)}
+                      onNext={() => moveToQuestion(activeQuestionIndex + 1)}
+                    />
+                  ) : isPending ? (
+                    <Loader2Icon className="animate-spin text-muted-foreground" />
+                  ) : null}
+                </div>
+              </div>
             </CardContent>
           </Card>
-
-          <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-            <div className="flex justify-start">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => moveToQuestion(activeQuestionIndex - 1)}
-                disabled={activeQuestionIndex === 0 || isPending}
-              >
-                <ArrowLeftIcon data-icon="inline-start" />
-                Sebelumnya
-              </Button>
-            </div>
-
-            <div className={cn("flex justify-center", session.mode === "practice" && "sm:min-w-8")}>
-              {session.mode === "practice" && !isAnswerLocked(activeAnswer) ? (
-                <Button
-                  type="button"
-                  variant="outline-primary"
-                  onClick={() => confirmAnswer(activeQuestion)}
-                  disabled={!isQuestionAnswered(activeAnswer) || isPending}
-                >
-                  <CheckCircle2Icon data-icon="inline-start" />
-                  Konfirmasi
-                </Button>
-              ) : isPending ? (
-                <Loader2Icon className="animate-spin text-muted-foreground" />
-              ) : null}
-            </div>
-
-            <div className="flex justify-end">
-              {session.mode === "practice" || session.mode === "quiz" ? (
-                <RoomPrimaryActions
-                  mode={session.mode}
-                  showConfirm={false}
-                  activeIndex={activeQuestionIndex}
-                  totalQuestions={session.questions.length}
-                  highestReachableIndex={highestReachableIndex}
-                  activeAnswer={activeAnswer}
-                  canFinish={canFinish}
-                  isPending={isPending}
-                  onConfirm={() => confirmAnswer(activeQuestion)}
-                  onFinish={() => setIsFinishDialogOpen(true)}
-                  onNext={() => moveToQuestion(activeQuestionIndex + 1)}
-                />
-              ) : isPending ? (
-                <Loader2Icon className="animate-spin text-muted-foreground" />
-              ) : null}
-            </div>
-          </div>
         </section>
       </div>
 
@@ -628,55 +628,57 @@ function QuestionNavigation({
   onSelect: (index: number) => void
 }) {
   return (
-    <aside className="lg:sticky lg:top-28 lg:self-start">
-      <Card className="gap-0 overflow-hidden py-0 shadow-sm">
+    <aside className="min-w-0 lg:self-start">
+      <Card className="max-w-full gap-0 py-0 shadow-sm">
         <CardHeader className="px-4 py-4">
           <CardTitle className="text-sm font-semibold">
             Navigasi Soal
           </CardTitle>
         </CardHeader>
-        <CardContent className="px-3 pb-3 pt-0">
-          <div className="grid grid-flow-col auto-cols-[2.5rem] gap-2 overflow-x-auto pb-1 lg:grid-flow-row lg:grid-cols-5 lg:overflow-visible lg:pb-0">
-            {questions.map((question, index) => {
-              const answer = answers[question.id]
-              const answered = isQuestionAnswered(answer)
-              const lockedAnswer = isAnswerLocked(answer)
-              const wrongAnswer = mode === "practice" && lockedAnswer && answer?.isCorrect === false
-              const flagged = mode === "quiz" && Boolean(answer?.isMarkedForReview)
-              const active = index === activeIndex
-              const locked = index > highestReachableIndex
+        <CardContent className="min-w-0 px-3 pb-3 pt-0">
+          <div className="max-w-full overflow-x-auto pb-1 lg:overflow-visible lg:pb-0">
+            <div className="grid w-max grid-flow-col auto-cols-[2.5rem] gap-2 pt-1.5 lg:w-auto lg:grid-flow-row lg:grid-cols-5">
+              {questions.map((question, index) => {
+                const answer = answers[question.id]
+                const answered = isQuestionAnswered(answer)
+                const lockedAnswer = isAnswerLocked(answer)
+                const wrongAnswer = mode === "practice" && lockedAnswer && answer?.isCorrect === false
+                const flagged = mode === "quiz" && Boolean(answer?.isMarkedForReview)
+                const active = index === activeIndex
+                const locked = index > highestReachableIndex
 
-              return (
-                <button
-                  key={question.id}
-                  type="button"
-                  onClick={() => onSelect(index)}
-                  disabled={locked}
-                  aria-current={active ? "step" : undefined}
-                  className={cn(
-                    "relative grid size-10 place-items-center rounded-lg border text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-45",
-                    wrongAnswer
-                      ? active
-                        ? "border-destructive bg-destructive text-white"
-                        : "border-destructive/35 bg-destructive/10 text-destructive hover:bg-destructive/15"
-                      : active
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : lockedAnswer
-                        ? "border-chart-2/35 bg-chart-2/10 text-chart-2 hover:bg-chart-2/15"
-                        : answered
-                          ? "border-primary/35 bg-primary/10 text-primary hover:bg-primary/15"
-                          : "bg-background hover:bg-muted",
-                  )}
-                >
-                  {question.orderIndex}
-                  {flagged ? (
-                    <span className="absolute -right-1 -top-1 size-2.5 rounded-full bg-chart-3 ring-2 ring-card" />
-                  ) : null}
-                </button>
-              )
-            })}
+                return (
+                  <button
+                    key={question.id}
+                    type="button"
+                    onClick={() => onSelect(index)}
+                    disabled={locked}
+                    aria-current={active ? "step" : undefined}
+                    className={cn(
+                      "relative grid size-10 place-items-center rounded-lg border text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-45",
+                      wrongAnswer
+                        ? active
+                          ? "border-destructive bg-destructive text-white"
+                          : "border-destructive/35 bg-destructive/10 text-destructive hover:bg-destructive/15"
+                        : active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : lockedAnswer
+                          ? "border-chart-2/35 bg-chart-2/10 text-chart-2 hover:bg-chart-2/15"
+                          : answered
+                            ? "border-primary/35 bg-primary/10 text-primary hover:bg-primary/15"
+                            : "bg-background hover:bg-muted",
+                    )}
+                  >
+                    {question.orderIndex}
+                    {flagged ? (
+                      <span className="absolute -right-1 -top-1 size-2.5 rounded-full bg-chart-3 ring-2 ring-card" />
+                    ) : null}
+                  </button>
+                )
+              })}
+            </div>
           </div>
-          <div className="mt-4 grid grid-cols-3 gap-2 text-[0.72rem] text-muted-foreground">
+          <div className="mt-4 flex items-center justify-between gap-3 text-[0.72rem] text-muted-foreground">
             <LegendItem className="bg-primary" label="Aktif" />
             <LegendItem className={mode === "practice" ? "bg-chart-2" : "bg-primary/20"} label={mode === "practice" ? "Selesai" : "Terjawab"} />
             {mode === "practice" ? (
