@@ -275,6 +275,7 @@ export const examTypes = mysqlTable(
     name: varchar('name', { length: 100 }).notNull(),
     slug: varchar('slug', { length: 191 }).notNull(),
     description: text('description'),
+    logoUrl: varchar('logo_url', { length: 2048 }),
     ...auditColumns(),
   },
   (table) => [uniqueIndex('exam_types_slug_uq').on(table.slug)],
@@ -290,6 +291,7 @@ export const subjects = mysqlTable(
     name: varchar('name', { length: 150 }).notNull(),
     slug: varchar('slug', { length: 191 }).notNull(),
     description: text('description'),
+    logoUrl: varchar('logo_url', { length: 2048 }),
     ...auditColumns(),
   },
   (table) => [

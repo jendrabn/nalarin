@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useId, useMemo } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { LogoUploadField } from "@/features/admin/components/logo-upload-field"
 
 import {
   examTypeFormSchema,
@@ -45,6 +46,7 @@ function buildDefaultValues(initialValues?: ExamTypeFormValues): ExamTypeFormVal
   return {
     name: initialValues?.name ?? "",
     description: initialValues?.description ?? "",
+    logoUrl: initialValues?.logoUrl ?? "",
   }
 }
 
@@ -75,6 +77,7 @@ export function ExamTypeFormDialog({
 
   const rootError = form.formState.errors.root?.message
   const isSubmitting = form.formState.isSubmitting
+  const logoUrl = useWatch({ control: form.control, name: "logoUrl" })
 
   const handleSubmit = form.handleSubmit(async (values) => {
     const result = await onSubmit(values)
@@ -118,6 +121,7 @@ export function ExamTypeFormDialog({
 
         <form id={formId} onSubmit={handleSubmit}>
           <FieldGroup>
+            <input type="hidden" {...form.register("logoUrl")} />
             {rootError ? (
               <p className="text-sm text-destructive" aria-live="polite">
                 {rootError}
@@ -156,6 +160,18 @@ export function ExamTypeFormDialog({
                 <FieldError>{form.formState.errors.description?.message}</FieldError>
               </div>
             </Field>
+
+            <LogoUploadField
+              label="Logo"
+              value={logoUrl}
+              error={form.formState.errors.logoUrl?.message}
+              onChange={(value) =>
+                form.setValue("logoUrl", value, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+            />
           </FieldGroup>
 
           <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

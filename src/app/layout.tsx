@@ -23,6 +23,7 @@ export default function RootLayout({
       lang="id"
       suppressHydrationWarning
       className="h-full antialiased"
+      data-scroll-behavior="smooth"
     >
       <body
         suppressHydrationWarning

@@ -24,10 +24,11 @@ import {
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { LogoUploadField } from "@/features/admin/components/logo-upload-field"
 
 import type { SubjectActionResult } from "../actions"
 import { subjectFormSchema, type SubjectFormValues } from "../schemas"
-import type { ExamTypeLookup } from "../queries"
+import type { ExamTypeLookup } from "../../exam-types/queries"
 
 type SubjectFormDialogProps = {
   open: boolean
@@ -47,6 +48,7 @@ function buildDefaultValues(initialValues?: SubjectFormValues): SubjectFormValue
     examTypeId: initialValues?.examTypeId ?? "",
     name: initialValues?.name ?? "",
     description: initialValues?.description ?? "",
+    logoUrl: initialValues?.logoUrl ?? "",
   }
 }
 
@@ -77,6 +79,7 @@ export function SubjectFormDialog({
   }, [defaultValues, form, open])
 
   const watchedExamTypeId = useWatch({ control: form.control, name: "examTypeId" })
+  const watchedLogoUrl = useWatch({ control: form.control, name: "logoUrl" })
   const rootError = form.formState.errors.root?.message
   const isSubmitting = form.formState.isSubmitting
 
@@ -122,6 +125,7 @@ export function SubjectFormDialog({
 
         <form id={formId} onSubmit={handleSubmit}>
           <FieldGroup>
+            <input type="hidden" {...form.register("logoUrl")} />
             {rootError ? (
               <p className="text-sm text-destructive" aria-live="polite">
                 {rootError}
@@ -192,6 +196,18 @@ export function SubjectFormDialog({
                 <FieldError>{form.formState.errors.description?.message}</FieldError>
               </div>
             </Field>
+
+            <LogoUploadField
+              label="Logo"
+              value={watchedLogoUrl}
+              error={form.formState.errors.logoUrl?.message}
+              onChange={(value) =>
+                form.setValue("logoUrl", value, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+            />
           </FieldGroup>
 
           <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

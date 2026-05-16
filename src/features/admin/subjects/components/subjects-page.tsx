@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { EllipsisVerticalIcon, PencilLineIcon, PlusIcon, Trash2Icon } from "lucide-react"
+import { EllipsisVerticalIcon, ImageIcon, PencilLineIcon, PlusIcon, Trash2Icon } from "lucide-react"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/page-header"
@@ -144,7 +145,14 @@ export function SubjectsPage({
             accessorKey: "name",
             meta: { label: "Name" },
             header: ({ column }) => <SortableHeader column={column}>Name</SortableHeader>,
-            cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
+            cell: ({ row }) => (
+              <div className="flex min-w-0 items-center gap-3">
+                <TaxonomyLogo src={row.original.logoUrl} />
+                <span className="truncate font-medium text-foreground">
+                  {row.original.name}
+                </span>
+              </div>
+            ),
           },
           {
             accessorKey: "examTypeName",
@@ -281,6 +289,7 @@ export function SubjectsPage({
                 examTypeId: String(editingSubject.examTypeId),
                 name: editingSubject.name,
                 description: editingSubject.description ?? "",
+                logoUrl: editingSubject.logoUrl ?? "",
               }
             : undefined
         }
@@ -338,5 +347,24 @@ export function SubjectsPage({
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+function TaxonomyLogo({ src }: { src: string | null }) {
+  return (
+    <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/35 text-muted-foreground [&_svg]:size-4">
+      {src ? (
+        <Image
+          src={src}
+          alt=""
+          width={36}
+          height={36}
+          unoptimized
+          className="size-full object-contain p-1.5"
+        />
+      ) : (
+        <ImageIcon />
+      )}
+    </span>
   )
 }

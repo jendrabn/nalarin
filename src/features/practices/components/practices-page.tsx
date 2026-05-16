@@ -10,9 +10,15 @@ type PracticesPageProps = {
   user: CurrentUser | null
   currentPlanCode: PlanCode
   data: PracticeDiscoveryData
+  selectedExamTypeSlug?: string
 }
 
-export function PracticesPage({ user, currentPlanCode, data }: PracticesPageProps) {
+export function PracticesPage({
+  user,
+  currentPlanCode,
+  data,
+  selectedExamTypeSlug,
+}: PracticesPageProps) {
   const siteUser = user
     ? ({
         name: user.name,
@@ -38,6 +44,7 @@ export function PracticesPage({ user, currentPlanCode, data }: PracticesPageProp
             : null
         }
         currentPlanCode={currentPlanCode}
+        selectedExamTypeSlug={selectedExamTypeSlug}
       />
       <SiteFooter />
     </div>

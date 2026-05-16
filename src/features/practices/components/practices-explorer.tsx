@@ -1,9 +1,11 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useMemo, useState, useTransition, type ReactNode } from "react"
 import {
+  ArrowLeftIcon,
   BookOpenCheckIcon,
   BookOpenIcon,
   ClockIcon,
@@ -79,6 +81,7 @@ type PracticesExplorerProps = {
     isEmailVerified: boolean
   } | null
   currentPlanCode: PlanCode
+  selectedExamTypeSlug?: string
 }
 
 const difficultyCardClasses: Record<PracticeDifficulty, string> = {
@@ -108,13 +111,17 @@ export function PracticesExplorer({
   data,
   user,
   currentPlanCode,
+  selectedExamTypeSlug,
 }: PracticesExplorerProps) {
   const router = useRouter()
+  const selectedExamType = selectedExamTypeSlug
+    ? data.examTypes.find((examType) => examType.slug === selectedExamTypeSlug)
+    : null
   const [activeExamTypeId, setActiveExamTypeId] = useState(
-    data.examTypes[0]?.id ?? null,
+    selectedExamType?.id ?? data.examTypes[0]?.id ?? null,
   )
   const [activeSubjectId, setActiveSubjectId] = useState(() => {
-    const firstExamTypeId = data.examTypes[0]?.id
+    const firstExamTypeId = selectedExamType?.id ?? data.examTypes[0]?.id
 
     return data.subjects.find((subject) => subject.examTypeId === firstExamTypeId)?.id ?? null
   })
@@ -127,6 +134,7 @@ export function PracticesExplorer({
     sessionId: number
   } | null>(null)
   const [isStarting, startTransition] = useTransition()
+  const isExamTypeLocked = Boolean(selectedExamTypeSlug)
 
   const activeExamType = useMemo(
     () => data.examTypes.find((examType) => examType.id === activeExamTypeId) ?? null,
@@ -273,39 +281,49 @@ export function PracticesExplorer({
           <div className="flex min-w-0 items-center gap-3">
             <span className="h-9 w-1.5 rounded-full bg-primary" aria-hidden="true" />
             <h1 className="font-heading text-[1.65rem] font-semibold leading-tight tracking-normal text-balance sm:text-[1.85rem]">
-              Latihan Soal
+              {activeExamType ? `Latihan Soal ${activeExamType.name}` : "Latihan Soal"}
             </h1>
           </div>
 
-          <div className="-mx-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 lg:max-w-[68%]">
-            <div
-              role="tablist"
-              aria-label="Pilih tipe ujian"
-              className="inline-flex w-fit min-w-max snap-x items-center gap-1 rounded-lg border bg-card p-1 text-muted-foreground shadow-sm"
+          {isExamTypeLocked ? (
+            <Link
+              href="/practices"
+              className="inline-flex w-fit items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm font-medium text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
-              {data.examTypes.map((examType) => {
-                const active = examType.id === activeExamTypeId
+              <ArrowLeftIcon data-icon="inline-start" />
+              Kembali ke jenis ujian
+            </Link>
+          ) : (
+            <div className="-mx-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 lg:max-w-[68%]">
+              <div
+                role="tablist"
+                aria-label="Pilih tipe ujian"
+                className="inline-flex w-fit min-w-max snap-x items-center gap-1 rounded-lg border bg-card p-1 text-muted-foreground shadow-sm"
+              >
+                {data.examTypes.map((examType) => {
+                  const active = examType.id === activeExamTypeId
 
-                return (
-                  <button
-                    key={examType.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => handleExamTypeChange(String(examType.id))}
-                    className={cn(
-                      "h-9 flex-none snap-start rounded-md px-3.5 text-sm font-medium whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-4",
-                      active
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-                    )}
-                  >
-                    {examType.name}
-                  </button>
-                )
-              })}
+                  return (
+                    <button
+                      key={examType.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => handleExamTypeChange(String(examType.id))}
+                      className={cn(
+                        "h-9 flex-none snap-start rounded-md px-3.5 text-sm font-medium whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-4",
+                        active
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                      )}
+                    >
+                      {examType.name}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
@@ -436,7 +454,7 @@ function SubjectSidebar({
             {examTypeName}
           </h2>
           <p className="mt-1 text-sm leading-5 text-muted-foreground">
-            Pilih sub-materi yang ingin kamu kuasai.
+            Pilih mata pelajaran untuk melihat paket latihan.
           </p>
         </div>
 
@@ -462,7 +480,23 @@ function SubjectSidebar({
                   )}
                   aria-pressed={active}
                 >
-                  <span className="block truncate font-medium">{subject.name}</span>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-md border bg-background/70 text-muted-foreground [&_svg]:size-3.5">
+                      {subject.logoUrl ? (
+                        <Image
+                          src={subject.logoUrl}
+                          alt=""
+                          width={28}
+                          height={28}
+                          unoptimized
+                          className="size-full object-contain p-1"
+                        />
+                      ) : (
+                        <BookOpenIcon />
+                      )}
+                    </span>
+                    <span className="block truncate font-medium">{subject.name}</span>
+                  </span>
                 </button>
               )
             })}

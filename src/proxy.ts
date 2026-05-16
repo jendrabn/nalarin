@@ -15,8 +15,8 @@ const protectedPrefixes = [
   "/progress",
   "/tryout",
   "/tryout-sessions",
-  "/tryouts",
 ];
+const publicPracticePrefixes = ["/practices/exam"];
 
 function startsWithAny(pathname: string, prefixes: string[]) {
   return prefixes.some(
@@ -46,7 +46,8 @@ export async function proxy(request: NextRequest) {
 
   if (
     (startsWithAny(pathname, protectedPrefixes) ||
-      pathname.startsWith("/practices/")) &&
+      (pathname.startsWith("/practices/") &&
+        !startsWithAny(pathname, publicPracticePrefixes))) &&
     !isAuthenticated
   ) {
     return NextResponse.redirect(new URL("/login", request.url));

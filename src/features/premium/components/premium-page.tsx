@@ -63,6 +63,15 @@ export async function PremiumPage({ user }: PremiumPageProps) {
       <SiteNavbar user={siteUser} />
       <main>
         <section className="bg-background pb-20 pt-8 sm:pb-24 sm:pt-10">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 sm:px-6 lg:px-8">
+            <h1 className="font-heading text-[1.9rem] font-semibold leading-tight tracking-normal text-foreground sm:text-[2.25rem]">
+              Paket Premium
+            </h1>
+            <p className="max-w-2xl text-[0.95rem] leading-6 text-muted-foreground sm:text-base">
+              Pilih paket belajar yang sesuai dengan targetmu untuk membuka latihan, tryout, pembahasan, dan fitur premium lainnya.
+            </p>
+          </div>
+
           <PremiumCheckout
             user={premiumUser}
             plans={plans}

@@ -9,6 +9,7 @@ export type ExamTypeRow = {
   name: string
   slug: string
   description: string | null
+  logoUrl: string | null
   subjectCount: number
   topicCount: number
   questionCount: number
@@ -28,6 +29,7 @@ function selectExamTypeColumns() {
     name: schema.examTypes.name,
     slug: schema.examTypes.slug,
     description: schema.examTypes.description,
+    logoUrl: schema.examTypes.logoUrl,
     createdAt: schema.examTypes.createdAt,
     updatedAt: schema.examTypes.updatedAt,
   } as const
@@ -81,6 +83,7 @@ export async function getExamTypes() {
   return rows.map<ExamTypeRow>((row) => ({
     ...row,
     description: row.description ?? null,
+    logoUrl: row.logoUrl ?? null,
     subjectCount: counts.subjectCounts.get(row.id) ?? 0,
     topicCount: counts.topicCounts.get(row.id) ?? 0,
     questionCount: counts.questionCounts.get(row.id) ?? 0,

@@ -275,7 +275,7 @@ export function PremiumCheckout({
         />
       ) : null}
 
-      <div className="mx-auto mt-10 flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto mt-6 flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
         {pendingPayment ? (
           <PendingPaymentSection
             currentPlanName={currentPlan?.name ?? "Free"}

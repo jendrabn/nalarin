@@ -127,11 +127,11 @@ function revalidateTryoutRoutes(tryoutId?: number, slug?: string, previousSlug?:
   }
 
   if (slug) {
-    revalidatePath(`/tryout/${slug}`)
+    revalidatePath(`/tryouts/${slug}`)
   }
 
   if (previousSlug && previousSlug !== slug) {
-    revalidatePath(`/tryout/${previousSlug}`)
+    revalidatePath(`/tryouts/${previousSlug}`)
   }
 }
 
@@ -662,7 +662,7 @@ export async function deleteTryoutsAction(
     revalidatePath(`/admin/tryouts/${tryout.id}/edit`)
     revalidatePath(`/admin/tryouts/${tryout.id}/sections`)
     revalidatePath(`/admin/tryouts/${tryout.id}/sessions`)
-    revalidatePath(`/tryout/${tryout.slug}`)
+    revalidatePath(`/tryouts/${tryout.slug}`)
   })
 
   return {

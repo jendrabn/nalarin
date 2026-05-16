@@ -12,6 +12,7 @@ export type SubjectRow = {
   name: string
   slug: string
   description: string | null
+  logoUrl: string | null
   topicCount: number
   questionCount: number
   createdAt: Date
@@ -34,6 +35,7 @@ function selectSubjectColumns() {
     name: schema.subjects.name,
     slug: schema.subjects.slug,
     description: schema.subjects.description,
+    logoUrl: schema.subjects.logoUrl,
     createdAt: schema.subjects.createdAt,
     updatedAt: schema.subjects.updatedAt,
   } as const
@@ -78,6 +80,7 @@ export async function getSubjects() {
   return rows.map<SubjectRow>((row) => ({
     ...row,
     description: row.description ?? null,
+    logoUrl: row.logoUrl ?? null,
     topicCount: counts.topicCounts.get(row.id) ?? 0,
     questionCount: counts.questionCounts.get(row.id) ?? 0,
   }))

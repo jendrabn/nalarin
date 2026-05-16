@@ -46,6 +46,7 @@ function parseSubjectValues(values: SubjectFormValues) {
       examTypeId,
       name: validated.data.name.trim(),
       description: normalizeNullableText(validated.data.description),
+      logoUrl: normalizeNullableText(validated.data.logoUrl),
     },
   }
 }
@@ -106,6 +107,7 @@ export async function createSubjectAction(
         name: parsed.data.name,
         slug,
         description: parsed.data.description,
+        logoUrl: parsed.data.logoUrl,
       })
       .$returningId()
 
@@ -171,6 +173,7 @@ export async function updateSubjectAction(
         name: parsed.data.name,
         slug,
         description: parsed.data.description,
+        logoUrl: parsed.data.logoUrl,
       })
       .where(eq(schema.subjects.id, subjectId))
 

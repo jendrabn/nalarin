@@ -1,9 +1,7 @@
 import type { Metadata } from "next"
 
-import type { PlanCode } from "@/config/plans"
 import { getCurrentUser } from "@/features/auth/services/session"
-import { getCurrentActiveSubscription } from "@/features/premium/queries"
-import { PracticesPage } from "@/features/practices/components/practices-page"
+import { PracticeExamTypesPage } from "@/features/practices/components/practice-exam-types-page"
 import { getPracticeDiscoveryData } from "@/features/practices/queries"
 
 export const metadata: Metadata = {
@@ -38,25 +36,17 @@ export const metadata: Metadata = {
 }
 
 export default async function Page() {
-  const userPromise = getCurrentUser()
-  const dataPromise = getPracticeDiscoveryData()
-
-  const user = await userPromise
-  const subscriptionPromise = user
-    ? getCurrentActiveSubscription(user.id)
-    : Promise.resolve(null)
-  const [data, currentSubscription] = await Promise.all([
-    dataPromise,
-    subscriptionPromise,
+  const [user, data] = await Promise.all([
+    getCurrentUser(),
+    getPracticeDiscoveryData(),
   ])
-  const currentPlanCode: PlanCode = currentSubscription?.planCode ?? "free"
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: "Latihan Soal Nalarin",
     url: "https://nalarin.id/practices",
     description: metadata.description,
-    numberOfItems: data.practices.length,
+    numberOfItems: data.examTypes.length,
   }
 
   return (
@@ -67,11 +57,7 @@ export default async function Page() {
           __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
         }}
       />
-      <PracticesPage
-        user={user}
-        currentPlanCode={currentPlanCode}
-        data={data}
-      />
+      <PracticeExamTypesPage user={user} data={data} />
     </>
   )
 }

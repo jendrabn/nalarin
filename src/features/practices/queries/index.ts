@@ -15,6 +15,7 @@ export type PracticeDiscoveryExamType = {
   name: string
   slug: string
   description: string | null
+  logoUrl: string | null
 }
 
 export type PracticeDiscoverySubject = {
@@ -23,6 +24,7 @@ export type PracticeDiscoverySubject = {
   name: string
   slug: string
   description: string | null
+  logoUrl: string | null
   practiceCount: number
 }
 
@@ -75,6 +77,7 @@ export async function getPracticeDiscoveryData(): Promise<PracticeDiscoveryData>
         name: schema.examTypes.name,
         slug: schema.examTypes.slug,
         description: schema.examTypes.description,
+        logoUrl: schema.examTypes.logoUrl,
       })
       .from(schema.examTypes)
       .orderBy(asc(schema.examTypes.id)),
@@ -85,6 +88,7 @@ export async function getPracticeDiscoveryData(): Promise<PracticeDiscoveryData>
         name: schema.subjects.name,
         slug: schema.subjects.slug,
         description: schema.subjects.description,
+        logoUrl: schema.subjects.logoUrl,
       })
       .from(schema.subjects)
       .orderBy(asc(schema.subjects.id)),
@@ -169,10 +173,12 @@ export async function getPracticeDiscoveryData(): Promise<PracticeDiscoveryData>
     examTypes: examTypes.map((examType) => ({
       ...examType,
       description: examType.description ?? null,
+      logoUrl: examType.logoUrl ?? null,
     })),
     subjects: subjects.map((subject) => ({
       ...subject,
       description: subject.description ?? null,
+      logoUrl: subject.logoUrl ?? null,
       practiceCount: practiceCountBySubject.get(subject.id) ?? 0,
     })),
     topics: topics.map((topic) => ({

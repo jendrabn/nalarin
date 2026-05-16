@@ -32,6 +32,7 @@ function parseExamTypeValues(values: ExamTypeFormValues) {
     data: {
       name: validated.data.name.trim(),
       description: normalizeNullableText(validated.data.description),
+      logoUrl: normalizeNullableText(validated.data.logoUrl),
     },
   }
 }
@@ -89,6 +90,7 @@ export async function updateExamTypeAction(
         name: parsed.data.name,
         slug,
         description: parsed.data.description,
+        logoUrl: parsed.data.logoUrl,
       })
       .where(eq(schema.examTypes.id, examTypeId))
 

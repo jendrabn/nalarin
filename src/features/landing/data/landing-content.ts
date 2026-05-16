@@ -110,10 +110,10 @@ export const footerGroups = [
   {
     title: "Tes",
     links: [
-      { label: "UTBK", href: "/practices/utbk" },
-      { label: "UTUL UGM", href: "/practices/utul-ugm" },
-      { label: "SIMAK UI", href: "/practices/simak-ui" },
-      { label: "CPNS", href: "/practices/cpns" },
+      { label: "UTBK", href: "/practices/exam/utbk" },
+      { label: "UTUL UGM", href: "/practices/exam/utul-ugm" },
+      { label: "SIMAK UI", href: "/practices/exam/simak-ui" },
+      { label: "CPNS", href: "/practices/exam/cpns" },
     ],
   },
   {
