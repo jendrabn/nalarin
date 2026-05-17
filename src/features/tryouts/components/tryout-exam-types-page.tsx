@@ -109,14 +109,14 @@ function ExamTypeCard({
       className="group h-full rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
     >
       <Card className="flex h-full flex-col rounded-lg border-border/75 bg-card py-5 shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/25 group-hover:shadow-lg">
-        <CardHeader className="gap-4 px-5 pb-0">
-          <div className="flex items-start justify-between gap-4">
+        <CardHeader className="gap-2.5 px-5 pb-0">
+          <div className="flex items-start justify-between gap-3">
             <ExamTypeLogo src={examType.logoUrl} name={examType.name} />
             <Badge
               variant="outline"
               size="sm"
               className={cn(
-                "rounded-full font-semibold tabular-nums",
+                "rounded-full text-[0.8rem] font-semibold tabular-nums",
                 totalTryouts > 0
                   ? "border-primary/20 bg-primary/8 text-primary"
                   : "border-border bg-secondary/70 text-muted-foreground",
@@ -126,17 +126,17 @@ function ExamTypeCard({
             </Badge>
           </div>
 
-          <div className="flex flex-col gap-2.5">
-            <CardTitle className="line-clamp-2 text-[1.125rem] font-semibold leading-6 text-foreground">
+          <div className="flex flex-col gap-1.5">
+            <CardTitle className="line-clamp-2 text-[1.05rem] font-semibold leading-6 text-foreground sm:text-[1.08rem]">
               {examType.name}
             </CardTitle>
-            <p className="line-clamp-3 min-h-[4.5rem] text-[0.925rem] leading-6 text-muted-foreground">
+            <p className="line-clamp-3 text-[0.9rem] font-normal leading-6 text-muted-foreground sm:text-[0.925rem]">
               {examType.description ??
                 `Tryout dan simulasi ujian untuk persiapan ${examType.name}.`}
             </p>
           </div>
         </CardHeader>
-        <CardContent className="flex flex-1 flex-col px-5 pt-1">
+        <CardContent className="flex flex-1 flex-col px-5 pt-3.5">
           <Button
             asChild
             variant={totalTryouts > 0 ? "default" : "secondary"}

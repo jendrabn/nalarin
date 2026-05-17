@@ -360,7 +360,7 @@ function TryoutAccessCard({
   return (
     <Card className="rounded-lg shadow-sm">
       <CardHeader>
-        <CardTitle>Akses Tryout</CardTitle>
+        <CardTitle>Mulai Tryout</CardTitle>
         <CardDescription>Sesi baru hanya dibuat setelah kamu menekan tombol mulai.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

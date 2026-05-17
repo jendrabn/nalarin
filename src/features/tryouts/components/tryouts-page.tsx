@@ -204,10 +204,10 @@ function TryoutPageHeader({
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pt-6 pb-1 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
       <div className="flex max-w-2xl flex-col gap-1.5">
-        <h1 className="font-heading text-[1.7rem] font-semibold leading-tight tracking-normal text-foreground/95 sm:text-[2rem]">
+        <h1 className="font-heading text-[1.625rem] font-semibold leading-tight tracking-normal text-foreground/95 sm:text-[1.9rem]">
           {title}
         </h1>
-        <p className="max-w-xl text-[0.925rem] leading-6 text-muted-foreground">
+        <p className="max-w-xl text-[0.9rem] leading-6 text-muted-foreground sm:text-[0.925rem]">
           {subtitle}
         </p>
       </div>
@@ -247,7 +247,7 @@ function StatusFilterBar({
             variant={active ? "default" : "outline"}
             size="xl"
             className={cn(
-              "max-w-full shrink-0 justify-start rounded-full font-semibold tracking-normal shadow-sm",
+              "max-w-full shrink-0 justify-start rounded-full text-[0.9rem] font-medium tracking-normal shadow-sm",
               !active && "text-muted-foreground hover:border-primary/30 hover:text-foreground",
             )}
           >
@@ -301,7 +301,7 @@ function TryoutCard({
       className="group h-full rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
     >
       <Card className="flex h-full flex-col rounded-lg border-border/75 bg-card py-5 shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/25 group-hover:shadow-lg">
-        <CardHeader className="gap-4 px-5 pb-0">
+        <CardHeader className="gap-2.5 px-5 pb-0">
           <div className="flex items-start justify-between gap-3">
             <Badge
               variant="outline"
@@ -319,18 +319,18 @@ function TryoutCard({
             )}
           </div>
 
-          <div className="flex flex-col gap-2.5">
-            <CardTitle className="line-clamp-2 text-[1.08rem] font-semibold leading-6 text-foreground">
+          <div className="flex flex-col gap-1.5">
+            <CardTitle className="line-clamp-2 text-[1.05rem] font-semibold leading-6 text-foreground sm:text-[1.08rem]">
               {tryout.title}
             </CardTitle>
-            <p className="line-clamp-3 min-h-[4.5rem] text-[0.925rem] leading-6 text-muted-foreground">
+            <p className="line-clamp-3 text-[0.9rem] font-normal leading-6 text-muted-foreground sm:text-[0.925rem]">
               {tryout.description ?? "Simulasi tryout multi-section dengan timer per subtest."}
             </p>
           </div>
         </CardHeader>
 
-        <CardContent className="mt-auto flex flex-1 flex-col px-5 pt-4">
-          <div className="grid gap-2.5 rounded-lg border border-border/70 bg-secondary/35 p-3">
+        <CardContent className="mt-auto flex flex-1 flex-col px-5 pt-2.5">
+          <div className="grid gap-1.5 rounded-lg border border-border/70 bg-secondary/35 p-2.5">
             <TryoutMetaRow
               icon={<CalendarDaysIcon />}
               value={formatShortDateRange(tryout.startsAt, tryout.endsAt)}
@@ -342,8 +342,8 @@ function TryoutCard({
             />
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            <TryoutMetric label="Section" value={tryout.sectionCount.toString()} />
+          <div className="mt-2.5 grid grid-cols-3 gap-2">
+            <TryoutMetric label="Subtes" value={tryout.sectionCount.toString()} />
             <TryoutMetric label="Soal" value={tryout.questionCount.toString()} />
             <TryoutMetric
               label="Durasi"
@@ -356,7 +356,7 @@ function TryoutCard({
             variant={primaryAction ? "default" : "secondary"}
             size="lg"
             className={cn(
-              "mt-5 w-full font-semibold",
+              "mt-3.5 w-full font-semibold",
               primaryAction && "group-hover:bg-primary/90",
               !primaryAction && "text-muted-foreground group-hover:bg-secondary/80",
             )}
@@ -390,12 +390,12 @@ function TryoutMetaRow({
   }[tone]
 
   return (
-    <div className="flex items-center gap-3 text-sm">
+    <div className="flex items-center gap-2.5 text-sm">
       <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-md bg-background text-muted-foreground [&_svg]:size-4", toneClassName)}>
         {icon}
       </span>
       <span className="min-w-0 flex-1 py-1">
-        <span className={cn("block truncate text-sm font-semibold", toneClassName)}>{value}</span>
+        <span className={cn("block truncate text-[0.9rem] font-medium", toneClassName)}>{value}</span>
       </span>
     </div>
   )
@@ -403,9 +403,11 @@ function TryoutMetaRow({
 
 function TryoutMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-border/70 bg-background/70 px-2.5 py-2">
-      <span className="block truncate text-sm font-semibold text-foreground">{value}</span>
-      <span className="mt-0.5 block truncate text-xs font-medium text-muted-foreground">
+    <div className="rounded-md border border-border/70 bg-background/70 px-2.5 py-1.5">
+      <span className="block truncate text-[0.9rem] font-semibold text-foreground">
+        {value}
+      </span>
+      <span className="mt-0.5 block truncate text-[0.72rem] font-medium tracking-normal text-muted-foreground">
         {label}
       </span>
     </div>

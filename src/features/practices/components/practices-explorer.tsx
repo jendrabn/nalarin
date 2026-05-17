@@ -576,7 +576,7 @@ function PracticeCard({
         difficultyCardClasses[practice.difficulty],
       )}
     >
-      <CardHeader className="gap-3 px-5 pb-0">
+      <CardHeader className="gap-2.5 px-5 pb-0">
         <div className="flex items-start justify-between gap-3">
           <Badge
             variant="outline"
@@ -597,23 +597,23 @@ function PracticeCard({
           )}
         </div>
 
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-1.5">
           <CardTitle
             id={titleId}
             role="heading"
             aria-level={3}
-            className="line-clamp-2 text-[1.08rem] font-semibold leading-6 text-foreground"
+            className="line-clamp-2 text-[1.05rem] font-semibold leading-6 text-foreground sm:text-[1.08rem]"
           >
             {practice.title}
           </CardTitle>
-          <p className="line-clamp-2 text-[0.925rem] leading-6 text-muted-foreground">
+          <p className="line-clamp-3 text-[0.9rem] font-normal leading-6 text-muted-foreground sm:text-[0.925rem]">
             {practice.description ?? "Latihan soal terkurasi untuk memperkuat pemahaman materi."}
           </p>
         </div>
       </CardHeader>
 
-      <CardContent className="mt-auto flex flex-col gap-5 px-5 pt-6">
-        <div className="flex items-center justify-between gap-4">
+      <CardContent className="mt-auto flex flex-col gap-3.5 px-5 pt-3.5">
+        <div className="flex items-center justify-between gap-3">
           <PracticeMetaItem>
             <BookOpenIcon />
             {practice.questionCount} Soal
@@ -643,7 +643,7 @@ function PracticeCard({
 
 function PracticeMetaItem({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs font-medium leading-none text-muted-foreground [&_svg]:size-3.5">
+    <span className="inline-flex items-center gap-1.5 text-[0.8rem] font-medium leading-none text-muted-foreground [&_svg]:size-3.5">
       {children}
     </span>
   )

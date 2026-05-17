@@ -116,7 +116,7 @@ export function TryoutSessionOverviewPage({
         <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle>Section Tryout</CardTitle>
+            <CardTitle>Subtes Tryout</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               {session.sections.map((section, index) => {
@@ -149,8 +149,8 @@ export function TryoutSessionOverviewPage({
                 <CardTitle>Aturan Room</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-3 text-sm leading-6 text-muted-foreground">
-                <p>Kerjakan section sesuai urutan. Timer berjalan terpisah untuk setiap section.</p>
-                <p>Section yang sudah disubmit tidak dapat dibuka ulang atau diubah jawabannya.</p>
+                <p>Kerjakan subtes sesuai urutan. Timer berjalan terpisah untuk setiap subtes.</p>
+                <p>Subtes yang sudah disubmit tidak dapat dibuka ulang atau diubah jawabannya.</p>
                 <p>Tryout hanya bisa dikerjakan satu kali. Hasil mengikuti jadwal rilis tryout.</p>
               </CardContent>
             </Card>
