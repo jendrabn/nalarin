@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { useMemo, useState, useTransition, type ReactNode } from "react"
 import {
   ArrowLeftIcon,
+  ArrowRightIcon,
   BookOpenCheckIcon,
   BookOpenIcon,
   ClockIcon,
@@ -17,14 +18,6 @@ import { toast } from "sonner"
 
 import type { PlanCode } from "@/config/plans"
 import { Badge } from "@/components/ui/badge"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -85,15 +78,9 @@ type PracticesExplorerProps = {
 }
 
 const difficultyCardClasses: Record<PracticeDifficulty, string> = {
-  easy: "ring-chart-2/20 hover:ring-chart-2/45",
-  medium: "ring-chart-3/20 hover:ring-chart-3/45",
-  hard: "ring-chart-4/20 hover:ring-chart-4/45",
-}
-
-const difficultyStripClasses: Record<PracticeDifficulty, string> = {
-  easy: "bg-chart-2",
-  medium: "bg-chart-3",
-  hard: "bg-chart-4",
+  easy: "group-hover:border-chart-2/35",
+  medium: "group-hover:border-chart-3/35",
+  hard: "group-hover:border-chart-4/35",
 }
 
 const difficultyBadgeClasses: Record<PracticeDifficulty, string> = {
@@ -160,6 +147,10 @@ export function PracticesExplorer({
       ),
     [activeExamType?.id, activeSubject?.id, data.practices],
   )
+  const pageTitle = activeExamType ? `Latihan Soal ${activeExamType.name}` : "Latihan Soal"
+  const pageSubtitle = activeExamType
+    ? `Pilih mata pelajaran ${activeExamType.name}, lalu mulai latihan sesuai kebutuhan belajarmu.`
+    : "Pilih tipe ujian dan mata pelajaran untuk membuka kumpulan latihan yang tersedia."
 
   function handleExamTypeChange(value: string) {
     const examTypeId = Number(value)
@@ -276,96 +267,51 @@ export function PracticesExplorer({
 
   return (
     <main>
-      <section className="bg-[linear-gradient(180deg,color-mix(in_oklab,var(--secondary)_62%,transparent),transparent)]">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="h-9 w-1.5 rounded-full bg-primary" aria-hidden="true" />
-            <h1 className="font-heading text-[1.65rem] font-semibold leading-tight tracking-normal text-balance sm:text-[1.85rem]">
-              {activeExamType ? `Latihan Soal ${activeExamType.name}` : "Latihan Soal"}
-            </h1>
-          </div>
+      <PracticePageHeader
+        title={pageTitle}
+        subtitle={pageSubtitle}
+        showBackButton={isExamTypeLocked}
+      />
 
-          {isExamTypeLocked ? (
-            <Link
-              href="/practices"
-              className="inline-flex w-fit items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm font-medium text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <ArrowLeftIcon data-icon="inline-start" />
-              Kembali ke jenis ujian
-            </Link>
-          ) : (
-            <div className="-mx-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 lg:max-w-[68%]">
-              <div
-                role="tablist"
-                aria-label="Pilih tipe ujian"
-                className="inline-flex w-fit min-w-max snap-x items-center gap-1 rounded-lg border bg-card p-1 text-muted-foreground shadow-sm"
-              >
-                {data.examTypes.map((examType) => {
-                  const active = examType.id === activeExamTypeId
+      <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
+        {!isExamTypeLocked ? (
+          <ExamTypeTabs
+            examTypes={data.examTypes}
+            activeExamTypeId={activeExamTypeId}
+            onExamTypeChange={handleExamTypeChange}
+          />
+        ) : null}
 
-                  return (
-                    <button
-                      key={examType.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={active}
-                      onClick={() => handleExamTypeChange(String(examType.id))}
-                      className={cn(
-                        "h-9 flex-none snap-start rounded-md px-3.5 text-sm font-medium whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-4",
-                        active
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-                      )}
-                    >
-                      {examType.name}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[18.5rem_minmax(0,1fr)] lg:px-8">
-        <SubjectSidebar
-          examTypeName={activeExamType?.name ?? "Tipe Ujian"}
-          subjects={visibleSubjects}
-          activeSubjectId={activeSubjectId}
-          onSubjectChange={setActiveSubjectId}
-        />
-
-        <div className="min-w-0 space-y-6">
-          <PracticeBreadcrumb
-            examTypeName={activeExamType?.name}
-            subjectName={activeSubject?.name}
-            onExamTypeClick={() => {
-              if (activeExamTypeId !== null) {
-                handleExamTypeChange(String(activeExamTypeId))
-              }
-            }}
+        <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start">
+          <SubjectTabs
+            subjects={visibleSubjects}
+            activeSubjectId={activeSubjectId}
+            onSubjectChange={setActiveSubjectId}
           />
 
-          {visibleSubjects.length === 0 ? (
-            <Empty className="min-h-72 border bg-card">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <BookOpenIcon />
-                </EmptyMedia>
-                <EmptyTitle>Belum ada mata pelajaran</EmptyTitle>
-                <EmptyDescription>
-                  {activeExamType?.name
-                    ? `${activeExamType.name} belum memiliki mata pelajaran yang tersedia.`
-                    : "Tipe ujian ini belum memiliki mata pelajaran."}
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : (
-            <PracticeList
-              practices={visiblePractices}
-              onPracticeStart={handlePracticeStart}
-            />
-          )}
+          <div className="min-w-0">
+            {visibleSubjects.length === 0 ? (
+              <Empty className="min-h-72 border bg-card">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <BookOpenIcon />
+                  </EmptyMedia>
+                  <EmptyTitle>Belum Ada Mata Pelajaran</EmptyTitle>
+                  <EmptyDescription>
+                    {activeExamType?.name
+                      ? `${activeExamType.name} belum memiliki mata pelajaran yang tersedia.`
+                      : "Tipe ujian ini belum memiliki mata pelajaran."}
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            ) : (
+              <PracticeList
+                practices={visiblePractices}
+                currentPlanCode={currentPlanCode}
+                onPracticeStart={handlePracticeStart}
+              />
+            )}
+          </div>
         </div>
       </section>
 
@@ -435,117 +381,138 @@ export function PracticesExplorer({
   )
 }
 
-function SubjectSidebar({
-  examTypeName,
+function PracticePageHeader({
+  title,
+  subtitle,
+  showBackButton,
+}: {
+  title: string
+  subtitle: string
+  showBackButton: boolean
+}) {
+  return (
+    <section className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pt-6 pb-1 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+      <div className="flex max-w-2xl flex-col gap-1.5">
+        <h1 className="font-heading text-[1.7rem] font-semibold leading-tight tracking-normal text-foreground/95 sm:text-[2rem]">
+          {title}
+        </h1>
+        <p className="max-w-xl text-[0.925rem] leading-6 text-muted-foreground">
+          {subtitle}
+        </p>
+      </div>
+      {showBackButton ? (
+        <Button asChild variant="outline" className="w-fit shrink-0">
+          <Link href="/practices">
+            <ArrowLeftIcon data-icon="inline-start" />
+            Kembali Ke Latihan
+          </Link>
+        </Button>
+      ) : null}
+    </section>
+  )
+}
+
+function ExamTypeTabs({
+  examTypes,
+  activeExamTypeId,
+  onExamTypeChange,
+}: {
+  examTypes: PracticeDiscoveryData["examTypes"]
+  activeExamTypeId: number | null
+  onExamTypeChange: (value: string) => void
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Pilih Tipe Ujian"
+      className="flex w-full flex-wrap gap-2 pb-1"
+    >
+      {examTypes.map((examType) => {
+        const active = examType.id === activeExamTypeId
+
+        return (
+          <button
+            key={examType.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onExamTypeChange(String(examType.id))}
+            className={cn(
+              "inline-flex h-10 shrink-0 items-center rounded-full border px-4 text-sm font-semibold tracking-normal shadow-sm transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+              active
+                ? "border-primary bg-primary text-primary-foreground shadow-primary/20"
+                : "border-border/80 bg-card text-muted-foreground hover:border-primary/30 hover:bg-secondary hover:text-foreground",
+            )}
+          >
+            {examType.name}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function SubjectTabs({
   subjects,
   activeSubjectId,
   onSubjectChange,
 }: {
-  examTypeName: string
   subjects: PracticeDiscoverySubject[]
   activeSubjectId: number | null
   onSubjectChange: (subjectId: number) => void
 }) {
   return (
-    <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
-      <div className="rounded-xl border bg-card p-3 shadow-sm">
-        <div className="px-2 pb-3">
-          <h2 className="line-clamp-2 font-heading text-base font-semibold">
-            {examTypeName}
-          </h2>
-          <p className="mt-1 text-sm leading-5 text-muted-foreground">
-            Pilih mata pelajaran untuk melihat paket latihan.
-          </p>
-        </div>
+    <aside
+      role="tablist"
+      aria-label="Pilih Mata Pelajaran"
+      className="flex w-full flex-col gap-2 lg:sticky lg:top-24"
+    >
+      {subjects.map((subject) => {
+        const active = subject.id === activeSubjectId
 
-        {subjects.length === 0 ? (
-          <p className="rounded-lg bg-muted/60 px-3 py-4 text-sm text-muted-foreground">
-            Belum tersedia.
-          </p>
-        ) : (
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
-            {subjects.map((subject) => {
-              const active = subject.id === activeSubjectId
-
-              return (
-                <button
-                  key={subject.id}
-                  type="button"
-                  onClick={() => onSubjectChange(subject.id)}
-                  className={cn(
-                    "min-w-48 rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:min-w-0",
-                    active
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                  aria-pressed={active}
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-md border bg-background/70 text-muted-foreground [&_svg]:size-3.5">
-                      {subject.logoUrl ? (
-                        <Image
-                          src={subject.logoUrl}
-                          alt=""
-                          width={28}
-                          height={28}
-                          unoptimized
-                          className="size-full object-contain p-1"
-                        />
-                      ) : (
-                        <BookOpenIcon />
-                      )}
-                    </span>
-                    <span className="block truncate font-medium">{subject.name}</span>
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </div>
+        return (
+          <button
+            key={subject.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onSubjectChange(subject.id)}
+            className={cn(
+              "inline-flex h-10 w-full min-w-0 items-center justify-start gap-2 rounded-full border px-4 text-sm font-semibold tracking-normal shadow-sm transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+              active
+                ? "border-primary bg-primary text-primary-foreground shadow-primary/20"
+                : "border-border/80 bg-card text-muted-foreground hover:border-primary/30 hover:bg-secondary hover:text-foreground",
+            )}
+          >
+            <span className="flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-sm [&_svg]:size-4">
+              {subject.logoUrl ? (
+                <Image
+                  src={subject.logoUrl}
+                  alt=""
+                  width={20}
+                  height={20}
+                  unoptimized
+                  className="size-full object-contain"
+                />
+              ) : (
+                <BookOpenIcon />
+              )}
+            </span>
+            <span className="min-w-0 truncate text-left">{subject.name}</span>
+          </button>
+        )
+      })}
     </aside>
-  )
-}
-
-function PracticeBreadcrumb({
-  examTypeName,
-  subjectName,
-  onExamTypeClick,
-}: {
-  examTypeName?: string
-  subjectName?: string
-  onExamTypeClick: () => void
-}) {
-  return (
-    <Breadcrumb>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link href="/practices">Latihan</Link>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <button type="button" onClick={onExamTypeClick}>
-              {examTypeName ?? "Tipe Ujian"}
-            </button>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbPage>{subjectName ?? "Mata Pelajaran"}</BreadcrumbPage>
-        </BreadcrumbItem>
-      </BreadcrumbList>
-    </Breadcrumb>
   )
 }
 
 function PracticeList({
   practices,
+  currentPlanCode,
   onPracticeStart,
 }: {
   practices: PracticeDiscoveryPractice[]
+  currentPlanCode: PlanCode
   onPracticeStart: (practice: PracticeDiscoveryPractice) => void
 }) {
   return (
@@ -568,6 +535,7 @@ function PracticeList({
             <PracticeCard
               key={practice.id}
               practice={practice}
+              currentPlanCode={currentPlanCode}
               onStart={() => onPracticeStart(practice)}
             />
           ))}
@@ -579,94 +547,118 @@ function PracticeList({
 
 function PracticeCard({
   practice,
+  currentPlanCode,
   onStart,
 }: {
   practice: PracticeDiscoveryPractice
+  currentPlanCode: PlanCode
   onStart: () => void
 }) {
   const titleId = `practice-title-${practice.id}`
   const durationLabel =
     practice.hasQuizMode && practice.quizDurationMinutes
-      ? `${practice.quizDurationMinutes}m`
-      : "Tanpa timer"
+      ? `${practice.quizDurationMinutes} Menit`
+      : "Tanpa Timer"
+  const accessAllowed = canAccessPractice({
+    isFree: practice.isFree,
+    planCode: currentPlanCode,
+  })
+  const actionLabel = accessAllowed ? "Mulai Latihan" : "Upgrade Untuk Akses"
 
   return (
     <button
       type="button"
       onClick={onStart}
       aria-labelledby={titleId}
-      className="h-full w-full rounded-xl text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      className="group h-full w-full rounded-lg text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
     >
       <Card
         className={cn(
-          "relative h-full gap-0 rounded-xl py-0 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-secondary/20 hover:shadow-md",
+          "flex h-full flex-col rounded-lg border-border/75 bg-card py-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)]",
           difficultyCardClasses[practice.difficulty],
         )}
       >
-        <div
-          className={cn("absolute inset-x-0 top-0 h-[3px]", difficultyStripClasses[practice.difficulty])}
-        />
-        <CardHeader className="gap-2.5 px-4 pt-4 pb-2">
-          <div className="flex min-w-0 items-center justify-between gap-2.5">
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-              <Badge variant="outline" className={difficultyBadgeClasses[practice.difficulty]}>
-                {practiceDifficultyLabels[practice.difficulty]}
+        <CardHeader className="gap-4 px-5 pb-0">
+          <div className="flex items-start justify-between gap-3">
+            <Badge
+              variant="outline"
+              className={cn("h-7 shrink-0 rounded-full px-3 text-xs font-semibold", difficultyBadgeClasses[practice.difficulty])}
+            >
+              {practiceDifficultyLabels[practice.difficulty]}
+            </Badge>
+            {practice.isFree ? (
+              <Badge variant="soft" className="h-7 shrink-0 rounded-full px-3 text-xs font-semibold">
+                Gratis
               </Badge>
-              <PracticeMetaBadge>
-                <ClockIcon />
-                {durationLabel}
-              </PracticeMetaBadge>
-            </div>
-            {practice.isFree ? null : (
-              <Badge className="shrink-0 bg-primary text-primary-foreground">
-                <LockIcon />
+            ) : (
+              <Badge className="h-7 shrink-0 rounded-full bg-primary px-3 text-xs font-semibold text-primary-foreground">
+                <LockIcon data-icon="inline-start" />
                 Premium
               </Badge>
             )}
           </div>
-          <CardTitle
-            id={titleId}
-            role="heading"
-            aria-level={3}
-            className="line-clamp-2 text-[0.95rem] font-semibold leading-[1.32] tracking-normal text-foreground"
-          >
-            {practice.title}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-between gap-3 px-4 pt-1 pb-4">
-          <PracticeMetaBadge>
-            <BookOpenIcon />
-            {practice.questionCount} Soal
-          </PracticeMetaBadge>
-          <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
-            {practice.hasPracticeMode ? (
-              <PracticeMetaBadge>
-                <BookOpenCheckIcon />
-                Latihan
-              </PracticeMetaBadge>
-            ) : null}
-            {practice.hasQuizMode ? (
-              <PracticeMetaBadge>
-                <ClockIcon />
-                Quiz
-              </PracticeMetaBadge>
-            ) : null}
+
+          <div className="flex flex-col gap-2.5">
+            <CardTitle
+              id={titleId}
+              role="heading"
+              aria-level={3}
+              className="line-clamp-2 text-[1.08rem] font-semibold leading-6 text-foreground"
+            >
+              {practice.title}
+            </CardTitle>
+            <p className="line-clamp-3 min-h-[4.5rem] text-[0.925rem] leading-6 text-muted-foreground">
+              {practice.description ?? "Latihan soal terkurasi untuk memperkuat pemahaman materi."}
+            </p>
           </div>
+        </CardHeader>
+
+        <CardContent className="mt-auto flex flex-1 flex-col px-5 pt-4">
+          <div className="grid grid-cols-3 gap-2">
+            <PracticeMetric label="Soal" value={practice.questionCount.toString()} />
+            <PracticeMetric label="Timer" value={durationLabel} />
+            <PracticeMetric label="Mode" value={formatPracticeModes(practice)} />
+          </div>
+
+          <span
+            className={cn(
+              "mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold shadow-sm transition-colors [&_svg]:size-4",
+              accessAllowed
+                ? "border-primary/25 bg-primary text-primary-foreground group-hover:bg-primary/90"
+                : "border-border bg-secondary text-muted-foreground shadow-none group-hover:bg-secondary/80",
+            )}
+          >
+            {!accessAllowed ? <LockIcon /> : null}
+            {actionLabel}
+            {accessAllowed ? <ArrowRightIcon aria-hidden="true" /> : null}
+          </span>
         </CardContent>
       </Card>
     </button>
   )
 }
 
-function PracticeMetaBadge({ children }: { children: ReactNode }) {
+function PracticeMetric({ label, value }: { label: string; value: string }) {
   return (
-    <Badge
-      variant="outline"
-      className="h-5 gap-1 border-border/80 bg-muted/35 px-1.5 text-[0.7rem] font-medium leading-none text-muted-foreground"
-    >
-      {children}
-    </Badge>
+    <div className="rounded-md border border-border/70 bg-background/70 px-2.5 py-2">
+      <span className="block truncate text-sm font-semibold text-foreground">{value}</span>
+      <span className="mt-0.5 block truncate text-xs font-medium text-muted-foreground">
+        {label}
+      </span>
+    </div>
   )
+}
+
+function formatPracticeModes(practice: PracticeDiscoveryPractice) {
+  if (practice.hasPracticeMode && practice.hasQuizMode) {
+    return "2 Mode"
+  }
+
+  if (practice.hasQuizMode) {
+    return "Quiz"
+  }
+
+  return "Latihan"
 }
 
 function ModeDialog({
