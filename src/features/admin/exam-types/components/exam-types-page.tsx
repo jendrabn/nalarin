@@ -1,9 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { EllipsisVerticalIcon, ImageIcon, PencilLineIcon } from "lucide-react"
+import { EllipsisVerticalIcon, PencilLineIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/page-header"
@@ -15,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { AdminDataTable, SortableHeader } from "@/components/admin-data-table"
+import { TaxonomyLogo } from "@/components/taxonomy-logo"
 
 import { updateExamTypeAction } from "../actions"
 import type { ExamTypeFormValues } from "../schemas"
@@ -59,20 +59,28 @@ export function ExamTypesPage({
         searchPlaceholder="Search exam types..."
         emptyMessage="No exam types found."
         defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
-        columns={[
-          {
-            accessorKey: "name",
-            meta: { label: "Name" },
-            header: ({ column }) => <SortableHeader column={column}>Name</SortableHeader>,
-            cell: ({ row }) => (
-              <div className="flex min-w-0 items-center gap-3">
-                <TaxonomyLogo src={row.original.logoUrl} />
+          columns={[
+            {
+              id: "logo",
+              header: () => "Logo",
+              enableSorting: false,
+              enableHiding: false,
+              cell: ({ row }) => (
+                <div className="flex justify-center">
+                  <TaxonomyLogo src={row.original.logoUrl} alt={row.original.name} />
+                </div>
+              ),
+            },
+            {
+              accessorKey: "name",
+              meta: { label: "Name" },
+              header: ({ column }) => <SortableHeader column={column}>Name</SortableHeader>,
+              cell: ({ row }) => (
                 <span className="truncate font-medium text-foreground">
                   {row.original.name}
                 </span>
-              </div>
-            ),
-          },
+              ),
+            },
           {
             accessorKey: "description",
             meta: { label: "Description" },
@@ -197,24 +205,5 @@ export function ExamTypesPage({
         }}
       />
     </div>
-  )
-}
-
-function TaxonomyLogo({ src }: { src: string | null }) {
-  return (
-    <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/35 text-muted-foreground [&_svg]:size-4">
-      {src ? (
-        <Image
-          src={src}
-          alt=""
-          width={36}
-          height={36}
-          unoptimized
-          className="size-full object-contain p-1.5"
-        />
-      ) : (
-        <ImageIcon />
-      )}
-    </span>
   )
 }

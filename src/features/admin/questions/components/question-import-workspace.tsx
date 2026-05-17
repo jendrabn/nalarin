@@ -1,9 +1,9 @@
 "use client"
 
-import { type ChangeEvent, useMemo, useState } from "react"
+import { type ChangeEvent, type ComponentPropsWithoutRef, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { FileDownIcon, UploadIcon } from "lucide-react"
+import { CheckIcon, CopyIcon, FileDownIcon, UploadIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/page-header"
@@ -28,7 +28,6 @@ import {
 import {
   questionDifficultyLabels,
   questionDifficultyValues,
-  questionScoringRuleValues,
   questionStatusValues,
   questionTypeLabels,
   questionTypeValues,
@@ -72,140 +71,122 @@ function AvailableValuesReference({
 }: {
   lookups: QuestionImportWorkspaceProps["lookups"]
 }) {
-  const examTypeMap = new Map(lookups.examTypes.map((examType) => [examType.id, examType]))
-  const subjectMap = new Map(lookups.subjects.map((subject) => [subject.id, subject]))
+  return (
+      <Card>
+      <CardHeader>
+        <CardTitle>Rules & Slugs</CardTitle>
+        <CardDescription>
+          Use the exact lowercase values shown below when filling the workbook.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium">question_type</p>
+            <div className="flex flex-wrap gap-2">
+              {questionTypeValues.map((value) => (
+                <CopyableBadge key={value} value={value} />
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium">difficulty</p>
+            <div className="flex flex-wrap gap-2">
+              {questionDifficultyValues.map((value) => (
+                <CopyableBadge key={value} value={value} />
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium">scoring_rule</p>
+            <div className="flex flex-wrap gap-2">
+              <CopyableBadge value="all_or_nothing" />
+              <CopyableBadge value="partial" />
+              <CopyableBadge value="blank" variant="secondary" />
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium">status</p>
+            <div className="flex flex-wrap gap-2">
+              {questionStatusValues.map((value) => (
+                <CopyableBadge key={value} value={value} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 rounded-xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-3">
+          <p>
+            <span className="font-medium text-foreground">scoring_rule</span> is only used for <span className="font-medium text-foreground">multiple_answer</span>.
+          </p>
+          <p>
+            Valid <span className="font-medium text-foreground">scoring_rule</span> values are <span className="font-medium text-foreground">all_or_nothing</span>, <span className="font-medium text-foreground">partial</span>, or blank.
+          </p>
+          <p>
+            <span className="font-medium text-foreground">correct_answer</span> uses option letters like <span className="font-medium text-foreground">A</span> or <span className="font-medium text-foreground">A,C</span>.
+          </p>
+          <p>
+            <span className="font-medium text-foreground">topic_slug</span> is optional.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <SlugList title="Exam Type Slugs" slugs={lookups.examTypes.map((item) => item.slug)} />
+          <SlugList title="Subject Slugs" slugs={lookups.subjects.map((item) => item.slug)} />
+          <SlugList title="Topic Slugs" slugs={lookups.topics.map((item) => item.slug)} />
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function SlugList({ title, slugs }: { title: string; slugs: string[] }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm font-medium">{title}</p>
+      <div className="flex flex-wrap gap-2">
+        {slugs.map((slug) => (
+          <CopyableBadge key={slug} value={slug} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CopyableBadge({
+  value,
+  variant = "outline",
+}: {
+  value: string
+  variant?: ComponentPropsWithoutRef<typeof Badge>["variant"]
+}) {
+  const [copied, setCopied] = useState(false)
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(value)
+      toast.success(`Copied ${value}`)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1200)
+    } catch {
+      toast.error(`Failed to copy ${value}`)
+    }
+  }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-      <Card>
-        <CardHeader>
-          <CardTitle>Available Enum Values</CardTitle>
-          <CardDescription>
-            Use these exact lowercase values in the Excel columns.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium">question_type</p>
-              <div className="flex flex-wrap gap-2">
-                {questionTypeValues.map((value) => (
-                  <Badge key={value} variant="outline">
-                    {value}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium">difficulty</p>
-              <div className="flex flex-wrap gap-2">
-                {questionDifficultyValues.map((value) => (
-                  <Badge key={value} variant="outline">
-                    {value}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium">scoring_rule</p>
-              <div className="flex flex-wrap gap-2">
-                {questionScoringRuleValues.map((value) => (
-                  <Badge key={value} variant="outline">
-                    {value}
-                  </Badge>
-                ))}
-                <Badge variant="secondary">blank</Badge>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium">status</p>
-              <div className="flex flex-wrap gap-2">
-                {questionStatusValues.map((value) => (
-                  <Badge key={value} variant="outline">
-                    {value}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 rounded-lg border border-border/60 p-3 text-sm text-muted-foreground">
-            <p>
-              <span className="font-medium text-foreground">correct_answer</span>{" "}
-              uses option letters: A for single choice, or comma-separated values like A,C for multiple answer.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Available Slugs</CardTitle>
-          <CardDescription>
-            Slugs come from the current database. Topic slug is optional.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-hidden rounded-lg border border-border/60">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>TYPE</TableHead>
-                  <TableHead>NAME</TableHead>
-                  <TableHead>SLUG</TableHead>
-                  <TableHead>PARENT</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {lookups.examTypes.map((examType) => (
-                  <TableRow key={`exam-${examType.id}`}>
-                    <TableCell>exam_type_slug</TableCell>
-                    <TableCell>{examType.name}</TableCell>
-                    <TableCell>
-                      <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
-                        {examType.slug}
-                      </code>
-                    </TableCell>
-                    <TableCell>-</TableCell>
-                  </TableRow>
-                ))}
-                {lookups.subjects.map((subject) => {
-                  const examType = examTypeMap.get(subject.examTypeId)
-
-                  return (
-                    <TableRow key={`subject-${subject.id}`}>
-                      <TableCell>subject_slug</TableCell>
-                      <TableCell>{subject.name}</TableCell>
-                      <TableCell>
-                        <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
-                          {subject.slug}
-                        </code>
-                      </TableCell>
-                      <TableCell>{examType?.slug ?? "-"}</TableCell>
-                    </TableRow>
-                  )
-                })}
-                {lookups.topics.map((topic) => {
-                  const subject = subjectMap.get(topic.subjectId)
-
-                  return (
-                    <TableRow key={`topic-${topic.id}`}>
-                      <TableCell>topic_slug</TableCell>
-                      <TableCell>{topic.name}</TableCell>
-                      <TableCell>
-                        <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
-                          {topic.slug}
-                        </code>
-                      </TableCell>
-                      <TableCell>{subject?.slug ?? "-"}</TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <Badge variant={variant} className="gap-1.5 pr-1.5">
+      <span className="whitespace-normal break-words">{value}</span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={() => void handleCopy()}
+        className="size-5 shrink-0 rounded-full text-muted-foreground hover:bg-transparent hover:text-foreground"
+        aria-label={`Copy ${value}`}
+      >
+        {copied ? <CheckIcon data-icon="inline-start" /> : <CopyIcon data-icon="inline-start" />}
+      </Button>
+    </Badge>
   )
 }
 
