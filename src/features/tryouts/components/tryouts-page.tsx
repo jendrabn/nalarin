@@ -65,10 +65,10 @@ const statusFilters: Array<{
   label: string
   icon: ReactNode
 }> = [
-  { value: "all", label: "Semua", icon: <ListFilterIcon /> },
-  { value: "ongoing", label: "Sedang Berlangsung", icon: <PlayCircleIcon /> },
-  { value: "upcoming", label: "Akan Datang", icon: <CalendarDaysIcon /> },
-  { value: "ended", label: "Selesai", icon: <CheckCircle2Icon /> },
+  { value: "all", label: "Semua", icon: <ListFilterIcon data-icon="inline-start" /> },
+  { value: "ongoing", label: "Sedang Berlangsung", icon: <PlayCircleIcon data-icon="inline-start" /> },
+  { value: "upcoming", label: "Akan Datang", icon: <CalendarDaysIcon data-icon="inline-start" /> },
+  { value: "ended", label: "Selesai", icon: <CheckCircle2Icon data-icon="inline-start" /> },
 ]
 
 export function TryoutsPage({
@@ -230,21 +230,21 @@ function StatusFilterBar({
         const active = filter.value === activeStatus
 
         return (
-          <button
+          <Button
             key={filter.value}
             type="button"
             aria-pressed={active}
             onClick={() => onStatusChange(filter.value)}
+            variant={active ? "default" : "outline"}
+            size="xl"
             className={cn(
-              "inline-flex h-10 max-w-full shrink-0 items-center justify-start gap-2 rounded-full border px-4 text-sm font-semibold tracking-normal shadow-sm transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 [&_svg]:size-4",
-              active
-                ? "border-primary bg-primary text-primary-foreground shadow-primary/20"
-                : "border-border/80 bg-card text-muted-foreground hover:border-primary/30 hover:bg-secondary hover:text-foreground",
+              "max-w-full shrink-0 justify-start rounded-full font-semibold tracking-normal shadow-sm",
+              !active && "text-muted-foreground hover:border-primary/30 hover:text-foreground",
             )}
           >
             {filter.icon}
             <span className="min-w-0 truncate">{filter.label}</span>
-          </button>
+          </Button>
         )
       })}
     </div>
@@ -289,22 +289,19 @@ function TryoutCard({
       href={`/tryouts/${tryout.slug}`}
       className="group h-full rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
     >
-      <Card className="flex h-full flex-col rounded-lg border-border/75 bg-card py-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/25 group-hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
+      <Card className="flex h-full flex-col rounded-lg border-border/75 bg-card py-5 shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/25 group-hover:shadow-lg">
         <CardHeader className="gap-4 px-5 pb-0">
           <div className="flex items-start justify-between gap-3">
             <Badge
               variant="outline"
-              className={cn("h-7 shrink-0 rounded-full px-3 text-xs font-semibold", statusMeta.badgeClassName)}
+              size="sm"
+              className={cn("shrink-0 rounded-full font-semibold", statusMeta.badgeClassName)}
             >
               {statusMeta.icon}
               {statusMeta.label}
             </Badge>
-            {tryout.isFree ? (
-              <Badge variant="soft" className="h-7 shrink-0 rounded-full px-3 text-xs font-semibold">
-                Gratis
-              </Badge>
-            ) : (
-              <Badge className="h-7 shrink-0 rounded-full bg-primary px-3 text-xs font-semibold text-primary-foreground">
+            {tryout.isFree ? null : (
+              <Badge variant="destructive" size="sm" className="shrink-0 rounded-full font-semibold">
                 <LockIcon data-icon="inline-start" />
                 Premium
               </Badge>
@@ -343,18 +340,22 @@ function TryoutCard({
             />
           </div>
 
-          <span
+          <Button
+            asChild
+            variant={primaryAction ? "default" : "secondary"}
+            size="lg"
             className={cn(
-              "mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold shadow-sm transition-colors [&_svg]:size-4",
-              primaryAction
-                ? "border-primary/25 bg-primary text-primary-foreground group-hover:bg-primary/90"
-                : "border-border bg-secondary text-muted-foreground shadow-none group-hover:bg-secondary/80",
+              "mt-5 w-full font-semibold",
+              primaryAction && "group-hover:bg-primary/90",
+              !primaryAction && "text-muted-foreground group-hover:bg-secondary/80",
             )}
           >
-            {!accessAllowed && !tryout.isFree ? <LockIcon /> : null}
-            {actionLabel}
-            {primaryAction ? <ArrowRightIcon aria-hidden="true" /> : null}
-          </span>
+            <span>
+              {!accessAllowed && !tryout.isFree ? <LockIcon data-icon="inline-start" /> : null}
+              {actionLabel}
+              {primaryAction ? <ArrowRightIcon data-icon="inline-end" aria-hidden="true" /> : null}
+            </span>
+          </Button>
         </CardContent>
       </Card>
     </Link>

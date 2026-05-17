@@ -88,8 +88,6 @@ export async function startPracticeSessionAction(
     .select({
       id: schema.practices.id,
       isFree: schema.practices.isFree,
-      hasPracticeMode: schema.practices.hasPracticeMode,
-      hasQuizMode: schema.practices.hasQuizMode,
       quizDurationMinutes: schema.practices.quizDurationMinutes,
       status: schema.practices.status,
       publishedAt: schema.practices.publishedAt,
@@ -102,20 +100,6 @@ export async function startPracticeSessionAction(
     return {
       success: false,
       message: "Latihan belum tersedia.",
-    }
-  }
-
-  if (input.mode === "practice" && !practice.hasPracticeMode) {
-    return {
-      success: false,
-      message: "Practice ini tidak mendukung Mode Latihan.",
-    }
-  }
-
-  if (input.mode === "quiz" && !practice.hasQuizMode) {
-    return {
-      success: false,
-      message: "Practice ini tidak mendukung Mode Quiz.",
     }
   }
 

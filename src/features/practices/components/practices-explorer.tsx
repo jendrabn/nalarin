@@ -9,9 +9,12 @@ import {
   ArrowRightIcon,
   BookOpenCheckIcon,
   BookOpenIcon,
+  CheckCircle2Icon,
   ClockIcon,
+  GaugeIcon,
   GraduationCapIcon,
   LayoutListIcon,
+  LoaderCircleIcon,
   LockIcon,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -22,6 +25,7 @@ import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -39,6 +43,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -78,9 +83,9 @@ type PracticesExplorerProps = {
 }
 
 const difficultyCardClasses: Record<PracticeDifficulty, string> = {
-  easy: "group-hover:border-chart-2/35",
-  medium: "group-hover:border-chart-3/35",
-  hard: "group-hover:border-chart-4/35",
+  easy: "border-chart-2/35 shadow-chart-2/10 hover:border-chart-2/55 hover:shadow-chart-2/20",
+  medium: "border-chart-3/35 shadow-chart-3/10 hover:border-chart-3/55 hover:shadow-chart-3/20",
+  hard: "border-chart-4/35 shadow-chart-4/10 hover:border-chart-4/55 hover:shadow-chart-4/20",
 }
 
 const difficultyBadgeClasses: Record<PracticeDifficulty, string> = {
@@ -431,21 +436,20 @@ function ExamTypeTabs({
         const active = examType.id === activeExamTypeId
 
         return (
-          <button
+          <Button
             key={examType.id}
             type="button"
             role="tab"
             aria-selected={active}
             onClick={() => onExamTypeChange(String(examType.id))}
+            variant={active ? "default" : "outline"}
             className={cn(
-              "inline-flex h-10 shrink-0 items-center rounded-full border px-4 text-sm font-semibold tracking-normal shadow-sm transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-              active
-                ? "border-primary bg-primary text-primary-foreground shadow-primary/20"
-                : "border-border/80 bg-card text-muted-foreground hover:border-primary/30 hover:bg-secondary hover:text-foreground",
+              "shrink-0 rounded-full px-4 font-semibold tracking-normal shadow-sm",
+              !active && "text-muted-foreground hover:border-primary/30 hover:text-foreground",
             )}
           >
             {examType.name}
-          </button>
+          </Button>
         )
       })}
     </div>
@@ -471,17 +475,17 @@ function SubjectTabs({
         const active = subject.id === activeSubjectId
 
         return (
-          <button
+          <Button
             key={subject.id}
             type="button"
             role="tab"
             aria-selected={active}
             onClick={() => onSubjectChange(subject.id)}
+            variant={active ? "default" : "outline"}
+            size="xl"
             className={cn(
-              "inline-flex h-10 w-full min-w-0 items-center justify-start gap-2 rounded-full border px-4 text-sm font-semibold tracking-normal shadow-sm transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-              active
-                ? "border-primary bg-primary text-primary-foreground shadow-primary/20"
-                : "border-border/80 bg-card text-muted-foreground hover:border-primary/30 hover:bg-secondary hover:text-foreground",
+              "w-full min-w-0 justify-start rounded-full font-semibold tracking-normal shadow-sm",
+              !active && "text-muted-foreground hover:border-primary/30 hover:text-foreground",
             )}
           >
             <span className="flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-sm [&_svg]:size-4">
@@ -499,7 +503,7 @@ function SubjectTabs({
               )}
             </span>
             <span className="min-w-0 truncate text-left">{subject.name}</span>
-          </button>
+          </Button>
         )
       })}
     </aside>
@@ -530,7 +534,7 @@ function PracticeList({
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
           {practices.map((practice) => (
             <PracticeCard
               key={practice.id}
@@ -556,7 +560,7 @@ function PracticeCard({
 }) {
   const titleId = `practice-title-${practice.id}`
   const durationLabel =
-    practice.hasQuizMode && practice.quizDurationMinutes
+    practice.quizDurationMinutes
       ? `${practice.quizDurationMinutes} Menit`
       : "Tanpa Timer"
   const accessAllowed = canAccessPractice({
@@ -566,99 +570,83 @@ function PracticeCard({
   const actionLabel = accessAllowed ? "Mulai Latihan" : "Upgrade Untuk Akses"
 
   return (
-    <button
-      type="button"
-      onClick={onStart}
-      aria-labelledby={titleId}
-      className="group h-full w-full rounded-lg text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+    <Card
+      className={cn(
+        "flex h-full flex-col rounded-lg bg-card py-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg",
+        difficultyCardClasses[practice.difficulty],
+      )}
     >
-      <Card
-        className={cn(
-          "flex h-full flex-col rounded-lg border-border/75 bg-card py-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)]",
-          difficultyCardClasses[practice.difficulty],
-        )}
-      >
-        <CardHeader className="gap-4 px-5 pb-0">
-          <div className="flex items-start justify-between gap-3">
-            <Badge
-              variant="outline"
-              className={cn("h-7 shrink-0 rounded-full px-3 text-xs font-semibold", difficultyBadgeClasses[practice.difficulty])}
-            >
-              {practiceDifficultyLabels[practice.difficulty]}
-            </Badge>
-            {practice.isFree ? (
-              <Badge variant="soft" className="h-7 shrink-0 rounded-full px-3 text-xs font-semibold">
-                Gratis
-              </Badge>
-            ) : (
-              <Badge className="h-7 shrink-0 rounded-full bg-primary px-3 text-xs font-semibold text-primary-foreground">
-                <LockIcon data-icon="inline-start" />
-                Premium
-              </Badge>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2.5">
-            <CardTitle
-              id={titleId}
-              role="heading"
-              aria-level={3}
-              className="line-clamp-2 text-[1.08rem] font-semibold leading-6 text-foreground"
-            >
-              {practice.title}
-            </CardTitle>
-            <p className="line-clamp-3 min-h-[4.5rem] text-[0.925rem] leading-6 text-muted-foreground">
-              {practice.description ?? "Latihan soal terkurasi untuk memperkuat pemahaman materi."}
-            </p>
-          </div>
-        </CardHeader>
-
-        <CardContent className="mt-auto flex flex-1 flex-col px-5 pt-4">
-          <div className="grid grid-cols-3 gap-2">
-            <PracticeMetric label="Soal" value={practice.questionCount.toString()} />
-            <PracticeMetric label="Timer" value={durationLabel} />
-            <PracticeMetric label="Mode" value={formatPracticeModes(practice)} />
-          </div>
-
-          <span
+      <CardHeader className="gap-3 px-5 pb-0">
+        <div className="flex items-start justify-between gap-3">
+          <Badge
+            variant="outline"
+            size="sm"
             className={cn(
-              "mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold shadow-sm transition-colors [&_svg]:size-4",
-              accessAllowed
-                ? "border-primary/25 bg-primary text-primary-foreground group-hover:bg-primary/90"
-                : "border-border bg-secondary text-muted-foreground shadow-none group-hover:bg-secondary/80",
+              "shrink-0 rounded-full font-semibold",
+              difficultyBadgeClasses[practice.difficulty],
             )}
           >
-            {!accessAllowed ? <LockIcon /> : null}
-            {actionLabel}
-            {accessAllowed ? <ArrowRightIcon aria-hidden="true" /> : null}
-          </span>
-        </CardContent>
-      </Card>
-    </button>
+            <GaugeIcon />
+            {practiceDifficultyLabels[practice.difficulty]}
+          </Badge>
+          {practice.isFree ? null : (
+            <Badge variant="destructive" size="sm" className="shrink-0 rounded-full font-semibold">
+              <LockIcon data-icon="inline-start" />
+              Premium
+            </Badge>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-2.5">
+          <CardTitle
+            id={titleId}
+            role="heading"
+            aria-level={3}
+            className="line-clamp-2 text-[1.08rem] font-semibold leading-6 text-foreground"
+          >
+            {practice.title}
+          </CardTitle>
+          <p className="line-clamp-2 text-[0.925rem] leading-6 text-muted-foreground">
+            {practice.description ?? "Latihan soal terkurasi untuk memperkuat pemahaman materi."}
+          </p>
+        </div>
+      </CardHeader>
+
+      <CardContent className="mt-auto flex flex-col gap-5 px-5 pt-6">
+        <div className="flex items-center justify-between gap-4">
+          <PracticeMetaItem>
+            <BookOpenIcon />
+            {practice.questionCount} Soal
+          </PracticeMetaItem>
+          <PracticeMetaItem>
+            <ClockIcon />
+            {durationLabel}
+          </PracticeMetaItem>
+        </div>
+
+        <Button
+          type="button"
+          aria-label={`${actionLabel} ${practice.title}`}
+          onClick={onStart}
+          className="w-full"
+          variant={accessAllowed ? "default" : "secondary"}
+          size="lg"
+        >
+          {!accessAllowed ? <LockIcon data-icon="inline-start" /> : null}
+          {actionLabel}
+          {accessAllowed ? <ArrowRightIcon data-icon="inline-end" /> : null}
+        </Button>
+      </CardContent>
+    </Card>
   )
 }
 
-function PracticeMetric({ label, value }: { label: string; value: string }) {
+function PracticeMetaItem({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-md border border-border/70 bg-background/70 px-2.5 py-2">
-      <span className="block truncate text-sm font-semibold text-foreground">{value}</span>
-      <span className="mt-0.5 block truncate text-xs font-medium text-muted-foreground">
-        {label}
-      </span>
-    </div>
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium leading-none text-muted-foreground [&_svg]:size-3.5">
+      {children}
+    </span>
   )
-}
-
-function formatPracticeModes(practice: PracticeDiscoveryPractice) {
-  if (practice.hasPracticeMode && practice.hasQuizMode) {
-    return "2 Mode"
-  }
-
-  if (practice.hasQuizMode) {
-    return "Quiz"
-  }
-
-  return "Latihan"
 }
 
 function ModeDialog({
@@ -674,37 +662,44 @@ function ModeDialog({
   isStarting: boolean
   startingMode: PracticeMode | null
 }) {
+  const durationLabel = practice?.quizDurationMinutes
+    ? `${practice.quizDurationMinutes} Menit`
+    : "Tanpa Timer"
+
   return (
     <Dialog open={Boolean(practice)} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Pilih Mode Latihan</DialogTitle>
+          <DialogTitle className="line-clamp-2">
+            {practice?.title ?? "Mulai Latihan"}
+          </DialogTitle>
+          <DialogDescription>
+            Pilih mode pengerjaan yang paling sesuai dengan target belajarmu.
+          </DialogDescription>
         </DialogHeader>
 
         {practice ? (
-          <div className="grid gap-3">
-            {practice.hasPracticeMode ? (
-              <ModeOptionButton
-                title="Mode Latihan"
-                description="Belajar bertahap dengan feedback langsung setelah jawaban dikonfirmasi."
-                icon={<BookOpenCheckIcon />}
-                isLoading={isStarting && startingMode === "practice"}
-                disabled={isStarting}
-                onClick={() => onModeClick("practice")}
-                tone="study"
-              />
-            ) : null}
-            {practice.hasQuizMode ? (
-              <ModeOptionButton
-                title="Mode Quiz"
-                description="Simulasi singkat dengan timer, navigasi bebas, dan hasil setelah submit."
-                icon={<ClockIcon />}
-                isLoading={isStarting && startingMode === "quiz"}
-                disabled={isStarting}
-                onClick={() => onModeClick("quiz")}
-                tone="quiz"
-              />
-            ) : null}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <ModeOptionButton
+              title="Mode Latihan"
+              description="Cocok untuk memahami konsep dan mengecek jawaban sambil belajar."
+              points={["Feedback Langsung", "Tanpa Tekanan Timer"]}
+              icon={<BookOpenCheckIcon />}
+              isLoading={isStarting && startingMode === "practice"}
+              disabled={isStarting}
+              onClick={() => onModeClick("practice")}
+              tone="study"
+            />
+            <ModeOptionButton
+              title="Mode Quiz"
+              description="Cocok untuk mengukur kesiapan dengan suasana yang lebih terstruktur."
+              points={[durationLabel, "Hasil Setelah Submit"]}
+              icon={<ClockIcon />}
+              isLoading={isStarting && startingMode === "quiz"}
+              disabled={isStarting}
+              onClick={() => onModeClick("quiz")}
+              tone="quiz"
+            />
           </div>
         ) : null}
 
@@ -723,6 +718,7 @@ function ModeDialog({
 function ModeOptionButton({
   title,
   description,
+  points,
   icon,
   tone,
   isLoading,
@@ -731,6 +727,7 @@ function ModeOptionButton({
 }: {
   title: string
   description: string
+  points: string[]
   icon: ReactNode
   tone: "study" | "quiz"
   isLoading: boolean
@@ -740,38 +737,64 @@ function ModeOptionButton({
   const styles = modeOptionToneClasses[tone]
 
   return (
-    <button
-      type="button"
+    <Card
       className={cn(
-        "group rounded-xl border bg-card p-4 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-60",
+        "group h-full min-h-60 gap-0 rounded-xl border border-border/80 bg-card py-0 text-left shadow-xs ring-0 transition-all hover:-translate-y-0.5 hover:bg-card hover:shadow-md",
         styles.card,
+        disabled && "pointer-events-none opacity-70",
       )}
-      disabled={disabled}
-      onClick={onClick}
-      aria-label={`Mulai ${title}`}
     >
-      <div className="flex items-start gap-4">
-        <span className={cn("grid size-10 shrink-0 place-items-center rounded-lg [&_svg]:size-5", styles.icon)}>
-          {isLoading ? <ClockIcon className="animate-spin" /> : icon}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="text-base font-semibold text-foreground">{title}</span>
-          <span className="mt-1 block text-sm leading-6 text-muted-foreground">
-            {description}
+      <CardContent className="flex flex-1 flex-col gap-4 p-5">
+        <div className="flex items-start gap-4">
+          <span className={cn("grid size-11 shrink-0 place-items-center rounded-xl [&_svg]:size-5", styles.icon)}>
+            {isLoading ? <LoaderCircleIcon className="animate-spin" /> : icon}
           </span>
-        </span>
-      </div>
-    </button>
+        </div>
+        <div className="flex flex-1 flex-col gap-3">
+          <span className="text-lg font-semibold leading-6 text-foreground">{title}</span>
+          <span className="text-sm leading-6 text-muted-foreground">{description}</span>
+          <div className="mt-auto flex flex-col gap-2">
+            {points.map((point) => (
+              <span
+                key={point}
+                className="inline-flex items-center gap-2 text-sm font-medium text-foreground"
+              >
+                <CheckCircle2Icon className={styles.checkIcon} />
+                {point}
+              </span>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="border-0 bg-transparent px-5 pb-5 pt-0">
+        <Button
+          type="button"
+          variant="secondary"
+          className={cn("w-full shadow-none", styles.action)}
+          disabled={disabled}
+          onClick={onClick}
+          aria-label={`Mulai ${title}`}
+        >
+          {isLoading ? <LoaderCircleIcon data-icon="inline-start" className="animate-spin" /> : null}
+          {isLoading ? "Memulai..." : `Pilih ${title}`}
+          {isLoading ? null : <ArrowRightIcon data-icon="inline-end" />}
+        </Button>
+      </CardFooter>
+    </Card>
   )
 }
 
 const modeOptionToneClasses = {
   study: {
-    card: "hover:border-chart-2/45",
+    action: "bg-chart-2/10 text-chart-2 hover:bg-chart-2/15",
+    card: "hover:border-chart-2/45 hover:shadow-chart-2/10",
+    checkIcon: "text-chart-2",
     icon: "bg-chart-2/10 text-chart-2",
   },
   quiz: {
-    card: "hover:border-primary/45",
+    action: "bg-primary/10 text-primary hover:bg-primary/15",
+    card: "hover:border-primary/45 hover:shadow-primary/10",
+    checkIcon: "text-primary",
     icon: "bg-primary/10 text-primary",
   },
 }

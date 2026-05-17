@@ -9,6 +9,8 @@ import {
 import { SiteFooter } from "@/components/site-footer"
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar"
 import type { CurrentUser } from "@/features/auth/services/session"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Empty,
@@ -105,20 +107,22 @@ function ExamTypeCard({
       href={`/practices/exam/${examType.slug}`}
       className="group h-full rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
     >
-      <Card className="h-full rounded-lg border-border/75 bg-card py-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/25 group-hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
+      <Card className="flex h-full flex-col rounded-lg border-border/75 bg-card py-5 shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/25 group-hover:shadow-lg">
         <CardHeader className="gap-4 px-5 pb-0">
           <div className="flex items-start justify-between gap-4">
             <ExamTypeLogo src={examType.logoUrl} name={examType.name} />
-            <span
+            <Badge
+              variant="outline"
+              size="sm"
               className={cn(
-                "inline-flex h-7 shrink-0 items-center rounded-full border px-3 text-xs font-semibold tabular-nums",
+                "rounded-full font-semibold tabular-nums",
                 totalPractices > 0
                   ? "border-primary/20 bg-primary/8 text-primary"
                   : "border-border bg-secondary/70 text-muted-foreground",
               )}
             >
               {totalPractices} Latihan
-            </span>
+            </Badge>
           </div>
 
           <div className="flex flex-col gap-2.5">
@@ -131,18 +135,22 @@ function ExamTypeCard({
             </p>
           </div>
         </CardHeader>
-        <CardContent className="mt-auto flex flex-1 flex-col px-5 pt-1">
-          <span
+        <CardContent className="flex flex-1 flex-col px-5 pt-1">
+          <Button
+            asChild
+            variant={totalPractices > 0 ? "default" : "secondary"}
+            size="xl"
             className={cn(
-              "mt-auto inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold shadow-sm transition-colors [&_svg]:size-4",
-              totalPractices > 0
-                ? "border-primary/25 bg-primary text-primary-foreground group-hover:bg-primary/90"
-                : "border-border bg-secondary text-muted-foreground shadow-none group-hover:bg-secondary/80",
+              "mt-auto w-full font-semibold",
+              totalPractices > 0 && "group-hover:bg-primary/90",
+              totalPractices === 0 && "text-muted-foreground group-hover:bg-secondary/80",
             )}
           >
-            Lihat Latihan
-            <ArrowRightIcon aria-hidden="true" />
-          </span>
+            <span>
+              Lihat Latihan
+              <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
+            </span>
+          </Button>
         </CardContent>
       </Card>
     </Link>

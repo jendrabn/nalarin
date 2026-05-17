@@ -85,13 +85,8 @@ function statusBadge(status: PracticeStatus) {
   )
 }
 
-function formatModes(practice: PracticeRow) {
-  const modes = [
-    practice.hasPracticeMode ? "Practice" : null,
-    practice.hasQuizMode ? "Quiz" : null,
-  ].filter(Boolean)
-
-  return modes.join(" + ") || "-"
+function formatModes() {
+  return "Practice + Quiz"
 }
 
 function createColumns({
@@ -150,10 +145,10 @@ function createColumns({
     },
     {
       id: "modes",
-      accessorFn: (row) => formatModes(row),
+      accessorFn: () => formatModes(),
       meta: { label: practiceColumnLabels.modes },
       header: ({ column }) => <SortableHeader column={column}>Modes</SortableHeader>,
-      cell: ({ row }) => <span>{formatModes(row.original)}</span>,
+      cell: () => <span>{formatModes()}</span>,
     },
     {
       accessorKey: "questionCount",

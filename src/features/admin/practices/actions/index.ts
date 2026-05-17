@@ -48,11 +48,9 @@ function parsePracticeValues(values: PracticeFormValues) {
     }
   }
 
-  const quizDurationMinutes = validated.data.hasQuizMode
-    ? parseRequiredInteger(validated.data.quizDurationMinutes)
-    : null
+  const quizDurationMinutes = parseRequiredInteger(validated.data.quizDurationMinutes)
 
-  if (validated.data.hasQuizMode && quizDurationMinutes === null) {
+  if (quizDurationMinutes === null) {
     return {
       success: false as const,
       message: "Please fix the highlighted fields.",
@@ -71,8 +69,8 @@ function parsePracticeValues(values: PracticeFormValues) {
       title: validated.data.title.trim(),
       description: normalizeNullableText(validated.data.description),
       isFree: validated.data.isFree,
-      hasPracticeMode: validated.data.hasPracticeMode,
-      hasQuizMode: validated.data.hasQuizMode,
+      hasPracticeMode: true,
+      hasQuizMode: true,
       quizDurationMinutes,
       shuffleQuestions: false,
       shuffleOptions: false,
@@ -457,17 +455,7 @@ export async function publishPracticeAction(
     }
   }
 
-  if (!existingPractice.hasPracticeMode && !existingPractice.hasQuizMode) {
-    return {
-      success: false,
-      message: "Enable at least one practice mode before publishing.",
-    }
-  }
-
-  if (
-    existingPractice.hasQuizMode &&
-    (!existingPractice.quizDurationMinutes || existingPractice.quizDurationMinutes <= 0)
-  ) {
+  if (!existingPractice.quizDurationMinutes || existingPractice.quizDurationMinutes <= 0) {
     return {
       success: false,
       message: "Quiz duration is required before publishing.",

@@ -198,6 +198,8 @@ export async function getPracticeDiscoveryData(): Promise<PracticeDiscoveryData>
         ...practice,
         topicId: practice.topicId ?? null,
         description: practice.description ?? null,
+        hasPracticeMode: true,
+        hasQuizMode: true,
         quizDurationMinutes: practice.quizDurationMinutes ?? null,
         questionCount: stats?.questionCount ?? 0,
         difficultyCounts,

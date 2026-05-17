@@ -28,7 +28,7 @@ export async function generateMetadata({
 
   const description =
     tryout.description ??
-    `Detail tryout ${tryout.examTypeName} dengan ${tryout.sectionCount} section dan ${tryout.questionCount} soal.`
+    `Detail tryout ${tryout.examTypeName} dengan ${tryout.sectionCount} subtes dan ${tryout.questionCount} soal.`
 
   return {
     title: tryout.title,

@@ -44,13 +44,8 @@ function formatDateTime(value: Date | null) {
   }).format(value)
 }
 
-function formatModes(practice: PracticeDetails) {
-  return [
-    practice.hasPracticeMode ? "Practice" : null,
-    practice.hasQuizMode ? "Quiz" : null,
-  ]
-    .filter(Boolean)
-    .join(" + ") || "-"
+function formatModes() {
+  return "Practice + Quiz"
 }
 
 export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
@@ -149,7 +144,7 @@ export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
               </div>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-muted-foreground">Modes</span>
-                <span className="font-medium">{formatModes(practice)}</span>
+                <span className="font-medium">{formatModes()}</span>
               </div>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-muted-foreground">Quiz duration</span>

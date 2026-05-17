@@ -141,6 +141,8 @@ function normalizePracticeRow(
     description: row.description ?? null,
     topicId: row.topicId ?? null,
     topicName: row.topicName ?? null,
+    hasPracticeMode: true,
+    hasQuizMode: true,
     quizDurationMinutes: row.quizDurationMinutes ?? null,
     publishedAt: row.publishedAt ?? null,
     createdBy: row.createdBy ?? null,

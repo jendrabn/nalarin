@@ -18,7 +18,7 @@ export const practiceFormSchema = z
     description: z.string().trim().max(10000, "Description is too long.").default(""),
     isFree: z.boolean().default(true),
     hasPracticeMode: z.boolean().default(true),
-    hasQuizMode: z.boolean().default(false),
+    hasQuizMode: z.boolean().default(true),
     quizDurationMinutes: z.string().trim().default(""),
     shuffleQuestions: z.boolean().default(false),
     shuffleOptions: z.boolean().default(false),
@@ -29,24 +29,14 @@ export const practiceFormSchema = z
     questions: z.array(practiceQuestionFormSchema).default([]),
   })
   .superRefine((value, ctx) => {
-    if (!value.hasPracticeMode && !value.hasQuizMode) {
+    const duration = Number(value.quizDurationMinutes)
+
+    if (!Number.isInteger(duration) || duration <= 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["hasPracticeMode"],
-        message: "Enable at least one mode.",
+        path: ["quizDurationMinutes"],
+        message: "Quiz duration is required.",
       })
-    }
-
-    if (value.hasQuizMode) {
-      const duration = Number(value.quizDurationMinutes)
-
-      if (!Number.isInteger(duration) || duration <= 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["quizDurationMinutes"],
-          message: "Quiz duration is required when quiz mode is enabled.",
-        })
-      }
     }
 
     const questionIds = new Set<string>()

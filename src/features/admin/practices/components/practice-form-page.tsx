@@ -99,8 +99,8 @@ function getDefaultValues(initialValues?: PracticeDetails | null): PracticeFormV
     title: initialValues?.title ?? "",
     description: initialValues?.description ?? "",
     isFree: initialValues?.isFree ?? true,
-    hasPracticeMode: initialValues?.hasPracticeMode ?? true,
-    hasQuizMode: initialValues?.hasQuizMode ?? false,
+    hasPracticeMode: true,
+    hasQuizMode: true,
     quizDurationMinutes: initialValues?.quizDurationMinutes
       ? String(initialValues.quizDurationMinutes)
       : "",
@@ -168,11 +168,7 @@ function getStepForErrors(errors: FieldErrors<PracticeFormValues>): WizardStep {
     return "details"
   }
 
-  if (
-    errors.hasPracticeMode ||
-    errors.hasQuizMode ||
-    errors.quizDurationMinutes
-  ) {
+  if (errors.quizDurationMinutes) {
     return "settings"
   }
 
@@ -182,10 +178,6 @@ function getStepForErrors(errors: FieldErrors<PracticeFormValues>): WizardStep {
 function formatReviewText(value: string | null | undefined, fallback = "-") {
   const trimmed = value?.trim()
   return trimmed ? trimmed : fallback
-}
-
-function getEnabledLabel(value: boolean | null | undefined) {
-  return value ? "Enabled" : "Disabled"
 }
 
 export function PracticeFormPage({
@@ -652,50 +644,37 @@ export function PracticeFormPage({
               <Card>
                 <CardHeader>
                   <CardTitle>Modes</CardTitle>
-                  <CardDescription>Enable practice mode, quiz mode, or both.</CardDescription>
+                  <CardDescription>
+                    Every practice is available in Practice Mode and Quiz Mode.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FieldGroup>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <FieldSwitch
-                        id={`${formId}-practice-mode`}
-                        label="Practice Mode"
-                        description="No timer and suitable for learning."
-                        checked={Boolean(watchedValues.hasPracticeMode)}
-                        disabled={isLocked}
-                        onCheckedChange={(checked) =>
-                          form.setValue("hasPracticeMode", checked, {
-                            shouldDirty: true,
-                            shouldValidate: true,
-                          })
-                        }
-                      />
-                      <FieldSwitch
-                        id={`${formId}-quiz-mode`}
-                        label="Quiz Mode"
-                        description="Timed session with result after submit."
-                        checked={Boolean(watchedValues.hasQuizMode)}
-                        disabled={isLocked}
-                        onCheckedChange={(checked) =>
-                          form.setValue("hasQuizMode", checked, {
-                            shouldDirty: true,
-                            shouldValidate: true,
-                          })
-                        }
-                      />
+                    <div className="grid gap-3 text-sm md:grid-cols-2">
+                      <div className="rounded-lg border border-border/60 p-3">
+                        <span className="text-muted-foreground">Practice Mode</span>
+                        <p className="font-medium">Enabled</p>
+                      </div>
+                      <div className="rounded-lg border border-border/60 p-3">
+                        <span className="text-muted-foreground">Quiz Mode</span>
+                        <p className="font-medium">Enabled</p>
+                      </div>
                     </div>
 
                     <Field data-invalid={Boolean(form.formState.errors.quizDurationMinutes)}>
                       <FieldContent>
-                        <FieldLabel htmlFor={`${formId}-quiz-duration`}>
+                        <FieldLabel htmlFor={`${formId}-quiz-duration`} className="required">
                           Quiz Duration Minutes
                         </FieldLabel>
+                        <FieldDescription>
+                          Used when users start this practice in Quiz Mode.
+                        </FieldDescription>
                       </FieldContent>
                       <Input
                         id={`${formId}-quiz-duration`}
                         inputMode="numeric"
                         placeholder="30"
-                        disabled={isLocked || !watchedValues.hasQuizMode}
+                        disabled={isLocked}
                         aria-invalid={Boolean(form.formState.errors.quizDurationMinutes)}
                         {...form.register("quizDurationMinutes")}
                       />
@@ -959,11 +938,7 @@ export function PracticeFormPage({
                     </div>
                     <div className="rounded-lg border border-border/60 p-3">
                       <p className="text-sm text-muted-foreground">Modes</p>
-                      <p className="font-medium">
-                        {[watchedValues.hasPracticeMode ? "Practice" : null, watchedValues.hasQuizMode ? "Quiz" : null]
-                          .filter(Boolean)
-                          .join(" + ") || "-"}
-                      </p>
+                      <p className="font-medium">Practice + Quiz</p>
                     </div>
                     <div className="rounded-lg border border-border/60 p-3">
                       <p className="text-sm text-muted-foreground">Access</p>
@@ -1018,18 +993,16 @@ export function PracticeFormPage({
                     <div className="grid gap-3 text-sm md:grid-cols-3">
                       <div className="rounded-lg border border-border/60 p-3">
                         <span className="text-muted-foreground">Practice mode</span>
-                        <p className="font-medium">{getEnabledLabel(watchedValues.hasPracticeMode)}</p>
+                        <p className="font-medium">Enabled</p>
                       </div>
                       <div className="rounded-lg border border-border/60 p-3">
                         <span className="text-muted-foreground">Quiz mode</span>
-                        <p className="font-medium">{getEnabledLabel(watchedValues.hasQuizMode)}</p>
+                        <p className="font-medium">Enabled</p>
                       </div>
                       <div className="rounded-lg border border-border/60 p-3">
                         <span className="text-muted-foreground">Quiz duration</span>
                         <p className="font-medium tabular-nums">
-                          {watchedValues.hasQuizMode
-                            ? `${formatReviewText(watchedValues.quizDurationMinutes)} minutes`
-                            : "-"}
+                          {formatReviewText(watchedValues.quizDurationMinutes)} minutes
                         </p>
                       </div>
                     </div>

@@ -76,10 +76,16 @@ export function formatLongDateTime(value: string | null) {
     return "Belum ditentukan"
   }
 
-  return new Intl.DateTimeFormat("id-ID", {
+  const datePart = new Intl.DateTimeFormat("id-ID", {
     dateStyle: "full",
-    timeStyle: "short",
   }).format(date)
+  const timePart = new Intl.DateTimeFormat("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date)
+
+  return `${datePart}, ${timePart}`
 }
 
 export function formatDuration(minutes: number) {
