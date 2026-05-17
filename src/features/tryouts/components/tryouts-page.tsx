@@ -106,6 +106,12 @@ export function TryoutsPage({
   const tryoutsByExamType = data.tryouts.filter(
     (tryout) => tryout.examTypeId === activeExamTypeId,
   )
+  const statusCounts = {
+    all: tryoutsByExamType.length,
+    ongoing: tryoutsByExamType.filter((tryout) => tryout.availabilityStatus === "ongoing").length,
+    upcoming: tryoutsByExamType.filter((tryout) => tryout.availabilityStatus === "upcoming").length,
+    ended: tryoutsByExamType.filter((tryout) => tryout.availabilityStatus === "ended").length,
+  } satisfies Record<StatusFilter, number>
   const visibleTryouts =
     activeStatus === "all"
       ? tryoutsByExamType
@@ -139,6 +145,7 @@ export function TryoutsPage({
               <StatusFilterBar
                 activeStatus={activeStatus}
                 onStatusChange={setActiveStatus}
+                counts={statusCounts}
               />
 
               {tryoutsByExamType.length === 0 ? (
@@ -217,9 +224,11 @@ function TryoutPageHeader({
 function StatusFilterBar({
   activeStatus,
   onStatusChange,
+  counts,
 }: {
   activeStatus: StatusFilter
   onStatusChange: (status: StatusFilter) => void
+  counts: Record<StatusFilter, number>
 }) {
   return (
     <div
@@ -243,7 +252,9 @@ function StatusFilterBar({
             )}
           >
             {filter.icon}
-            <span className="min-w-0 truncate">{filter.label}</span>
+            <span className="min-w-0 truncate">
+              {filter.label} ({counts[filter.value]})
+            </span>
           </Button>
         )
       })}

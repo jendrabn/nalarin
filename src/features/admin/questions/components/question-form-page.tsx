@@ -139,7 +139,7 @@ function getQuestionTypeDescription(type: QuestionType) {
     return "Best for concise free-text answers."
   }
 
-  return "Best for open-ended essay answers."
+  return "Best for short free-text answers."
 }
 
 function getStatusDescription(status: QuestionStatus) {
@@ -975,7 +975,7 @@ export function QuestionFormPage({
                       {...form.register("gradingRubric")}
                     />
                     <FieldDescription>
-                      Use this for short answers and essays when subjective grading is needed.
+                      Use this for short answers when subjective grading is needed.
                     </FieldDescription>
                     <FieldError>{form.formState.errors.gradingRubric?.message}</FieldError>
                   </div>

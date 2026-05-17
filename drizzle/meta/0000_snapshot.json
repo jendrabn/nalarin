@@ -1004,7 +1004,7 @@
         },
         "question_type": {
           "name": "question_type",
-          "type": "enum('multiple_choice','multiple_answer','short_answer','essay','true_false')",
+          "type": "enum('multiple_choice','multiple_answer','short_answer','true_false')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -2057,7 +2057,7 @@
         },
         "type": {
           "name": "type",
-          "type": "enum('multiple_choice','multiple_answer','short_answer','essay','true_false')",
+          "type": "enum('multiple_choice','multiple_answer','short_answer','true_false')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -2668,7 +2668,7 @@
         },
         "question_type": {
           "name": "question_type",
-          "type": "enum('multiple_choice','multiple_answer','short_answer','essay','true_false')",
+          "type": "enum('multiple_choice','multiple_answer','short_answer','true_false')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false

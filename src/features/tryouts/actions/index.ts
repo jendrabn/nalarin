@@ -617,7 +617,6 @@ export async function submitTryoutSectionAction(
   let wrongCount = 0
   let unansweredCount = 0
   let score = 0
-  let pendingSubjectiveCount = 0
 
   await db.transaction(async (tx) => {
     for (const row of rows) {
@@ -643,34 +642,6 @@ export async function submitTryoutSectionAction(
 
       if (!answered) {
         unansweredCount += 1
-        continue
-      }
-
-      if (questionType === "short_answer" || questionType === "essay") {
-        pendingSubjectiveCount += 1
-        await tx
-          .insert(schema.tryoutAnswers)
-          .values({
-            tryoutSessionId: input.sessionId,
-            tryoutSectionSessionId: section.id,
-            tryoutSessionQuestionId: row.sessionQuestionId,
-            questionType,
-            selectedOptionKeys,
-            answerText,
-            isMarkedForReview: Boolean(row.isMarkedForReview),
-            maxScore: points.toFixed(2),
-            gradingStatus: "pending",
-            answeredAt: row.answeredAt ?? now,
-            lastSavedAt: now,
-          })
-          .onDuplicateKeyUpdate({
-            set: {
-              maxScore: points.toFixed(2),
-              gradingStatus: "pending",
-              lastSavedAt: now,
-              updatedAt: now,
-            },
-          })
         continue
       }
 
@@ -729,14 +700,14 @@ export async function submitTryoutSectionAction(
     await tx
       .update(schema.tryoutSectionSessions)
       .set({
-        status: pendingSubjectiveCount > 0 ? "grading" : "graded",
+        status: "graded",
         totalQuestions: rows.length,
         correctCount,
         wrongCount,
         unansweredCount,
         score: score.toFixed(2),
         submittedAt: now,
-        gradedAt: pendingSubjectiveCount > 0 ? null : now,
+        gradedAt: now,
         lastSavedAt: now,
         updatedAt: now,
       })
@@ -1201,6 +1172,10 @@ function normalizeAnswerText(value: string | null | undefined) {
   return value?.trim().replace(/\s+/g, " ").toLowerCase() ?? ""
 }
 
+function normalizeExactAnswerText(value: string | null | undefined) {
+  return value?.trim() ?? ""
+}
+
 function getTrueFalseCorrectOptionKeys(correctAnswerText: string | null | undefined) {
   const normalized = normalizeAnswerText(correctAnswerText)
 
@@ -1238,7 +1213,6 @@ function isPracticeQuestionType(value: unknown): value is PracticeQuestionType {
     value === "multiple_choice" ||
     value === "multiple_answer" ||
     value === "short_answer" ||
-    value === "essay" ||
     value === "true_false"
   )
 }
@@ -1262,9 +1236,9 @@ function gradeTryoutAnswer({
   points: number
   penalty: number
 }) {
-  if (questionType === "short_answer" || questionType === "essay") {
-    const normalizedAnswer = normalizeAnswerText(answerText)
-    const normalizedCorrectAnswer = normalizeAnswerText(correctAnswerText)
+  if (questionType === "short_answer") {
+    const normalizedAnswer = normalizeExactAnswerText(answerText)
+    const normalizedCorrectAnswer = normalizeExactAnswerText(correctAnswerText)
     const isCorrect =
       normalizedAnswer.length > 0 &&
       normalizedCorrectAnswer.length > 0 &&

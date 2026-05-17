@@ -118,15 +118,13 @@ export const modelEnums = {
       multiple_choice: "Multiple Choice",
       multiple_answer: "Multiple Answer",
       short_answer: "Short Answer",
-      essay: "Essay",
       true_false: "True / False",
     },
     {
       multiple_choice: "chart1",
       multiple_answer: "chart2",
       short_answer: "chart3",
-      essay: "chart4",
-      true_false: "chart5",
+      true_false: "chart4",
     },
   ),
   questionDifficulty: createEnumDefinition(

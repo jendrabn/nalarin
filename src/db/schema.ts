@@ -23,7 +23,6 @@ export const questionTypeValues = [
   'multiple_choice',
   'multiple_answer',
   'short_answer',
-  'essay',
   'true_false',
 ] as const;
 export const questionDifficultyValues = ['easy', 'medium', 'hard'] as const;

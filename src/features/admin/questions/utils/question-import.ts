@@ -87,7 +87,7 @@ export function createQuestionImportTemplateWorkbook() {
     ],
     [
       "correct_answer_text",
-      `Use for true_false, short_answer, and essay. For true_false, enter true or false. Fill option_a as ${questionTrueFalseLabels[0]} and option_b as ${questionTrueFalseLabels[1]}.`,
+      `Use for true_false and short_answer. For true_false, enter true or false. Fill option_a as ${questionTrueFalseLabels[0]} and option_b as ${questionTrueFalseLabels[1]}.`,
     ],
   ])
   instructionsSheet["!cols"] = [{ wch: 28 }, { wch: 96 }]

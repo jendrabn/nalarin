@@ -67,7 +67,6 @@ const questionTypeLabels: Record<TryoutQuestionType, string> = {
   multiple_choice: "Pilihan Ganda",
   multiple_answer: "Multi Jawaban",
   short_answer: "Isian Singkat",
-  essay: "Esai",
   true_false: "Benar/Salah",
 }
 
@@ -730,7 +729,7 @@ function AnswerControl({
     setHighlightedOptionKey,
   ])
 
-  if (question.question.type === "short_answer" || question.question.type === "essay") {
+  if (question.question.type === "short_answer") {
     return (
       <div className="flex flex-col gap-2">
         <label className="text-base font-semibold" htmlFor={`answer-${question.id}`}>
@@ -739,11 +738,7 @@ function AnswerControl({
         <Textarea
           id={`answer-${question.id}`}
           value={answer.answerText}
-          placeholder={
-            question.question.type === "essay"
-              ? "Tulis jawaban esai kamu di sini."
-              : "Tulis jawaban singkat kamu di sini."
-          }
+          placeholder="Tulis jawaban singkat kamu di sini."
           className="min-h-32 resize-y bg-background text-base"
           disabled={isPending}
           onChange={(event) => onTextChange(question, event.target.value)}

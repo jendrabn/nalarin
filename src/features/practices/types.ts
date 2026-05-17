@@ -4,7 +4,6 @@ export type PracticeQuestionType =
   | "multiple_choice"
   | "multiple_answer"
   | "short_answer"
-  | "essay"
   | "true_false"
 
 export type PracticeQuestionSnapshot = {

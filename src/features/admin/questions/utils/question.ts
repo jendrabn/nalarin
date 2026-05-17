@@ -78,7 +78,7 @@ export function isChoiceQuestionType(type: QuestionType) {
 }
 
 export function isSubjectiveQuestionType(type: QuestionType) {
-  return type === "short_answer" || type === "essay"
+  return type === "short_answer"
 }
 
 export function getNextQuestionOptionLabel(index: number) {

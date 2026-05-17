@@ -1032,11 +1032,10 @@ async function getOwnedSessionQuestionContext(
     orderIndex: row.orderIndex,
     mode: row.mode,
     questionType:
-      snapshot.type === "multiple_choice" ||
-      snapshot.type === "multiple_answer" ||
-      snapshot.type === "short_answer" ||
-      snapshot.type === "essay" ||
-      snapshot.type === "true_false"
+    snapshot.type === "multiple_choice" ||
+    snapshot.type === "multiple_answer" ||
+    snapshot.type === "short_answer" ||
+    snapshot.type === "true_false"
         ? snapshot.type
         : "multiple_choice",
     scoringRule: snapshot.scoringRule === "partial" ? "partial" : "all_or_nothing",
@@ -1088,7 +1087,6 @@ function isPracticeQuestionType(value: unknown): value is PracticeQuestionType {
     value === "multiple_choice" ||
     value === "multiple_answer" ||
     value === "short_answer" ||
-    value === "essay" ||
     value === "true_false"
   )
 }
@@ -1110,9 +1108,9 @@ function gradeAnswer({
   correctAnswerText: string | null
   points: number
 }) {
-  if (questionType === "short_answer" || questionType === "essay") {
-    const normalizedAnswer = normalizeAnswerText(answerText)
-    const normalizedCorrectAnswer = normalizeAnswerText(correctAnswerText)
+  if (questionType === "short_answer") {
+    const normalizedAnswer = normalizeExactAnswerText(answerText)
+    const normalizedCorrectAnswer = normalizeExactAnswerText(correctAnswerText)
     const isCorrect =
       normalizedAnswer.length > 0 &&
       normalizedCorrectAnswer.length > 0 &&
@@ -1154,6 +1152,10 @@ function isAnswerFilled(selectedOptionKeys: string[], answerText: string | null)
 
 function normalizeAnswerText(value: string | null | undefined) {
   return value?.trim().replace(/\s+/g, " ").toLowerCase() ?? ""
+}
+
+function normalizeExactAnswerText(value: string | null | undefined) {
+  return value?.trim() ?? ""
 }
 
 function getTrueFalseCorrectOptionKeys(correctAnswerText: string | null | undefined) {

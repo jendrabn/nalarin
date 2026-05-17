@@ -56,7 +56,7 @@ const workflowItems = [
   },
   {
     title: "Grading",
-    description: "Review short-answer and essay responses manually or with AI.",
+    description: "Review short-answer responses and final scoring status.",
     href: "/admin/grading",
     icon: ClipboardCheckIcon,
   },
