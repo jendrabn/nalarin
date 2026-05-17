@@ -102,7 +102,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
               >
                 <DropdownMenuGroup>
                   <DropdownMenuItem asChild>
-                    <Link href="/account/profile">
+                    <Link href="/profile">
                       <UserRoundIcon />
                       Profile
                     </Link>

@@ -102,7 +102,7 @@ export function SiteNavbar({ user }: SiteNavbarProps) {
                         ) : null}
                         <SheetClose asChild>
                           <Button className="h-11 w-full" variant="outline" asChild>
-                            <Link href="/account/profile">Profil</Link>
+                            <Link href="/profile">Profil</Link>
                           </Button>
                         </SheetClose>
                         <form action={logoutAction}>
@@ -200,7 +200,7 @@ function UserMenu({ user }: { user: NonNullable<SiteUser> }) {
             asChild
             className="h-10 rounded-xl px-3 focus:bg-secondary/70 focus:text-foreground hover:bg-secondary/70 hover:text-foreground"
           >
-            <Link href="/account/profile">Profil</Link>
+            <Link href="/profile">Profil</Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

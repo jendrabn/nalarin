@@ -157,7 +157,9 @@ export const users = mysqlTable(
     role: userRoleEnum.default('user').notNull(),
     status: userStatusEnum.default('active').notNull(),
     gender: genderEnum,
+    birthDate: date('birth_date', { mode: 'string' }),
     phoneNumber: varchar('phone_number', { length: 32 }),
+    bio: text('bio'),
     ...auditColumns(),
   },
   (table) => [
