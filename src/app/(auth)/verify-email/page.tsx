@@ -1,5 +1,0 @@
-import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
-
-export default function Page() {
-  return <RoutePlaceholder section="Auth" route="/verify-email" />;
-}

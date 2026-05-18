@@ -8,8 +8,6 @@ import {
 
 const adminPrefix = "/admin";
 const protectedPrefixes = [
-  "/account",
-  "/dashboard",
   "/practice",
   "/practice-sessions",
   "/progress",
@@ -40,7 +38,7 @@ export async function proxy(request: NextRequest) {
     }
 
     if (session.role !== "admin") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return NextResponse.redirect(new URL("/profile", request.url));
     }
   }
 

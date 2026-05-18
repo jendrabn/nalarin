@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
       role: user.role,
     });
 
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/profile", request.url));
   } catch (error) {
     const message = error instanceof Error ? error.message : "auth_failed";
 

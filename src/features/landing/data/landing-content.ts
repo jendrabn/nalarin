@@ -17,6 +17,7 @@ import {
 export const navLinks = [
   { label: "Latihan", href: "/practices" },
   { label: "Tryout", href: "/tryouts" },
+  { label: "Progress", href: "/progress" },
   { label: "Premium", href: "/pricing" },
   { label: "Blog", href: "/blog" },
 ];
