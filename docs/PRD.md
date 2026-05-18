@@ -16,7 +16,7 @@ Produk mengambil inspirasi dari pola fitur aimasukptn: landing page, bank soal, 
 - Menyediakan review jawaban, pembahasan, dan progress tracking.
 - Menyediakan ranking tryout yang akurat dan dinamis melalui query.
 - Menyediakan monetisasi sederhana melalui plan Free, Pro, dan Max.
-- Memudahkan admin mengelola user, subscriber/payment, soal, practice, tryout, grading jawaban subjektif, dan blog.
+- Memudahkan admin mengelola user, subscriber/payment, soal, practice, tryout, dan blog.
 
 ---
 
@@ -24,27 +24,24 @@ Produk mengambil inspirasi dari pola fitur aimasukptn: landing page, bank soal, 
 
 ### 3.1 In Scope
 
-- Auth lengkap: register, login, login Google, verifikasi email, lupa password, reset password, ubah email, logout.
+- Auth: register, login Google, verifikasi email, logout.
 - Landing page publik.
 - Bank soal / latihan dengan Mode Latihan dan Mode Quiz.
 - Tryout rutin multi-section/subtest.
 - Auto save jawaban.
 - Auto submit saat waktu habis.
-- Acak soal dan acak opsi.
-- Pengaturan hasil langsung setelah submit.
-- Pengaturan review jawaban sebelum submit.
-- Mode navigasi: bebas dan berurutan.
+- Acak soal dan acak opsi (khusus tryout).
+- Pengaturan hasil langsung setelah submit (khusus tryout).
 - Review jawaban dan pembahasan untuk latihan, quiz, dan tryout.
 - Ranking tryout berbasis query dinamis.
 - Progress / tracking belajar.
 - Blog.
-- Account profile dan ubah password.
+- Account profile.
 - Payment Midtrans.
 - Admin panel.
 - Import soal via Excel.
 - Generate soal dengan AI dari halaman create question (modal parameter + autofill form).
 - Generate explanation dengan AI dari field explanation di halaman create/edit question (autofill langsung, tanpa modal, syarat semua field wajib terisi).
-- Koreksi manual dan AI untuk isian singkat dan esai.
 
 ### 3.2 Out of Scope
 
@@ -59,7 +56,6 @@ Produk mengambil inspirasi dari pola fitur aimasukptn: landing page, bank soal, 
 - CRUD plan di database.
 - Activity logs kompleks.
 - Anti-cheating kompleks seperti face detection atau tab monitoring.
-- Riwayat grading (grading history) — hanya feedback terakhir yang disimpan.
 
 ---
 
@@ -76,17 +72,16 @@ Role hanya terdiri dari:
 
 User dapat:
 
-- Register dan login.
-- Login menggunakan Google.
+- Register dan login menggunakan Google.
 - Melakukan verifikasi email.
 - Mengakses landing page dan blog.
 - Mengakses latihan sesuai plan.
-- Memulai Mode Latihan atau Mode Quiz sesuai akses plan.
+- Memulai Mode Latihan atau Mode Quiz.
 - Mengikuti tryout sesuai akses plan.
 - Melihat hasil, review jawaban, dan pembahasan sesuai setting dan plan.
 - Melihat ranking tryout jika plan mengizinkan.
 - Melihat progress belajar.
-- Mengubah profil, email, dan password.
+- Mengubah profil.
 - Membeli plan Pro atau Max jika tidak sedang memiliki subscription aktif.
 
 ### 4.3 Admin
@@ -109,7 +104,6 @@ Admin dapat:
 - Manage practices.
 - Manage tryouts.
 - Melihat hasil tryout user.
-- Mengoreksi jawaban isian singkat dan esai secara manual atau AI.
 - Manage blog.
 
 ---
@@ -294,7 +288,7 @@ Pengecekan jadwal rilis dilakukan secara **lazy** saat user mengakses halaman ha
 - **date-fns** — manipulasi dan formatting tanggal. Ringan dan tree-shakeable.
 - **xlsx** (`SheetJS`) — parsing file Excel untuk fitur import soal.
 - **midtrans-node** — official Midtrans SDK untuk Node.js, digunakan di Route Handlers untuk membuat transaksi dan memverifikasi webhook signature.
-- **Resend** (atau **Nodemailer**) — pengiriman email transaksional (verifikasi, reset password). Resend direkomendasikan karena DX yang lebih baik dan terintegrasi dengan React Email.
+- **Resend** (atau **Nodemailer**) — pengiriman email transaksional (verifikasi email). Resend direkomendasikan karena DX yang lebih baik dan terintegrasi dengan React Email.
 - **React Email** — template email berbasis React, dikombinasikan dengan Resend.
 
 ### 6.8 Catatan Migrasi dari Nuxt
@@ -317,7 +311,7 @@ Pengecekan jadwal rilis dilakukan secara **lazy** saat user mengakses halaman ha
 
 #### Deskripsi
 
-User dapat register, login, login Google, verifikasi email, lupa password, reset password, ubah email, logout, dan mengelola keamanan akun.
+Sistem hanya menggunakan Google OAuth sebagai satu-satunya metode autentikasi. Tidak ada register email/password, lupa password, reset password, atau ubah password. User login dan register sepenuhnya melalui akun Google.
 
 #### Session Management
 
@@ -325,21 +319,16 @@ User dapat register, login, login Google, verifikasi email, lupa password, reset
 - Session disimpan di tabel `user_sessions` (lihat Section 10.2).
 - Session aktif selama **7 hari sejak login (fixed window)**. `expires_at` ditetapkan saat session dibuat dan **tidak diperpanjang** berdasarkan aktivitas. `last_active_at` diperbarui setiap request untuk keperluan monitoring saja, bukan untuk memperpanjang session.
 - Setiap login baru membuat session baru. Multi-device diizinkan.
-- Logout menginvalidasi session aktif di sisi server dengan mengisi `user_sessions.revoked_at`. Session valid hanya jika `revoked_at` masih null dan `expires_at` lebih besar dari waktu saat ini.
+- Logout menginvalidasi session aktif di sisi server dengan mengisi `user_sessions.revoked_at`. Session valid hanya jika `revoked_at IS NULL` AND `expires_at > NOW()`.
 - Tidak ada fitur "logout semua perangkat" pada MVP.
 
 #### Acceptance Criteria
 
 - Email user harus unik.
-- Password disimpan dalam bentuk hash.
-- Setelah register email/password, sistem mengirim email verifikasi.
-- User yang belum verifikasi email dapat login, tetapi akses latihan, quiz, tryout, dan payment dibatasi sampai email diverifikasi.
-- Login Google membuat akun baru jika email belum ada, dan email dianggap terverifikasi.
-- Jika email Google sudah terdaftar tetapi `google_id` user masih null (belum pernah dihubungkan ke Google), login Google **ditolak**. User harus login dengan email/password terlebih dahulu, lalu menghubungkan Google dari halaman profil.
-- Jika email Google sudah terdaftar dan `google_id` sudah terhubung (tidak null), login Google diizinkan tanpa memandang ada-tidaknya password.
-- Google account linking hanya boleh dilakukan dari halaman profil setelah user terautentikasi. Untuk MVP, email Google yang dihubungkan wajib sama dengan email akun Nalarin.id. Jika berbeda, sistem menolak linking dan meminta user mengganti email akun terlebih dahulu atau memakai akun Google yang sesuai.
-- Reset password memakai token yang di-hash dan memiliki masa kedaluwarsa.
-- Ubah email memakai token verifikasi ke email baru sebelum email utama diganti.
+- Login Google membuat akun baru jika email belum ada di sistem. Email dari Google dianggap terverifikasi; `email_verified_at` diisi otomatis saat akun dibuat.
+- Jika email Google sudah terdaftar dan `google_id` sudah terhubung, login Google diizinkan.
+- Jika email Google sudah terdaftar tetapi `google_id` masih null, login Google ditolak. Kondisi ini hanya dapat terjadi jika ada akun lama yang dimigrasikan secara manual; aturan ini berfungsi sebagai safeguard.
+- User yang belum memiliki `email_verified_at` (akun migrasi lama) dibatasi aksesnya ke latihan, quiz, tryout, dan payment.
 
 ### 7.2 Landing Page
 
@@ -366,7 +355,7 @@ Bank soal menampilkan daftar practice yang dibuat admin. User dapat memilih prac
 2. User memilih subject/subtest.
 3. User memfilter daftar practice berdasarkan topic jika diperlukan.
 4. User memilih satu practice.
-5. User memilih Mode Latihan atau Mode Quiz jika practice mendukung keduanya.
+5. User memilih Mode Latihan atau Mode Quiz.
 6. Sistem mengecek email verified, akses plan, dan limit bulanan.
 7. Sistem membuat `practice_session` (dengan status awal `in_progress`) dan snapshot soal.
 8. User mengerjakan soal.
@@ -378,17 +367,20 @@ Bank soal menampilkan daftar practice yang dibuat admin. User dapat memilih prac
 #### Mode Latihan
 
 - Tanpa timer.
-- Feedback bisa langsung setelah user menjawab.
-- Cocok untuk belajar santai dan memahami konsep.
-- User dapat berpindah soal sesuai mode navigasi yang diatur.
+- Navigasi berurutan — user tidak dapat melompat ke soal lain secara bebas.
+- User **wajib menjawab** soal sebelum dapat melanjutkan. Tombol "Lanjut" baru aktif setelah user memilih atau mengisi jawaban.
+- Setelah user mengklik **"Konfirmasi"**, jawaban dikunci dan sistem langsung menampilkan status benar/salah serta pembahasan soal tersebut secara seketika.
+- User tidak dapat mengubah jawaban setelah konfirmasi.
+- Tidak ada halaman submit akhir — session selesai otomatis setelah soal terakhir dikonfirmasi.
 
 #### Mode Quiz
 
-- Menggunakan timer.
-- Feedback tampil setelah submit.
-- Cocok untuk simulasi singkat.
+- Menggunakan timer; durasi ditentukan oleh admin saat membuat practice.
+- Navigasi bebas — user dapat berpindah ke soal mana pun.
+- User boleh mengosongkan jawaban (melewati soal).
+- Jawaban dan pembahasan ditampilkan setelah submit, bukan seketika.
+- Jika waktu habis, session auto submit dengan jawaban terakhir yang tersimpan.
 - Timer dihitung dari server time.
-- Jika waktu habis, session auto submit.
 
 #### Resume Session
 
@@ -409,24 +401,25 @@ Background job membedakan dua kondisi:
 
 #### Mode Navigasi
 
-- **Bebas:** user dapat lompat ke nomor soal mana pun dalam session/section aktif.
-- **Berurutan:** user mengerjakan soal sesuai urutan; lompat bebas tidak tersedia.
+Navigasi soal sudah ditentukan per mode dan tidak dapat dikonfigurasi admin secara terpisah:
+
+- **Mode Latihan:** selalu berurutan. User tidak dapat melompat ke soal lain.
+- **Mode Quiz dan Tryout:** selalu bebas. User dapat berpindah ke nomor soal mana pun dalam session/section aktif.
 
 #### Status Soal
 
 - Belum dijawab.
 - Dijawab.
-- Ditandai ragu-ragu.
-- Dijawab dan ditandai ragu-ragu.
+- Ditandai ragu-ragu (khusus Mode Quiz dan Tryout).
+- Dijawab dan ditandai ragu-ragu (khusus Mode Quiz dan Tryout).
+- Terkunci setelah konfirmasi (Mode Latihan), atau setelah submit/waktu habis (Mode Quiz dan Tryout).
 - Aktif.
-- Terkunci setelah submit atau waktu habis.
 
 #### Acceptance Criteria
 
-- User boleh mengosongkan jawaban.
-- Soal kosong dihitung sebagai unanswered dan score 0.
-- Jika review sebelum submit aktif, sistem menampilkan ringkasan dijawab, belum dijawab, dan ragu-ragu.
-- Sistem dapat menampilkan warning jika masih ada soal kosong, tetapi tidak memblokir submit.
+- Mode Latihan: user wajib menjawab sebelum mengklik konfirmasi. Jawaban terkunci setelah konfirmasi.
+- Mode Quiz dan Tryout: user boleh mengosongkan jawaban. Soal kosong dihitung sebagai unanswered dengan skor 0.
+- Mode Quiz: jika review sebelum submit aktif, sistem menampilkan ringkasan dijawab, belum dijawab, dan ragu-ragu. Sistem dapat menampilkan warning jika masih ada soal kosong, tetapi tidak memblokir submit.
 
 ### 7.5 Tryout Rutin
 
@@ -445,10 +438,9 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 7. User submit section atau sistem auto submit saat waktu section habis.
 8. User lanjut ke section berikutnya.
 9. Setelah semua section selesai, tryout session masuk status `submitted`.
-10. Sistem menilai jawaban objektif.
-11. Jika ada jawaban subjektif, status menjadi `grading`.
-12. Setelah semua jawaban subjektif selesai dikoreksi, status menjadi `graded`.
-13. Hasil, review, pembahasan, ranking, dan progress tersedia sesuai setting dan plan.
+10. Sistem menilai semua jawaban secara otomatis.
+11. Status session berubah menjadi `graded`.
+12. Hasil, review, pembahasan, ranking, dan progress tersedia sesuai setting dan plan.
 
 #### Acceptance Criteria
 
@@ -466,7 +458,7 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 
 #### Akses dan Ketersediaan
 
-- Halaman review dapat diakses setelah session berstatus `submitted`, `grading`, atau `graded`. Saat status masih `grading`, soal subjektif yang belum selesai dikoreksi ditampilkan dengan status "menunggu koreksi" dan belum memiliki skor final.
+- Halaman review dapat diakses setelah session berstatus `submitted` atau `graded`.
 - Akses review (status jawaban benar/salah/kosong) dikendalikan oleh `show_result_after_submit`. Jika `false`, halaman review tidak dapat diakses.
 - Akses pembahasan di dalam halaman review dikendalikan oleh `show_explanation_after_submit`. Jika `false`, jawaban dan status tetap ditampilkan tetapi kolom pembahasan disembunyikan.
 - Jika `result_release_at` diisi dan belum tiba, review belum dapat diakses meskipun session sudah submitted/graded.
@@ -479,8 +471,8 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 **Header:**
 
 - Judul tryout atau practice.
-- Status session: jika `grading`, tampilkan banner "Skor belum final — ada jawaban yang masih dikoreksi". Jika `graded`, tampilkan "Skor final".
-- Total skor dan skor maksimal. Jika status masih `grading`, tampilkan skor sementara (hanya dari jawaban objektif yang sudah dinilai).
+- Status session: `graded` menampilkan "Skor final".
+- Total skor dan skor maksimal.
 - Ringkasan: total benar, total salah, total kosong, total soal.
 - Jika tryout memiliki `wrong_answer_penalty ≠ 0`, tampilkan keterangan penalti yang berlaku.
 
@@ -490,7 +482,6 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 - Hanya yang benar.
 - Hanya yang salah.
 - Hanya yang belum dijawab.
-- Hanya yang masih menunggu koreksi (`pending` atau `needs_review`) — khusus jika ada soal subjektif.
 
 **Per soal:**
 
@@ -518,12 +509,10 @@ Halaman ini ditampilkan setelah user selesai mengerjakan tryout (session berstat
 
 - Ditampilkan hanya jika `show_result_after_submit = true`.
 - Jika `result_release_at` diisi dan belum tiba, halaman menampilkan pesan bahwa hasil belum dirilis beserta estimasi waktu rilis.
-- Jika session masih berstatus `grading` (ada jawaban subjektif yang menunggu), tampilkan skor sementara (hanya dari jawaban objektif) dengan keterangan bahwa skor belum final.
 
 **Konten halaman hasil:**
 
 - Judul tryout dan tanggal pengerjaan.
-- Status skor: final atau sementara (jika masih grading).
 - Skor total dan skor maksimal.
 - Persentase skor: `total_score / total_max_score × 100`.
 - Ringkasan jawaban: total benar, total salah, total kosong, total soal.
@@ -569,31 +558,31 @@ Halaman ini ditampilkan setelah user selesai mengerjakan tryout (session berstat
 
 **Filter:**
 
-- Per exam type — user memilih ujian yang ingin dilihat progressnya (UTBK, CPNS, dll.).
-- Per subject/subtest — opsional, untuk melihat detail per mata pelajaran.
+- Satu filter tunggal: **Jenis Ujian** — pilihan: Semua, UTBK, CPNS, UTUL UGM, SIMAK UI.
+- Tidak ada filter subtes dan tidak ada filter periode. Statistik selalu bersifat all-time.
 
-**Statistik all-time (agregat sesuai filter exam type dan subject aktif):**
+**Statistik (3 kartu, all-time sesuai filter jenis ujian aktif):**
 
-Data ini bersumber dari `user_progress_snapshots` yang menyimpan akumulasi sepanjang waktu. Tidak mendukung filter periode karena tabel ini adalah upsert (satu record per user+exam_type+subject), bukan time-series.
+Data ini bersumber dari `user_progress_snapshots`. Tidak mendukung filter periode karena tabel ini adalah upsert — satu record per `user_id + exam_type_id + subject_id`, bukan time-series.
 
-- Total soal dijawab (benar + salah, tidak termasuk yang dikosongkan).
-- Total jawaban benar dan total jawaban salah.
-- Rata-rata skor ternormalisasi (0–100): `total_score_aggregate / total_max_score_aggregate × 100`. Ternormalisasi agar adil lintas session dengan jumlah soal dan bobot berbeda.
-- Akurasi keseluruhan: `total_correct / total_questions_answered × 100`.
+- **Soal Dijawab** — total soal yang dijawab (benar + salah, tidak termasuk yang dikosongkan), disertai rincian benar dan salah di bawahnya.
+- **Akurasi** — `total_correct / total_questions_answered × 100`.
+- **Rata-Rata Skor** — skor ternormalisasi 0–100: `total_score_aggregate / total_max_score_aggregate × 100`. Ternormalisasi agar adil lintas session dengan jumlah soal dan bobot berbeda.
 
-**Analisis topik (all-time):**
+Waktu update terakhir ditampilkan sebagai teks kecil di bawah kartu statistik, bukan sebagai kartu tersendiri.
 
-- Strongest topics — daftar topik dengan akurasi tertinggi, disertai nilai akurasi per topik. Ditampilkan maksimal 5 topik.
-- Weakest topics — daftar topik dengan akurasi terendah, disertai nilai akurasi per topik. Ditampilkan maksimal 5 topik.
-- Data strongest/weakest topics bersumber dari field JSON di `user_progress_snapshots` dan di-snapshot saat progress terakhir diperbarui. Jika admin mengganti nama topik setelah update terakhir, nama yang tampil bisa stale sampai progress user diperbarui kembali.
+**Analisis topik (all-time, maksimal 3 topik per kolom):**
 
-**Riwayat aktivitas:**
+- **Topik Terkuat** — 3 topik dengan akurasi tertinggi, disertai nilai akurasi per topik.
+- **Topik Prioritas** — 3 topik dengan akurasi terendah, disertai nilai akurasi per topik.
+- Data bersumber dari field JSON di `user_progress_snapshots` dan di-snapshot saat progress terakhir diperbarui. Jika admin mengganti nama topik setelah update terakhir, nama yang tampil bisa stale sampai progress user diperbarui kembali.
+- Jika user belum memiliki cukup data topik, kolom ini tidak ditampilkan.
 
-Data ini di-query langsung dari `practice_sessions` dan `tryout_sessions`, bukan dari `user_progress_snapshots`, sehingga mendukung filter periode.
+**Riwayat Aktivitas:**
 
-- Filter periode: 7 hari terakhir, 30 hari terakhir, 3 bulan terakhir, semua waktu.
 - Daftar practice dan tryout yang sudah diselesaikan (status `graded`), diurutkan dari yang terbaru.
-- Per item: judul konten, tanggal pengerjaan, skor, benar/salah/kosong, dan link ke halaman review (jika tersedia sesuai setting dan plan).
+- Tidak ada filter periode — user cukup scroll untuk melihat riwayat lebih lama.
+- Per item: label tipe (Latihan/Quiz/Tryout), label jenis ujian, judul konten, tanggal pengerjaan, jumlah benar, jumlah salah, skor, dan tombol Review (jika tersedia sesuai setting dan plan).
 
 ### 7.9 Blog
 
@@ -602,16 +591,17 @@ Data ini di-query langsung dari `practice_sessions` dan `tryout_sessions`, bukan
 - Artikel dapat memiliki kategori dan tag.
 - Blog digunakan untuk edukasi, SEO, pengumuman, dan panduan belajar.
 
-### 7.10 Account Profile dan Ubah Password
+### 7.10 Account Profile
 
 User dapat:
 
 - Melihat profil.
 - Mengubah nama.
 - Mengubah foto profil opsional.
+- Mengubah tanggal lahir.
+- Mengubah bio.
+- Mengubah gender.
 - Mengubah WhatsApp/phone.
-- Mengubah email dengan verifikasi email baru.
-- Mengubah password.
 - Menghubungkan Google login dari halaman profil.
 - Melihat status subscription aktif.
 - Melihat riwayat transaksi.
@@ -641,7 +631,7 @@ Admin dapat:
 
 - Melihat daftar payment.
 - Melihat detail payment.
-- Approve payment manual (lihat Flow 14.9).
+- Approve payment manual (lihat Flow 14.8).
 - Cancel subscription aktif.
 - Force downgrade user ke Free.
 - Menambahkan subscription manual hanya untuk `plan_code = pro` atau `max`. Admin tidak dapat membuat subscription manual dengan `plan_code = free` karena status Free sudah otomatis berlaku saat tidak ada subscription berbayar aktif.
@@ -724,7 +714,7 @@ Quality requirements:
 - For multiple_choice: exactly one correct answer; distractors must be plausible, structurally parallel, and not obviously wrong
 - For multiple_answer: at least 2 correct options; all options must be structurally parallel and homogeneous in length and form
 - For true_false: the statement must be definitively true or false with absolutely no grey area
-- For short_answer and essay: include a clear and specific grading rubric as the correct answer reference
+- For short_answer: include a specific reference answer that will be used for automated case-insensitive matching
 - Do not include any clues in the question stem that hint at the correct answer
 - Write the explanation as a clear educational justification that teaches the underlying concept, not just restates the answer
 
@@ -741,7 +731,7 @@ Respond ONLY with a valid JSON object in the following format, with no additiona
 
 Output rules:
 - "options": fill only for multiple_choice, multiple_answer, and true_false. For true_false, always produce exactly 2 options with labels "True" and "False"; set is_correct to false on both (is_correct is not used as the source of truth for true_false).
-- "correct_answer_text": fill only for true_false ("true" or "false" in lowercase), short_answer (reference answer), and essay (grading rubric). Use empty string for multiple_choice and multiple_answer.
+- "correct_answer_text": fill only for true_false ("true" or "false" in lowercase) and short_answer (exact reference answer used for case-insensitive matching). Use empty string for multiple_choice and multiple_answer.
 - "explanation": always fill with a thorough explanation regardless of question type.
 - Produce valid JSON only. Do not wrap in markdown code blocks.
 ```
@@ -752,7 +742,7 @@ Fitur ini tersedia di halaman **Create Question** dan **Edit Question** pada fie
 
 **Flow:**
 
-1. Admin mengisi semua field wajib di form terlebih dahulu: exam type, subject, tipe soal, konten soal, dan kunci jawaban (untuk MC/MA: minimal satu opsi ditandai benar; untuk true_false: `correct_answer_text` sudah diisi; untuk short_answer/essay: tidak ada syarat kunci jawaban tambahan).
+1. Admin mengisi semua field wajib di form terlebih dahulu: exam type, subject, tipe soal, konten soal, dan kunci jawaban (untuk MC/MA: minimal satu opsi ditandai benar; untuk `true_false` dan `short_answer`: `correct_answer_text` sudah diisi).
 2. Jika ada field wajib yang belum terisi, tombol "AI Generate" di field explanation dinonaktifkan (disabled) dan menampilkan tooltip yang menjelaskan field mana saja yang masih kosong.
 3. Setelah semua field wajib terisi, tombol menjadi aktif.
 4. Admin mengklik tombol **"AI Generate"** di samping field explanation.
@@ -769,9 +759,9 @@ Fitur ini tersedia di halaman **Create Question** dan **Edit Question** pada fie
 | Tipe soal | Sudah dipilih |
 | Konten soal | Tidak kosong |
 | Opsi jawaban | Minimal 2 opsi terisi (untuk `multiple_choice`, `multiple_answer`, `true_false`) |
-| Kunci jawaban | Minimal satu opsi ditandai benar (untuk `multiple_choice`, `multiple_answer`); `correct_answer_text` terisi (untuk `true_false`) |
+| Kunci jawaban | `correct_answer_text` terisi (untuk `true_false` dan `short_answer`) |
 
-Untuk `short_answer` dan `essay`, field kunci jawaban tidak wajib terisi sebelum generate explanation dapat dilakukan.
+Untuk `short_answer`, `correct_answer_text` wajib terisi sebelum tombol generate explanation aktif, karena kunci jawaban dibutuhkan sebagai konteks untuk AI membuat penjelasan yang tepat.
 
 #### Prompt Template AI Generate Explanation
 
@@ -788,14 +778,14 @@ Question details:
 - Topic: {topic}
 - Question Type: {question_type}
 - Question Content: {question_content}
-- Answer Options: {options_with_correct_flag} (omit this line for short_answer and essay; for true_false, list both options with the correct one marked)
-- Correct Answer: {correct_answer} (for short_answer and essay, this may be empty — infer what a good answer should cover from the question content)
+- Answer Options: {options_with_correct_flag} (omit this line for short_answer; for true_false, list both options with the correct one marked)
+- Correct Answer: {correct_answer} (for short_answer, this is the exact reference answer used for auto-grading)
 
 Explanation requirements:
 - Start by briefly explaining why the correct answer is correct, grounded in the relevant concept or principle
 - For multiple_choice and multiple_answer: explain why each incorrect option (distractor) is wrong — this is critical for learning
 - For true_false: explain the principle or fact that makes the statement definitively true or false
-- For short_answer and essay: explain the key concepts that a good answer must cover, and describe what distinguishes a complete answer from an incomplete one
+- For short_answer: explain why the reference answer is correct, and clarify common misconceptions if applicable
 - Use clear, plain language appropriate for the exam level implied by the exam type
 - Do not use phrases like "the answer is" or "the correct option is" as the opening — lead with the concept instead
 - The explanation must be self-contained and understandable without any external reference
@@ -813,9 +803,10 @@ Setiap tipe soal memiliki aturan penyimpanan data yang berbeda:
 | `multiple_answer` | Wajib ada (min. 2), `is_correct = true` untuk ≥2 opsi | Null | `selected_option_keys` (JSON, banyak nilai) |
 | `true_false` | Wajib ada tepat 2 opsi dengan label `True` dan `False`; `is_correct` pada kedua opsi **selalu diisi `false`** dan **tidak digunakan** sebagai sumber kebenaran | Wajib diisi: `"true"` atau `"false"` — ini sumber kebenaran | `selected_option_keys` (JSON, satu nilai: **`"true"` atau `"false"` — selalu lowercase**) |
 | `short_answer` | Tidak ada | Referensi jawaban, opsional | `answer_text` |
-| `essay` | Tidak ada | Rubrik singkat, opsional | `answer_text` |
 
 **Catatan khusus `true_false`:** Dua opsi di `question_options` dibuat agar tampilan UI konsisten dengan soal pilihan lainnya. Jawaban user **selalu disimpan dalam lowercase** (`"true"` atau `"false"`) di `selected_option_keys`. Penilaian otomatis dilakukan dengan membandingkan langsung nilai `selected_option_keys` dengan `correct_answer_text` — keduanya sudah lowercase sehingga tidak perlu konversi saat penilaian.
+
+**Catatan khusus `short_answer`:** Jawaban user dicocokkan dengan `correct_answer_text` secara case-insensitive dan dengan trimming whitespace di kedua sisi. Jika cocok, `is_correct = true` dan skor penuh. Jika tidak cocok, `is_correct = false` dan skor 0. Penilaian dilakukan otomatis oleh sistem saat session di-submit tanpa perlu koreksi manual maupun AI.
 
 ### 8.4 Import Question via Excel
 
@@ -824,7 +815,7 @@ Setiap tipe soal memiliki aturan penyimpanan data yang berbeda:
 - `exam_type_slug`
 - `subject_slug`
 - `topic_slug` — opsional
-- `question_type` — nilai: `multiple_choice`, `multiple_answer`, `short_answer`, `essay`, `true_false`
+- `question_type` — nilai: `multiple_choice`, `multiple_answer`, `short_answer`, `true_false`
 - `difficulty` — nilai: `easy`, `medium`, `hard`
 - `question_content`
 - `option_a` sampai `option_e` — untuk `multiple_choice` dan `multiple_answer`, minimal `option_a` dan `option_b` wajib diisi; opsi lain diisi sesuai kebutuhan. Untuk `true_false`, hanya `option_a = True` dan `option_b = False` yang wajib; `option_c` sampai `option_e` dikosongkan.
@@ -832,7 +823,7 @@ Setiap tipe soal memiliki aturan penyimpanan data yang berbeda:
   - `multiple_choice`: satu huruf, contoh `A`
   - `multiple_answer`: huruf dipisah koma, contoh `A,C`
   - `true_false`: nilai `true` atau `false`
-  - `short_answer` dan `essay`: teks referensi jawaban, opsional
+  - `short_answer`: teks referensi jawaban, opsional
 - `scoring_rule` — **wajib diisi** jika `question_type` adalah `multiple_answer`, nilai: `all_or_nothing` atau `partial`; kosongkan untuk tipe lain
 - `explanation` — opsional
 - `year` — opsional, format angka tahun, contoh `2023`
@@ -854,10 +845,10 @@ Admin dapat:
 - Membuat practice.
 - Menentukan exam type, subject, topic (sebagai metadata filtering), dan judul.
 - Menentukan apakah practice gratis atau berbayar.
-- Menentukan Mode Latihan, Mode Quiz, atau keduanya.
-- Menentukan durasi quiz jika mode quiz tersedia.
+- Menentukan durasi quiz (dalam menit) — digunakan saat user memilih Mode Quiz.
 - Menambahkan soal ke practice.
-- Mengatur acak soal, acak opsi, review jawaban, hasil langsung, pembahasan, dan mode navigasi.
+
+Semua practice otomatis mendukung Mode Latihan dan Mode Quiz tanpa perlu konfigurasi tambahan. Perbedaan perilaku antar mode sudah ditentukan secara sistem (lihat Section 7.3).
 
 ### 8.6 Manage Tryout
 
@@ -870,7 +861,7 @@ Admin dapat:
 - Menambahkan section/subtest.
 - Menentukan durasi tiap section.
 - Menambahkan soal ke section.
-- Mengatur acak soal, acak opsi, review jawaban, hasil langsung, pembahasan, ranking, mode navigasi, dan enforce end time.
+- Mengatur acak soal, acak opsi, review jawaban, hasil langsung, pembahasan, ranking, dan enforce end time.
 - **Menentukan nilai skor untuk jawaban salah (`wrong_answer_penalty`) di level tryout.** Nilai ini berlaku untuk semua section. Contoh: `0` = tidak ada penalti, `-1` = dikurangi 1 poin, `-0.25` = dikurangi 0.25 poin. Default `0`.
 - **Menentukan override `wrong_answer_penalty` per section**, jika section tertentu membutuhkan aturan penalti berbeda dari level tryout.
 - Mengubah status tryout: publish, unpublish ke draft, atau archive. Aturan transisi dan edit lengkap ada di Section 9.2a.
@@ -878,7 +869,7 @@ Admin dapat:
 
 > **Catatan:** Pengaturan acak soal (`shuffle_questions`) dan acak opsi (`shuffle_options`) berlaku secara global untuk semua section dalam satu tryout. Acak per-section tidak didukung pada MVP.
 
-> **Penalti Jawaban Salah:** `wrong_answer_penalty` adalah nilai skor yang diberikan untuk setiap jawaban **salah** (bukan unanswered). Unanswered selalu mendapat skor `0` tanpa memandang nilai penalti. Penalti diterapkan pada soal objektif (`multiple_choice`, `true_false`, `multiple_answer` dengan `all_or_nothing`). Untuk `multiple_answer` dengan `partial`, nilai penalti menjadi batas bawah (floor) dari formula partial scoring. Soal subjektif (`short_answer`, `essay`) tidak dikenai penalti otomatis karena dinilai manual/AI.
+> **Penalti Jawaban Salah:** `wrong_answer_penalty` adalah nilai skor yang diberikan untuk setiap jawaban **salah** (bukan unanswered). Unanswered selalu mendapat skor `0` tanpa memandang nilai penalti. Penalti diterapkan pada soal objektif (`multiple_choice`, `true_false`, `multiple_answer` dengan `all_or_nothing`). Untuk `multiple_answer` dengan `partial`, nilai penalti menjadi batas bawah (floor) dari formula partial scoring. `short_answer` dinilai auto dan dikenai penalti jika jawaban salah.
 
 #### Validasi Publish Tryout
 
@@ -890,27 +881,6 @@ Tryout tidak boleh dipublish jika:
 - Jadwal mulai dan selesai tidak valid (jika keduanya diisi, `ends_at` harus lebih besar dari `starts_at`).
 - `enforce_end_time = true` tetapi `ends_at` null. `enforce_end_time` membutuhkan `ends_at` yang valid agar sistem tahu kapan auto-submit dipicu.
 - Exam type section/subject tidak sesuai dengan exam type tryout.
-
-### 8.7 Grading Jawaban Subjektif
-
-Admin dapat:
-
-- Melihat jawaban isian singkat dan esai yang perlu dikoreksi.
-- Mengoreksi secara manual (`grading_source = manual`).
-- Meminta koreksi otomatis AI (`grading_source = ai`).
-- Menimpa skor dan feedback sebelumnya. **Hanya feedback terakhir yang disimpan** (`grading_feedback`); riwayat grading sebelumnya tidak dipertahankan pada MVP. Jika audit trail grading diperlukan, fitur ini dapat dipertimbangkan di iterasi berikutnya.
-- Menandai jawaban sebagai `needs_review`.
-
-#### Chain Grading
-
-1. Jawaban subjektif masuk status `pending`.
-2. Admin atau AI mengisi skor dan feedback → status jawaban menjadi `graded`. Field `grading_source` diisi sesuai penilai (`manual` atau `ai`). Field `is_correct` diisi bersamaan: `true` jika `score > 0`, `false` jika `score = 0`. Ini diperlukan agar `total_correct` dan `total_wrong` session dapat dihitung ulang secara akurat.
-3. Admin dapat menandai jawaban sebagai `needs_review` jika membutuhkan tinjauan ulang. Status `needs_review` berarti jawaban sudah memiliki skor sementara, tetapi belum final.
-4. Jawaban berstatus `needs_review` dianggap **belum selesai** dan memblokir chain grading. Session tidak akan menjadi `graded` selama masih ada jawaban berstatus `pending` atau `needs_review`.
-5. Setelah satu jawaban diubah menjadi `graded`, sistem mengecek apakah semua jawaban subjektif dalam session sudah berstatus `graded` (bukan `pending` atau `needs_review`).
-6. Jika semua sudah `graded`, sistem menghitung ulang skor session.
-7. Status session berubah menjadi `graded`.
-8. Progress user diperbarui.
 
 ### 8.8 Manage Blog
 
@@ -933,15 +903,14 @@ Admin dapat:
 | UserStatus | active, inactive, suspended |
 | Gender | male, female |
 | PlanCode | free, pro, max |
-| QuestionType | multiple_choice, multiple_answer, short_answer, essay, true_false |
+| QuestionType | multiple_choice, multiple_answer, short_answer, true_false |
 | QuestionDifficulty | easy, medium, hard |
 | ScoringRule | all_or_nothing, partial |
 | ContentStatus | draft, published, archived |
-| SessionStatus | pending, in_progress, submitted, grading, graded, cancelled |
+| SessionStatus | pending, in_progress, submitted, graded, cancelled |
 | PracticeMode | practice, quiz |
-| NavigationMode | free, sequential |
-| AnswerGradingStatus | not_required, pending, graded, needs_review |
-| **GradingSource** | **manual, ai, auto** |
+| AnswerGradingStatus | not_required, graded |
+| **GradingSource** | **auto** |
 | PaymentStatus | pending, paid, failed, expired, cancelled, refunded |
 | PaymentGateway | midtrans, manual |
 | PaymentMethod | bank_transfer, e_wallet, qris, credit_card, convenience_store, manual_transfer, other |
@@ -988,8 +957,8 @@ Admin dapat:
 - Setting tampilan hasil: `show_result_after_submit`, `result_release_at`
 - Setting tampilan ranking: `show_ranking_after_submit`, `ranking_release_at`
 - Setting tampilan pembahasan: `show_explanation_after_submit`, `explanation_release_at`
-- Mode navigasi (`navigation_mode`)
 - Review sebelum submit (`allow_review_before_submit`)
+- Mode navigasi (tryout selalu bebas; field ini tidak relevan dan dapat dihapus di iterasi berikutnya)
 
 **Field yang dilarang diedit setelah ada session apapun** (menyentuh fairness langsung — berlaku meski session masih `in_progress`):
 
@@ -1004,8 +973,7 @@ Jika admin mencoba mengedit field yang terkunci, sistem menolak operasi dengan p
 
 - `pending`: section session sudah dibuat tetapi belum dibuka user. **Hanya digunakan pada `tryout_section_sessions`.**
 - `in_progress`: session sedang dikerjakan user.
-- `submitted`: session telah disubmit, menunggu scoring atau grading.
-- `grading`: ada jawaban subjektif yang menunggu koreksi manual/AI.
+- `submitted`: session telah disubmit, menunggu scoring.
 - `graded`: semua jawaban sudah dinilai, skor final tersedia.
 - `cancelled`: session dibatalkan, tidak menghasilkan skor.
 
@@ -1039,9 +1007,7 @@ Saat tryout session dibuat, semua `tryout_section_sessions` dibuat sekaligus den
 
 ### 9.6 GradingSource Semantics
 
-- `auto`: jawaban dinilai otomatis oleh sistem saat session di-submit (untuk jawaban objektif: `multiple_choice`, `multiple_answer`, `true_false`). Diisi oleh scoring engine, bukan admin.
-- `manual`: jawaban dinilai secara manual oleh admin.
-- `ai`: jawaban dinilai menggunakan AI grading yang diminta admin.
+- `auto`: semua jawaban dinilai otomatis oleh sistem saat session di-submit (`multiple_choice`, `multiple_answer`, `true_false`, `short_answer`). Diisi oleh scoring engine.
 
 ---
 
@@ -1057,12 +1023,13 @@ Menyimpan identitas akun, kredensial, role, status, dan profil dasar user/admin.
 | name | Nama user |
 | email | Email unik |
 | email_verified_at | Waktu verifikasi email, nullable |
-| password_hash | Hash password, nullable untuk akun Google-only |
 | google_id | ID Google OAuth, nullable. Jika di masa depan ditambahkan provider lain (Facebook, Apple, dll.), tambahkan kolom `facebook_id`, `apple_id`, dsb. di tabel ini. |
 | avatar_url | Foto profil, nullable |
 | role | enum UserRole |
 | status | enum UserStatus |
 | gender | enum Gender, nullable |
+| birth_date | Tanggal lahir, DATE nullable |
+| bio | Bio singkat user, TEXT nullable |
 | phone_number | Nomor phone/WhatsApp, nullable |
 | created_at | Tanggal dibuat |
 | updated_at | Tanggal update |
@@ -1100,39 +1067,6 @@ Menyimpan token verifikasi email untuk akun baru atau resend verifikasi.
 
 Token dianggap valid jika: `used_at IS NULL` AND `invalidated_at IS NULL` AND `expires_at > NOW()`.
 
-### 10.4 password_reset_tokens
-
-Menyimpan token reset password yang dikirim ke email user.
-
-| Field | Keterangan |
-|---|---|
-| id | Primary key |
-| user_id | FK users |
-| token_hash | Hash token reset |
-| expires_at | Kedaluwarsa token |
-| used_at | Waktu token digunakan oleh user secara genuine, nullable |
-| **invalidated_at** | **Waktu token diinvalidasi oleh sistem (saat token reset baru dibuat), nullable** |
-| created_at | Tanggal dibuat |
-
-Token dianggap valid jika: `used_at IS NULL` AND `invalidated_at IS NULL` AND `expires_at > NOW()`.
-
-### 10.5 email_change_tokens
-
-Menyimpan token untuk memverifikasi email baru sebelum email akun diganti.
-
-| Field | Keterangan |
-|---|---|
-| id | Primary key |
-| user_id | FK users |
-| new_email | Email baru yang akan diverifikasi |
-| token_hash | Hash token verifikasi |
-| expires_at | Kedaluwarsa token |
-| used_at | Waktu token digunakan oleh user secara genuine, nullable |
-| **invalidated_at** | **Waktu token diinvalidasi oleh sistem (saat token ubah email baru dibuat), nullable** |
-| created_at | Tanggal dibuat |
-
-Token dianggap valid jika: `used_at IS NULL` AND `invalidated_at IS NULL` AND `expires_at > NOW()`.
-
 ### 10.6 exam_types
 
 Menyimpan tipe ujian yang didukung, seperti UTBK, UTUL UGM, SIMAK UI, dan CPNS.
@@ -1143,10 +1077,11 @@ Menyimpan tipe ujian yang didukung, seperti UTBK, UTUL UGM, SIMAK UI, dan CPNS.
 | name | Nama tipe exam, misalnya UTBK |
 | slug | Slug unik |
 | description | Deskripsi |
+| logo_url | URL logo exam type, nullable |
 | created_at | Tanggal dibuat |
 | updated_at | Tanggal update |
 
-Data awal exam type disimpan di database melalui seed: UTBK, UTUL UGM, SIMAK UI, dan CPNS. Admin dapat mengedit nama dan deskripsi exam type yang sudah ada melalui panel admin, tetapi tidak dapat menambah atau menghapus exam type pada MVP.
+Data awal exam type disimpan di database melalui seed: UTBK, UTUL UGM, SIMAK UI, dan CPNS. Admin dapat mengedit nama, deskripsi, dan logo exam type yang sudah ada melalui panel admin, tetapi tidak dapat menambah atau menghapus exam type pada MVP.
 
 ### 10.7 subjects
 
@@ -1159,6 +1094,7 @@ Menyimpan mata uji, subtest, atau subject di bawah exam type.
 | name | Nama subject/subtest |
 | slug | Slug unik per exam type |
 | description | Deskripsi, nullable |
+| logo_url | URL logo subject, nullable |
 | created_at | Tanggal dibuat |
 | updated_at | Tanggal update |
 
@@ -1191,8 +1127,7 @@ Menyimpan master soal beserta tipe, tingkat kesulitan, kunci teks, pembahasan, t
 | title | Judul internal, nullable |
 | content | Konten soal |
 | image_url | Gambar soal, nullable |
-| correct_answer_text | Kunci teks. Untuk `true_false`: wajib diisi `"true"` atau `"false"` — ini sumber kebenaran, bukan `is_correct` di `question_options`. Untuk `short_answer`: referensi jawaban, opsional. Untuk `essay`: rubrik singkat, opsional. Null untuk `multiple_choice` dan `multiple_answer`. |
-| grading_rubric | Rubrik detail untuk isian/esai, nullable |
+| correct_answer_text | Kunci teks. Untuk `true_false`: wajib diisi `"true"` atau `"false"` — ini sumber kebenaran, bukan `is_correct` di `question_options`. Untuk `short_answer`: referensi jawaban, wajib diisi untuk auto-grading. Null untuk `multiple_choice` dan `multiple_answer`. |
 | manual_explanation | Pembahasan manual, nullable |
 | ai_explanation | Pembahasan AI, nullable |
 | year | Tahun soal, nullable |
@@ -1204,7 +1139,7 @@ Menyimpan master soal beserta tipe, tingkat kesulitan, kunci teks, pembahasan, t
 
 ### 10.10 question_options
 
-Digunakan untuk `multiple_choice`, `multiple_answer`, dan `true_false`. Tidak dibuat untuk `short_answer` dan `essay`.
+Digunakan untuk `multiple_choice`, `multiple_answer`, dan `true_false`. Tidak dibuat untuk `short_answer`.
 
 | Field | Keterangan |
 |---|---|
@@ -1231,15 +1166,7 @@ Digunakan untuk `multiple_choice`, `multiple_answer`, dan `true_false`. Tidak di
 | slug | Slug unik per exam type (lihat Section 11) |
 | description | Deskripsi, nullable |
 | is_free | Boolean |
-| has_practice_mode | Boolean |
-| has_quiz_mode | Boolean |
-| quiz_duration_minutes | Durasi quiz, nullable |
-| shuffle_questions | Boolean |
-| shuffle_options | Boolean |
-| allow_review_before_submit | Boolean |
-| show_result_after_submit | Boolean |
-| show_explanation_after_submit | Boolean |
-| navigation_mode | enum NavigationMode |
+| quiz_duration_minutes | Durasi quiz dalam menit, nullable. Wajib diisi jika practice digunakan dalam Mode Quiz. |
 | status | enum ContentStatus |
 | **published_at** | **Waktu pertama kali dipublish, nullable. Diisi saat status pertama berubah ke `published`; tidak berubah jika di-unpublish dan re-publish.** |
 | created_by | FK users, nullable |
@@ -1321,14 +1248,13 @@ Menyimpan jawaban user untuk setiap soal dalam practice session.
 | practice_session_question_id | FK practice_session_questions |
 | question_type | enum QuestionType |
 | selected_option_keys | JSON nullable. Digunakan untuk `multiple_choice` (satu nilai), `multiple_answer` (banyak nilai), dan `true_false` (satu nilai: **`"true"` atau `"false"` — selalu lowercase**). |
-| answer_text | Jawaban teks, nullable. Digunakan untuk `short_answer` dan `essay`. |
-| is_marked_for_review | Boolean |
+| answer_text | Jawaban teks, nullable. Digunakan untuk `short_answer`. |
+| is_marked_for_review | Boolean. Hanya relevan untuk Mode Quiz. |
 | is_correct | Boolean nullable |
 | score | Skor final jawaban, nullable |
 | max_score | Skor maksimal, nullable |
-| grading_status | enum AnswerGradingStatus |
-| **grading_source** | **enum GradingSource, nullable. Diisi saat jawaban dinilai: `auto` (sistem), `manual` (admin), atau `ai` (AI grading).** |
-| grading_feedback | Feedback grading terakhir yang aktif, nullable. Hanya menyimpan feedback terbaru; riwayat grading sebelumnya tidak dipertahankan. |
+| grading_status | enum AnswerGradingStatus. Selalu `graded` setelah session di-submit karena semua tipe soal dinilai otomatis. |
+| **grading_source** | **enum GradingSource. Selalu `auto`.** |
 | graded_at | Waktu grading, nullable |
 | answered_at | Waktu menjawab, nullable |
 | last_saved_at | Waktu autosave terakhir, nullable |
@@ -1358,7 +1284,6 @@ Menyimpan master tryout/event yang dibuat admin.
 | ranking_release_at | Jadwal rilis ranking, nullable |
 | show_explanation_after_submit | Boolean |
 | explanation_release_at | Jadwal rilis pembahasan, nullable |
-| navigation_mode | enum NavigationMode |
 | enforce_end_time | Boolean. Hanya bermakna jika `ends_at` tidak null. Validasi publish mencegah `enforce_end_time = true` jika `ends_at` null. |
 | wrong_answer_penalty | DECIMAL(5,2), default `0.00`. Nilai skor yang diberikan untuk setiap jawaban **salah** pada soal objektif. Berlaku untuk seluruh section kecuali section yang memiliki override. Nilai harus `≤ 0`. Contoh: `0` = tidak ada penalti, `-1.00` = kurangi 1 poin, `-0.25` = kurangi 0.25 poin. |
 | status | enum ContentStatus |
@@ -1445,7 +1370,7 @@ Menyimpan progres user pada setiap section/subtest tryout.
 | current_question_order | Posisi soal terakhir yang sedang/sudah dikerjakan user, nullable |
 | started_at | Waktu section mulai (diisi saat user membuka section), nullable. Null berarti section belum pernah dibuka. |
 | submitted_at | Waktu section submit, nullable |
-| **graded_at** | **Waktu semua penilaian dalam section ini selesai, nullable. Diisi saat semua jawaban subjektif section ini berstatus `graded` (tidak ada lagi yang `pending` atau `needs_review`). Jika section tidak memiliki jawaban subjektif, `graded_at` diisi saat scoring objektif selesai dijalankan (termasuk untuk section yang di-auto-submit dari `pending`). Null berarti section belum selesai di-scoring.** |
+| **graded_at** | **Waktu semua penilaian dalam section ini selesai, nullable. Diisi saat scoring section selesai dijalankan (termasuk untuk section yang di-auto-submit dari `pending`). Null berarti section belum selesai di-scoring.** |
 | last_saved_at | Waktu autosave terakhir, nullable |
 | created_at | Tanggal dibuat |
 | updated_at | Tanggal update |
@@ -1484,14 +1409,13 @@ Menyimpan jawaban user untuk setiap soal dalam tryout session.
 | tryout_session_question_id | FK tryout_session_questions |
 | question_type | enum QuestionType |
 | selected_option_keys | JSON nullable. Digunakan untuk `multiple_choice` (satu nilai), `multiple_answer` (banyak nilai), dan `true_false` (satu nilai: **`"true"` atau `"false"` — selalu lowercase**). |
-| answer_text | Jawaban teks, nullable. Digunakan untuk `short_answer` dan `essay`. |
+| answer_text | Jawaban teks, nullable. Digunakan untuk `short_answer`. |
 | is_marked_for_review | Boolean |
 | is_correct | Boolean nullable |
 | score | Skor final jawaban, nullable |
 | max_score | Skor maksimal, nullable |
-| grading_status | enum AnswerGradingStatus |
-| **grading_source** | **enum GradingSource, nullable. Diisi saat jawaban dinilai: `auto` (sistem), `manual` (admin), atau `ai` (AI grading).** |
-| grading_feedback | Feedback grading terakhir yang aktif, nullable. Hanya menyimpan feedback terbaru; riwayat grading sebelumnya tidak dipertahankan. |
+| grading_status | enum AnswerGradingStatus. Selalu `graded` setelah session di-submit. |
+| **grading_source** | **enum GradingSource. Selalu `auto`.** |
 | graded_at | Waktu grading, nullable |
 | answered_at | Waktu menjawab, nullable |
 | last_saved_at | Waktu autosave terakhir, nullable |
@@ -1702,25 +1626,20 @@ Catatan: karena MySQL tidak mendukung partial unique index sederhana untuk semua
 
 ### 13.1 Auth dan Email
 
-- Token verifikasi email, reset password, dan ubah email disimpan dalam bentuk hash.
+- Token verifikasi email disimpan dalam bentuk hash.
 - Token hanya valid jika `used_at IS NULL` AND `invalidated_at IS NULL` AND `expires_at > NOW()`.
-- Sebelum membuat token reset password baru, sistem mengisi `invalidated_at = NOW()` pada semua token reset password lama milik user yang sama yang masih valid (belum `used_at` dan belum `invalidated_at`).
 - Sebelum membuat token verifikasi email baru (resend), sistem mengisi `invalidated_at = NOW()` pada semua token verifikasi email lama milik user yang sama yang masih valid. Resend dibatasi maksimal 3 kali per jam per user untuk mencegah abuse pengiriman email.
-- Sebelum membuat token ubah email baru, sistem mengisi `invalidated_at = NOW()` pada semua token ubah email lama milik user yang sama yang masih valid.
-- `used_at` diisi **hanya** ketika user benar-benar menggunakan token (klik link verifikasi, submit form reset password). Jangan gunakan `used_at` untuk invalidasi sistematis.
-- Google login **tidak** boleh otomatis mengambil alih akun yang `google_id`-nya masih null. Cek dilakukan berdasarkan `google_id`, bukan keberadaan password.
+- `used_at` diisi **hanya** ketika user benar-benar menggunakan token (klik link verifikasi). Jangan gunakan `used_at` untuk invalidasi sistematis.
+- Google login **tidak** boleh otomatis mengambil alih akun yang `google_id`-nya masih null. Cek dilakukan berdasarkan `google_id`.
 - Linking Google hanya boleh dari halaman profil setelah user login. Email Google yang dihubungkan wajib sama dengan email akun Nalarin.id pada MVP.
 
 #### Rate Limiting
 
 | Endpoint | Batas |
 |---|---|
-| Login (email/password) | Maks 10 percobaan gagal per 15 menit per IP + email |
-| Forgot password request | Maks 3 request per jam per email |
 | Resend email verification | Maks 3 request per jam per user |
 | AI generate soal | Maks 50 request per hari per admin |
 | AI generate explanation | Maks 100 request per hari per admin |
-| AI grading jawaban (practice + tryout gabungan) | Maks 200 request per hari per admin |
 
 Nilai batas di atas adalah acuan awal dan dapat disesuaikan berdasarkan monitoring produksi.
 
@@ -1735,17 +1654,15 @@ Nilai batas di atas adalah acuan awal dan dapat disesuaikan berdasarkan monitori
 ### 13.3 Practice Session Scoring
 
 - **Kebijakan pembuatan baris jawaban:** Baris `practice_answers` **tidak** di-pre-create saat session dibuat. Baris dibuat pertama kali saat user menyimpan jawaban (autosave atau submit). Jika user tidak pernah menyentuh soal tertentu, tidak ada baris `practice_answers` untuk soal tersebut. Saat scoring dijalankan, sistem menentukan soal mana yang tidak memiliki baris jawaban dan memperlakukannya sebagai unanswered (skor 0, `is_correct = false`). `total_unanswered` dihitung sebagai `total_questions - jumlah baris practice_answers yang ada`.
-- Jawaban objektif dinilai otomatis saat session di-submit.
-- Saat session di-submit, sistem mengisi `is_correct`, `score`, `grading_status = not_required`, dan **`grading_source = auto`** untuk semua jawaban objektif (termasuk `true_false`).
-- Penilaian `true_false` dilakukan dengan membandingkan langsung nilai `selected_option_keys` dengan `questions.correct_answer_text`. Keduanya selalu disimpan dalam lowercase (`"true"` atau `"false"`), sehingga tidak diperlukan konversi saat penilaian. Bukan dari `question_options.is_correct`.
-- Jawaban kosong (unanswered) juga diisi `is_correct = false`, `score = 0`, `grading_status = not_required`, `grading_source = auto`.
+- Semua jawaban dinilai otomatis saat session di-submit.
+- Saat session di-submit, sistem mengisi `is_correct`, `score`, `grading_status = graded`, dan `grading_source = auto` untuk semua jawaban.
+- Penilaian `multiple_choice`: skor penuh jika opsi yang dipilih memiliki `is_correct = true`.
+- Penilaian `true_false`: membandingkan langsung nilai `selected_option_keys` dengan `questions.correct_answer_text`. Keduanya selalu disimpan dalam lowercase (`"true"` atau `"false"`). Bukan dari `question_options.is_correct`.
+- Penilaian `short_answer`: membandingkan `answer_text` user dengan `questions.correct_answer_text` secara case-insensitive dengan trimming whitespace. Jika cocok, `is_correct = true` dan skor penuh. Jika tidak cocok atau kosong, `is_correct = false` dan skor 0.
+- Jawaban kosong (unanswered) diisi `is_correct = false`, `score = 0`, `grading_status = graded`, `grading_source = auto`.
 - Multiple answer mengikuti `scoring_rule` pada soal:
-  - `all_or_nothing`: skor penuh hanya jika semua opsi benar dipilih **dan** tidak ada opsi salah yang dipilih. Satu pun opsi salah dipilih atau satu pun opsi benar tidak dipilih → skor `0` (untuk practice); untuk tryout, skor menjadi `wrong_answer_penalty` section.
-  - `partial`: skor proporsional. Formula: `max(floor, (benar_dipilih - salah_dipilih) / total_opsi_benar × points)`, dibulatkan ke bawah. Nilai `floor` adalah `0` untuk practice. Untuk tryout, `floor = wrong_answer_penalty` dari section session. Contoh practice: 3 opsi benar, pilih 2 benar + 1 salah → `max(0, (2−1)/3 × points)`. Contoh tryout berpenalti −1 (points=4): `max(−1, (2−1)/3 × 4) = max(−1, 1.33) = 1`.
-- Jawaban subjektif: baris `practice_answers` dibuat saat user **pertama kali menyimpan** teks jawaban (autosave), dengan `grading_status = pending`, `is_correct = null`, `score = null`, `grading_source = null`. Jika user tidak pernah mengisi teks jawaban untuk soal subjektif tertentu, tidak ada baris yang dibuat; soal tersebut dianggap unanswered dengan skor 0.
-- Setelah admin atau AI menilai jawaban subjektif, `grading_source` diisi sesuai penilai (`manual` atau `ai`), dan `is_correct` diisi: `true` jika `score > 0`, `false` jika `score = 0`.
-- Jawaban berstatus `needs_review` dianggap belum selesai dan memblokir chain grading.
-- Skor session dihitung ulang dan status berubah menjadi `graded` hanya setelah semua jawaban subjektif berstatus `graded` (tidak ada yang `pending` atau `needs_review`).
+  - `all_or_nothing`: skor penuh hanya jika semua opsi benar dipilih **dan** tidak ada opsi salah yang dipilih. Satu pun opsi salah dipilih atau satu pun opsi benar tidak dipilih → skor `0`.
+  - `partial`: skor proporsional. Formula: `max(0, (benar_dipilih - salah_dipilih) / total_opsi_benar × points)`, dibulatkan ke bawah.
 
 ### 13.4 Tryout Timer dan Auto Submit
 
@@ -1798,8 +1715,8 @@ Setelah seluruh tryout session di-submit (semua section selesai):
 2. Sistem mengakumulasikan nilai dari semua `tryout_section_sessions` ke `tryout_sessions`: `total_correct += correct_count`, `total_wrong += wrong_count`, `total_unanswered += unanswered_count`, `total_score += score`. Perhatikan perbedaan nama field: `tryout_section_sessions` menggunakan `correct_count`, `wrong_count`, `unanswered_count`; sedangkan `tryout_sessions` menggunakan `total_correct`, `total_wrong`, `total_unanswered`.
 3. `duration_used_seconds` dihitung sebagai jumlah `(submitted_at - started_at)` **hanya untuk section yang memiliki `started_at` tidak null**. Section yang di-auto-submit dari status `pending` (`started_at = null`) dikecualikan dari kalkulasi ini dan berkontribusi 0 detik. Dengan demikian user yang tidak mengerjakan section tidak mendapat keuntungan dari kalkulasi durasi.
 4. `total_sections_started` diisi dengan jumlah section yang `started_at`-nya tidak null.
-5. Jika tidak ada jawaban subjektif, status langsung berubah menjadi `graded`. Pada kondisi ini, `tryout_section_sessions.graded_at` untuk setiap section diisi dengan waktu scoring selesai. Section yang di-auto-submit dari `pending` (tidak ada jawaban sama sekali) juga mendapat `graded_at` diisi saat scoring dijalankan.
-6. Jika ada jawaban subjektif, status menjadi `grading`. Nilai `total_score` pada saat ini hanya mencerminkan skor jawaban objektif. Setelah semua jawaban subjektif dalam satu section di-grade (tidak ada lagi yang `pending` atau `needs_review`), `tryout_section_sessions.graded_at` untuk section tersebut diisi. Setelah **semua** section memiliki `graded_at` terisi, `total_score`, `total_correct`, `total_wrong`, dan `tryout_section_sessions.score` **dihitung ulang** (menggabungkan skor objektif + subjektif yang sudah final), `tryout_sessions.graded_at` diisi, dan status berubah menjadi `graded`.
+5. Setelah scoring selesai, status section berubah menjadi `graded`. `tryout_section_sessions.graded_at` untuk setiap section diisi dengan waktu scoring selesai. Section yang di-auto-submit dari `pending` (tidak ada jawaban sama sekali) juga mendapat `graded_at` diisi saat scoring dijalankan.
+6. Setelah semua section di-submit dan scoring selesai, `total_score`, `total_correct`, `total_wrong`, dan `tryout_section_sessions.score` dihitung final, `tryout_sessions.graded_at` diisi, dan status berubah menjadi `graded`. Progress user diperbarui.
 
 ### 13.6 Tryout Ranking
 
@@ -1841,8 +1758,7 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 **Validasi tambahan pada saat publish:**
 
 - Practice tidak boleh dipublish jika tidak punya soal.
-- Practice tidak boleh dipublish jika `has_practice_mode = false` dan `has_quiz_mode = false`. Minimal satu mode harus aktif.
-- Practice tidak boleh dipublish jika `has_quiz_mode = true` tetapi `quiz_duration_minutes` kosong atau kurang dari/sama dengan 0.
+- Practice tidak boleh dipublish jika `quiz_duration_minutes` kosong atau kurang dari/sama dengan 0 (karena Mode Quiz selalu tersedia, durasi wajib ada).
 - Practice tidak boleh dipublish jika ada soal dalam practice yang belum `published`, sudah `archived`, atau subject-nya tidak sesuai dengan subject practice.
 - Tryout tidak boleh dipublish jika tidak punya soal.
 - Tryout tidak boleh dipublish jika section kosong atau durasi section belum diisi.
@@ -1862,52 +1778,36 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 
 ## 14. Flow Utama
 
-### 14.1 Flow Register dan Verifikasi Email
+### 14.1 Flow Register via Google
 
-1. User register dengan nama, email, dan password.
-2. Sistem membuat user Free secara default tanpa subscription berbayar.
-3. Sistem membuat email verification token dan mengirim link verifikasi.
-4. User login dalam mode terbatas sampai email terverifikasi.
-5. Setelah token valid digunakan, `email_verified_at` diisi dan `used_at` pada token diisi.
+1. User mengklik tombol "Daftar / Masuk dengan Google".
+2. Sistem mengarahkan user ke halaman autentikasi Google.
+3. Setelah Google mengonfirmasi identitas, sistem menerima email dan Google ID user.
+4. Jika email belum ada di sistem, sistem membuat akun baru dengan `email_verified_at` terisi otomatis dan `google_id` diisi.
+5. User langsung masuk ke sistem tanpa langkah verifikasi tambahan.
 
 ### 14.2 Flow Resend Email Verification
 
-1. User yang sudah login tapi belum terverifikasi membuka halaman profil atau banner verifikasi.
-2. User memilih kirim ulang email verifikasi.
-3. Sistem mengisi `invalidated_at = NOW()` pada semua token verifikasi lama milik user yang masih valid.
-4. Sistem membuat token baru dan mengirim email verifikasi baru.
-5. Endpoint ini memiliki rate limit maks 3 kali per jam per user untuk mencegah spam.
+Hanya berlaku untuk akun lama yang dimigrasikan dan belum memiliki `email_verified_at`.
 
-### 14.3 Flow Forgot Password
+1. User yang belum terverifikasi memilih kirim ulang email verifikasi dari banner atau halaman profil.
+2. Sistem mengisi `invalidated_at = NOW()` pada semua token verifikasi lama milik user yang masih valid.
+3. Sistem membuat token baru dan mengirim email verifikasi baru.
+4. Endpoint ini memiliki rate limit maks 3 kali per jam per user.
 
-1. User memasukkan email di halaman forgot password.
-2. Jika email terdaftar, sistem mengisi `invalidated_at = NOW()` pada semua token reset password lama milik user yang masih valid (belum `used_at` dan belum `invalidated_at`). Invalidasi dilakukan **sebelum** token baru dibuat.
-3. Sistem membuat token reset password baru. Token asli dikirim ke email, token hash disimpan.
-4. User membuka link reset password.
-5. Sistem validasi token (cek `used_at IS NULL`, `invalidated_at IS NULL`, `expires_at > NOW()`).
-6. User membuat password baru.
-7. `used_at` pada token diisi.
+### 14.3 Flow Google Login dan Linking
+
+Telah dipindahkan ke Section 14.4.
 
 ### 14.4 Flow Google Login dan Linking
 
-1. User memilih login Google.
-2. Jika email belum ada di sistem, sistem membuat user baru dengan `email_verified_at` terisi dan `google_id` diisi.
-3. Jika email sudah ada **dan `google_id` user masih null** (belum pernah dihubungkan ke Google), login Google **ditolak** dengan pesan untuk login menggunakan email/password terlebih dahulu, kemudian menghubungkan Google dari halaman profil.
-4. Jika email sudah ada **dan `google_id` sudah terhubung** (tidak null), login Google diizinkan tanpa memandang ada-tidaknya password.
-5. User yang sudah login dapat membuka profil dan memilih hubungkan Google.
-6. Sistem hanya menghubungkan Google jika email dari Google OAuth sama dengan email akun Nalarin.id milik user yang sedang login. Jika berbeda, linking ditolak.
-7. Setelah validasi email sesuai, `google_id` dihubungkan ke akun tersebut.
+1. User mengklik tombol login Google.
+2. Jika email belum ada di sistem, sistem membuat user baru dengan `email_verified_at` terisi dan `google_id` diisi dari data Google.
+3. Jika email sudah ada dan `google_id` sudah terhubung, login diizinkan.
+4. Jika email sudah ada tetapi `google_id` masih null (kondisi safeguard untuk akun lama), login ditolak dengan pesan yang menjelaskan situasi.
+5. User yang sudah login dapat menghubungkan Google dari halaman profil. Email Google wajib sama dengan email akun yang aktif; jika berbeda, linking ditolak.
 
-### 14.5 Flow Ubah Email
-
-1. User login dan membuka halaman profil.
-2. User memasukkan email baru.
-3. Sistem mengisi `invalidated_at = NOW()` pada semua token ubah email lama yang masih valid.
-4. Sistem membuat `email_change_token` dan mengirim verifikasi ke email baru.
-5. Email utama belum berubah sampai token valid digunakan.
-6. Setelah token valid, email user diperbarui, `used_at` token diisi, dan `email_verified_at` diisi ulang.
-
-### 14.6 Flow Latihan / Quiz
+### 14.5 Flow Latihan / Quiz
 
 1. User memilih exam type.
 2. User memilih subject.
@@ -1918,12 +1818,11 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 7. Sistem membuat session dengan status awal `in_progress` dan snapshot soal.
 8. User mengerjakan soal.
 9. Jawaban dan `current_question_order` autosave.
-10. Session selesai melalui submit atau auto submit.
-11. Sistem menghitung skor dan mengisi `grading_source = auto` untuk jawaban objektif.
-12. Jika ada jawaban subjektif, session masuk grading.
-13. Setelah graded, progress diperbarui.
+10. Session selesai melalui submit atau auto submit (Mode Quiz).
+11. Sistem menilai semua jawaban secara otomatis, mengisi `grading_source = auto`.
+12. Status session berubah menjadi `graded`. Progress diperbarui.
 
-### 14.7 Flow Cancel Pending Payment
+### 14.6 Flow Cancel Pending Payment
 
 1. User membuka halaman profil atau halaman checkout dan melihat payment pending aktif.
 2. User memilih batalkan payment.
@@ -1932,7 +1831,7 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 5. Jika Midtrans API gagal dipanggil (timeout/error), payment tetap ditandai `cancelled` di sisi kita. Midtrans akan expire sendiri sesuai waktu yang ditetapkan. Jika kemudian Midtrans mengirim webhook sukses untuk payment yang sudah `cancelled`, webhook tersebut **diabaikan (no-op)** dan tidak membuat subscription baru (lihat Section 13.7).
 6. Setelah cancelled, user dapat membuat payment baru untuk plan yang sama atau berbeda.
 
-### 14.8 Flow Tryout
+### 14.7 Flow Tryout
 
 1. User membuka daftar tryout.
 2. User memilih tryout aktif.
@@ -1941,14 +1840,13 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 5. Sistem membuat tryout session (status `in_progress`), section sessions (semua status `pending`), dan snapshot soal.
 6. User mengerjakan section sesuai timer.
 7. Section selesai melalui submit atau auto submit.
-8. Setelah semua section selesai, session submit.
-9. Sistem menilai jawaban objektif, mengisi `grading_source = auto`.
-10. Jawaban subjektif masuk grading jika ada.
-11. Setelah semua penilaian selesai, session menjadi graded.
-12. Ranking tersedia melalui query jika plan dan setting mengizinkan.
-13. Progress diperbarui.
+8. Setelah semua section selesai, tryout session di-submit.
+9. Sistem menilai semua jawaban secara otomatis, mengisi `grading_source = auto`.
+10. Status session berubah menjadi `graded`.
+11. Ranking tersedia melalui query jika plan dan setting mengizinkan.
+12. Progress diperbarui.
 
-### 14.9 Flow Manual Payment dan Admin Approval
+### 14.8 Flow Manual Payment dan Admin Approval
 
 1. User memilih plan Pro atau Max di halaman checkout.
 2. User memilih metode pembayaran manual (transfer bank).
@@ -1972,10 +1870,8 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 - Konfigurasi **Tiptap** (`@tiptap/react` + `@tiptap/starter-kit`) sebagai rich text editor.
 - Konfigurasi **Zod** + **React Hook Form** + `@hookform/resolvers` untuk form validation.
 - Setup **iron-session** untuk server-side session management (cookie-based, tabel `user_sessions`).
-- Auth email/password via Server Actions.
-- Verifikasi email dan Resend/React Email untuk email transaksional.
-- Forgot/reset password (dengan `invalidated_at` pada token tables).
 - Login Google via OAuth 2.0 manual (no auto-link).
+- Verifikasi email dan Resend/React Email untuk email transaksional (khusus akun migrasi).
 - Profile dasar.
 - Admin dashboard awal dengan layout shadcn/ui.
 
@@ -1994,12 +1890,10 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 - Practice sessions (dengan field `current_question_order`, status awal `in_progress`).
 - Snapshot soal.
 - Autosave (jawaban + posisi soal).
-- Mode Latihan.
-- Mode Quiz.
+- Mode Latihan (berurutan, wajib jawab, konfirmasi langsung tampilkan hasil per soal).
+- Mode Quiz (timer, navigasi bebas, hasil setelah submit).
 - Resume session.
-- Review jawaban.
-- Pembahasan.
-- Grading jawaban subjektif (dengan field `grading_source`).
+- Review jawaban dan pembahasan.
 
 ### Phase 4 — Tryout
 
@@ -2037,7 +1931,7 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 ## 16. Success Metrics
 
 - Jumlah user terdaftar.
-- Persentase user yang memverifikasi email.
+- Persentase user yang memverifikasi email (khusus akun migrasi).
 - Jumlah practice session dibuat.
 - Jumlah quiz session dibuat.
 - Jumlah tryout session dibuat.
@@ -2047,6 +1941,5 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 - Jumlah artikel blog terindeks.
 - Akurasi import soal.
 - Jumlah soal dan pembahasan yang berhasil di-generate AI.
-- Distribusi `grading_source` (manual vs AI) untuk monitoring kualitas grading.
 
 ---
