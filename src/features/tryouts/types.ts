@@ -106,3 +106,121 @@ export type TryoutSectionRoomData = {
   questions: TryoutRoomQuestion[]
   answers: TryoutRoomAnswer[]
 }
+
+export type TryoutReleaseState = {
+  enabled: boolean
+  available: boolean
+  releaseAt: string | null
+}
+
+export type TryoutPlanReleaseState = TryoutReleaseState & {
+  allowedByPlan: boolean
+}
+
+export type TryoutResultSession = {
+  id: number
+  tryoutId: number
+  userId: number
+  title: string
+  slug: string
+  description: string | null
+  examTypeName: string
+  status: TryoutSessionStatus
+  startedAt: string
+  submittedAt: string | null
+  gradedAt: string | null
+  totalQuestions: number
+  totalCorrect: number
+  totalWrong: number
+  totalUnanswered: number
+  totalScore: number
+  totalMaxScore: number
+  totalSectionsStarted: number
+  durationUsedSeconds: number
+  autoSubmitted: boolean
+  wrongAnswerPenalty: number
+  showResultAfterSubmit: boolean
+  resultReleaseAt: Date | null
+  showRankingAfterSubmit: boolean
+  rankingReleaseAt: Date | null
+  showExplanationAfterSubmit: boolean
+  explanationReleaseAt: Date | null
+}
+
+export type TryoutSectionResult = {
+  id: number
+  tryoutSectionId: number
+  title: string
+  subjectName: string
+  orderIndex: number
+  durationMinutes: number
+  durationUsedSeconds: number
+  totalQuestions: number
+  correctCount: number
+  wrongCount: number
+  unansweredCount: number
+  score: number
+  maxScore: number
+}
+
+export type TryoutResultData = TryoutResultSession & {
+  scorePercentage: number
+  isFinal: boolean
+  resultRelease: TryoutReleaseState
+  rankingRelease: TryoutPlanReleaseState
+  explanationRelease: TryoutPlanReleaseState
+  sections: TryoutSectionResult[]
+}
+
+export type TryoutRankingRow = {
+  rank: number
+  sessionId: number
+  userId: number
+  userName: string
+  userAvatarUrl: string | null
+  totalScore: number
+  totalMaxScore: number
+  totalCorrect: number
+  totalWrong: number
+  totalUnanswered: number
+  totalSectionsStarted: number
+  durationUsedSeconds: number
+  submittedAt: string | null
+  gradedAt: string | null
+  isCurrentUser: boolean
+}
+
+export type TryoutRankingData = {
+  session: TryoutResultSession
+  release: TryoutPlanReleaseState
+  participantCount: number
+  ownRank: TryoutRankingRow | null
+  leaderboard: TryoutRankingRow[]
+}
+
+export type TryoutReviewQuestion = TryoutRoomQuestion & {
+  answer: TryoutRoomAnswer | null
+  status: "correct" | "wrong" | "unanswered" | "pending"
+}
+
+export type TryoutReviewSection = {
+  id: number
+  title: string
+  subjectName: string
+  orderIndex: number
+  score: number
+  maxScore: number
+  correctCount: number
+  wrongCount: number
+  unansweredCount: number
+  durationMinutes: number
+  durationUsedSeconds: number
+  questions: TryoutReviewQuestion[]
+}
+
+export type TryoutReviewData = {
+  session: TryoutResultSession
+  resultRelease: TryoutReleaseState
+  explanationRelease: TryoutPlanReleaseState
+  sections: TryoutReviewSection[]
+}

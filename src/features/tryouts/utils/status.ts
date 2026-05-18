@@ -50,6 +50,27 @@ export function isResultReleased(
   return releaseAt.getTime() <= now.getTime()
 }
 
+export function isFeatureReleased(
+  input: {
+    enabled: boolean
+    releaseAt: string | null
+  },
+  nowInput: Date | string = new Date(),
+) {
+  if (!input.enabled) {
+    return false
+  }
+
+  const releaseAt = toDate(input.releaseAt)
+
+  if (!releaseAt) {
+    return true
+  }
+
+  const now = toDate(nowInput) ?? new Date()
+  return releaseAt.getTime() <= now.getTime()
+}
+
 export function formatShortDateRange(startsAt: string | null, endsAt: string | null) {
   const start = toDate(startsAt)
   const end = toDate(endsAt)
