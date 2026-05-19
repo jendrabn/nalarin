@@ -3,15 +3,13 @@ import {
   ArrowRightIcon,
   BarChart3Icon,
   BookOpenIcon,
-  CalendarDaysIcon,
   CheckCircle2Icon,
   CircleSlashIcon,
-  FlameIcon,
   FileTextIcon,
   TargetIcon,
+  TrophyIcon,
   TrendingDownIcon,
   TrendingUpIcon,
-  TrophyIcon,
   XCircleIcon,
 } from "lucide-react"
 import type { ReactNode } from "react"
@@ -28,18 +26,15 @@ import type {
   ProgressActivityItem,
   ProgressExamType,
   ProgressPageData,
-  ProgressPeriod,
-  ProgressSubject,
   ProgressSummary,
-  ProgressStreak,
-  ProgressStreakDay,
   ProgressTopicSnapshot,
 } from "../types"
-import { PROGRESS_PERIOD_OPTIONS } from "../utils/period"
 
 export function ProgressPage({ data }: { data: ProgressPageData }) {
-  const scopeTitle = getScopeTitle(data.activeExamType, data.activeSubject)
-  const basePath = getProgressBasePath(data.activeExamType, data.activeSubject)
+  const activeExamTypeLabel = data.activeExamType?.name ?? "Semua Jenis Ujian"
+  const strongestTopics = data.summary.strongestTopics.slice(0, 3)
+  const weakestTopics = data.summary.weakestTopics.slice(0, 3)
+  const hasTopicCards = strongestTopics.length > 0 || weakestTopics.length > 0
 
   return (
     <div className="min-h-svh bg-muted/35 px-4 py-6 sm:px-6 lg:px-8">
@@ -47,45 +42,69 @@ export function ProgressPage({ data }: { data: ProgressPageData }) {
         <PageHeader
           className="mb-0"
           title="Progress Belajar"
-          subtitle={`Pantau performa latihan dan tryout${scopeTitle ? ` untuk ${scopeTitle}` : ""}.`}
+          subtitle={`Pantau performa latihan dan tryout all-time${data.activeExamType ? ` untuk ${activeExamTypeLabel}` : ""}.`}
         />
 
-        <section className="flex flex-col gap-5">
-          <FilterPanel
-            examTypes={data.examTypes}
-            subjects={data.subjects}
-            activeExamType={data.activeExamType}
-            activeSubject={data.activeSubject}
-            activePeriod={data.activePeriod}
-            basePath={basePath}
-          />
+        <FilterPanel
+          examTypes={data.examTypes}
+          activeExamType={data.activeExamType}
+        />
 
-          <div className="flex min-w-0 flex-col gap-5">
-            <SummaryGrid summary={data.summary} />
-            <DailyStreakCard streak={data.streak} />
-
-            <section className="grid gap-5 xl:grid-cols-2">
-              <TopicCard
-                title="Topik Terkuat"
-                description="Akurasi tertinggi dari snapshot progress terakhir."
-                icon={<TrendingUpIcon />}
-                topics={data.summary.strongestTopics}
-                tone="strong"
-              />
-              <TopicCard
-                title="Topik Prioritas"
-                description="Area dengan akurasi terendah untuk diprioritaskan."
-                icon={<TrendingDownIcon />}
-                topics={data.summary.weakestTopics}
-                tone="weak"
-              />
-            </section>
-
-            <ActivityCard
-              activities={data.activities}
-            />
+        <section className="flex flex-col gap-3">
+          <SummaryGrid summary={data.summary} />
+          <div className="flex flex-col gap-2 border-t border-border/70 pt-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <span>Semua statistik bersifat all-time berdasarkan sesi graded.</span>
+            <span>
+              {data.summary.snapshotDate
+                ? `Terakhir diperbarui ${formatDate(data.summary.snapshotDate)}`
+                : "Belum ada pembaruan progress."}
+            </span>
           </div>
         </section>
+
+        {hasTopicCards ? (
+          <section
+            className={cn(
+              "grid gap-5",
+              strongestTopics.length > 0 && weakestTopics.length > 0
+                ? "xl:grid-cols-2"
+                : "xl:grid-cols-1",
+            )}
+          >
+            {strongestTopics.length > 0 ? (
+              <TopicCard
+                title="Topik Terkuat"
+                description="Tiga topik dengan akurasi tertinggi dari snapshot progress terakhir."
+                icon={<TrendingUpIcon />}
+                topics={strongestTopics}
+                tone="strong"
+              />
+            ) : null}
+            {weakestTopics.length > 0 ? (
+              <TopicCard
+                title="Topik Prioritas"
+                description="Tiga topik dengan akurasi terendah untuk diprioritaskan."
+                icon={<TrendingDownIcon />}
+                topics={weakestTopics}
+                tone="weak"
+              />
+            ) : null}
+          </section>
+        ) : (
+          <Empty className="border bg-card py-10 shadow-sm">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <CircleSlashIcon />
+              </EmptyMedia>
+              <EmptyTitle>Belum Ada Data Topik</EmptyTitle>
+              <EmptyDescription>
+                Topik akan muncul setelah ada sesi graded dengan jawaban terisi.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        )}
+
+        <ActivityCard activities={data.activities} />
       </div>
     </div>
   )
@@ -93,103 +112,22 @@ export function ProgressPage({ data }: { data: ProgressPageData }) {
 
 function FilterPanel({
   examTypes,
-  subjects,
   activeExamType,
-  activeSubject,
-  activePeriod,
-  basePath,
 }: {
   examTypes: ProgressExamType[]
-  subjects: ProgressSubject[]
   activeExamType: ProgressExamType | null
-  activeSubject: ProgressSubject | null
-  activePeriod: ProgressPeriod
-  basePath: string
 }) {
   return (
-    <Card className="border-border/70 bg-card/80 shadow-sm backdrop-blur">
-      <CardHeader className="gap-2">
-        <CardTitle className="text-base">Filter Progress</CardTitle>
-        <p className="text-sm leading-6 text-muted-foreground">
-          Pilih jenis ujian, subtes, dan periode yang ingin dilihat.
-        </p>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-5">
-        <FilterGroup title="Jenis Ujian">
-          <div className="flex flex-wrap gap-2">
-            <FilterButton
-              href={withPeriod("/progress", activePeriod)}
-              active={!activeExamType}
-              label="Semua"
-            />
-            {examTypes.map((examType) => (
-              <FilterButton
-                key={examType.id}
-                href={withPeriod(`/progress/${examType.slug}`, activePeriod)}
-                active={activeExamType?.id === examType.id && !activeSubject}
-                label={examType.name}
-              />
-            ))}
-          </div>
-        </FilterGroup>
-
-        {activeExamType ? (
-          <FilterGroup title="Subtes">
-            <div className="flex flex-wrap gap-2">
-              <FilterButton
-                href={withPeriod(`/progress/${activeExamType.slug}`, activePeriod)}
-                active={!activeSubject}
-                label="Semua Subtes"
-              />
-              {subjects.map((subject) => (
-                <FilterButton
-                  key={subject.id}
-                  href={withPeriod(
-                    `/progress/${activeExamType.slug}/${subject.slug}`,
-                    activePeriod,
-                  )}
-                  active={activeSubject?.id === subject.id}
-                  label={subject.name}
-                />
-              ))}
-            </div>
-          </FilterGroup>
-        ) : null}
-
-        <FilterGroup title="Periode">
-          <div className="flex flex-wrap gap-2">
-            {PROGRESS_PERIOD_OPTIONS.map((period) => {
-              const active = activePeriod === period.value
-
-              return (
-                <Button
-                  key={period.value}
-                  asChild
-                  variant={active ? "default" : "outline"}
-                  size="xl"
-                  className={cn(
-                    "rounded-full text-[0.9rem] font-medium tracking-normal shadow-sm",
-                    !active && "text-muted-foreground hover:border-primary/30 hover:text-foreground",
-                  )}
-                >
-                  <Link href={withPeriod(basePath, period.value)}>{period.label}</Link>
-                </Button>
-              )
-            })}
-          </div>
-        </FilterGroup>
-      </CardContent>
-    </Card>
-  )
-}
-
-function FilterGroup({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-2.5">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {title}
-      </h2>
-      <div>{children}</div>
+    <div className="flex flex-wrap gap-2">
+      <FilterButton href="/progress" active={!activeExamType} label="Semua" />
+      {examTypes.map((examType) => (
+        <FilterButton
+          key={examType.id}
+          href={buildProgressHref(examType.slug)}
+          active={activeExamType?.id === examType.id}
+          label={examType.name}
+        />
+      ))}
     </div>
   )
 }
@@ -226,20 +164,20 @@ function SummaryGrid({ summary }: { summary: ProgressSummary }) {
   const averageScore = summary.averageScore ?? 0
 
   return (
-    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       <SummaryCard
         icon={<TargetIcon />}
         label="Soal Dijawab"
         value={summary.totalQuestionsAnswered}
-        helper={`${summary.totalCorrect} Benar / ${summary.totalWrong} Salah`}
+        helper={`${summary.totalCorrect} benar / ${summary.totalWrong} salah`}
         tone="primary"
       />
       <SummaryCard
         icon={<CheckCircle2Icon />}
         label="Akurasi"
         value={summary.accuracy === null ? "-" : `${accuracy}%`}
-        helper="Benar dibanding soal terjawab"
-        progress={accuracy}
+        helper="Persentase jawaban benar"
+        progress={summary.accuracy === null ? undefined : accuracy}
         tone="success"
       />
       <SummaryCard
@@ -247,15 +185,8 @@ function SummaryGrid({ summary }: { summary: ProgressSummary }) {
         label="Rata-Rata Skor"
         value={summary.averageScore === null ? "-" : `${formatNumber(averageScore)}%`}
         helper="Skor ternormalisasi 0-100"
-        progress={averageScore}
+        progress={summary.averageScore === null ? undefined : averageScore}
         tone="score"
-      />
-      <SummaryCard
-        icon={<CalendarDaysIcon />}
-        label="Update Terakhir"
-        value={summary.snapshotDate ? formatDate(summary.snapshotDate) : "-"}
-        helper="Berdasarkan sesi graded"
-        tone="neutral"
       />
     </section>
   )
@@ -274,13 +205,13 @@ function SummaryCard({
   value: ReactNode
   helper: string
   progress?: number
-  tone: "primary" | "success" | "score" | "neutral"
+  tone: "primary" | "success" | "score"
 }) {
   const toneClass = summaryToneClasses[tone]
 
   return (
     <Card className={cn("shadow-sm", toneClass.card)}>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex flex-col gap-4 p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-medium text-muted-foreground">{label}</p>
@@ -288,7 +219,12 @@ function SummaryCard({
               {value}
             </p>
           </div>
-          <span className={cn("grid size-9 shrink-0 place-items-center rounded-lg [&_svg]:size-4", toneClass.icon)}>
+          <span
+            className={cn(
+              "grid size-9 shrink-0 place-items-center rounded-lg [&_svg]:size-4",
+              toneClass.icon,
+            )}
+          >
             {icon}
           </span>
         </div>
@@ -322,123 +258,38 @@ function TopicCard({
             <CardTitle>{title}</CardTitle>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p>
           </div>
-          <span className={cn("grid size-9 shrink-0 place-items-center rounded-lg [&_svg]:size-4", toneClass.icon)}>
+          <span
+            className={cn(
+              "grid size-9 shrink-0 place-items-center rounded-lg [&_svg]:size-4",
+              toneClass.icon,
+            )}
+          >
             {icon}
           </span>
         </div>
       </CardHeader>
       <CardContent>
-        {topics.length > 0 ? (
-          <div className="flex flex-col gap-3">
-            {topics.map((topic) => (
-              <div key={topic.topic_id} className="flex flex-col gap-2">
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="min-w-0 truncate font-medium text-foreground">
-                    {topic.topic_name}
-                  </span>
-                  <span className={cn("font-semibold tabular-nums", toneClass.value)}>
-                    {topic.accuracy}%
-                  </span>
-                </div>
-                <Progress value={topic.accuracy} className="h-2" />
+        <div className="flex flex-col gap-3">
+          {topics.map((topic) => (
+            <div key={topic.topic_id} className="flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="min-w-0 truncate font-medium text-foreground">
+                  {topic.topic_name}
+                </span>
+                <span className={cn("font-semibold tabular-nums", toneClass.value)}>
+                  {topic.accuracy}%
+                </span>
               </div>
-            ))}
-          </div>
-        ) : (
-          <Empty className="border bg-muted/20 py-8">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <CircleSlashIcon />
-              </EmptyMedia>
-              <EmptyTitle>Belum Ada Data Topik</EmptyTitle>
-              <EmptyDescription>
-                Topik akan muncul setelah ada sesi graded dengan jawaban terisi.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-function DailyStreakCard({ streak }: { streak: ProgressStreak }) {
-  return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <CardTitle>Streak Harianku</CardTitle>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Aktivitas harian dari latihan dan tryout selama 12 minggu terakhir.
-            </p>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-center text-xs">
-            <StreakMetric label="Streak" value={`${streak.currentStreak} Hari`} />
-            <StreakMetric label="Terpanjang" value={`${streak.longestStreak} Hari`} />
-            <StreakMetric label="Hari Aktif" value={streak.activeDays} />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="overflow-x-auto pb-1">
-          <div className="grid w-max grid-flow-col grid-rows-7 gap-1">
-            {streak.days.map((day) => (
-              <StreakDayCell key={day.date} day={day} />
-            ))}
-          </div>
-        </div>
-        <div className="flex flex-col gap-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <FlameIcon className="size-4 text-primary" />
-            <span>{streak.totalSessions} sesi selesai dalam periode ini.</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>Lebih sedikit</span>
-            {[0, 1, 2, 3, 4].map((level) => (
-              <span
-                key={level}
-                className={cn(
-                  "size-3 rounded-[3px] ring-1 ring-border/70",
-                  streakLevelClasses[level as ProgressStreakDay["level"]],
-                )}
-              />
-            ))}
-            <span>Lebih banyak</span>
-          </div>
+              <Progress value={topic.accuracy} className="h-2" />
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>
   )
 }
 
-function StreakMetric({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="rounded-lg bg-muted/45 px-3 py-2">
-      <p className="font-semibold tabular-nums text-foreground">{value}</p>
-      <p className="mt-0.5 text-muted-foreground">{label}</p>
-    </div>
-  )
-}
-
-function StreakDayCell({ day }: { day: ProgressStreakDay }) {
-  return (
-    <span
-      aria-label={`${formatDate(day.date)}: ${day.count} sesi`}
-      title={`${formatDate(day.date)} - ${day.count} sesi`}
-      className={cn(
-        "size-3 rounded-[3px] ring-1 ring-border/70",
-        streakLevelClasses[day.level],
-      )}
-    />
-  )
-}
-
-function ActivityCard({
-  activities,
-}: {
-  activities: ProgressActivityItem[]
-}) {
+function ActivityCard({ activities }: { activities: ProgressActivityItem[] }) {
   return (
     <Card className="shadow-sm">
       <CardHeader>
@@ -446,7 +297,7 @@ function ActivityCard({
           <div>
             <CardTitle>Riwayat Aktivitas</CardTitle>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Latihan dan tryout yang sudah selesai dinilai.
+              Latihan, quiz, dan tryout yang sudah selesai dinilai.
             </p>
           </div>
         </div>
@@ -477,8 +328,7 @@ function ActivityCard({
 }
 
 function ActivityRow({ activity }: { activity: ProgressActivityItem }) {
-  const scorePercentage =
-    activity.maxScore > 0 ? Math.round((activity.score / activity.maxScore) * 100) : 0
+  const activityLabel = getActivityTypeLabel(activity)
 
   return (
     <article className="rounded-xl border bg-background p-4">
@@ -490,10 +340,9 @@ function ActivityRow({ activity }: { activity: ProgressActivityItem }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant={activity.type === "practice" ? "secondary" : "outline"}>
-                {activity.type === "practice" ? "Latihan" : "Tryout"}
+                {activityLabel}
               </Badge>
               <Badge variant="outline">{activity.examTypeName}</Badge>
-              {activity.subjectName ? <Badge variant="outline">{activity.subjectName}</Badge> : null}
             </div>
             <h2 className="mt-2 line-clamp-2 text-base font-semibold leading-snug text-foreground">
               {activity.title}
@@ -504,7 +353,7 @@ function ActivityRow({ activity }: { activity: ProgressActivityItem }) {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 lg:min-w-72">
+        <div className="flex flex-col gap-3 lg:min-w-80">
           <div className="grid grid-cols-3 gap-2 text-center text-xs">
             <ActivityMetric
               icon={<CheckCircle2Icon />}
@@ -521,7 +370,7 @@ function ActivityRow({ activity }: { activity: ProgressActivityItem }) {
             <ActivityMetric
               icon={<TargetIcon />}
               label="Skor"
-              value={`${scorePercentage}%`}
+              value={`${formatNumber(activity.score)} / ${formatNumber(activity.maxScore)}`}
               className="text-primary"
             />
           </div>
@@ -581,11 +430,6 @@ const summaryToneClasses = {
     icon: "bg-chart-3/10 text-chart-3",
     value: "text-chart-3",
   },
-  neutral: {
-    card: "border-border bg-card",
-    icon: "bg-muted text-muted-foreground",
-    value: "text-foreground",
-  },
 }
 
 const topicToneClasses = {
@@ -599,41 +443,16 @@ const topicToneClasses = {
   },
 }
 
-const streakLevelClasses: Record<ProgressStreakDay["level"], string> = {
-  0: "bg-muted",
-  1: "bg-primary/20",
-  2: "bg-primary/40",
-  3: "bg-primary/70",
-  4: "bg-primary",
+function buildProgressHref(examTypeSlug: string) {
+  return `/progress/${examTypeSlug}`
 }
 
-function withPeriod(path: string, period: ProgressPeriod) {
-  const currentPath = path || "#"
-
-  return period === "30d" ? currentPath : `${currentPath}?period=${period}`
-}
-
-function getScopeTitle(examType: ProgressExamType | null, subject: ProgressSubject | null) {
-  if (examType && subject) {
-    return `${examType.name} - ${subject.name}`
+function getActivityTypeLabel(activity: ProgressActivityItem) {
+  if (activity.type === "tryout") {
+    return "Tryout"
   }
 
-  return examType?.name ?? ""
-}
-
-function getProgressBasePath(
-  examType: ProgressExamType | null,
-  subject: ProgressSubject | null,
-) {
-  if (examType && subject) {
-    return `/progress/${examType.slug}/${subject.slug}`
-  }
-
-  if (examType) {
-    return `/progress/${examType.slug}`
-  }
-
-  return "/progress"
+  return activity.practiceMode === "quiz" ? "Quiz" : "Latihan"
 }
 
 function formatNumber(value: number) {

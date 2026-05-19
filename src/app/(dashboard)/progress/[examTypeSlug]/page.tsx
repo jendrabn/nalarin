@@ -4,7 +4,6 @@ import { notFound } from "next/navigation"
 import { requireUser } from "@/features/auth/services/session"
 import { ProgressPage } from "@/features/progress/components/progress-page"
 import { getProgressPageData } from "@/features/progress/queries"
-import { parseProgressPeriod } from "@/features/progress/utils/period"
 
 export const metadata: Metadata = {
   title: "Progress Ujian",
@@ -17,21 +16,11 @@ export const metadata: Metadata = {
 
 export default async function Page({
   params,
-  searchParams,
 }: {
   params: Promise<{ examTypeSlug: string }>
-  searchParams: Promise<{ period?: string | string[] }>
 }) {
-  const [{ examTypeSlug }, query, user] = await Promise.all([
-    params,
-    searchParams,
-    requireUser(),
-  ])
-  const data = await getProgressPageData({
-    userId: user.id,
-    period: parseProgressPeriod(query.period),
-    examTypeSlug,
-  })
+  const [{ examTypeSlug }, user] = await Promise.all([params, requireUser()])
+  const data = await getProgressPageData({ userId: user.id, examTypeSlug })
 
   if (!data) {
     notFound()
