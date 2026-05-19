@@ -32,13 +32,13 @@ import type {
 
 export function ProgressPage({ data }: { data: ProgressPageData }) {
   const activeExamTypeLabel = data.activeExamType?.name ?? "Semua Jenis Ujian"
-  const strongestTopics = data.summary.strongestTopics.slice(0, 3)
-  const weakestTopics = data.summary.weakestTopics.slice(0, 3)
+  const strongestTopics = data.summary.strongestTopics.slice(0, 5)
+  const weakestTopics = data.summary.weakestTopics.slice(0, 5)
   const hasTopicCards = strongestTopics.length > 0 || weakestTopics.length > 0
 
   return (
     <div className="min-h-svh bg-muted/35 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
         <PageHeader
           className="mb-0"
           title="Progress Belajar"
@@ -52,14 +52,6 @@ export function ProgressPage({ data }: { data: ProgressPageData }) {
 
         <section className="flex flex-col gap-3">
           <SummaryGrid summary={data.summary} />
-          <div className="flex flex-col gap-2 border-t border-border/70 pt-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-            <span>Semua statistik bersifat all-time berdasarkan sesi graded.</span>
-            <span>
-              {data.summary.snapshotDate
-                ? `Terakhir diperbarui ${formatDate(data.summary.snapshotDate)}`
-                : "Belum ada pembaruan progress."}
-            </span>
-          </div>
         </section>
 
         {hasTopicCards ? (
@@ -74,7 +66,6 @@ export function ProgressPage({ data }: { data: ProgressPageData }) {
             {strongestTopics.length > 0 ? (
               <TopicCard
                 title="Topik Terkuat"
-                description="Tiga topik dengan akurasi tertinggi dari snapshot progress terakhir."
                 icon={<TrendingUpIcon />}
                 topics={strongestTopics}
                 tone="strong"
@@ -83,7 +74,6 @@ export function ProgressPage({ data }: { data: ProgressPageData }) {
             {weakestTopics.length > 0 ? (
               <TopicCard
                 title="Topik Prioritas"
-                description="Tiga topik dengan akurasi terendah untuk diprioritaskan."
                 icon={<TrendingDownIcon />}
                 topics={weakestTopics}
                 tone="weak"
@@ -237,13 +227,11 @@ function SummaryCard({
 
 function TopicCard({
   title,
-  description,
   icon,
   topics,
   tone,
 }: {
   title: string
-  description: string
   icon: ReactNode
   topics: ProgressTopicSnapshot[]
   tone: "strong" | "weak"
@@ -256,7 +244,6 @@ function TopicCard({
         <div className="flex items-start justify-between gap-3">
           <div>
             <CardTitle>{title}</CardTitle>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p>
           </div>
           <span
             className={cn(
@@ -293,14 +280,7 @@ function ActivityCard({ activities }: { activities: ProgressActivityItem[] }) {
   return (
     <Card className="shadow-sm">
       <CardHeader>
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <CardTitle>Riwayat Aktivitas</CardTitle>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Latihan, quiz, dan tryout yang sudah selesai dinilai.
-            </p>
-          </div>
-        </div>
+        <CardTitle>Riwayat Aktivitas</CardTitle>
       </CardHeader>
       <CardContent>
         {activities.length > 0 ? (
