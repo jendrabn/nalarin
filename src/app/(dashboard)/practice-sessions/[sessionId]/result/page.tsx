@@ -3,8 +3,8 @@ import type { ReactNode } from "react"
 import { notFound, redirect } from "next/navigation"
 import { BarChart3Icon, CheckCircle2Icon, ClockIcon, XCircleIcon } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageHeader } from "@/components/page-header"
+import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { requireUser } from "@/features/auth/services/session"
 import { PracticeResultActions } from "@/features/practices/components/practice-result-actions"
@@ -44,25 +44,14 @@ export default async function Page({
   return (
     <main className="min-h-svh bg-muted/35 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-        <Card className="overflow-hidden">
-          <CardHeader className="gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline">
-                {summary.mode === "practice" ? "Mode Latihan" : "Mode Quiz"}
-              </Badge>
-              <Badge variant="secondary">{summary.examTypeName}</Badge>
-              <Badge variant="secondary">{summary.subjectName}</Badge>
-            </div>
-            <div>
-              <CardTitle className="font-heading text-2xl tracking-normal">
-                Hasil {summary.title}
-              </CardTitle>
-              <CardDescription>
-                Ringkasan skor dari sesi yang sudah selesai.
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-5">
+        <PageHeader
+          className="mb-0"
+          title={`Hasil Latihan ${summary.title}`}
+          subtitle="Ringkasan skor, akurasi, dan durasi pada sesi latihan ini."
+        />
+
+        <Card className="overflow-hidden shadow-sm">
+          <CardContent className="flex flex-col gap-5 p-4 sm:p-5">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <MetricCard
                 icon={<BarChart3Icon />}

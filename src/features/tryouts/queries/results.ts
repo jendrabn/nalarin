@@ -102,7 +102,7 @@ export async function getTryoutRankingData(
   )
   const allowedByPlan = PLAN_CONFIG[planCode].access.ranking
 
-  if (!release.available || !allowedByPlan) {
+  if (!release.available) {
     return {
       session: context,
       release: {
@@ -173,7 +173,7 @@ export async function getTryoutRankingData(
     },
     participantCount: rankedRows.length,
     ownRank: rankedRows.find((row) => row.userId === userId) ?? null,
-    leaderboard: rankedRows.slice(0, 50),
+    leaderboard: allowedByPlan ? rankedRows : [],
   }
 }
 

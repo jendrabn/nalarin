@@ -4,8 +4,10 @@ import { notFound, redirect } from "next/navigation"
 import type { PlanCode } from "@/config/plans"
 import { requireUser } from "@/features/auth/services/session"
 import { getCurrentActiveSubscription } from "@/features/premium/queries"
+import { TryoutSessionPageShell } from "@/features/tryouts/components/tryout-session-page-shell"
 import { TryoutReviewPage } from "@/features/tryouts/components/tryout-review-page"
 import { getTryoutReviewData } from "@/features/tryouts/queries/results"
+import type { SiteUser } from "@/components/site-navbar"
 
 export const metadata: Metadata = {
   title: "Review Jawaban Tryout",
@@ -40,5 +42,16 @@ export default async function Page({
     redirect(`/tryout-sessions/${data.session.id}`)
   }
 
-  return <TryoutReviewPage data={data} />
+  const siteUser: NonNullable<SiteUser> = {
+    name: user.name,
+    email: user.email,
+    avatarUrl: user.avatarUrl,
+    role: user.role,
+  }
+
+  return (
+    <TryoutSessionPageShell user={siteUser}>
+      <TryoutReviewPage data={data} />
+    </TryoutSessionPageShell>
+  )
 }

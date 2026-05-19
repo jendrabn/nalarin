@@ -12,9 +12,9 @@ import {
 import type { ReactNode } from "react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageHeader } from "@/components/page-header"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Progress } from "@/components/ui/progress"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -29,26 +29,19 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
   return (
     <main className="min-h-svh bg-muted/35 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <Badge variant="outline">{data.examTypeName}</Badge>
-              <ResultStatusBadge isFinal={data.isFinal} status={data.status} />
-            </div>
-            <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Hasil Tryout
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-              {data.title}
-            </p>
-          </div>
-          <Button asChild variant="outline">
-            <Link href={`/tryout-sessions/${data.id}`}>
-              <ArrowLeftIcon data-icon="inline-start" />
-              Kembali
-            </Link>
-          </Button>
-        </header>
+        <PageHeader
+          className="mb-0"
+          title={`Hasil Tryout ${data.title}`}
+          subtitle="Ringkasan skor, status penilaian, dan pembahasan untuk sesi tryout ini."
+          actions={
+            <Button asChild variant="outline">
+              <Link href={`/tryout-sessions/${data.id}`}>
+                <ArrowLeftIcon data-icon="inline-start" />
+                Kembali
+              </Link>
+            </Button>
+          }
+        />
 
         {resultLocked ? (
           <LockedResultCard releaseText={releaseText} sessionId={data.id} />
@@ -65,7 +58,7 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
               </Alert>
             ) : null}
 
-            <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
+            <section className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
               <Card className="shadow-sm">
                 <CardHeader>
                   <CardTitle>Ringkasan Skor</CardTitle>
@@ -115,35 +108,31 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
                 </CardContent>
               </Card>
 
-              <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle>Aksi Lanjutan</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3">
-                  <Button asChild className="w-full">
+              <Card className="h-fit self-start shadow-sm">
+                <CardContent className="flex flex-col gap-3 p-4 sm:p-5">
+                  <Button asChild size="xl" className="w-full">
                     <Link href={`/tryout-sessions/${data.id}/review`}>
                       <FileTextIcon data-icon="inline-start" />
                       Review Jawaban
                     </Link>
                   </Button>
-                  {data.rankingRelease.available && data.rankingRelease.allowedByPlan ? (
-                    <Button asChild variant="outline-primary" className="w-full">
-                      <Link href={`/tryout-sessions/${data.id}/ranking`}>
-                        <TrophyIcon data-icon="inline-start" />
-                        Lihat Ranking
-                      </Link>
-                    </Button>
-                  ) : (
-                    <Button asChild variant="outline" className="w-full">
-                      <Link href={`/tryout-sessions/${data.id}/ranking`}>
-                        <TrophyIcon data-icon="inline-start" />
-                        Info Ranking
-                      </Link>
-                    </Button>
-                  )}
-                  <div className="rounded-lg bg-muted/50 p-3 text-sm leading-6 text-muted-foreground">
-                    Ranking dan pembahasan mengikuti jadwal rilis tryout serta akses paket aktif.
-                  </div>
+                  <Button
+                    asChild
+                    size="xl"
+                    variant={
+                      data.rankingRelease.available && data.rankingRelease.allowedByPlan
+                        ? "outline-primary"
+                        : "outline"
+                    }
+                    className="w-full"
+                  >
+                    <Link href={`/tryout-sessions/${data.id}/ranking`}>
+                      <TrophyIcon data-icon="inline-start" />
+                      {data.rankingRelease.available && data.rankingRelease.allowedByPlan
+                        ? "Lihat Ranking"
+                        : "Info Ranking"}
+                    </Link>
+                  </Button>
                 </CardContent>
               </Card>
             </section>
@@ -157,12 +146,24 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Subtes</TableHead>
-                        <TableHead className="text-right">Skor</TableHead>
-                        <TableHead className="text-right">Benar</TableHead>
-                        <TableHead className="text-right">Salah</TableHead>
-                        <TableHead className="text-right">Kosong</TableHead>
-                        <TableHead className="text-right">Durasi</TableHead>
+                        <TableHead className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Subtes
+                        </TableHead>
+                        <TableHead className="text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Skor
+                        </TableHead>
+                        <TableHead className="text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Benar
+                        </TableHead>
+                        <TableHead className="text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Salah
+                        </TableHead>
+                        <TableHead className="text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Kosong
+                        </TableHead>
+                        <TableHead className="text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Durasi
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -291,24 +292,6 @@ function MetricCard({
       </p>
     </div>
   )
-}
-
-function ResultStatusBadge({
-  isFinal,
-  status,
-}: {
-  isFinal: boolean
-  status: TryoutResultData["status"]
-}) {
-  if (isFinal) {
-    return (
-      <Badge variant="outline" className="border-chart-2/35 bg-chart-2/10 text-chart-2">
-        Final
-      </Badge>
-    )
-  }
-
-  return <Badge variant="secondary">{status === "grading" ? "Diproses" : "Sementara"}</Badge>
 }
 
 const metricToneClasses = {

@@ -2,8 +2,10 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { requireUser } from "@/features/auth/services/session"
+import { TryoutSessionPageShell } from "@/features/tryouts/components/tryout-session-page-shell"
 import { TryoutSessionOverviewPage } from "@/features/tryouts/components/tryout-session-overview-page"
 import { getTryoutSessionOverview } from "@/features/tryouts/queries/session"
+import type { SiteUser } from "@/components/site-navbar"
 
 export const metadata: Metadata = {
   title: "Sesi Tryout",
@@ -31,5 +33,16 @@ export default async function Page({
     notFound()
   }
 
-  return <TryoutSessionOverviewPage session={session} />
+  const siteUser: NonNullable<SiteUser> = {
+    name: user.name,
+    email: user.email,
+    avatarUrl: user.avatarUrl,
+    role: user.role,
+  }
+
+  return (
+    <TryoutSessionPageShell user={siteUser}>
+      <TryoutSessionOverviewPage session={session} />
+    </TryoutSessionPageShell>
+  )
 }

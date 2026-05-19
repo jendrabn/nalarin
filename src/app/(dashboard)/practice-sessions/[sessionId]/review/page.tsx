@@ -5,6 +5,7 @@ import { ArrowLeftIcon, CheckCircle2Icon, CircleSlashIcon, FileTextIcon, XCircle
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -52,25 +53,19 @@ export default async function Page({
   return (
     <main className="min-h-svh bg-muted/35 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline">
-                {summary.mode === "practice" ? "Mode Latihan" : "Mode Quiz"}
-              </Badge>
-              <Badge variant="secondary">{summary.totalQuestions} soal</Badge>
-            </div>
-            <h1 className="mt-2 font-heading text-2xl font-semibold tracking-normal">
-              Pembahasan {summary.title}
-            </h1>
-          </div>
-          <Button variant="outline" asChild>
-            <Link href={`/practice-sessions/${summary.id}/result`}>
-              <ArrowLeftIcon data-icon="inline-start" />
-              Kembali ke Hasil
-            </Link>
-          </Button>
-        </div>
+        <PageHeader
+          className="mb-0"
+          title={`Pembahasan ${summary.title}`}
+          subtitle="Tinjau jawaban, status benar-salah, dan pembahasan untuk setiap soal."
+          actions={
+            <Button variant="outline" asChild>
+              <Link href={`/practice-sessions/${summary.id}/result`}>
+                <ArrowLeftIcon data-icon="inline-start" />
+                Kembali ke Hasil
+              </Link>
+            </Button>
+          }
+        />
 
         <div className="flex flex-col gap-4">
           {summary.questions.map((question) => (

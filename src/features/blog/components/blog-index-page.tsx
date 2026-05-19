@@ -4,6 +4,7 @@ import { LibraryBigIcon, SearchIcon } from "lucide-react";
 
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar";
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -46,13 +47,14 @@ export function BlogIndexPage({
           <div className="absolute inset-0 -z-10 opacity-[0.34] [background-image:linear-gradient(0deg,color-mix(in_oklch,var(--foreground)_4%,transparent)_1px,transparent_1px)] [background-size:100%_18px]" />
           <div className="absolute inset-x-0 bottom-0 -z-10 h-28 bg-gradient-to-b from-transparent to-background" />
           <div className="mx-auto flex w-full max-w-5xl flex-col items-center px-4 py-12 text-center sm:px-6 sm:py-14 lg:px-8">
-            <h1 className="max-w-4xl text-balance text-4xl font-black leading-tight tracking-normal sm:text-5xl lg:text-6xl">
-              Strategi Belajar, Pembahasan, dan Ritme Persiapan Tes
-            </h1>
-            <p className="mt-5 max-w-2xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg">
-              Baca artikel tentang UTBK, UTUL UGM, SIMAK UI, CPNS, tryout, dan
-              cara membangun kebiasaan belajar yang lebih terukur.
-            </p>
+            <PageHeader
+              align="center"
+              className="mb-0"
+              title="Strategi Belajar, Pembahasan, dan Ritme Persiapan Tes"
+              subtitle="Baca artikel tentang UTBK, UTUL UGM, SIMAK UI, CPNS, tryout, dan cara membangun kebiasaan belajar yang lebih terukur."
+              titleClassName="max-w-4xl text-balance text-4xl font-black leading-tight tracking-normal sm:text-5xl lg:text-6xl"
+              subtitleClassName="mt-5 max-w-2xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg"
+            />
             <Form
               action="/blog"
               role="search"

@@ -20,6 +20,7 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageHeader } from "@/components/page-header"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 
@@ -58,33 +59,29 @@ export function TryoutSessionOverviewPage({
   return (
     <main className="min-h-svh bg-muted/35">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8">
-        <header className="flex flex-col gap-4 rounded-xl border bg-card p-5 shadow-sm">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex min-w-0 flex-col gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className="gap-1.5 bg-primary/10 text-primary">
-                  <BookOpenCheckIcon />
-                  Tryout
-                </Badge>
-                <Badge variant="secondary">{session.examTypeName}</Badge>
-                <SessionStatusBadge status={session.status} />
-              </div>
-              <div className="flex flex-col gap-1">
-                <h1 className="font-heading text-2xl font-semibold tracking-normal text-foreground sm:text-3xl">
-                  {session.title}
-                </h1>
-                {session.description ? (
-                  <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                    {session.description}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-
-            <Button asChild variant="outline">
-              <Link href={`/tryouts/${session.tryoutSlug}`}>Detail Tryout</Link>
-            </Button>
+        <section className="flex flex-col gap-4 rounded-xl border bg-card p-5 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className="gap-1.5 bg-primary/10 text-primary">
+              <BookOpenCheckIcon />
+              Tryout
+            </Badge>
+            <Badge variant="secondary">{session.examTypeName}</Badge>
+            <SessionStatusBadge status={session.status} />
           </div>
+
+          <PageHeader
+            className="mb-0"
+            title={session.title}
+            subtitle={
+              session.description ??
+              "Tinjau progress, lanjutkan subtes, dan buka detail sebelum mulai."
+            }
+            actions={
+              <Button asChild variant="outline">
+                <Link href={`/tryouts/${session.tryoutSlug}`}>Detail Tryout</Link>
+              </Button>
+            }
+          />
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <SummaryMetric label="Progress" value={`${progressValue}%`} icon={<TrophyIcon />} />
@@ -111,7 +108,7 @@ export function TryoutSessionOverviewPage({
               {progressValue}%
             </span>
           </div>
-        </header>
+        </section>
 
         <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <Card className="shadow-sm">

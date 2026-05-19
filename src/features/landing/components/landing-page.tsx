@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRightIcon, ShieldCheckIcon } from "lucide-react";
 
+import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -76,15 +77,19 @@ function HeroSection() {
         </div>
 
         <div className="mx-auto max-w-4xl">
-          <h1 className="mx-auto max-w-4xl text-balance text-[3.25rem] font-extrabold leading-[1.05] tracking-tight sm:text-[3.95rem] lg:text-[4.45rem]">
-            Belajar Pakai Nalar, Siap Hadapi{" "}
-            <span className="text-primary">Seleksi PTN</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg">
-            Latihan soal, quiz bertimer, tryout rutin, pembahasan, ranking, dan
-            progress belajar dalam satu platform untuk UTBK, UTUL UGM, dan SIMAK
-            UI, dengan fondasi kategori CPNS.
-          </p>
+          <PageHeader
+            align="center"
+            className="mb-0"
+            title={
+              <>
+                Belajar Pakai Nalar, Siap Hadapi{" "}
+                <span className="text-primary">Seleksi PTN</span>
+              </>
+            }
+            subtitle="Latihan soal, quiz bertimer, tryout rutin, pembahasan, ranking, dan progress belajar dalam satu platform untuk UTBK, UTUL UGM, dan SIMAK UI, dengan fondasi kategori CPNS."
+            titleClassName="mx-auto max-w-4xl text-balance text-[3.25rem] font-extrabold leading-[1.05] tracking-tight sm:text-[3.95rem] lg:text-[4.45rem]"
+            subtitleClassName="mx-auto mt-6 max-w-xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg"
+          />
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button
               variant="cta"

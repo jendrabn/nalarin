@@ -19,6 +19,7 @@ import {
 import type { PlanCode } from "@/config/plans"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar"
+import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -202,21 +203,20 @@ function TryoutPageHeader({
   subtitle: string
 }) {
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pt-6 pb-1 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-      <div className="flex max-w-2xl flex-col gap-1.5">
-        <h1 className="font-heading text-[1.625rem] font-semibold leading-tight tracking-normal text-foreground/95 sm:text-[1.9rem]">
-          {title}
-        </h1>
-        <p className="max-w-xl text-[0.9rem] leading-6 text-muted-foreground sm:text-[0.925rem]">
-          {subtitle}
-        </p>
-      </div>
-      <Button asChild variant="outline" className="w-fit shrink-0">
-        <Link href="/tryouts">
-          <ArrowLeftIcon data-icon="inline-start" />
-          Kembali Ke Tryout
-        </Link>
-      </Button>
+    <section className="mx-auto w-full max-w-7xl px-4 pt-6 pb-1 sm:px-6 lg:px-8">
+      <PageHeader
+        className="mb-0 w-full"
+        title={title}
+        subtitle={subtitle}
+        actions={
+          <Button asChild variant="outline" className="w-fit shrink-0">
+            <Link href="/tryouts">
+              <ArrowLeftIcon data-icon="inline-start" />
+              Kembali Ke Tryout
+            </Link>
+          </Button>
+        }
+      />
     </section>
   )
 }
@@ -290,17 +290,19 @@ function TryoutCard({
     accessAllowed,
     resultAvailable,
   })
-  const primaryAction =
-    session?.status === "in_progress" ||
-    resultAvailable ||
-    (accessAllowed && tryout.availabilityStatus === "ongoing" && !session)
+  const actionHref = getCardActionHref({
+    tryout,
+    session,
+    accessAllowed,
+    resultAvailable,
+  })
 
   return (
-    <Link
-      href={`/tryouts/${tryout.slug}`}
-      className="group h-full rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-    >
-      <Card className="flex h-full flex-col rounded-lg border-border/75 bg-card py-5 shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/25 group-hover:shadow-lg">
+    <Card className="group flex h-full flex-col rounded-lg border-border/75 bg-card py-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg">
+      <Link
+        href={`/tryouts/${tryout.slug}`}
+        className="flex flex-1 flex-col outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      >
         <CardHeader className="gap-2.5 px-5 pb-0">
           <div className="flex items-start justify-between gap-3">
             <Badge
@@ -350,26 +352,41 @@ function TryoutCard({
               value={formatTitleCaseDuration(tryout.totalDurationMinutes)}
             />
           </div>
+        </CardContent>
+      </Link>
 
+      <div className="px-5 pt-3">
+        {actionHref ? (
           <Button
             asChild
-            variant={primaryAction ? "default" : "secondary"}
+            variant="default"
             size="lg"
             className={cn(
-              "mt-3.5 w-full font-semibold",
-              primaryAction && "group-hover:bg-primary/90",
-              !primaryAction && "text-muted-foreground group-hover:bg-secondary/80",
+              "w-full font-semibold transition-colors",
+              statusMeta.actionClassName,
+              "group-hover:bg-primary/90",
             )}
           >
-            <span>
+            <Link href={actionHref}>
               {!accessAllowed && !tryout.isFree ? <LockIcon data-icon="inline-start" /> : null}
               {actionLabel}
-              {primaryAction ? <ArrowRightIcon data-icon="inline-end" aria-hidden="true" /> : null}
-            </span>
+              <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
+            </Link>
           </Button>
-        </CardContent>
-      </Card>
-    </Link>
+        ) : (
+          <Button
+            type="button"
+            variant="secondary"
+            size="lg"
+            disabled
+            className={cn("w-full font-semibold text-muted-foreground", statusMeta.actionClassName)}
+          >
+            {!accessAllowed && !tryout.isFree ? <LockIcon data-icon="inline-start" /> : null}
+            {actionLabel}
+          </Button>
+        )}
+      </div>
+    </Card>
   )
 }
 
@@ -510,4 +527,38 @@ function getCardActionLabel({
   }
 
   return "Lihat Detail"
+}
+
+function getCardActionHref({
+  tryout,
+  session,
+  accessAllowed,
+  resultAvailable,
+}: {
+  tryout: PublicTryoutSummary
+  session: PublicTryoutSessionSummary | null
+  accessAllowed: boolean
+  resultAvailable: boolean
+}) {
+  if (session?.status === "in_progress") {
+    return `/tryout-sessions/${session.id}`
+  }
+
+  if (resultAvailable || session?.status === "graded") {
+    return `/tryout-sessions/${session.id}/result`
+  }
+
+  if (session && session.status !== "cancelled") {
+    return `/tryout-sessions/${session.id}`
+  }
+
+  if (!accessAllowed) {
+    return "/pricing"
+  }
+
+  if (tryout.availabilityStatus === "ongoing") {
+    return `/tryouts/${tryout.slug}`
+  }
+
+  return null
 }

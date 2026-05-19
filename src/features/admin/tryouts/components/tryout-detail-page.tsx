@@ -47,7 +47,7 @@ function formatDateTime(value: Date | null) {
 export function TryoutDetailPage({ tryout }: TryoutDetailPageProps) {
   const router = useRouter()
   const [dialogType, setDialogType] = useState<DialogType>(null)
-  const statusBadge = getModelEnumBadgeMeta("contentStatus", tryout.status)
+  const statusLabel = getModelEnumBadgeMeta("contentStatus", tryout.status).label
 
   async function handleConfirm() {
     if (!dialogType) {
@@ -128,15 +128,11 @@ export function TryoutDetailPage({ tryout }: TryoutDetailPageProps) {
             <div className="grid gap-3 text-sm">
               <div className="flex items-center justify-between gap-4">
                 <span className="text-muted-foreground">Status</span>
-                <Badge variant="soft" className={statusBadge.className}>
-                  {statusBadge.label}
-                </Badge>
+                <span className="font-medium">{statusLabel}</span>
               </div>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-muted-foreground">Access</span>
-                <Badge variant={tryout.isFree ? "secondary" : "outline"}>
-                  {tryout.isFree ? "Free" : "Paid"}
-                </Badge>
+                <span className="font-medium">{tryout.isFree ? "Free" : "Paid"}</span>
               </div>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-muted-foreground">Sections</span>

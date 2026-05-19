@@ -3,6 +3,7 @@ import { CalendarDaysIcon, Clock3Icon, UserRoundIcon } from "lucide-react";
 
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar";
+import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 
 import type {
@@ -27,47 +28,38 @@ export function BlogDetailPage({ user, post, relatedPosts }: BlogDetailPageProps
       <SiteNavbar user={user} />
       <main>
         <article>
-          <header className="border-b bg-secondary/35">
+          <section className="border-b bg-secondary/35">
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-start">
-                  <Badge
-                    variant="outline"
-                    className="h-7 rounded-full border-primary/25 bg-primary/10 px-3 font-semibold text-primary"
-                  >
-                    {categoryLabel}
-                  </Badge>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <h1 className="text-3xl font-black leading-[1.12] tracking-normal text-foreground sm:text-[2.5rem]">
-                    {post.title}
-                  </h1>
-                  {post.excerpt ? (
-                    <p className="max-w-2xl text-pretty text-[0.95rem] leading-7 text-muted-foreground sm:text-[1.05rem] sm:leading-8">
-                      {post.excerpt}
-                    </p>
-                  ) : null}
-                </div>
-                <div className="flex items-center justify-between gap-3 border-t border-border/70 pt-3">
-                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground sm:text-sm">
+              <Badge
+                variant="outline"
+                className="h-7 rounded-full border-primary/25 bg-primary/10 px-3 font-semibold text-primary"
+              >
+                {categoryLabel}
+              </Badge>
+              <PageHeader
+                className="mb-0"
+                title={post.title}
+                subtitle={post.excerpt ?? undefined}
+                actions={<BlogShareButton title={post.title} text={post.excerpt} />}
+              />
+              <div className="flex items-center justify-between gap-3 border-t border-border/70 pt-3">
+                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground sm:text-sm">
+                  <span className="inline-flex items-center gap-1">
+                    <CalendarDaysIcon className="size-4" />
+                    {formatBlogDate(post.publishedAt)}
+                  </span>
+                  <span className="inline-flex min-w-0 items-center gap-1">
+                    <UserRoundIcon className="size-4" />
+                    <span className="truncate">
+                      {post.authorName ?? "Tim Nalarin"}
+                    </span>
+                  </span>
+                  {post.readTimeMinutes ? (
                     <span className="inline-flex items-center gap-1">
-                      <CalendarDaysIcon className="size-4" />
-                      {formatBlogDate(post.publishedAt)}
+                      <Clock3Icon className="size-4" />
+                      {post.readTimeMinutes} menit
                     </span>
-                    <span className="inline-flex min-w-0 items-center gap-1">
-                      <UserRoundIcon className="size-4" />
-                      <span className="truncate">
-                        {post.authorName ?? "Tim Nalarin"}
-                      </span>
-                    </span>
-                    {post.readTimeMinutes ? (
-                      <span className="inline-flex items-center gap-1">
-                        <Clock3Icon className="size-4" />
-                        {post.readTimeMinutes} menit
-                      </span>
-                    ) : null}
-                  </div>
-                  <BlogShareButton title={post.title} text={post.excerpt} />
+                  ) : null}
                 </div>
               </div>
               <figure className="flex flex-col gap-3">
@@ -96,7 +88,7 @@ export function BlogDetailPage({ user, post, relatedPosts }: BlogDetailPageProps
                 ) : null}
               </figure>
             </div>
-          </header>
+          </section>
 
           <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
             <div

@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner"
 
 import type { PlanCode } from "@/config/plans"
+import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -396,23 +397,22 @@ function PracticePageHeader({
   showBackButton: boolean
 }) {
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pt-6 pb-1 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-      <div className="flex max-w-2xl flex-col gap-1.5">
-        <h1 className="font-heading text-[1.7rem] font-semibold leading-tight tracking-normal text-foreground/95 sm:text-[2rem]">
-          {title}
-        </h1>
-        <p className="max-w-xl text-[0.925rem] leading-6 text-muted-foreground">
-          {subtitle}
-        </p>
-      </div>
-      {showBackButton ? (
-        <Button asChild variant="outline" className="w-fit shrink-0">
-          <Link href="/practices">
-            <ArrowLeftIcon data-icon="inline-start" />
-            Kembali Ke Latihan
-          </Link>
-        </Button>
-      ) : null}
+    <section className="mx-auto w-full max-w-7xl px-4 pt-6 pb-1 sm:px-6 lg:px-8">
+      <PageHeader
+        className="mb-0"
+        title={title}
+        subtitle={subtitle}
+        actions={
+          showBackButton ? (
+            <Button asChild variant="outline" className="w-fit shrink-0">
+              <Link href="/practices">
+                <ArrowLeftIcon data-icon="inline-start" />
+                Kembali Ke Latihan
+              </Link>
+            </Button>
+          ) : null
+        }
+      />
     </section>
   )
 }

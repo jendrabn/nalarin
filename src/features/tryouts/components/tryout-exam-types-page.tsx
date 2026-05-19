@@ -8,6 +8,7 @@ import {
 
 import { SiteFooter } from "@/components/site-footer"
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar"
+import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -52,15 +53,12 @@ export function TryoutExamTypesPage({ user, data }: TryoutExamTypesPageProps) {
     <div className="min-h-screen bg-background text-foreground">
       <SiteNavbar user={siteUser} />
       <main className="flex flex-col">
-        <section className="mx-auto flex w-full max-w-7xl items-end justify-between gap-4 px-4 pt-6 pb-1 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-1.5">
-            <h1 className="font-heading text-[1.7rem] font-semibold leading-tight tracking-normal text-foreground/95 sm:text-[2rem]">
-              Tryout
-            </h1>
-            <p className="max-w-xl text-[0.925rem] leading-6 text-muted-foreground">
-              Simulasi ujian berdasarkan jalur pilihanmu.
-            </p>
-          </div>
+        <section className="mx-auto w-full max-w-7xl px-4 pt-6 pb-1 sm:px-6 lg:px-8">
+          <PageHeader
+            className="mb-0"
+            title="Tryout"
+            subtitle="Simulasi ujian berdasarkan jalur pilihanmu."
+          />
         </section>
 
         <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pt-4 pb-8 sm:px-6 lg:px-8">

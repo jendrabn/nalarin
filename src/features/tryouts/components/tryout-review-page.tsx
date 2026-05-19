@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageHeader } from "@/components/page-header"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { cn } from "@/lib/utils"
@@ -26,26 +27,19 @@ export function TryoutReviewPage({ data }: { data: TryoutReviewData }) {
   return (
     <main className="min-h-svh bg-muted/35 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <Badge variant="outline">{data.session.examTypeName}</Badge>
-              <Badge variant="secondary">{data.session.totalQuestions} Soal</Badge>
-            </div>
-            <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Review Jawaban
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-              {data.session.title}
-            </p>
-          </div>
-          <Button asChild variant="outline">
-            <Link href={`/tryout-sessions/${data.session.id}/result`}>
-              <ArrowLeftIcon data-icon="inline-start" />
-              Kembali ke Hasil
-            </Link>
-          </Button>
-        </header>
+        <PageHeader
+          className="mb-0"
+          title={`Review Jawaban ${data.session.title}`}
+          subtitle="Telaah jawaban, status benar-salah, dan pembahasan tiap soal."
+          actions={
+            <Button asChild variant="outline">
+              <Link href={`/tryout-sessions/${data.session.id}/result`}>
+                <ArrowLeftIcon data-icon="inline-start" />
+                Kembali ke Hasil
+              </Link>
+            </Button>
+          }
+        />
 
         {!data.resultRelease.available ? (
           <Empty className="min-h-[24rem] border bg-card">
