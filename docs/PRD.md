@@ -78,7 +78,8 @@ User dapat:
 - Mengakses latihan sesuai plan.
 - Memulai Mode Latihan atau Mode Quiz.
 - Mengikuti tryout sesuai akses plan.
-- Melihat hasil, review jawaban, dan pembahasan sesuai setting dan plan.
+- Melihat hasil, review jawaban, dan pembahasan manual sesuai setting dan plan.
+- Mendapatkan Pembahasan AI per soal di halaman review (khusus plan Pro dan Max).
 - Melihat ranking tryout jika plan mengizinkan.
 - Melihat progress belajar.
 - Mengubah profil.
@@ -153,7 +154,8 @@ export const PLAN_CONFIG = {
       freeTryouts: true,
       paidTryouts: false,
       ranking: false,
-      fullExplanation: false,
+      manualExplanation: false,
+      aiExplanation: false,
     },
   },
   pro: {
@@ -172,7 +174,8 @@ export const PLAN_CONFIG = {
       freeTryouts: true,
       paidTryouts: true,
       ranking: true,
-      fullExplanation: true,
+      manualExplanation: true,
+      aiExplanation: true,
     },
   },
   max: {
@@ -191,7 +194,8 @@ export const PLAN_CONFIG = {
       freeTryouts: true,
       paidTryouts: true,
       ranking: true,
-      fullExplanation: true,
+      manualExplanation: true,
+      aiExplanation: true,
     },
   },
 }
@@ -227,7 +231,8 @@ Akses user terhadap fitur adalah gabungan dari **akses plan** dan **setting kont
 Contoh:
 
 - Jika tryout menampilkan ranking tetapi plan user tidak mengizinkan ranking, user tidak dapat melihat ranking.
-- Jika plan user mengizinkan pembahasan penuh tetapi practice/tryout belum merilis pembahasan, pembahasan tetap tidak tampil.
+- Jika plan user mengizinkan pembahasan manual (`manualExplanation`) tetapi practice/tryout belum merilis pembahasan, pembahasan tetap tidak tampil.
+- Pembahasan AI (`aiExplanation`) tersedia per-soal on-demand di halaman review — tidak bergantung pada jadwal rilis konten, tetapi tetap membutuhkan `manualExplanation = true` (akses review aktif) sebagai prasyarat agar konteks soal dapat ditampilkan terlebih dahulu.
 - Dengan kata lain, akses fitur membutuhkan dua kondisi: setting konten mengizinkan **dan** plan user mengizinkan.
 
 ### 5.7 Jadwal Rilis Hasil, Ranking, dan Pembahasan Tryout
@@ -460,11 +465,12 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 
 - Halaman review dapat diakses setelah session berstatus `submitted` atau `graded`.
 - Akses review (status jawaban benar/salah/kosong) dikendalikan oleh `show_result_after_submit`. Jika `false`, halaman review tidak dapat diakses.
-- Akses pembahasan di dalam halaman review dikendalikan oleh `show_explanation_after_submit`. Jika `false`, jawaban dan status tetap ditampilkan tetapi kolom pembahasan disembunyikan.
+- Akses **pembahasan manual** di dalam halaman review dikendalikan oleh `show_explanation_after_submit`. Jika `false`, kolom pembahasan manual disembunyikan.
 - Jika `result_release_at` diisi dan belum tiba, review belum dapat diakses meskipun session sudah submitted/graded.
-- Jika `explanation_release_at` diisi dan belum tiba, pembahasan disembunyikan meskipun review sudah dapat diakses.
-- Akses pembahasan juga mengikuti plan user. Jika plan user tidak mengizinkan akses pembahasan, kolom pembahasan disembunyikan meskipun setting tryout mengizinkan.
-- Untuk practice session, tidak ada jadwal rilis (`result_release_at` / `explanation_release_at`). Akses review dan pembahasan hanya dikendalikan oleh toggle `show_result_after_submit` dan `show_explanation_after_submit` pada practice, serta plan user.
+- Jika `explanation_release_at` diisi dan belum tiba, pembahasan manual disembunyikan meskipun review sudah dapat diakses.
+- Akses pembahasan manual juga mengikuti plan user (`manualExplanation`). Jika plan tidak mengizinkan, kolom pembahasan manual disembunyikan meskipun setting konten mengizinkan.
+- **Pembahasan AI tersedia secara terpisah**, tidak bergantung pada `show_explanation_after_submit` maupun jadwal rilis. Akses hanya dikendalikan oleh plan user (`aiExplanation = true` untuk Pro dan Max). Lihat subseksi "Fitur Pembahasan AI" di bawah.
+- Untuk practice session, tidak ada jadwal rilis. Akses pembahasan manual hanya dikendalikan oleh toggle `show_explanation_after_submit` pada practice dan plan user.
 
 #### Konten Halaman Review
 
@@ -488,16 +494,105 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 - Nomor urut dan konten soal (dari snapshot).
 - Jawaban user.
 - Jawaban benar (kunci jawaban).
-- Status: benar, salah, kosong, atau menunggu koreksi.
+- Status: benar, salah, atau kosong.
 - Poin yang didapat dan poin maksimal soal tersebut.
 - Jika jawaban salah dan tryout memiliki penalti, tampilkan pengurangan poin (contoh: "−0.25 poin").
-- Pembahasan — jika tersedia sesuai setting dan plan. Pembahasan tidak di-snapshot; jika admin memperbarui pembahasan setelah session berjalan, review menampilkan pembahasan terbaru. Desain ini disengaja agar user selalu mendapat pembahasan terbaik yang tersedia.
+- Pembahasan manual — jika tersedia sesuai setting dan plan. Pembahasan tidak di-snapshot; jika admin memperbarui pembahasan setelah session berjalan, review menampilkan pembahasan terbaru.
+- Tombol **"Pembahasan AI"** — ditampilkan di setiap soal jika plan user mengizinkan (`aiExplanation = true`). Jika plan tidak mengizinkan, tombol tidak ditampilkan atau ditampilkan dengan state terkunci beserta CTA upgrade.
 
 **Breakdown per section (khusus tryout):**
 
 - Nama section.
 - Skor section, total benar, total salah, total kosong.
 - Durasi pengerjaan section tersebut.
+
+#### Fitur Pembahasan AI
+
+Tersedia di halaman review untuk **semua tipe sesi** (Mode Latihan, Mode Quiz, Tryout). Khusus untuk plan **Pro dan Max**.
+
+**Flow:**
+
+1. User mengklik tombol **"Pembahasan AI"** pada soal tertentu di halaman review.
+2. Tombol menampilkan indikator loading. Konten soal tersebut tidak di-block — soal lain tetap dapat dilihat.
+3. Sistem mengirim request ke AI provider melalui Route Handler, menyertakan konteks soal dari snapshot session.
+4. Hasil pembahasan AI ditampilkan langsung di bawah soal, di bawah pembahasan manual (jika ada).
+5. Hasil tidak disimpan ke database — setiap klik tombol selalu memanggil AI baru.
+6. Jika AI gagal merespons, tampilkan pesan error ringkas dan beri opsi coba lagi.
+
+**Ketersediaan:**
+
+- Mode Latihan: tombol **"Pembahasan AI"** muncul setelah user mengklik "Konfirmasi" pada soal tersebut, bersama dengan pembahasan manual. Tidak perlu menunggu session selesai.
+- Mode Quiz dan Tryout: tombol muncul di halaman review setelah session di-submit/graded.
+
+**Konteks yang dikirim ke AI:**
+Semua data diambil dari snapshot session, bukan langsung dari tabel `questions`, agar konsisten dengan kondisi soal saat user mengerjakannya.
+
+- Konten soal (dari `question_snapshot`)
+- Tipe soal
+- Opsi jawaban (dari `option_snapshot`)
+- Kunci jawaban (dari `correct_answer_snapshot`)
+- Jawaban user
+- Status jawaban user (benar/salah/kosong)
+- Exam type, subject, topic
+- Pembahasan manual yang ada (dari `questions.manual_explanation`, nullable — jika ada, AI dapat memperluas atau melengkapinya)
+
+#### Prompt Template Pembahasan AI (User-Facing)
+
+Prompt berikut digunakan sistem saat user mengklik "Pembahasan AI" di halaman review. Semua parameter diisi dari data session dan soal.
+
+```
+Kamu adalah tutor ahli untuk persiapan ujian {exam_type} — {subject}.
+
+Buat pembahasan yang jelas, terstruktur, rinci, dan mudah dipahami untuk soal berikut.
+
+---
+INFORMASI SOAL
+Tipe soal: {question_type}
+Materi/Topik: {topic}
+Soal: {question_content}
+{options_block}
+Kunci jawaban: {correct_answer}
+Jawaban user: {user_answer}
+Status jawaban user: {answer_status}
+{manual_explanation_block}
+---
+
+INSTRUKSI PEMBAHASAN:
+
+Tulis pembahasan dengan urutan berikut — gunakan heading yang jelas untuk setiap bagian:
+
+1. **Jawaban yang Benar**
+   Sebutkan kunci jawaban dan jelaskan secara singkat mengapa jawaban tersebut benar. Mulai dari konsep atau prinsip yang mendasari, bukan sekadar menyatakan "jawaban yang benar adalah...".
+
+2. **Penjelasan Konsep**
+   Jelaskan konsep, teori, atau materi inti yang diuji soal ini secara mendalam. Gunakan bahasa yang mudah dipahami. Sertakan contoh konkret jika membantu pemahaman.
+
+3. **Analisis Pilihan Jawaban** *(hanya untuk multiple_choice dan multiple_answer)*
+   Jelaskan satu per satu mengapa setiap pilihan benar atau salah. Jangan hanya menyebut "pilihan ini salah" — jelaskan alasan substantifnya agar user memahami perbedaannya.
+
+4. **Analisis Jawaban User** *(hanya jika user menjawab salah atau kosong)*
+   Jelaskan dengan empati mengapa jawaban user kurang tepat. Identifikasi kemungkinan miskonsepsi atau jebakan yang membuat user memilih jawaban tersebut, lalu luruskan.
+
+5. **Tips dan Trik**
+   Berikan 1–2 strategi atau cara cepat untuk menyelesaikan soal serupa di ujian nyata. Fokus pada pendekatan yang praktis dan hemat waktu.
+
+6. **Rangkuman**
+   Tutup dengan 2–3 kalimat poin kunci yang harus diingat user dari soal ini.
+
+ATURAN PENULISAN:
+- Gunakan Bahasa Indonesia yang baik, jelas, dan tidak kaku.
+- Hindari kalimat pembuka seperti "Baik, saya akan menjelaskan..." atau "Tentu saja...".
+- Langsung masuk ke konten pada setiap bagian.
+- Jika {answer_status} adalah "benar", lewati bagian "Analisis Jawaban User" dan beri apresiasi singkat di bagian Rangkuman.
+- Jika soal bertipe true_false atau short_answer, sesuaikan bagian yang relevan dan lewati bagian "Analisis Pilihan Jawaban".
+- Format menggunakan Markdown: heading bold, bullet list untuk poin, dan teks biasa untuk penjelasan panjang.
+```
+
+**Keterangan blok parameter:**
+
+- `{options_block}`: diisi daftar opsi (A, B, C, dst.) jika tipe soal `multiple_choice`, `multiple_answer`, atau `true_false`. Dikosongkan untuk `short_answer`.
+- `{manual_explanation_block}`: jika `manual_explanation` ada, diisi dengan `Pembahasan dari admin: {manual_explanation}` agar AI dapat memperluas atau melengkapinya. Jika null, blok ini dikosongkan.
+- `{answer_status}`: diisi `"benar"`, `"salah"`, atau `"tidak dijawab"`.
 
 ### 7.7 Hasil dan Ranking Tryout
 
@@ -1128,8 +1223,7 @@ Menyimpan master soal beserta tipe, tingkat kesulitan, kunci teks, pembahasan, t
 | content | Konten soal |
 | image_url | Gambar soal, nullable |
 | correct_answer_text | Kunci teks. Untuk `true_false`: wajib diisi `"true"` atau `"false"` — ini sumber kebenaran, bukan `is_correct` di `question_options`. Untuk `short_answer`: referensi jawaban, wajib diisi untuk auto-grading. Null untuk `multiple_choice` dan `multiple_answer`. |
-| manual_explanation | Pembahasan manual, nullable |
-| ai_explanation | Pembahasan AI, nullable |
+| manual_explanation | Pembahasan manual yang ditulis atau di-generate admin, nullable |
 | year | Tahun soal, nullable |
 | points | Bobot nilai default |
 | status | enum ContentStatus |
@@ -1235,7 +1329,7 @@ Snapshot soal dalam practice session. Data ini bersifat immutable setelah dibuat
 | points | Bobot nilai saat session dibuat |
 | created_at | Tanggal dibuat |
 
-**Catatan:** Pembahasan (`manual_explanation`, `ai_explanation`) tidak di-snapshot. Halaman review akan selalu menampilkan pembahasan terbaru dari tabel `questions`.
+**Catatan:** Pembahasan manual (`manual_explanation`) tidak di-snapshot. Halaman review akan selalu menampilkan pembahasan terbaru dari tabel `questions`. Pembahasan AI di-generate on-demand dan tidak disimpan ke database.
 
 ### 10.15 practice_answers
 
@@ -1395,7 +1489,7 @@ Snapshot soal dalam tryout session. Data ini bersifat immutable setelah dibuat.
 | points | Bobot nilai saat session dibuat |
 | created_at | Tanggal dibuat |
 
-**Catatan:** Pembahasan (`manual_explanation`, `ai_explanation`) tidak di-snapshot. Halaman review akan selalu menampilkan pembahasan terbaru dari tabel `questions`.
+**Catatan:** Pembahasan manual (`manual_explanation`) tidak di-snapshot. Halaman review akan selalu menampilkan pembahasan terbaru dari tabel `questions`. Pembahasan AI di-generate on-demand dan tidak disimpan ke database.
 
 ### 10.22 tryout_answers
 
@@ -1638,8 +1732,9 @@ Catatan: karena MySQL tidak mendukung partial unique index sederhana untuk semua
 | Endpoint | Batas |
 |---|---|
 | Resend email verification | Maks 3 request per jam per user |
-| AI generate soal | Maks 50 request per hari per admin |
-| AI generate explanation | Maks 100 request per hari per admin |
+| AI generate soal (admin) | Maks 50 request per hari per admin |
+| AI generate explanation (admin) | Maks 100 request per hari per admin |
+| Pembahasan AI (user Pro/Max) | Maks 50 request per hari per user |
 
 Nilai batas di atas adalah acuan awal dan dapat disesuaikan berdasarkan monitoring produksi.
 
@@ -1879,7 +1974,7 @@ Telah dipindahkan ke Section 14.4.
 
 - Exam types seed (via Drizzle seed).
 - Subjects dan topics.
-- CRUD questions (termasuk penanganan true_false, multiple_answer dengan scoring_rule wajib).
+- CRUD questions (termasuk penanganan true_false, multiple_answer dengan scoring_rule wajib; field `manual_explanation` sebagai satu-satunya pembahasan yang disimpan).
 - Question options.
 - Import Excel via **SheetJS** (`xlsx`).
 - Generate soal dan explanation AI (via Route Handler ke AI provider).
@@ -1894,6 +1989,7 @@ Telah dipindahkan ke Section 14.4.
 - Mode Quiz (timer, navigasi bebas, hasil setelah submit).
 - Resume session.
 - Review jawaban dan pembahasan.
+- Pembahasan AI on-demand per soal (Pro/Max, via Route Handler).
 
 ### Phase 4 — Tryout
 
