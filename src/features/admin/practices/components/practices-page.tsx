@@ -85,10 +85,6 @@ function statusBadge(status: PracticeStatus) {
   )
 }
 
-function formatModes() {
-  return "Practice + Quiz"
-}
-
 function createColumns({
   onView,
   onEdit,
@@ -142,13 +138,6 @@ function createColumns({
           {row.original.isFree ? "Free" : "Paid"}
         </Badge>
       ),
-    },
-    {
-      id: "modes",
-      accessorFn: () => formatModes(),
-      meta: { label: practiceColumnLabels.modes },
-      header: ({ column }) => <SortableHeader column={column}>Modes</SortableHeader>,
-      cell: () => <span>{formatModes()}</span>,
     },
     {
       accessorKey: "questionCount",
@@ -217,36 +206,26 @@ function createColumns({
                 <EyeIcon />
                 View
               </DropdownMenuItem>
-              {row.original.status === "draft" ? (
-                <DropdownMenuItem onClick={() => onEdit(row.original)}>
-                  <PencilLineIcon />
-                  Edit
-                </DropdownMenuItem>
-              ) : null}
-              {row.original.status === "draft" ? (
-                <DropdownMenuItem onClick={() => onPublish(row.original)}>
-                  <RocketIcon />
-                  Publish
-                </DropdownMenuItem>
-              ) : null}
-              {row.original.status === "published" ? (
-                <DropdownMenuItem onClick={() => onArchive(row.original)}>
-                  <ArchiveIcon />
-                  Archive
-                </DropdownMenuItem>
-              ) : null}
-              {row.original.status === "draft" ? (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onClick={() => onDelete(row.original)}
-                  >
-                    <Trash2Icon />
-                    Delete
-                  </DropdownMenuItem>
-                </>
-              ) : null}
+              <DropdownMenuItem onClick={() => onEdit(row.original)}>
+                <PencilLineIcon />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onPublish(row.original)}>
+                <RocketIcon />
+                Publish
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onArchive(row.original)}>
+                <ArchiveIcon />
+                Archive
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => onDelete(row.original)}
+              >
+                <Trash2Icon />
+                Delete
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -301,11 +280,10 @@ export function PracticesPage({ practices }: PracticesPageProps) {
   }
 
   const dialogCopy =
-    dialogTarget?.type === "publish"
+      dialogTarget?.type === "publish"
       ? {
           title: "Publish practice?",
-          description:
-            "This will publish the draft immediately. After publishing, practice settings and questions can no longer be edited.",
+          description: "This will publish the practice using the current data.",
           action: "Publish",
           variant: "default" as const,
         }
@@ -319,8 +297,7 @@ export function PracticesPage({ practices }: PracticesPageProps) {
           }
         : {
             title: "Delete practice?",
-            description:
-              "This action cannot be undone. Only draft practices without sessions can be deleted.",
+            description: "This action cannot be undone. Practices with sessions cannot be deleted.",
             action: "Delete",
             variant: "destructive" as const,
           }

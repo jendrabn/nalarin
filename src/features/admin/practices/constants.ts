@@ -5,10 +5,6 @@ export const practiceStatusValues = modelEnums.contentStatus.values
 export type PracticeStatus = ModelEnumValue<"contentStatus">
 export const practiceStatusLabels = modelEnums.contentStatus.labels
 
-export const practiceNavigationModeValues = modelEnums.navigationMode.values
-export type PracticeNavigationMode = ModelEnumValue<"navigationMode">
-export const practiceNavigationModeLabels = modelEnums.navigationMode.labels
-
 export const objectiveQuestionTypes = [
   "multiple_choice",
   "multiple_answer",
@@ -23,7 +19,6 @@ export const practiceColumnLabels = {
   topic: "Topic",
   status: "Status",
   access: "Access",
-  modes: "Modes",
   questions: "Questions",
   sessions: "Sessions",
   publishedAt: "Published At",

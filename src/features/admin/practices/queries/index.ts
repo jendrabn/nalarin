@@ -9,7 +9,6 @@ import { db, schema } from "@/db"
 import { objectiveQuestionTypes } from "../constants"
 import type {
   ObjectiveQuestionType,
-  PracticeNavigationMode,
   PracticeStatus,
 } from "../constants"
 import type { ModelEnumValue } from "@/lib/model-enums"
@@ -26,15 +25,7 @@ export type PracticeRow = {
   slug: string
   description: string | null
   isFree: boolean
-  hasPracticeMode: boolean
-  hasQuizMode: boolean
   quizDurationMinutes: number | null
-  shuffleQuestions: boolean
-  shuffleOptions: boolean
-  allowReviewBeforeSubmit: boolean
-  showResultAfterSubmit: boolean
-  showExplanationAfterSubmit: boolean
-  navigationMode: PracticeNavigationMode
   status: PracticeStatus
   publishedAt: Date | null
   createdBy: number | null
@@ -115,15 +106,7 @@ function selectPracticeColumns() {
     slug: schema.practices.slug,
     description: schema.practices.description,
     isFree: schema.practices.isFree,
-    hasPracticeMode: schema.practices.hasPracticeMode,
-    hasQuizMode: schema.practices.hasQuizMode,
     quizDurationMinutes: schema.practices.quizDurationMinutes,
-    shuffleQuestions: schema.practices.shuffleQuestions,
-    shuffleOptions: schema.practices.shuffleOptions,
-    allowReviewBeforeSubmit: schema.practices.allowReviewBeforeSubmit,
-    showResultAfterSubmit: schema.practices.showResultAfterSubmit,
-    showExplanationAfterSubmit: schema.practices.showExplanationAfterSubmit,
-    navigationMode: schema.practices.navigationMode,
     status: schema.practices.status,
     publishedAt: schema.practices.publishedAt,
     createdBy: schema.practices.createdBy,
@@ -141,8 +124,6 @@ function normalizePracticeRow(
     description: row.description ?? null,
     topicId: row.topicId ?? null,
     topicName: row.topicName ?? null,
-    hasPracticeMode: true,
-    hasQuizMode: true,
     quizDurationMinutes: row.quizDurationMinutes ?? null,
     publishedAt: row.publishedAt ?? null,
     createdBy: row.createdBy ?? null,

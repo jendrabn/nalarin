@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArchiveIcon, PencilLineIcon, RocketIcon } from "lucide-react"
+import { ArchiveIcon, PencilLineIcon, RocketIcon, Trash2Icon } from "lucide-react"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/page-header"
@@ -23,7 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 
-import { archivePracticeAction, publishPracticeAction } from "../actions"
+import { archivePracticeAction, deletePracticeAction, publishPracticeAction } from "../actions"
 import type { PracticeDetails } from "../queries"
 import { previewText } from "../utils/practice"
 
@@ -31,7 +31,7 @@ type PracticeDetailPageProps = {
   practice: PracticeDetails
 }
 
-type DialogType = "publish" | "archive" | null
+type DialogType = "publish" | "archive" | "delete" | null
 
 function formatDateTime(value: Date | null) {
   if (!value) {
@@ -42,10 +42,6 @@ function formatDateTime(value: Date | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(value)
-}
-
-function formatModes() {
-  return "Practice + Quiz"
 }
 
 export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
@@ -61,11 +57,24 @@ export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
     const result =
       dialogType === "publish"
         ? await publishPracticeAction(practice.id)
-        : await archivePracticeAction(practice.id)
+        : dialogType === "archive"
+          ? await archivePracticeAction(practice.id)
+          : await deletePracticeAction(practice.id)
 
     if (result.success) {
-      toast.success(dialogType === "publish" ? "Practice published." : "Practice archived.")
+      toast.success(
+        dialogType === "publish"
+          ? "Practice published."
+          : dialogType === "archive"
+            ? "Practice archived."
+            : "Practice deleted.",
+      )
       setDialogType(null)
+      if (dialogType === "delete") {
+        router.push("/admin/practices")
+        router.refresh()
+        return
+      }
       router.refresh()
       return
     }
@@ -79,15 +88,23 @@ export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
       ? {
           title: "Publish practice?",
           description:
-            "This will publish the draft immediately. After publishing, practice settings and questions can no longer be edited.",
+            "This will publish the practice immediately using the current data.",
           action: "Publish",
           variant: "default" as const,
         }
-      : {
+      : dialogType === "archive"
+        ? {
           title: "Archive practice?",
           description:
             "Archived practices are final. Existing sessions remain available for review.",
           action: "Archive",
+          variant: "destructive" as const,
+        }
+        : {
+          title: "Delete practice?",
+          description:
+            "This action cannot be undone. Practices with sessions cannot be deleted.",
+          action: "Delete",
           variant: "destructive" as const,
         }
 
@@ -98,26 +115,24 @@ export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
         subtitle={`${practice.examTypeName} / ${practice.subjectName}`}
         actions={
           <div className="flex flex-wrap gap-2">
-            {practice.status === "draft" ? (
-              <>
-                <Button asChild variant="outline">
-                  <Link href={`/admin/practices/${practice.id}/edit`}>
-                    <PencilLineIcon data-icon="inline-start" />
-                    Edit
-                  </Link>
-                </Button>
-                <Button type="button" onClick={() => setDialogType("publish")}>
-                  <RocketIcon data-icon="inline-start" />
-                  Publish
-                </Button>
-              </>
-            ) : null}
-            {practice.status === "published" ? (
-              <Button type="button" variant="destructive" onClick={() => setDialogType("archive")}>
-                <ArchiveIcon data-icon="inline-start" />
-                Archive
-              </Button>
-            ) : null}
+            <Button asChild variant="outline">
+              <Link href={`/admin/practices/${practice.id}/edit`}>
+                <PencilLineIcon data-icon="inline-start" />
+                Edit
+              </Link>
+            </Button>
+            <Button type="button" onClick={() => setDialogType("publish")}>
+              <RocketIcon data-icon="inline-start" />
+              Publish
+            </Button>
+            <Button type="button" variant="destructive" onClick={() => setDialogType("archive")}>
+              <ArchiveIcon data-icon="inline-start" />
+              Archive
+            </Button>
+            <Button type="button" variant="destructive" onClick={() => setDialogType("delete")}>
+              <Trash2Icon data-icon="inline-start" />
+              Delete
+            </Button>
           </div>
         }
       />
@@ -126,7 +141,7 @@ export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
         <Card>
           <CardHeader>
             <CardTitle>Overview</CardTitle>
-            <CardDescription>Publication, access, mode, and quiz timing.</CardDescription>
+            <CardDescription>Publication, access, and quiz timing.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 text-sm">
@@ -141,10 +156,6 @@ export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
                 <Badge variant={practice.isFree ? "secondary" : "outline"}>
                   {practice.isFree ? "Free" : "Paid"}
                 </Badge>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Modes</span>
-                <span className="font-medium">{formatModes()}</span>
               </div>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-muted-foreground">Quiz duration</span>

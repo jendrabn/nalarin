@@ -69,15 +69,11 @@ function parsePracticeValues(values: PracticeFormValues) {
       title: validated.data.title.trim(),
       description: normalizeNullableText(validated.data.description),
       isFree: validated.data.isFree,
-      hasPracticeMode: true,
-      hasQuizMode: true,
       quizDurationMinutes,
       shuffleQuestions: false,
       shuffleOptions: false,
-      allowReviewBeforeSubmit: false,
       showResultAfterSubmit: true,
       showExplanationAfterSubmit: true,
-      navigationMode: "free" as const,
       questions: validated.data.questions.map((question) => ({
         questionId: Number(question.questionId),
         orderIndex: parseRequiredInteger(question.orderIndex),
@@ -308,15 +304,15 @@ export async function createPracticeAction(
           slug,
           description: parsed.data.description,
           isFree: parsed.data.isFree,
-          hasPracticeMode: parsed.data.hasPracticeMode,
-          hasQuizMode: parsed.data.hasQuizMode,
+          hasPracticeMode: true,
+          hasQuizMode: true,
           quizDurationMinutes: parsed.data.quizDurationMinutes,
-          shuffleQuestions: parsed.data.shuffleQuestions,
-          shuffleOptions: parsed.data.shuffleOptions,
-          allowReviewBeforeSubmit: parsed.data.allowReviewBeforeSubmit,
-          showResultAfterSubmit: parsed.data.showResultAfterSubmit,
-          showExplanationAfterSubmit: parsed.data.showExplanationAfterSubmit,
-          navigationMode: parsed.data.navigationMode,
+          shuffleQuestions: false,
+          shuffleOptions: false,
+          allowReviewBeforeSubmit: false,
+          showResultAfterSubmit: true,
+          showExplanationAfterSubmit: true,
+          navigationMode: "free" as const,
           status: "draft",
           publishedAt: null,
           createdBy: user.id,
@@ -359,20 +355,6 @@ export async function updatePracticeAction(
     }
   }
 
-  if (existingPractice.status !== "draft") {
-    return {
-      success: false,
-      message: "Published or archived practices cannot be edited.",
-    }
-  }
-
-  if (await practiceHasSessions(practiceId)) {
-    return {
-      success: false,
-      message: "This practice already has sessions and can no longer be edited.",
-    }
-  }
-
   const parsed = parsePracticeValues(values)
 
   if (!parsed.success) {
@@ -402,15 +384,15 @@ export async function updatePracticeAction(
           slug,
           description: parsed.data.description,
           isFree: parsed.data.isFree,
-          hasPracticeMode: parsed.data.hasPracticeMode,
-          hasQuizMode: parsed.data.hasQuizMode,
+          hasPracticeMode: true,
+          hasQuizMode: true,
           quizDurationMinutes: parsed.data.quizDurationMinutes,
-          shuffleQuestions: parsed.data.shuffleQuestions,
-          shuffleOptions: parsed.data.shuffleOptions,
-          allowReviewBeforeSubmit: parsed.data.allowReviewBeforeSubmit,
-          showResultAfterSubmit: parsed.data.showResultAfterSubmit,
-          showExplanationAfterSubmit: parsed.data.showExplanationAfterSubmit,
-          navigationMode: parsed.data.navigationMode,
+          shuffleQuestions: false,
+          shuffleOptions: false,
+          allowReviewBeforeSubmit: false,
+          showResultAfterSubmit: true,
+          showExplanationAfterSubmit: true,
+          navigationMode: "free" as const,
         })
         .where(eq(schema.practices.id, practiceId))
 
@@ -445,13 +427,6 @@ export async function publishPracticeAction(
     return {
       success: false,
       message: "Practice not found.",
-    }
-  }
-
-  if (existingPractice.status !== "draft") {
-    return {
-      success: false,
-      message: "Only draft practices can be published.",
     }
   }
 
@@ -514,13 +489,6 @@ export async function archivePracticeAction(
     }
   }
 
-  if (existingPractice.status !== "published") {
-    return {
-      success: false,
-      message: "Only published practices can be archived.",
-    }
-  }
-
   await db
     .update(schema.practices)
     .set({
@@ -547,13 +515,6 @@ export async function deletePracticeAction(
     return {
       success: false,
       message: "Practice not found.",
-    }
-  }
-
-  if (existingPractice.status !== "draft") {
-    return {
-      success: false,
-      message: "Only draft practices can be deleted.",
     }
   }
 
@@ -615,13 +576,6 @@ export async function deletePracticesAction(
     return {
       success: false,
       message: "Some selected practices were not found.",
-    }
-  }
-
-  if (existingPractices.some((practice) => practice.status !== "draft")) {
-    return {
-      success: false,
-      message: "Only draft practices can be deleted.",
     }
   }
 

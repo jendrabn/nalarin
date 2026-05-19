@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import {
   ArrowLeftIcon,
@@ -6,23 +9,27 @@ import {
   ClockIcon,
   FileTextIcon,
   LockIcon,
+  ArrowRightIcon,
   XCircleIcon,
 } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { PageHeader } from "@/components/page-header"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { cn } from "@/lib/utils"
 
-import type { TryoutReviewData, TryoutReviewQuestion } from "../types"
+import type { TryoutReviewData, TryoutReviewQuestion, TryoutReviewSection } from "../types"
 
 export function TryoutReviewPage({ data }: { data: TryoutReviewData }) {
   const explanationsAvailable =
     data.explanationRelease.available && data.explanationRelease.allowedByPlan
+  const reviewEntries = useMemo(() => buildReviewEntries(data.sections), [data.sections])
+  const sectionEntries = useMemo(() => buildSectionEntries(reviewEntries), [reviewEntries])
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0)
 
   return (
     <main className="min-h-svh bg-muted/35 px-4 py-6 sm:px-6 lg:px-8">
@@ -59,34 +66,264 @@ export function TryoutReviewPage({ data }: { data: TryoutReviewData }) {
               <ExplanationNotice data={data} />
             ) : null}
 
-            {data.sections.map((section) => (
-              <Card key={section.id} className="shadow-sm">
-                <CardHeader className="border-b bg-background">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <CardTitle>{section.title}</CardTitle>
-                      <p className="mt-1 text-sm text-muted-foreground">{section.subjectName}</p>
-                    </div>
-                    <Badge variant="outline">
-                      {formatNumber(section.score)} / {formatNumber(section.maxScore)} Poin
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-4 p-4 sm:p-5">
-                  {section.questions.map((question) => (
-                    <ReviewQuestionCard
-                      key={question.id}
-                      question={question}
-                      explanationsAvailable={explanationsAvailable}
-                    />
-                  ))}
-                </CardContent>
-              </Card>
-            ))}
+            {reviewEntries.length > 0 ? (
+              <>
+                <ReviewSectionTabs
+                  sectionEntries={sectionEntries}
+                  reviewEntries={reviewEntries}
+                  activeQuestionIndex={activeQuestionIndex}
+                  onSectionChange={setActiveQuestionIndex}
+                />
+                <div className="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start">
+                  <ReviewSidebar
+                    reviewEntries={reviewEntries}
+                    activeIndex={activeQuestionIndex}
+                    onQuestionChange={setActiveQuestionIndex}
+                  />
+                  <ReviewNavigator
+                    reviewEntries={reviewEntries}
+                    explanationsAvailable={explanationsAvailable}
+                    activeIndex={activeQuestionIndex}
+                    onActiveIndexChange={setActiveQuestionIndex}
+                  />
+                </div>
+              </>
+            ) : (
+              <Empty className="min-h-[24rem] border bg-card">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <FileTextIcon />
+                  </EmptyMedia>
+                  <EmptyTitle>Tidak Ada Soal untuk Ditinjau</EmptyTitle>
+                  <EmptyDescription>
+                    Tryout ini belum memiliki data soal yang bisa dibuka dalam mode review.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            )}
           </>
         )}
       </div>
     </main>
+  )
+}
+
+function ReviewSidebar({
+  reviewEntries,
+  activeIndex,
+  onQuestionChange,
+}: {
+  reviewEntries: ReviewQuestionEntry[]
+  activeIndex: number
+  onQuestionChange: (index: number) => void
+}) {
+  return (
+    <aside>
+      <Card className="gap-0 overflow-hidden py-0 shadow-sm">
+        <CardContent className="p-4">
+          <ReviewQuestionNavigation
+            reviewEntries={reviewEntries}
+            activeIndex={activeIndex}
+            onActiveIndexChange={onQuestionChange}
+          />
+        </CardContent>
+      </Card>
+    </aside>
+  )
+}
+
+function ReviewNavigator({
+  reviewEntries,
+  explanationsAvailable,
+  activeIndex,
+  onActiveIndexChange,
+}: {
+  reviewEntries: ReviewQuestionEntry[]
+  explanationsAvailable: boolean
+  activeIndex: number
+  onActiveIndexChange: (index: number) => void
+}) {
+  const activeEntry = reviewEntries[activeIndex] ?? reviewEntries[0]
+
+  if (!activeEntry) {
+    return null
+  }
+
+  const activeStatusMeta = getStatusMeta(activeEntry.question.status)
+  const canGoPrevious = activeIndex > 0
+  const canGoNext = activeIndex < reviewEntries.length - 1
+
+  return (
+    <Card className="gap-0 overflow-hidden py-0 shadow-sm">
+      <CardContent className="flex flex-col gap-6 px-4 pb-5 pt-4 sm:px-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">
+              Soal {activeIndex + 1} / {reviewEntries.length}
+            </Badge>
+            <Badge variant="outline">{formatNumber(activeEntry.question.points)} Poin</Badge>
+          </div>
+          <Badge variant="outline" className={activeStatusMeta.className}>
+            {activeStatusMeta.icon}
+            {activeStatusMeta.label}
+          </Badge>
+        </div>
+        <ReviewQuestionContent
+          question={activeEntry.question}
+          explanationsAvailable={explanationsAvailable}
+        />
+
+        <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onActiveIndexChange(Math.max(0, activeIndex - 1))}
+            disabled={!canGoPrevious}
+            className="w-full sm:w-auto"
+          >
+            <ArrowLeftIcon data-icon="inline-start" />
+            Sebelumnya
+          </Button>
+
+          <Button
+            type="button"
+            onClick={() =>
+              onActiveIndexChange(Math.min(reviewEntries.length - 1, activeIndex + 1))
+            }
+            disabled={!canGoNext}
+            className="w-full sm:w-auto"
+          >
+            Berikutnya
+            <ArrowRightIcon data-icon="inline-end" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function ReviewQuestionNavigation({
+  reviewEntries,
+  activeIndex,
+  onActiveIndexChange,
+}: {
+  reviewEntries: ReviewQuestionEntry[]
+  activeIndex: number
+  onActiveIndexChange: (index: number) => void
+}) {
+  const activeEntry = reviewEntries[activeIndex] ?? reviewEntries[0]
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!activeEntry) {
+      return
+    }
+
+    containerRef.current
+      ?.querySelector<HTMLButtonElement>(`[data-question-index="${activeIndex}"]`)
+      ?.scrollIntoView({
+        block: "nearest",
+        inline: "center",
+        behavior: "smooth",
+      })
+  }, [activeEntry, activeIndex])
+
+  if (!activeEntry) {
+    return null
+  }
+
+  return (
+    <div ref={containerRef} className="max-w-full overflow-x-auto pb-1">
+      <div className="grid w-max grid-cols-5 gap-2 sm:grid-cols-6 lg:grid-cols-5">
+        {reviewEntries.map((entry) => {
+          const isActive = entry.globalIndex === activeIndex
+          const inView = activeEntry.section.id === entry.section.id
+
+          return (
+            <button
+              key={entry.question.id}
+              type="button"
+              data-question-index={entry.globalIndex}
+              onClick={() => onActiveIndexChange(entry.globalIndex)}
+              aria-current={isActive ? "step" : undefined}
+              className={cn(
+                "grid size-10 place-items-center rounded-full border text-sm font-semibold transition-colors",
+                isActive
+                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                  : inView
+                    ? "border-border bg-background text-foreground hover:border-primary/40 hover:text-foreground"
+                    : "border-border/70 bg-background/70 text-muted-foreground hover:border-primary/40 hover:text-foreground",
+              )}
+            >
+              {entry.globalIndex + 1}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function ReviewSectionTabs({
+  sectionEntries,
+  reviewEntries,
+  activeQuestionIndex,
+  onSectionChange,
+}: {
+  sectionEntries: ReviewSectionEntry[]
+  reviewEntries: ReviewQuestionEntry[]
+  activeQuestionIndex: number
+  onSectionChange: (index: number) => void
+}) {
+  const activeSectionId = reviewEntries[activeQuestionIndex]?.section.id
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const activeSection = sectionEntries.find(
+      (section) => section.section.id === activeSectionId,
+    )
+
+    if (!activeSection) {
+      return
+    }
+
+    containerRef.current
+      ?.querySelector<HTMLButtonElement>(`[data-section-id="${activeSection.section.id}"]`)
+      ?.scrollIntoView({
+        block: "nearest",
+        inline: "center",
+        behavior: "smooth",
+      })
+  }, [activeSectionId, sectionEntries])
+
+  return (
+    <div
+      ref={containerRef}
+      aria-label="Filter Subtes"
+      className="flex w-full flex-wrap gap-2 pb-1"
+    >
+      {sectionEntries.map((section) => {
+        const active = section.section.id === activeSectionId
+
+        return (
+          <Button
+            key={section.section.id}
+            type="button"
+            aria-pressed={active}
+            data-section-id={section.section.id}
+            onClick={() => onSectionChange(section.firstQuestionIndex)}
+            variant={active ? "default" : "outline"}
+            size="xl"
+            className={cn(
+              "max-w-full shrink-0 justify-start rounded-full text-[0.9rem] font-medium tracking-normal shadow-sm",
+              !active && "text-muted-foreground hover:border-primary/30 hover:text-foreground",
+            )}
+          >
+            <span className="min-w-0 truncate">{section.section.title}</span>
+          </Button>
+        )
+      })}
+    </div>
   )
 }
 
@@ -115,46 +352,28 @@ function ExplanationNotice({ data }: { data: TryoutReviewData }) {
   )
 }
 
-function ReviewQuestionCard({
+function ReviewQuestionContent({
   question,
   explanationsAvailable,
 }: {
   question: TryoutReviewQuestion
   explanationsAvailable: boolean
 }) {
-  const statusMeta = getStatusMeta(question.status)
-
   return (
-    <article className="rounded-xl border bg-card p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">Soal {question.displayOrder}</Badge>
-          <Badge variant="outline" className={statusMeta.className}>
-            {statusMeta.icon}
-            {statusMeta.label}
-          </Badge>
-          <Badge variant="outline">{formatNumber(question.points)} Poin</Badge>
-        </div>
-        {question.answer?.isMarkedForReview ? (
-          <Badge variant="outline" className="bg-muted text-muted-foreground">
-            Ditandai
-          </Badge>
-        ) : null}
-      </div>
-
+    <article className="flex flex-col gap-4">
       {question.question.title ? (
-        <h2 className="mt-4 text-base font-semibold text-foreground">
+        <h2 className="text-base font-semibold text-foreground">
           {question.question.title}
         </h2>
       ) : null}
 
       <div
-        className="mt-4 text-sm leading-7 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
+        className="text-sm leading-7 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
         dangerouslySetInnerHTML={{ __html: question.question.content }}
       />
 
       {question.options.length > 0 ? (
-        <div className="mt-4 grid gap-2">
+        <div className="grid gap-2">
           {question.options.map((option) => {
             const selected = question.answer?.selectedOptionKeys.includes(option.label) ?? false
             const correct = question.correctAnswer.optionKeys.includes(option.label)
@@ -186,12 +405,12 @@ function ReviewQuestionCard({
         </div>
       ) : null}
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2">
         <AnswerBox label="Jawaban Kamu" value={getUserAnswerLabel(question)} muted={question.status === "unanswered"} />
         <AnswerBox label="Jawaban Benar" value={getCorrectAnswerLabel(question)} />
       </div>
 
-      <div className="mt-5">
+      <div className="flex flex-col gap-3">
         <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
           <FileTextIcon className="size-4 text-primary" />
           Pembahasan
@@ -339,4 +558,50 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat("id-ID", {
     maximumFractionDigits: 2,
   }).format(value)
+}
+
+type ReviewQuestionEntry = {
+  section: TryoutReviewSection
+  question: TryoutReviewQuestion
+  globalIndex: number
+}
+
+type ReviewSectionEntry = {
+  section: TryoutReviewSection
+  firstQuestionIndex: number
+}
+
+function buildReviewEntries(sections: TryoutReviewData["sections"]) {
+  const entries: ReviewQuestionEntry[] = []
+
+  sections.forEach((section) => {
+    section.questions.forEach((question) => {
+      entries.push({
+        section,
+        question,
+        globalIndex: entries.length,
+      })
+    })
+  })
+
+  return entries
+}
+
+function buildSectionEntries(reviewEntries: ReviewQuestionEntry[]) {
+  const entries: ReviewSectionEntry[] = []
+  const seenSectionIds = new Set<number>()
+
+  reviewEntries.forEach((entry, index) => {
+    if (seenSectionIds.has(entry.section.id)) {
+      return
+    }
+
+    seenSectionIds.add(entry.section.id)
+    entries.push({
+      section: entry.section,
+      firstQuestionIndex: index,
+    })
+  })
+
+  return entries
 }

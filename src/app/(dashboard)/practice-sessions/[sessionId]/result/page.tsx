@@ -7,9 +7,11 @@ import { PageHeader } from "@/components/page-header"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { requireUser } from "@/features/auth/services/session"
+import { PracticeSessionPageShell } from "@/features/practices/components/practice-session-page-shell"
 import { PracticeResultActions } from "@/features/practices/components/practice-result-actions"
 import { getPracticeSessionSummary } from "@/features/practices/queries/session"
 import { cn } from "@/lib/utils"
+import type { SiteUser } from "@/components/site-navbar"
 
 export const metadata: Metadata = {
   title: "Hasil Latihan",
@@ -41,65 +43,74 @@ export default async function Page({
     redirect(`/practice-sessions/${summary.id}`)
   }
 
+  const siteUser: NonNullable<SiteUser> = {
+    name: user.name,
+    email: user.email,
+    avatarUrl: user.avatarUrl,
+    role: user.role,
+  }
+
   return (
-    <main className="min-h-svh bg-muted/35 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-        <PageHeader
-          className="mb-0"
-          title={`Hasil Latihan ${summary.title}`}
-          subtitle="Ringkasan skor, akurasi, dan durasi pada sesi latihan ini."
-        />
+    <PracticeSessionPageShell user={siteUser}>
+      <main className="min-h-svh bg-muted/35 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+          <PageHeader
+            className="mb-0"
+            title={`Hasil Latihan ${summary.title}`}
+            subtitle="Ringkasan skor, akurasi, dan durasi pada sesi latihan ini."
+          />
 
-        <Card className="overflow-hidden shadow-sm">
-          <CardContent className="flex flex-col gap-5 p-4 sm:p-5">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <MetricCard
-                icon={<BarChart3Icon />}
-                label="Skor"
-                value={`${formatNumber(summary.totalScore)} / ${formatNumber(summary.totalMaxScore)}`}
-                tone="score"
-              />
-              <MetricCard
-                icon={<CheckCircle2Icon />}
-                label="Benar"
-                value={summary.totalCorrect}
-                tone="correct"
-              />
-              <MetricCard
-                icon={<XCircleIcon />}
-                label="Salah"
-                value={summary.totalWrong}
-                tone="wrong"
-              />
-              <MetricCard
-                icon={<ClockIcon />}
-                label="Waktu"
-                value={formatDuration(summary.durationSeconds)}
-                tone="time"
-              />
-            </div>
-
-            <div className="rounded-xl border border-chart-2/20 bg-chart-2/5 p-4">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-2xl font-semibold tabular-nums text-chart-2">{summary.accuracy}%</p>
-                </div>
-                <div className="text-right text-sm text-muted-foreground">
-                  {summary.totalQuestions} soal / {summary.totalUnanswered} kosong
-                </div>
+          <Card className="overflow-hidden shadow-sm">
+            <CardContent className="flex flex-col gap-5 p-4 sm:p-5">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <MetricCard
+                  icon={<BarChart3Icon />}
+                  label="Skor"
+                  value={`${formatNumber(summary.totalScore)} / ${formatNumber(summary.totalMaxScore)}`}
+                  tone="score"
+                />
+                <MetricCard
+                  icon={<CheckCircle2Icon />}
+                  label="Benar"
+                  value={summary.totalCorrect}
+                  tone="correct"
+                />
+                <MetricCard
+                  icon={<XCircleIcon />}
+                  label="Salah"
+                  value={summary.totalWrong}
+                  tone="wrong"
+                />
+                <MetricCard
+                  icon={<ClockIcon />}
+                  label="Waktu"
+                  value={formatDuration(summary.durationSeconds)}
+                  tone="time"
+                />
               </div>
-              <Progress value={summary.accuracy} className="mt-4 h-2" />
-            </div>
 
-            <PracticeResultActions
-              practiceId={summary.practiceId}
-              sessionId={summary.id}
-              mode={summary.mode}
-            />
-          </CardContent>
-        </Card>
-      </div>
-    </main>
+              <div className="rounded-xl border border-chart-2/20 bg-chart-2/5 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-2xl font-semibold tabular-nums text-chart-2">{summary.accuracy}%</p>
+                  </div>
+                  <div className="text-right text-sm text-muted-foreground">
+                    {summary.totalQuestions} soal / {summary.totalUnanswered} kosong
+                  </div>
+                </div>
+                <Progress value={summary.accuracy} className="mt-4 h-2" />
+              </div>
+
+              <PracticeResultActions
+                practiceId={summary.practiceId}
+                sessionId={summary.id}
+                mode={summary.mode}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </PracticeSessionPageShell>
   )
 }
 

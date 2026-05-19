@@ -16,9 +16,11 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { requireUser } from "@/features/auth/services/session"
+import { PracticeSessionPageShell } from "@/features/practices/components/practice-session-page-shell"
 import { getPracticeSessionSummary } from "@/features/practices/queries/session"
 import type { PracticeSessionReviewQuestion } from "@/features/practices/types"
 import { cn } from "@/lib/utils"
+import type { SiteUser } from "@/components/site-navbar"
 
 export const metadata: Metadata = {
   title: "Pembahasan Latihan",
@@ -50,30 +52,39 @@ export default async function Page({
     redirect(`/practice-sessions/${summary.id}`)
   }
 
-  return (
-    <main className="min-h-svh bg-muted/35 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-        <PageHeader
-          className="mb-0"
-          title={`Pembahasan ${summary.title}`}
-          subtitle="Tinjau jawaban, status benar-salah, dan pembahasan untuk setiap soal."
-          actions={
-            <Button variant="outline" asChild>
-              <Link href={`/practice-sessions/${summary.id}/result`}>
-                <ArrowLeftIcon data-icon="inline-start" />
-                Kembali ke Hasil
-              </Link>
-            </Button>
-          }
-        />
+  const siteUser: NonNullable<SiteUser> = {
+    name: user.name,
+    email: user.email,
+    avatarUrl: user.avatarUrl,
+    role: user.role,
+  }
 
-        <div className="flex flex-col gap-4">
-          {summary.questions.map((question) => (
-            <ReviewQuestionCard key={question.id} question={question} />
-          ))}
+  return (
+    <PracticeSessionPageShell user={siteUser}>
+      <main className="min-h-svh bg-muted/35 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+          <PageHeader
+            className="mb-0"
+            title={`Pembahasan ${summary.title}`}
+            subtitle="Tinjau jawaban, status benar-salah, dan pembahasan untuk setiap soal."
+            actions={
+              <Button variant="outline" asChild>
+                <Link href={`/practice-sessions/${summary.id}/result`}>
+                  <ArrowLeftIcon data-icon="inline-start" />
+                  Kembali ke Hasil
+                </Link>
+              </Button>
+            }
+          />
+
+          <div className="flex flex-col gap-4">
+            {summary.questions.map((question) => (
+              <ReviewQuestionCard key={question.id} question={question} />
+            ))}
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </PracticeSessionPageShell>
   )
 }
 

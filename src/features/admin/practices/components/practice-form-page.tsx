@@ -99,17 +99,9 @@ function getDefaultValues(initialValues?: PracticeDetails | null): PracticeFormV
     title: initialValues?.title ?? "",
     description: initialValues?.description ?? "",
     isFree: initialValues?.isFree ?? true,
-    hasPracticeMode: true,
-    hasQuizMode: true,
     quizDurationMinutes: initialValues?.quizDurationMinutes
       ? String(initialValues.quizDurationMinutes)
       : "",
-    shuffleQuestions: initialValues?.shuffleQuestions ?? false,
-    shuffleOptions: initialValues?.shuffleOptions ?? false,
-    allowReviewBeforeSubmit: initialValues?.allowReviewBeforeSubmit ?? true,
-    showResultAfterSubmit: initialValues?.showResultAfterSubmit ?? true,
-    showExplanationAfterSubmit: initialValues?.showExplanationAfterSubmit ?? true,
-    navigationMode: initialValues?.navigationMode ?? "free",
     questions:
       initialValues?.questions.map((question) => ({
         id: String(question.id),
@@ -197,7 +189,7 @@ export function PracticeFormPage({
   const [draggedQuestion, setDraggedQuestion] = useState<DraggedQuestion | null>(null)
   const [submitIntent, setSubmitIntent] = useState<SubmitIntent | null>(null)
   const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false)
-  const isLocked = Boolean(initialValues && initialValues.status !== "draft")
+  const isLocked = false
   const defaultValues = useMemo(() => getDefaultValues(initialValues), [initialValues])
 
   const form = useForm<PracticeFormValues>({
@@ -341,11 +333,6 @@ export function PracticeFormPage({
   }
 
   async function saveDraft(values: PracticeFormValues) {
-    if (isLocked) {
-      toast.error("Published or archived practices cannot be edited.")
-      return null
-    }
-
     const result =
       mode === "create"
         ? await createPracticeAction(values)
@@ -451,17 +438,6 @@ export function PracticeFormPage({
         </div>
       }
     >
-      {isLocked ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Practice is locked</CardTitle>
-            <CardDescription>
-              Published and archived practices are immutable. Archive it and create a new practice for major revisions.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      ) : null}
-
       <form id={formId} onSubmit={(event) => event.preventDefault()}>
         <Tabs value={step} onValueChange={(value) => setStep(value as WizardStep)}>
           <TabsList className="mb-4 flex w-full flex-wrap justify-start">
@@ -643,31 +619,18 @@ export function PracticeFormPage({
             <div className="flex flex-col gap-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Modes</CardTitle>
-                  <CardDescription>
-                    Every practice is available in Practice Mode and Quiz Mode.
-                  </CardDescription>
+                  <CardTitle>Settings</CardTitle>
+                  <CardDescription>Quiz duration used for this practice.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FieldGroup>
-                    <div className="grid gap-3 text-sm md:grid-cols-2">
-                      <div className="rounded-lg border border-border/60 p-3">
-                        <span className="text-muted-foreground">Practice Mode</span>
-                        <p className="font-medium">Enabled</p>
-                      </div>
-                      <div className="rounded-lg border border-border/60 p-3">
-                        <span className="text-muted-foreground">Quiz Mode</span>
-                        <p className="font-medium">Enabled</p>
-                      </div>
-                    </div>
-
                     <Field data-invalid={Boolean(form.formState.errors.quizDurationMinutes)}>
                       <FieldContent>
                         <FieldLabel htmlFor={`${formId}-quiz-duration`} className="required">
                           Quiz Duration Minutes
                         </FieldLabel>
                         <FieldDescription>
-                          Used when users start this practice in Quiz Mode.
+                          Used for the timed practice session.
                         </FieldDescription>
                       </FieldContent>
                       <Input
@@ -682,16 +645,6 @@ export function PracticeFormPage({
                     </Field>
                   </FieldGroup>
                 </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Behavior</CardTitle>
-                  <CardDescription>
-                    Mode Latihan selalu berurutan dengan feedback instan. Mode Quiz selalu bertimer,
-                    navigasi bebas, dan menampilkan pembahasan setelah submit.
-                  </CardDescription>
-                </CardHeader>
               </Card>
             </div>
           </TabsContent>
@@ -931,14 +884,10 @@ export function PracticeFormPage({
                   <CardDescription>Confirm the package before saving or publishing.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-lg border border-border/60 p-3">
                       <p className="text-sm text-muted-foreground">Questions</p>
                       <p className="text-lg font-semibold tabular-nums">{questions.length}</p>
-                    </div>
-                    <div className="rounded-lg border border-border/60 p-3">
-                      <p className="text-sm text-muted-foreground">Modes</p>
-                      <p className="font-medium">Practice + Quiz</p>
                     </div>
                     <div className="rounded-lg border border-border/60 p-3">
                       <p className="text-sm text-muted-foreground">Access</p>
@@ -986,20 +935,12 @@ export function PracticeFormPage({
               <Card>
                 <CardHeader>
                   <CardTitle>Settings</CardTitle>
-                  <CardDescription>Modes and quiz timing.</CardDescription>
+                  <CardDescription>Quiz timing for this practice.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-4">
-                    <div className="grid gap-3 text-sm md:grid-cols-3">
-                      <div className="rounded-lg border border-border/60 p-3">
-                        <span className="text-muted-foreground">Practice mode</span>
-                        <p className="font-medium">Enabled</p>
-                      </div>
-                      <div className="rounded-lg border border-border/60 p-3">
-                        <span className="text-muted-foreground">Quiz mode</span>
-                        <p className="font-medium">Enabled</p>
-                      </div>
-                      <div className="rounded-lg border border-border/60 p-3">
+                    <div className="grid gap-3 text-sm md:grid-cols-2">
+                      <div className="rounded-lg border border-border/60 p-3 md:col-span-2">
                         <span className="text-muted-foreground">Quiz duration</span>
                         <p className="font-medium tabular-nums">
                           {formatReviewText(watchedValues.quizDurationMinutes)} minutes
@@ -1174,8 +1115,7 @@ export function PracticeFormPage({
           <AlertDialogHeader>
             <AlertDialogTitle>Publish practice?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will save the current draft and publish it immediately. After publishing,
-              the practice can no longer be edited.
+              This will save the current changes and publish the practice immediately.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
