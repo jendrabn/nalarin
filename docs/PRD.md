@@ -232,8 +232,8 @@ Contoh:
 
 - Jika tryout menampilkan ranking tetapi plan user tidak mengizinkan ranking, user tidak dapat melihat ranking.
 - Jika plan user mengizinkan pembahasan manual (`manualExplanation`) tetapi practice/tryout belum merilis pembahasan, pembahasan tetap tidak tampil.
-- Pembahasan AI (`aiExplanation`) tersedia per-soal on-demand di halaman review — tidak bergantung pada jadwal rilis konten, tetapi tetap membutuhkan `manualExplanation = true` (akses review aktif) sebagai prasyarat agar konteks soal dapat ditampilkan terlebih dahulu.
-- Dengan kata lain, akses fitur membutuhkan dua kondisi: setting konten mengizinkan **dan** plan user mengizinkan.
+- Pembahasan AI (`aiExplanation`) tersedia per-soal on-demand di halaman review — hanya dikendalikan oleh plan user, tidak bergantung pada `show_explanation_after_submit`, jadwal rilis konten, maupun apakah pembahasan manual tersedia. User Pro/Max dapat meminta Pembahasan AI bahkan jika admin belum mengisi pembahasan manual.
+- Dengan kata lain, akses pembahasan manual membutuhkan dua kondisi: setting konten mengizinkan **dan** plan user mengizinkan. Akses Pembahasan AI hanya membutuhkan satu kondisi: plan user mengizinkan (`aiExplanation = true`).
 
 ### 5.7 Jadwal Rilis Hasil, Ranking, dan Pembahasan Tryout
 
@@ -475,7 +475,6 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 #### Konten Halaman Review
 
 **Header:**
-
 - Judul tryout atau practice.
 - Status session: `graded` menampilkan "Skor final".
 - Total skor dan skor maksimal.
@@ -483,14 +482,12 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 - Jika tryout memiliki `wrong_answer_penalty ≠ 0`, tampilkan keterangan penalti yang berlaku.
 
 **Filter soal:**
-
 - Semua soal.
 - Hanya yang benar.
 - Hanya yang salah.
 - Hanya yang belum dijawab.
 
 **Per soal:**
-
 - Nomor urut dan konten soal (dari snapshot).
 - Jawaban user.
 - Jawaban benar (kunci jawaban).
@@ -501,7 +498,6 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 - Tombol **"Pembahasan AI"** — ditampilkan di setiap soal jika plan user mengizinkan (`aiExplanation = true`). Jika plan tidak mengizinkan, tombol tidak ditampilkan atau ditampilkan dengan state terkunci beserta CTA upgrade.
 
 **Breakdown per section (khusus tryout):**
-
 - Nama section.
 - Skor section, total benar, total salah, total kosong.
 - Durasi pengerjaan section tersebut.
@@ -511,7 +507,6 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 Tersedia di halaman review untuk **semua tipe sesi** (Mode Latihan, Mode Quiz, Tryout). Khusus untuk plan **Pro dan Max**.
 
 **Flow:**
-
 1. User mengklik tombol **"Pembahasan AI"** pada soal tertentu di halaman review.
 2. Tombol menampilkan indikator loading. Konten soal tersebut tidak di-block — soal lain tetap dapat dilihat.
 3. Sistem mengirim request ke AI provider melalui Route Handler, menyertakan konteks soal dari snapshot session.
@@ -520,13 +515,11 @@ Tersedia di halaman review untuk **semua tipe sesi** (Mode Latihan, Mode Quiz, T
 6. Jika AI gagal merespons, tampilkan pesan error ringkas dan beri opsi coba lagi.
 
 **Ketersediaan:**
-
 - Mode Latihan: tombol **"Pembahasan AI"** muncul setelah user mengklik "Konfirmasi" pada soal tersebut, bersama dengan pembahasan manual. Tidak perlu menunggu session selesai.
 - Mode Quiz dan Tryout: tombol muncul di halaman review setelah session di-submit/graded.
 
 **Konteks yang dikirim ke AI:**
 Semua data diambil dari snapshot session, bukan langsung dari tabel `questions`, agar konsisten dengan kondisi soal saat user mengerjakannya.
-
 - Konten soal (dari `question_snapshot`)
 - Tipe soal
 - Opsi jawaban (dari `option_snapshot`)
@@ -589,10 +582,11 @@ ATURAN PENULISAN:
 ```
 
 **Keterangan blok parameter:**
-
 - `{options_block}`: diisi daftar opsi (A, B, C, dst.) jika tipe soal `multiple_choice`, `multiple_answer`, atau `true_false`. Dikosongkan untuk `short_answer`.
 - `{manual_explanation_block}`: jika `manual_explanation` ada, diisi dengan `Pembahasan dari admin: {manual_explanation}` agar AI dapat memperluas atau melengkapinya. Jika null, blok ini dikosongkan.
 - `{answer_status}`: diisi `"benar"`, `"salah"`, atau `"tidak dijawab"`.
+
+
 
 ### 7.7 Hasil dan Ranking Tryout
 
@@ -601,37 +595,32 @@ ATURAN PENULISAN:
 Halaman ini ditampilkan setelah user selesai mengerjakan tryout (session berstatus `submitted` atau `graded`), dan mengikuti aturan rilis dari setting tryout.
 
 **Ketersediaan:**
-
 - Ditampilkan hanya jika `show_result_after_submit = true`.
 - Jika `result_release_at` diisi dan belum tiba, halaman menampilkan pesan bahwa hasil belum dirilis beserta estimasi waktu rilis.
 
 **Konten halaman hasil:**
-
 - Judul tryout dan tanggal pengerjaan.
 - Skor total dan skor maksimal.
 - Persentase skor: `total_score / total_max_score × 100`.
 - Ringkasan jawaban: total benar, total salah, total kosong, total soal.
 - Breakdown per section: nama section, skor section, benar/salah/kosong, durasi pengerjaan.
 - Durasi total pengerjaan aktif.
-- Tombol menuju halaman Review Jawaban (jika `show_explanation_after_submit` dan jadwal rilis mengizinkan).
-- Tombol menuju halaman Ranking (jika `show_ranking_after_submit` dan jadwal rilis mengizinkan).
+- Tombol menuju halaman Review Jawaban (jika `show_result_after_submit = true` dan jadwal rilis `result_release_at` sudah lewat atau null).
+- Tombol menuju halaman Ranking (jika `show_ranking_after_submit = true` dan jadwal rilis `ranking_release_at` sudah lewat atau null).
 
 #### 7.7.2 Ranking Tryout
 
 **Ketersediaan:**
-
 - Ditampilkan hanya jika `show_ranking_after_submit = true`.
 - Jika `ranking_release_at` diisi dan belum tiba, tampilkan pesan bahwa ranking belum dirilis beserta estimasi waktu rilis.
 - Free user yang mengikuti tryout tetap berkontribusi dalam perhitungan ranking, tetapi tidak dapat melihat leaderboard jika plan tidak mengizinkan.
 
 **Konten leaderboard:**
-
 - Posisi ranking user sendiri selalu ditampilkan di bagian atas (pinned), terpisah dari tabel leaderboard utama, agar user langsung tahu posisinya tanpa harus scroll.
 - Tabel leaderboard: nomor urut, nama user (dengan avatar opsional), skor total, total benar, durasi pengerjaan aktif.
 - Total peserta yang sudah graded.
 
 **Urutan ranking:**
-
 - Diurutkan berdasarkan `total_score` tertinggi.
 - Tie-breaker berurutan jika skor sama:
   1. `total_sections_started` terbanyak (section yang pernah dibuka user secara aktif).
@@ -640,6 +629,7 @@ Halaman ini ditampilkan setelah user selesai mengerjakan tryout (session berstat
   4. `submitted_at` paling awal.
 - Ranking dihitung secara dinamis dari query, tidak disimpan sebagai field di database.
 - Hanya `tryout_sessions` berstatus `graded` yang masuk perhitungan ranking.
+
 
 ### 7.8 Progress / Tracking
 
@@ -652,7 +642,6 @@ Halaman ini ditampilkan setelah user selesai mengerjakan tryout (session berstat
 #### Konten Halaman Progress
 
 **Filter:**
-
 - Satu filter tunggal: **Jenis Ujian** — pilihan: Semua, UTBK, CPNS, UTUL UGM, SIMAK UI.
 - Tidak ada filter subtes dan tidak ada filter periode. Statistik selalu bersifat all-time.
 
@@ -667,17 +656,16 @@ Data ini bersumber dari `user_progress_snapshots`. Tidak mendukung filter period
 Waktu update terakhir ditampilkan sebagai teks kecil di bawah kartu statistik, bukan sebagai kartu tersendiri.
 
 **Analisis topik (all-time, maksimal 3 topik per kolom):**
-
 - **Topik Terkuat** — 3 topik dengan akurasi tertinggi, disertai nilai akurasi per topik.
 - **Topik Prioritas** — 3 topik dengan akurasi terendah, disertai nilai akurasi per topik.
 - Data bersumber dari field JSON di `user_progress_snapshots` dan di-snapshot saat progress terakhir diperbarui. Jika admin mengganti nama topik setelah update terakhir, nama yang tampil bisa stale sampai progress user diperbarui kembali.
 - Jika user belum memiliki cukup data topik, kolom ini tidak ditampilkan.
 
 **Riwayat Aktivitas:**
-
 - Daftar practice dan tryout yang sudah diselesaikan (status `graded`), diurutkan dari yang terbaru.
 - Tidak ada filter periode — user cukup scroll untuk melihat riwayat lebih lama.
 - Per item: label tipe (Latihan/Quiz/Tryout), label jenis ujian, judul konten, tanggal pengerjaan, jumlah benar, jumlah salah, skor, dan tombol Review (jika tersedia sesuai setting dan plan).
+
 
 ### 7.9 Blog
 
@@ -726,7 +714,7 @@ Admin dapat:
 
 - Melihat daftar payment.
 - Melihat detail payment.
-- Approve payment manual (lihat Flow 14.8).
+- Approve payment manual (lihat Flow 14.7).
 - Cancel subscription aktif.
 - Force downgrade user ke Free.
 - Menambahkan subscription manual hanya untuk `plan_code = pro` atau `max`. Admin tidak dapat membuat subscription manual dengan `plan_code = free` karena status Free sudah otomatis berlaku saat tidak ada subscription berbayar aktif.
@@ -752,7 +740,6 @@ Admin dapat:
 Fitur ini tersedia di halaman **Create Question** melalui tombol **"AI Generate"**.
 
 **Flow:**
-
 1. Admin membuka halaman Create Question.
 2. Admin mengklik tombol **"AI Generate"**.
 3. Muncul modal form berisi parameter yang harus diisi sebagai bahan instruksi ke AI.
@@ -836,7 +823,6 @@ Output rules:
 Fitur ini tersedia di halaman **Create Question** dan **Edit Question** pada field explanation melalui tombol **"AI Generate"** di samping field tersebut.
 
 **Flow:**
-
 1. Admin mengisi semua field wajib di form terlebih dahulu: exam type, subject, tipe soal, konten soal, dan kunci jawaban (untuk MC/MA: minimal satu opsi ditandai benar; untuk `true_false` dan `short_answer`: `correct_answer_text` sudah diisi).
 2. Jika ada field wajib yang belum terisi, tombol "AI Generate" di field explanation dinonaktifkan (disabled) dan menampilkan tooltip yang menjelaskan field mana saja yang masih kosong.
 3. Setelah semua field wajib terisi, tombol menjadi aktif.
@@ -897,7 +883,7 @@ Setiap tipe soal memiliki aturan penyimpanan data yang berbeda:
 | `multiple_choice` | Wajib ada (min. 2), `is_correct = true` untuk satu opsi | Null | `selected_option_keys` (JSON, satu nilai) |
 | `multiple_answer` | Wajib ada (min. 2), `is_correct = true` untuk ≥2 opsi | Null | `selected_option_keys` (JSON, banyak nilai) |
 | `true_false` | Wajib ada tepat 2 opsi dengan label `True` dan `False`; `is_correct` pada kedua opsi **selalu diisi `false`** dan **tidak digunakan** sebagai sumber kebenaran | Wajib diisi: `"true"` atau `"false"` — ini sumber kebenaran | `selected_option_keys` (JSON, satu nilai: **`"true"` atau `"false"` — selalu lowercase**) |
-| `short_answer` | Tidak ada | Referensi jawaban, opsional | `answer_text` |
+| `short_answer` | Tidak ada | **Wajib diisi** — digunakan untuk auto-grading case-insensitive | `answer_text` |
 
 **Catatan khusus `true_false`:** Dua opsi di `question_options` dibuat agar tampilan UI konsisten dengan soal pilihan lainnya. Jawaban user **selalu disimpan dalam lowercase** (`"true"` atau `"false"`) di `selected_option_keys`. Penilaian otomatis dilakukan dengan membandingkan langsung nilai `selected_option_keys` dengan `correct_answer_text` — keduanya sudah lowercase sehingga tidak perlu konversi saat penilaian.
 
@@ -1042,21 +1028,17 @@ Admin dapat:
 #### Aturan Edit Berdasarkan Kondisi
 
 **Field yang selalu dapat diedit** (tidak mempengaruhi hasil apapun), tanpa memandang status atau keberadaan session:
-
 - Judul (`title`) dan deskripsi (`description`)
 
 **Field yang dapat diedit selama belum ada session apapun** (tabel `tryout_sessions` untuk tryout ini masih kosong):
-
 - Jadwal (`starts_at`, `ends_at`, `enforce_end_time`)
 - Gratis/berbayar (`is_free`)
 - Setting tampilan hasil: `show_result_after_submit`, `result_release_at`
 - Setting tampilan ranking: `show_ranking_after_submit`, `ranking_release_at`
 - Setting tampilan pembahasan: `show_explanation_after_submit`, `explanation_release_at`
 - Review sebelum submit (`allow_review_before_submit`)
-- Mode navigasi (tryout selalu bebas; field ini tidak relevan dan dapat dihapus di iterasi berikutnya)
 
 **Field yang dilarang diedit setelah ada session apapun** (menyentuh fairness langsung — berlaku meski session masih `in_progress`):
-
 - Tambah, hapus, atau ubah section
 - Tambah, hapus, atau ubah soal dalam section
 - `wrong_answer_penalty` di level tryout maupun per section
@@ -1073,7 +1055,6 @@ Jika admin mencoba mengedit field yang terkunci, sistem menolak operasi dengan p
 - `cancelled`: session dibatalkan, tidak menghasilkan skor.
 
 **Status awal session:**
-
 - `practice_sessions`: status awal **selalu `in_progress`** saat session dibuat — user telah memulai mengerjakan.
 - `tryout_sessions`: status awal **selalu `in_progress`** saat session dibuat — user telah memulai tryout.
 - `tryout_section_sessions`: status awal **selalu `pending`** saat dibuat — semua section di-pre-create secara bersamaan; section belum tentu langsung dibuka user. Status berubah menjadi `in_progress` ketika user pertama kali membuka section tersebut.
@@ -1773,13 +1754,11 @@ Nilai batas di atas adalah acuan awal dan dapat disesuaikan berdasarkan monitori
 
 **Cleanup tryout session terbengkalai (tanpa `enforce_end_time`):**
 Untuk tryout dengan `enforce_end_time = false` atau `ends_at = null`, jika `tryout_session` masih `in_progress` dan tidak ada aktivitas selama lebih dari **72 jam**, background job melakukan auto-submit. Aktivitas terakhir ditentukan dari nilai **terbaru** di antara:
-
 - `tryout_sessions.last_saved_at` (autosave di level session)
 - `last_saved_at` dari semua `tryout_section_sessions` milik session tersebut (autosave di level section/jawaban)
 - Jika semua nilai di atas null (belum pernah ada autosave sama sekali), gunakan `tryout_sessions.started_at` sebagai waktu referensi.
 
 Background job mengambil max dari semua nilai ini sebagai "waktu aktivitas terakhir". Jika `NOW() - waktu_aktivitas_terakhir > 72 jam`, jalankan auto-submit:
-
 1. Section yang masih `in_progress` di-submit dengan jawaban terakhir yang tersimpan.
 2. Section berstatus `pending` di-submit langsung dengan skor 0.
 3. `tryout_session` diubah menjadi `submitted` dengan `auto_submitted = true`.
@@ -1842,7 +1821,6 @@ Setelah seluruh tryout session di-submit (semua section selesai):
 
 **Validasi pada saat create dan update (early feedback):**
 Service layer memvalidasi konsistensi relasi pada saat operasi create dan update, bukan hanya saat publish. Validasi yang dijalankan pada create/update:
-
 - Subject harus berasal dari exam type yang sama dengan practice/tryout.
 - Topic (jika diisi) harus berasal dari subject yang dipilih.
 - Jika `starts_at` dan `ends_at` keduanya diisi, `ends_at` harus lebih besar dari `starts_at`.
@@ -1851,7 +1829,6 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 - Jika validasi gagal, operasi ditolak dengan pesan error yang jelas. Admin tidak perlu menunggu proses publish untuk menemukan inkonsistensi relasi.
 
 **Validasi tambahan pada saat publish:**
-
 - Practice tidak boleh dipublish jika tidak punya soal.
 - Practice tidak boleh dipublish jika `quiz_duration_minutes` kosong atau kurang dari/sama dengan 0 (karena Mode Quiz selalu tersedia, durasi wajib ada).
 - Practice tidak boleh dipublish jika ada soal dalam practice yang belum `published`, sudah `archived`, atau subject-nya tidak sesuai dengan subject practice.
@@ -1861,7 +1838,7 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 - Soal yang sudah digunakan session tidak boleh diubah pada bagian konten, opsi, atau kunci jawaban. Gunakan `archived` dan buat soal baru jika perlu perubahan besar.
 - **Tryout: aturan edit berdasarkan kondisi session** (lihat Section 9.2a untuk detail lengkap):
   - `title` dan `description` selalu dapat diedit.
-  - Jadwal, setting tampilan hasil/ranking/pembahasan, mode navigasi, dan `allow_review_before_submit` hanya dapat diedit selama belum ada `tryout_sessions` untuk tryout tersebut.
+  - Jadwal, setting tampilan hasil/ranking/pembahasan, dan `allow_review_before_submit` hanya dapat diedit selama belum ada `tryout_sessions` untuk tryout tersebut.
   - Section, soal, `wrong_answer_penalty`, `shuffle_questions`, dan `shuffle_options` dilarang diedit setelah ada session apapun.
   - Transisi `published → draft` hanya diizinkan jika belum ada session. `published → archived` diizinkan kapan saja. `archived` bersifat final.
 - Field `created_by` pada questions, practices, dan tryouts wajib diisi untuk konten yang dibuat melalui admin panel. Nullable hanya untuk data seed, migrasi, atau import sistem lama.
@@ -1892,17 +1869,13 @@ Hanya berlaku untuk akun lama yang dimigrasikan dan belum memiliki `email_verifi
 
 ### 14.3 Flow Google Login dan Linking
 
-Telah dipindahkan ke Section 14.4.
-
-### 14.4 Flow Google Login dan Linking
-
 1. User mengklik tombol login Google.
 2. Jika email belum ada di sistem, sistem membuat user baru dengan `email_verified_at` terisi dan `google_id` diisi dari data Google.
 3. Jika email sudah ada dan `google_id` sudah terhubung, login diizinkan.
 4. Jika email sudah ada tetapi `google_id` masih null (kondisi safeguard untuk akun lama), login ditolak dengan pesan yang menjelaskan situasi.
 5. User yang sudah login dapat menghubungkan Google dari halaman profil. Email Google wajib sama dengan email akun yang aktif; jika berbeda, linking ditolak.
 
-### 14.5 Flow Latihan / Quiz
+### 14.4 Flow Latihan / Quiz
 
 1. User memilih exam type.
 2. User memilih subject.
@@ -1917,7 +1890,7 @@ Telah dipindahkan ke Section 14.4.
 11. Sistem menilai semua jawaban secara otomatis, mengisi `grading_source = auto`.
 12. Status session berubah menjadi `graded`. Progress diperbarui.
 
-### 14.6 Flow Cancel Pending Payment
+### 14.5 Flow Cancel Pending Payment
 
 1. User membuka halaman profil atau halaman checkout dan melihat payment pending aktif.
 2. User memilih batalkan payment.
@@ -1926,7 +1899,7 @@ Telah dipindahkan ke Section 14.4.
 5. Jika Midtrans API gagal dipanggil (timeout/error), payment tetap ditandai `cancelled` di sisi kita. Midtrans akan expire sendiri sesuai waktu yang ditetapkan. Jika kemudian Midtrans mengirim webhook sukses untuk payment yang sudah `cancelled`, webhook tersebut **diabaikan (no-op)** dan tidak membuat subscription baru (lihat Section 13.7).
 6. Setelah cancelled, user dapat membuat payment baru untuk plan yang sama atau berbeda.
 
-### 14.7 Flow Tryout
+### 14.6 Flow Tryout
 
 1. User membuka daftar tryout.
 2. User memilih tryout aktif.
@@ -1941,7 +1914,7 @@ Telah dipindahkan ke Section 14.4.
 11. Ranking tersedia melalui query jika plan dan setting mengizinkan.
 12. Progress diperbarui.
 
-### 14.8 Flow Manual Payment dan Admin Approval
+### 14.7 Flow Manual Payment dan Admin Approval
 
 1. User memilih plan Pro atau Max di halaman checkout.
 2. User memilih metode pembayaran manual (transfer bank).
