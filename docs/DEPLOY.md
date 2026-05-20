@@ -155,6 +155,7 @@ APP_NAME=Nalarin
 APP_URL=https://nalarin.id
 NEXT_PUBLIC_APP_URL=https://nalarin.id
 NEXT_PUBLIC_APP_NAME=Nalarin
+APP_PORT=3001
 
 DATABASE_URL=mysql://nalarin:GANTI_PASSWORD_YANG_KUAT@127.0.0.1:3306/nalarin
 
@@ -219,10 +220,10 @@ npm run build
 Jika build sukses, jalankan test start lokal terlebih dahulu:
 
 ```bash
-npm run start
+npm run start -- --port 3001
 ```
 
-Buka sementara ke `http://SERVER_IP:3000` atau lewat SSH tunnel untuk memastikan aplikasi naik.
+Buka sementara ke `http://SERVER_IP:3001` atau lewat SSH tunnel untuk memastikan aplikasi naik.
 Setelah test selesai, hentikan proses tersebut sebelum PM2 diaktifkan.
 
 ## 7. Jalankan Dengan PM2
@@ -236,20 +237,27 @@ sudo npm install -g pm2
 Buat file `ecosystem.config.cjs` di root project:
 
 ```js
+require("dotenv").config({ path: `${__dirname}/.env` });
+
+const appPort = process.env.APP_PORT || "3001";
+
 module.exports = {
   apps: [
     {
       name: "nalarin",
       script: "npm",
-      args: "run start -- --port 3000",
+      args: `run start -- --port ${appPort}`,
       cwd: "/srv/nalarin",
       env: {
         NODE_ENV: "production",
+        APP_PORT: appPort,
       },
     },
   ],
 };
 ```
+
+Nilai `APP_PORT` di `.env` menjadi sumber port aplikasi. Jika Anda mengubah port ini, sesuaikan juga `proxy_pass` di Nginx.
 
 Jalankan aplikasi:
 
@@ -305,7 +313,7 @@ server {
     client_max_body_size 50m;
 
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:3001;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
