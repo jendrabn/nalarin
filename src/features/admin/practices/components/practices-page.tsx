@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table"
 import {
   ArchiveIcon,
+  BarChart3Icon,
   EllipsisVerticalIcon,
   EyeIcon,
   PencilLineIcon,
@@ -87,12 +88,14 @@ function statusBadge(status: PracticeStatus) {
 
 function createColumns({
   onView,
+  onResults,
   onEdit,
   onPublish,
   onArchive,
   onDelete,
 }: {
   onView: (practice: PracticeRow) => void
+  onResults: (practice: PracticeRow) => void
   onEdit: (practice: PracticeRow) => void
   onPublish: (practice: PracticeRow) => void
   onArchive: (practice: PracticeRow) => void
@@ -202,13 +205,17 @@ function createColumns({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => onView(row.original)}>
-                <EyeIcon />
-                View
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(row.original)}>
-                <PencilLineIcon />
-                Edit
+            <DropdownMenuItem onClick={() => onView(row.original)}>
+              <EyeIcon />
+              View
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onResults(row.original)}>
+              <BarChart3Icon />
+              Results & Analytics
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(row.original)}>
+              <PencilLineIcon />
+              Edit
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onPublish(row.original)}>
                 <RocketIcon />
@@ -242,6 +249,7 @@ export function PracticesPage({ practices }: PracticesPageProps) {
     () =>
       createColumns({
         onView: (practice) => router.push(`/admin/practices/${practice.id}`),
+        onResults: (practice) => router.push(`/admin/practices/${practice.id}/results`),
         onEdit: (practice) => router.push(`/admin/practices/${practice.id}/edit`),
         onPublish: (practice) => setDialogTarget({ type: "publish", practice }),
         onArchive: (practice) => setDialogTarget({ type: "archive", practice }),

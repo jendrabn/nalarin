@@ -11,7 +11,6 @@ const adminRouteLabels: Record<string, string> = {
   blog: "Blog",
   "blog-categories": "Blog Categories",
   "exam-types": "Exam Types",
-  grading: "Grading",
   practice: "Practice",
   tryout: "Tryout",
   payments: "Payments",
@@ -27,6 +26,8 @@ const adminRouteLabels: Record<string, string> = {
   tryouts: "Tryouts",
   sections: "Sections",
   sessions: "Sessions",
+  results: "Results & Analytics",
+  analytics: "Analytics",
 }
 
 function isDynamicSegment(segment: string) {

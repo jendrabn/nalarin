@@ -11,6 +11,7 @@ import {
   PencilLineIcon,
   PlusIcon,
   RocketIcon,
+  BarChart3Icon,
   Trash2Icon,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -88,12 +89,14 @@ function statusBadge(status: TryoutStatus) {
 
 function createColumns({
   onView,
+  onResultsAnalytics,
   onEdit,
   onPublish,
   onArchive,
   onDelete,
 }: {
   onView: (tryout: TryoutRow) => void
+  onResultsAnalytics: (tryout: TryoutRow) => void
   onEdit: (tryout: TryoutRow) => void
   onPublish: (tryout: TryoutRow) => void
   onArchive: (tryout: TryoutRow) => void
@@ -223,6 +226,10 @@ function createColumns({
                 <EyeIcon />
                 View
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onResultsAnalytics(row.original)}>
+                <BarChart3Icon />
+                Results & Analytics
+              </DropdownMenuItem>
               {row.original.status === "draft" ? (
                 <DropdownMenuItem onClick={() => onEdit(row.original)}>
                   <PencilLineIcon />
@@ -266,6 +273,7 @@ export function TryoutsPage({ tryouts }: TryoutsPageProps) {
     () =>
       createColumns({
         onView: (tryout) => router.push(`/admin/tryouts/${tryout.id}`),
+        onResultsAnalytics: (tryout) => router.push(`/admin/tryouts/${tryout.id}/results`),
         onEdit: (tryout) => router.push(`/admin/tryouts/${tryout.id}/edit`),
         onPublish: (tryout) => setDialogTarget({ type: "publish", tryout }),
         onArchive: (tryout) => setDialogTarget({ type: "archive", tryout }),

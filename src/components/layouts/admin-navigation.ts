@@ -1,7 +1,6 @@
 import type { LucideIcon } from "lucide-react"
 import {
   BookOpenCheckIcon,
-  ClipboardCheckIcon,
   CreditCardIcon,
   FileQuestionIcon,
   FolderTreeIcon,
@@ -9,7 +8,6 @@ import {
   HomeIcon,
   LibraryBigIcon,
   NewspaperIcon,
-  ReceiptTextIcon,
   TagsIcon,
   TrophyIcon,
   UserRoundCheckIcon,
@@ -101,23 +99,6 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
         href: "/admin/tryouts",
         icon: TrophyIcon,
         description: "Multi-section tryouts",
-      },
-    ],
-  },
-  {
-    title: "Operations",
-    items: [
-      {
-        title: "Practice Sessions",
-        href: "/admin/practice-sessions",
-        icon: ReceiptTextIcon,
-        description: "User practice sessions",
-      },
-      {
-        title: "Grading",
-        href: "/admin/grading",
-        icon: ClipboardCheckIcon,
-        description: "Manual and AI grading",
       },
     ],
   },

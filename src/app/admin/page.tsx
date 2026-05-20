@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   ArrowUpRightIcon,
   BookOpenCheckIcon,
-  ClipboardCheckIcon,
   CreditCardIcon,
   FileQuestionIcon,
   TrophyIcon,
@@ -54,12 +53,6 @@ const workflowItems = [
     href: "/admin/practices",
     icon: BookOpenCheckIcon,
   },
-  {
-    title: "Grading",
-    description: "Review short-answer responses and final scoring status.",
-    href: "/admin/grading",
-    icon: ClipboardCheckIcon,
-  },
 ];
 
 export default function Page() {
@@ -67,7 +60,7 @@ export default function Page() {
     <div>
       <PageHeader
         title="Admin Dashboard"
-        subtitle="The academic command center for managing users, billing, learning content, tryouts, grading, and blog publishing within the MVP scope."
+        subtitle="The academic command center for managing users, billing, learning content, tryouts, and blog publishing within the MVP scope."
         actions={
           <Button asChild>
             <Link href="/admin/questions/create">Add Question</Link>
