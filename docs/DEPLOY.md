@@ -79,8 +79,8 @@ sudo ufw enable
 Jalankan aplikasi dengan user non-root. Pada VPS ini username yang dipakai adalah `deploy`.
 
 ```bash
-sudo mkdir -p /srv/nalarin
-sudo chown -R deploy:deploy /srv/nalarin
+sudo mkdir -p /var/www/nalarin
+sudo chown -R deploy:deploy /var/www/nalarin
 ```
 
 Masuk sebagai user deployment:
@@ -94,9 +94,9 @@ sudo -iu deploy
 Clone repo ke server:
 
 ```bash
-cd /srv
+cd /var/www
 git clone <REPO_URL> nalarin
-cd /srv/nalarin
+cd /var/www/nalarin
 npm ci
 mkdir -p public/uploads
 ```
@@ -247,7 +247,7 @@ module.exports = {
       name: "nalarin",
       script: "npm",
       args: `run start -- --port ${appPort}`,
-      cwd: "/srv/nalarin",
+      cwd: "/var/www/nalarin",
       env: {
         NODE_ENV: "production",
         APP_PORT: appPort,
@@ -262,7 +262,7 @@ Nilai `APP_PORT` di `.env` menjadi sumber port aplikasi. Jika Anda mengubah port
 Jalankan aplikasi:
 
 ```bash
-cd /srv/nalarin
+cd /var/www/nalarin
 pm2 start ecosystem.config.cjs
 pm2 status
 ```

@@ -8,7 +8,7 @@ module.exports = {
       name: "nalarin",
       script: "npm",
       args: `run start -- --port ${appPort}`,
-      cwd: "/srv/nalarin",
+      cwd: "/var/www/nalarin",
       env: {
         NODE_ENV: "production",
         APP_PORT: appPort,
