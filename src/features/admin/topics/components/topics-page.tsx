@@ -34,7 +34,8 @@ import {
 } from "../actions"
 import type { TopicFormValues } from "../schemas"
 import type { ExamTypeLookup } from "../../exam-types/queries"
-import type { SubjectLookup, TopicRow } from "../queries"
+import type { SubjectLookup } from "../../subjects/queries"
+import type { TopicRow } from "../queries"
 import { previewText } from "@/lib/utils"
 import { TopicFormDialog } from "./topic-form-dialog"
 

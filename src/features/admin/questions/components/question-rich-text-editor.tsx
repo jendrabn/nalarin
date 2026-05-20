@@ -114,7 +114,9 @@ export function QuestionRichTextEditor({
     if (!editor) return
 
     if (value !== editor.getHTML()) {
-      editor.commands.setContent(value || "<p></p>", false)
+      editor.commands.setContent(value || "<p></p>", {
+        emitUpdate: false,
+      })
     }
   }, [editor, value])
 

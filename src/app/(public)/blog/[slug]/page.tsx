@@ -18,6 +18,10 @@ type BlogDetailPageProps = {
   params: Promise<{ slug: string }>;
 };
 
+type PublishedBlogPost = NonNullable<
+  Awaited<ReturnType<typeof getPublishedBlogPostBySlug>>
+>;
+
 export async function generateMetadata({
   params,
 }: BlogDetailPageProps): Promise<Metadata> {
@@ -169,7 +173,7 @@ export default async function Page({ params }: BlogDetailPageProps) {
   );
 }
 
-function getArticleDescription(post: Awaited<ReturnType<typeof getPublishedBlogPostBySlug>>) {
+function getArticleDescription(post: PublishedBlogPost) {
   const metaDescription = post.metaDescription?.trim();
   const excerpt = post.excerpt?.trim();
   const contentFallback = buildContentDescription(post.content, post.title);

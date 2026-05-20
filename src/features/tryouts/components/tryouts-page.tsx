@@ -544,7 +544,7 @@ function getCardActionHref({
     return `/tryout-sessions/${session.id}`
   }
 
-  if (resultAvailable || session?.status === "graded") {
+  if (session && (resultAvailable || session.status === "graded")) {
     return `/tryout-sessions/${session.id}/result`
   }
 

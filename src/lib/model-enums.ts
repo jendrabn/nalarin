@@ -334,10 +334,11 @@ export function getModelEnumBadgeMeta<Name extends ModelEnumName>(
   value: ModelEnumValue<Name>,
 ) {
   const definition = modelEnums[name]
+  const key = value as keyof typeof definition.labels
 
   return {
-    label: definition.labels[value],
-    className: enumBadgeToneClasses[definition.tones[value]],
+    label: definition.labels[key],
+    className: enumBadgeToneClasses[definition.tones[key]],
   }
 }
 

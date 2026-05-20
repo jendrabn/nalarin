@@ -44,4 +44,5 @@ export const blogPostFormSchema = z.object({
     .default(""),
 })
 
-export type BlogPostFormValues = z.infer<typeof blogPostFormSchema>
+export type BlogPostFormValues = z.input<typeof blogPostFormSchema>
+export type BlogPostFormData = z.output<typeof blogPostFormSchema>

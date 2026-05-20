@@ -46,7 +46,7 @@ export function BlogPagination({
               <PaginationItem key={`ellipsis-${index}`}>
                 <PaginationEllipsis />
               </PaginationItem>
-            ) : (
+            ) : typeof page === "number" ? (
               <PaginationItem key={page}>
                 <PaginationLink
                   href={buildBlogHref(page, query, categorySlug)}
@@ -58,7 +58,7 @@ export function BlogPagination({
                   {page}
                 </PaginationLink>
               </PaginationItem>
-            ),
+            ) : null,
           )}
           <PaginationItem>
             <PaginationNext

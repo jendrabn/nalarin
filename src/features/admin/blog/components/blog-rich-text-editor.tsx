@@ -134,7 +134,9 @@ export function BlogRichTextEditor({
     }
 
     if (value !== editor.getHTML()) {
-      editor.commands.setContent(value || "<p></p>", false)
+      editor.commands.setContent(value || "<p></p>", {
+        emitUpdate: false,
+      })
     }
   }, [editor, value])
 

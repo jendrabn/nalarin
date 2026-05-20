@@ -186,11 +186,11 @@ export async function getAdminPaymentById(id: number) {
     linkedSubscription: row.linkedSubscriptionId
       ? {
           id: row.linkedSubscriptionId,
-          planCode: row.linkedSubscriptionPlanCode,
-          status: row.linkedSubscriptionStatus,
-          source: row.linkedSubscriptionSource,
-          startsAt: row.linkedSubscriptionStartsAt,
-          endsAt: row.linkedSubscriptionEndsAt,
+          planCode: row.linkedSubscriptionPlanCode as PlanCode,
+          status: row.linkedSubscriptionStatus as SubscriptionStatus,
+          source: row.linkedSubscriptionSource as SubscriptionSource,
+          startsAt: row.linkedSubscriptionStartsAt as Date,
+          endsAt: row.linkedSubscriptionEndsAt as Date,
           activatedByAdminId: row.linkedSubscriptionActivatedByAdminId,
           cancelledByAdminId: row.linkedSubscriptionCancelledByAdminId,
           cancelledAt: row.linkedSubscriptionCancelledAt ?? null,
@@ -232,11 +232,11 @@ export async function getPaymentByGatewayOrderId(orderId: string) {
     linkedSubscription: row.linkedSubscriptionId
       ? {
           id: row.linkedSubscriptionId,
-          planCode: row.linkedSubscriptionPlanCode,
-          status: row.linkedSubscriptionStatus,
-          source: row.linkedSubscriptionSource,
-          startsAt: row.linkedSubscriptionStartsAt,
-          endsAt: row.linkedSubscriptionEndsAt,
+          planCode: row.linkedSubscriptionPlanCode as PlanCode,
+          status: row.linkedSubscriptionStatus as SubscriptionStatus,
+          source: row.linkedSubscriptionSource as SubscriptionSource,
+          startsAt: row.linkedSubscriptionStartsAt as Date,
+          endsAt: row.linkedSubscriptionEndsAt as Date,
           activatedByAdminId: row.linkedSubscriptionActivatedByAdminId,
           cancelledByAdminId: row.linkedSubscriptionCancelledByAdminId,
           cancelledAt: row.linkedSubscriptionCancelledAt ?? null,

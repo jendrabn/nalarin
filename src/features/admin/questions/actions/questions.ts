@@ -14,6 +14,7 @@ import {
 } from "../schemas"
 import {
   questionOptionLabelValues,
+  type QuestionScoringRule,
   questionTrueFalseLabels,
 } from "../constants"
 import {
@@ -202,7 +203,7 @@ async function isQuestionLocked(questionId: number) {
 }
 
 async function persistQuestionOptions(
-  tx: typeof db,
+  tx: Pick<typeof db, "insert">,
   questionId: number,
   type: QuestionType,
   options: QuestionOptionInput[],
@@ -263,8 +264,6 @@ async function persistQuestion(
     topicId: parsed.data.topicId,
     type: parsed.data.type,
     difficulty: parsed.data.difficulty,
-    scoringRule:
-      parsed.data.type === "multiple_answer" ? parsed.data.scoringRule : null,
     title: parsed.data.title,
     content: parsed.data.content,
     imageUrl: parsed.data.imageUrl,
@@ -278,7 +277,13 @@ async function persistQuestion(
     manualExplanation: parsed.data.manualExplanation,
     aiExplanation: parsed.data.aiExplanation,
     year: parsed.data.year,
-    points: parsed.data.points,
+    points: parsed.data.points.toFixed(2),
+    scoringRule:
+      parsed.data.type === "multiple_answer" &&
+      parsed.data.scoringRule !== null &&
+      parsed.data.scoringRule.trim().length > 0
+        ? (parsed.data.scoringRule as QuestionScoringRule)
+        : null,
     status: parsed.data.status,
   }
 

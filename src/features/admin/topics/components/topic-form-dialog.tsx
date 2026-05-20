@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useId, useMemo } from "react"
-import { useForm, useWatch } from "react-hook-form"
+import { useForm, useWatch, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 
@@ -69,7 +69,7 @@ export function TopicFormDialog({
   const defaultValues = useMemo(() => buildDefaultValues(initialValues), [initialValues])
 
   const form = useForm<TopicFormValues>({
-    resolver: zodResolver(topicFormSchema),
+    resolver: zodResolver(topicFormSchema) as Resolver<TopicFormValues>,
     defaultValues,
   })
 

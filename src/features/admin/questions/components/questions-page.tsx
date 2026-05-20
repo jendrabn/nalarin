@@ -38,10 +38,8 @@ import {
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 
 import { deleteQuestionAction, deleteQuestionsAction } from "../actions"
-import {
-  questionColumnLabels,
-  type QuestionRow,
-} from "../constants"
+import { questionColumnLabels } from "../constants"
+import type { QuestionRow } from "../queries"
 import { previewQuestionContent } from "../utils/question"
 
 type QuestionsPageProps = {

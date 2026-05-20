@@ -9,6 +9,7 @@ import {
   useFieldArray,
   useForm,
   useWatch,
+  type Resolver,
 } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { PlusIcon, Trash2Icon, UploadIcon } from "lucide-react"
@@ -44,11 +45,10 @@ import {
   questionTypeLabels,
   questionTypeValues,
   type QuestionDifficulty,
-  type QuestionFormValues,
   type QuestionStatus,
   type QuestionType,
 } from "../constants"
-import { questionFormSchema } from "../schemas"
+import { questionFormSchema, type QuestionFormValues } from "../schemas"
 import type {
   QuestionDetails,
   QuestionLookupOption,
@@ -82,18 +82,19 @@ type QuestionFormPageProps = {
 
 function buildDefaultValues(initialValues?: QuestionDetails | null) {
   const type = initialValues?.type ?? "multiple_choice"
+  const existingOptions = initialValues?.options ?? []
   const options =
-    initialValues?.options?.length > 0
+    existingOptions.length > 0
       ? type === "multiple_choice" || type === "multiple_answer"
         ? normalizeQuestionChoiceOptions(
-            initialValues.options.map((option) => ({
+            existingOptions.map((option) => ({
               label: option.label,
               content: option.content,
               imageUrl: option.imageUrl ?? "",
               isCorrect: option.isCorrect,
             })),
           )
-        : initialValues.options.map((option) => ({
+        : existingOptions.map((option) => ({
             label: option.label,
             content: option.content,
             imageUrl: option.imageUrl ?? "",
@@ -170,7 +171,7 @@ export function QuestionFormPage({
   const defaultValues = useMemo(() => buildDefaultValues(initialValues), [initialValues])
 
   const form = useForm<QuestionFormValues>({
-    resolver: zodResolver(questionFormSchema),
+    resolver: zodResolver(questionFormSchema) as Resolver<QuestionFormValues>,
     defaultValues,
   })
 

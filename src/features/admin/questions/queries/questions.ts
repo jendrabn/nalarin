@@ -121,7 +121,7 @@ function normalizeQuestionRow(
     manualExplanation: string | null
     aiExplanation: string | null
     year: number | null
-    points: number
+    points: string
     status: QuestionStatus
     createdAt: Date
     updatedAt: Date
@@ -137,6 +137,7 @@ function normalizeQuestionRow(
     manualExplanation: row.manualExplanation ?? null,
     aiExplanation: row.aiExplanation ?? null,
     year: row.year ?? null,
+    points: Number(row.points),
     optionCount,
   }
 }
