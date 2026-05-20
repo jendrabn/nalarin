@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "ccc4f512-29c7-4c0c-83e4-f0c4e59cbb09",
+  "id": "75adaf96-25a3-4324-9e51-45e282ae5215",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "blog_categories": {
@@ -129,6 +129,13 @@
         "thumbnail_url": {
           "name": "thumbnail_url",
           "type": "varchar(2048)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "thumbnail_caption": {
+          "name": "thumbnail_caption",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -507,6 +514,13 @@
         "description": {
           "name": "description",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "logo_url": {
+          "name": "logo_url",
+          "type": "varchar(2048)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -1153,8 +1167,8 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "practice_answers_psq_fk": {
-          "name": "practice_answers_psq_fk",
+        "practice_answers_practice_session_question_id_practice_session_questions_id_fk": {
+          "name": "practice_answers_practice_session_question_id_practice_session_questions_id_fk",
           "tableFrom": "practice_answers",
           "tableTo": "practice_session_questions",
           "columnsFrom": [
@@ -1390,8 +1404,8 @@
         }
       },
       "foreignKeys": {
-        "practice_session_questions_ps_fk": {
-          "name": "practice_session_questions_ps_fk",
+        "practice_session_questions_practice_session_id_practice_sessions_id_fk": {
+          "name": "practice_session_questions_practice_session_id_practice_sessions_id_fk",
           "tableFrom": "practice_session_questions",
           "tableTo": "practice_sessions",
           "columnsFrom": [
@@ -1403,8 +1417,8 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "practice_session_questions_pq_fk": {
-          "name": "practice_session_questions_pq_fk",
+        "practice_session_questions_practice_question_id_practice_questions_id_fk": {
+          "name": "practice_session_questions_practice_question_id_practice_questions_id_fk",
           "tableFrom": "practice_session_questions",
           "tableTo": "practice_questions",
           "columnsFrom": [
@@ -1726,14 +1740,16 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": true
         },
         "has_quiz_mode": {
           "name": "has_quiz_mode",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": true
         },
         "quiz_duration_minutes": {
           "name": "quiz_duration_minutes",
@@ -2296,6 +2312,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "logo_url": {
+          "name": "logo_url",
+          "type": "varchar(2048)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -2817,8 +2840,8 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "tryout_answers_tss_fk": {
-          "name": "tryout_answers_tss_fk",
+        "tryout_answers_tryout_section_session_id_tryout_section_sessions_id_fk": {
+          "name": "tryout_answers_tryout_section_session_id_tryout_section_sessions_id_fk",
           "tableFrom": "tryout_answers",
           "tableTo": "tryout_section_sessions",
           "columnsFrom": [
@@ -2830,8 +2853,8 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "tryout_answers_tsq_fk": {
-          "name": "tryout_answers_tsq_fk",
+        "tryout_answers_tryout_session_question_id_tryout_session_questions_id_fk": {
+          "name": "tryout_answers_tryout_session_question_id_tryout_session_questions_id_fk",
           "tableFrom": "tryout_answers",
           "tableTo": "tryout_session_questions",
           "columnsFrom": [
@@ -3441,8 +3464,8 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "tryout_session_questions_tss_fk": {
-          "name": "tryout_session_questions_tss_fk",
+        "tryout_session_questions_tryout_section_session_id_tryout_section_sessions_id_fk": {
+          "name": "tryout_session_questions_tryout_section_session_id_tryout_section_sessions_id_fk",
           "tableFrom": "tryout_session_questions",
           "tableTo": "tryout_section_sessions",
           "columnsFrom": [
@@ -3454,8 +3477,8 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "tryout_session_questions_tq_fk": {
-          "name": "tryout_session_questions_tq_fk",
+        "tryout_session_questions_tryout_question_id_tryout_questions_id_fk": {
+          "name": "tryout_session_questions_tryout_question_id_tryout_questions_id_fk",
           "tableFrom": "tryout_session_questions",
           "tableTo": "tryout_questions",
           "columnsFrom": [
@@ -4373,9 +4396,23 @@
           "notNull": false,
           "autoincrement": false
         },
+        "birth_date": {
+          "name": "birth_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "phone_number": {
           "name": "phone_number",
           "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "bio": {
+          "name": "bio",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false

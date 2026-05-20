@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1778126494727,
-      "tag": "0000_initial_schema",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1778664031691,
-      "tag": "0001_thumbnail_caption",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1778919150000,
-      "tag": "0002_taxonomy_logo_url",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1779032552463,
-      "tag": "0003_practice_modes_default",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "5",
-      "when": 1779033600000,
-      "tag": "0004_question_type_cleanup",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "5",
-      "when": 1779037200000,
-      "tag": "0005_user_profile_fields",
+      "when": 1779319926383,
+      "tag": "0000_initial",
       "breakpoints": true
     }
   ]

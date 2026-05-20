@@ -15,11 +15,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { AdminDataTable, SortableHeader } from "@/components/admin-data-table"
 import { TaxonomyLogo } from "@/components/taxonomy-logo"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 import { updateExamTypeAction } from "../actions"
 import type { ExamTypeFormValues } from "../schemas"
 import type { ExamTypeRow } from "../queries"
-import { previewText } from "@/lib/utils"
 import { ExamTypeFormDialog } from "./exam-type-form-dialog"
 
 type ExamTypesPageProps = {
@@ -29,8 +29,42 @@ type ExamTypesPageProps = {
 }
 
 const DEFAULT_COLUMN_VISIBILITY = {
+  logo: false,
   createdAt: false,
   updatedAt: false,
+}
+
+function TableColumnHeader({ children }: { children: string }) {
+  return (
+    <span className="-ml-2 inline-flex h-8 items-center px-2 text-[0.8rem] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+      {children}
+    </span>
+  )
+}
+
+function DescriptionCell({ description }: { description?: string | null }) {
+  const value = description?.trim()
+
+  if (!value) {
+    return <span className="block w-full truncate text-sm text-muted-foreground">-</span>
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          tabIndex={0}
+          aria-label={value}
+          className="block w-full max-w-[28rem] truncate text-sm text-muted-foreground outline-none"
+        >
+          {value}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" align="start" className="max-w-sm">
+        <p className="whitespace-pre-wrap text-left">{value}</p>
+      </TooltipContent>
+    </Tooltip>
+  )
 }
 
 export function ExamTypesPage({
@@ -50,7 +84,7 @@ export function ExamTypesPage({
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Exam Types"
-        subtitle="Edit the seeded exam types that power subjects, topics, practices, tryouts, and question filters."
+        subtitle="Manage exam types for the admin area."
         actions={null}
       />
 
@@ -59,36 +93,31 @@ export function ExamTypesPage({
         searchPlaceholder="Search exam types..."
         emptyMessage="No exam types found."
         defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
-          columns={[
-            {
-              id: "logo",
-              header: () => "Logo",
-              enableSorting: false,
-              enableHiding: false,
-              cell: ({ row }) => (
-                <div className="flex justify-center">
-                  <TaxonomyLogo src={row.original.logoUrl} alt={row.original.name} />
-                </div>
-              ),
-            },
-            {
-              accessorKey: "name",
-              meta: { label: "Name" },
-              header: ({ column }) => <SortableHeader column={column}>Name</SortableHeader>,
-              cell: ({ row }) => (
-                <span className="truncate font-medium text-foreground">
-                  {row.original.name}
-                </span>
-              ),
-            },
+        columns={[
+          {
+            accessorKey: "name",
+            meta: { label: "Name" },
+            header: ({ column }) => <SortableHeader column={column}>Name</SortableHeader>,
+            cell: ({ row }) => (
+              <span className="truncate font-medium text-foreground">{row.original.name}</span>
+            ),
+          },
           {
             accessorKey: "description",
             meta: { label: "Description" },
             header: ({ column }) => <SortableHeader column={column}>Description</SortableHeader>,
+            cell: ({ row }) => <DescriptionCell description={row.original.description} />,
+          },
+          {
+            id: "logo",
+            meta: { label: "Logo" },
+            header: () => <TableColumnHeader>Logo</TableColumnHeader>,
+            enableSorting: false,
+            enableHiding: true,
             cell: ({ row }) => (
-              <span className="line-clamp-2 text-sm text-muted-foreground">
-                {previewText(row.original.description ?? "-", 120)}
-              </span>
+              <div className="flex justify-center">
+                <TaxonomyLogo src={row.original.logoUrl} alt={row.original.name} />
+              </div>
             ),
           },
           {

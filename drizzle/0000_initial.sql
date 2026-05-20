@@ -18,6 +18,7 @@ CREATE TABLE `blog_posts` (
 	`excerpt` text,
 	`content` longtext NOT NULL,
 	`thumbnail_url` varchar(2048),
+	`thumbnail_caption` varchar(255),
 	`tags` json,
 	`status` enum('draft','published','archived') NOT NULL,
 	`seo_title` varchar(255),
@@ -61,6 +62,7 @@ CREATE TABLE `exam_types` (
 	`name` varchar(100) NOT NULL,
 	`slug` varchar(191) NOT NULL,
 	`description` text,
+	`logo_url` varchar(2048),
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `exam_types_id` PRIMARY KEY(`id`),
@@ -200,8 +202,8 @@ CREATE TABLE `practices` (
 	`slug` varchar(191) NOT NULL,
 	`description` text,
 	`is_free` boolean NOT NULL,
-	`has_practice_mode` boolean NOT NULL,
-	`has_quiz_mode` boolean NOT NULL,
+	`has_practice_mode` boolean NOT NULL DEFAULT true,
+	`has_quiz_mode` boolean NOT NULL DEFAULT true,
 	`quiz_duration_minutes` int unsigned,
 	`shuffle_questions` boolean NOT NULL,
 	`shuffle_options` boolean NOT NULL,
@@ -259,6 +261,7 @@ CREATE TABLE `subjects` (
 	`name` varchar(150) NOT NULL,
 	`slug` varchar(191) NOT NULL,
 	`description` text,
+	`logo_url` varchar(2048),
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `subjects_id` PRIMARY KEY(`id`),
@@ -485,7 +488,9 @@ CREATE TABLE `users` (
 	`role` enum('user','admin') NOT NULL DEFAULT 'user',
 	`status` enum('active','inactive','suspended') NOT NULL DEFAULT 'active',
 	`gender` enum('male','female'),
+	`birth_date` date,
 	`phone_number` varchar(32),
+	`bio` text,
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `users_id` PRIMARY KEY(`id`),
@@ -502,11 +507,11 @@ ALTER TABLE `password_reset_tokens` ADD CONSTRAINT `password_reset_tokens_user_i
 ALTER TABLE `payments` ADD CONSTRAINT `payments_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `payments` ADD CONSTRAINT `payments_subscription_id_subscriptions_id_fk` FOREIGN KEY (`subscription_id`) REFERENCES `subscriptions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `practice_answers` ADD CONSTRAINT `practice_answers_practice_session_id_practice_sessions_id_fk` FOREIGN KEY (`practice_session_id`) REFERENCES `practice_sessions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `practice_answers` ADD CONSTRAINT `practice_answers_psq_fk` FOREIGN KEY (`practice_session_question_id`) REFERENCES `practice_session_questions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `practice_answers` ADD CONSTRAINT `practice_answers_practice_session_question_id_practice_session_questions_id_fk` FOREIGN KEY (`practice_session_question_id`) REFERENCES `practice_session_questions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `practice_questions` ADD CONSTRAINT `practice_questions_practice_id_practices_id_fk` FOREIGN KEY (`practice_id`) REFERENCES `practices`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `practice_questions` ADD CONSTRAINT `practice_questions_question_id_questions_id_fk` FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `practice_session_questions` ADD CONSTRAINT `practice_session_questions_ps_fk` FOREIGN KEY (`practice_session_id`) REFERENCES `practice_sessions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `practice_session_questions` ADD CONSTRAINT `practice_session_questions_pq_fk` FOREIGN KEY (`practice_question_id`) REFERENCES `practice_questions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `practice_session_questions` ADD CONSTRAINT `practice_session_questions_practice_session_id_practice_sessions_id_fk` FOREIGN KEY (`practice_session_id`) REFERENCES `practice_sessions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `practice_session_questions` ADD CONSTRAINT `practice_session_questions_practice_question_id_practice_questions_id_fk` FOREIGN KEY (`practice_question_id`) REFERENCES `practice_questions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `practice_session_questions` ADD CONSTRAINT `practice_session_questions_question_id_questions_id_fk` FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `practice_sessions` ADD CONSTRAINT `practice_sessions_practice_id_practices_id_fk` FOREIGN KEY (`practice_id`) REFERENCES `practices`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `practice_sessions` ADD CONSTRAINT `practice_sessions_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -524,8 +529,8 @@ ALTER TABLE `subscriptions` ADD CONSTRAINT `subscriptions_activated_by_admin_id_
 ALTER TABLE `subscriptions` ADD CONSTRAINT `subscriptions_cancelled_by_admin_id_users_id_fk` FOREIGN KEY (`cancelled_by_admin_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `topics` ADD CONSTRAINT `topics_subject_id_subjects_id_fk` FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `tryout_answers` ADD CONSTRAINT `tryout_answers_tryout_session_id_tryout_sessions_id_fk` FOREIGN KEY (`tryout_session_id`) REFERENCES `tryout_sessions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `tryout_answers` ADD CONSTRAINT `tryout_answers_tss_fk` FOREIGN KEY (`tryout_section_session_id`) REFERENCES `tryout_section_sessions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `tryout_answers` ADD CONSTRAINT `tryout_answers_tsq_fk` FOREIGN KEY (`tryout_session_question_id`) REFERENCES `tryout_session_questions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `tryout_answers` ADD CONSTRAINT `tryout_answers_tryout_section_session_id_tryout_section_sessions_id_fk` FOREIGN KEY (`tryout_section_session_id`) REFERENCES `tryout_section_sessions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `tryout_answers` ADD CONSTRAINT `tryout_answers_tryout_session_question_id_tryout_session_questions_id_fk` FOREIGN KEY (`tryout_session_question_id`) REFERENCES `tryout_session_questions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `tryout_questions` ADD CONSTRAINT `tryout_questions_tryout_section_id_tryout_sections_id_fk` FOREIGN KEY (`tryout_section_id`) REFERENCES `tryout_sections`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `tryout_questions` ADD CONSTRAINT `tryout_questions_question_id_questions_id_fk` FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `tryout_section_sessions` ADD CONSTRAINT `tryout_section_sessions_tryout_session_id_tryout_sessions_id_fk` FOREIGN KEY (`tryout_session_id`) REFERENCES `tryout_sessions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -533,8 +538,8 @@ ALTER TABLE `tryout_section_sessions` ADD CONSTRAINT `tryout_section_sessions_tr
 ALTER TABLE `tryout_sections` ADD CONSTRAINT `tryout_sections_tryout_id_tryouts_id_fk` FOREIGN KEY (`tryout_id`) REFERENCES `tryouts`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `tryout_sections` ADD CONSTRAINT `tryout_sections_subject_id_subjects_id_fk` FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `tryout_session_questions` ADD CONSTRAINT `tryout_session_questions_tryout_session_id_tryout_sessions_id_fk` FOREIGN KEY (`tryout_session_id`) REFERENCES `tryout_sessions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `tryout_session_questions` ADD CONSTRAINT `tryout_session_questions_tss_fk` FOREIGN KEY (`tryout_section_session_id`) REFERENCES `tryout_section_sessions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `tryout_session_questions` ADD CONSTRAINT `tryout_session_questions_tq_fk` FOREIGN KEY (`tryout_question_id`) REFERENCES `tryout_questions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `tryout_session_questions` ADD CONSTRAINT `tryout_session_questions_tryout_section_session_id_tryout_section_sessions_id_fk` FOREIGN KEY (`tryout_section_session_id`) REFERENCES `tryout_section_sessions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `tryout_session_questions` ADD CONSTRAINT `tryout_session_questions_tryout_question_id_tryout_questions_id_fk` FOREIGN KEY (`tryout_question_id`) REFERENCES `tryout_questions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `tryout_session_questions` ADD CONSTRAINT `tryout_session_questions_question_id_questions_id_fk` FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `tryout_sessions` ADD CONSTRAINT `tryout_sessions_tryout_id_tryouts_id_fk` FOREIGN KEY (`tryout_id`) REFERENCES `tryouts`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `tryout_sessions` ADD CONSTRAINT `tryout_sessions_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint

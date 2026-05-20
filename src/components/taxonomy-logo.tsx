@@ -8,7 +8,7 @@ type TaxonomyLogoProps = {
 
 export function TaxonomyLogo({ src, alt = "" }: TaxonomyLogoProps) {
   return (
-    <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/35 text-muted-foreground [&_svg]:size-4">
+    <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full border bg-muted/35 text-muted-foreground [&_svg]:size-4">
       {src ? (
         <Image
           src={src}
@@ -16,7 +16,7 @@ export function TaxonomyLogo({ src, alt = "" }: TaxonomyLogoProps) {
           width={36}
           height={36}
           unoptimized
-          className="size-full object-contain p-1.5"
+          className="size-full object-contain"
         />
       ) : (
         <ImageIcon />
