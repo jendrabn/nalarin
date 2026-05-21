@@ -41,6 +41,7 @@ import {
 import { uploadQuestionImage } from "../utils/upload"
 
 type QuestionRichTextEditorProps = {
+  id?: string
   value: string
   onChange: (value: string) => void
   placeholder?: string
@@ -67,9 +68,10 @@ function getTextAlignValue(editor: Editor) {
 }
 
 export function QuestionRichTextEditor({
+  id,
   value,
   onChange,
-  placeholder = "Write the question content here...",
+  placeholder = "Question content",
   disabled = false,
 }: QuestionRichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -101,6 +103,7 @@ export function QuestionRichTextEditor({
     editable: !disabled,
     editorProps: {
       attributes: {
+        id,
         class:
           "min-h-[18rem] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-0 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-border/60 [&_img]:shadow-sm",
       },
@@ -213,7 +216,7 @@ export function QuestionRichTextEditor({
           size="sm"
           onClick={() => {
             const currentUrl = editor.getAttributes("link").href as string | undefined
-            const url = window.prompt("Enter link URL", currentUrl ?? "")
+            const url = window.prompt("Link URL", currentUrl ?? "")
 
             if (url === null) return
 

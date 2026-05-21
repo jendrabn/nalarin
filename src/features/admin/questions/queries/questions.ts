@@ -39,8 +39,7 @@ export type QuestionRow = {
   imageUrl: string | null
   correctAnswerText: string | null
   gradingRubric: string | null
-  manualExplanation: string | null
-  aiExplanation: string | null
+  explanation: string | null
   year: number | null
   points: number
   status: QuestionStatus
@@ -91,8 +90,7 @@ function selectQuestionColumns() {
     imageUrl: schema.questions.imageUrl,
     correctAnswerText: schema.questions.correctAnswerText,
     gradingRubric: schema.questions.gradingRubric,
-    manualExplanation: schema.questions.manualExplanation,
-    aiExplanation: schema.questions.aiExplanation,
+    explanation: schema.questions.explanation,
     year: schema.questions.year,
     points: schema.questions.points,
     status: schema.questions.status,
@@ -118,8 +116,7 @@ function normalizeQuestionRow(
     imageUrl: string | null
     correctAnswerText: string | null
     gradingRubric: string | null
-    manualExplanation: string | null
-    aiExplanation: string | null
+    explanation: string | null
     year: number | null
     points: string
     status: QuestionStatus
@@ -134,8 +131,7 @@ function normalizeQuestionRow(
     imageUrl: row.imageUrl ?? null,
     correctAnswerText: row.correctAnswerText ?? null,
     gradingRubric: row.gradingRubric ?? null,
-    manualExplanation: row.manualExplanation ?? null,
-    aiExplanation: row.aiExplanation ?? null,
+    explanation: row.explanation ?? null,
     year: row.year ?? null,
     points: Number(row.points),
     optionCount,

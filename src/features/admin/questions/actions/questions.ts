@@ -14,6 +14,8 @@ import {
 } from "../schemas"
 import {
   questionOptionLabelValues,
+  questionOptionMaxCount,
+  questionOptionMinCount,
   type QuestionScoringRule,
   questionTrueFalseLabels,
 } from "../constants"
@@ -61,6 +63,7 @@ function parseQuestionValues(values: QuestionFormValues) {
 
   const year = parseOptionalInteger(validated.data.year)
   const points = parseOptionalDecimal(validated.data.points)
+  const optionCount = parseOptionalInteger(validated.data.optionCount)
 
   if (points === null) {
     return {
@@ -68,6 +71,23 @@ function parseQuestionValues(values: QuestionFormValues) {
       message: "Please fix the highlighted fields.",
       fieldErrors: {
         points: ["Points must be greater than 0."],
+      },
+    }
+  }
+
+  if (
+    isChoiceQuestionType(validated.data.type) &&
+    (optionCount === null ||
+      optionCount < questionOptionMinCount ||
+      optionCount > questionOptionMaxCount)
+  ) {
+    return {
+      success: false as const,
+      message: "Please fix the highlighted fields.",
+      fieldErrors: {
+        optionCount: [
+          `Select between ${questionOptionMinCount} and ${questionOptionMaxCount} options.`,
+        ],
       },
     }
   }
@@ -89,12 +109,16 @@ function parseQuestionValues(values: QuestionFormValues) {
       imageUrl: normalizeNullableText(validated.data.imageUrl),
       correctAnswerText: normalizeNullableText(validated.data.correctAnswerText),
       gradingRubric: normalizeNullableText(validated.data.gradingRubric),
-      manualExplanation: normalizeNullableText(validated.data.manualExplanation),
-      aiExplanation: normalizeNullableText(validated.data.aiExplanation),
+      explanation: normalizeNullableText(validated.data.explanation),
+      optionCount: validated.data.optionCount,
       year,
       points,
       status: validated.data.status,
-      options: ensureQuestionOptions(validated.data.options, validated.data.type),
+      options: ensureQuestionOptions(
+        validated.data.options,
+        validated.data.type,
+        optionCount ?? undefined,
+      ),
     },
   }
 }
@@ -117,7 +141,7 @@ function revalidateQuestionRoutes(questionId?: number) {
   if (questionId) {
     revalidatePath(`/admin/questions/${questionId}`)
     revalidatePath(`/admin/questions/${questionId}/edit`)
-    revalidatePath(`/admin/questions/${questionId}/ai-explanation`)
+    revalidatePath(`/admin/questions/${questionId}/explanation`)
   }
 }
 
@@ -274,8 +298,7 @@ async function persistQuestion(
           ? parsed.data.correctAnswerText
           : null,
     gradingRubric: parsed.data.gradingRubric,
-    manualExplanation: parsed.data.manualExplanation,
-    aiExplanation: parsed.data.aiExplanation,
+    explanation: parsed.data.explanation,
     year: parsed.data.year,
     points: parsed.data.points.toFixed(2),
     scoringRule:
@@ -502,7 +525,7 @@ export async function deleteQuestionsAction(
   uniqueQuestionIds.forEach((questionId) => {
     revalidatePath(`/admin/questions/${questionId}`)
     revalidatePath(`/admin/questions/${questionId}/edit`)
-    revalidatePath(`/admin/questions/${questionId}/ai-explanation`)
+    revalidatePath(`/admin/questions/${questionId}/explanation`)
   })
 
   return {
@@ -612,8 +635,7 @@ export async function importQuestionRowsAction(
       correctAnswerText:
         row.correctAnswerText || (row.questionType === "true_false" ? row.correctAnswer : ""),
       gradingRubric: row.gradingRubric,
-      manualExplanation: row.manualExplanation,
-      aiExplanation: row.aiExplanation,
+      explanation: row.explanation,
       year: row.year,
       points: row.points || "1",
       status: row.status,

@@ -12,7 +12,7 @@ import {
   type Resolver,
 } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { PlusIcon, Trash2Icon, UploadIcon } from "lucide-react"
+import { UploadIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { AdminFormPage } from "@/components/admin-form-page"
@@ -39,6 +39,7 @@ import {
   questionDifficultyValues,
   questionScoringRuleLabels,
   questionScoringRuleValues,
+  questionOptionMinCount,
   questionOptionMaxCount,
   questionStatusLabels,
   questionStatusValues,
@@ -57,10 +58,12 @@ import type {
 } from "../queries"
 import {
   getDefaultQuestionOptions,
+  getDefaultQuestionOptionCount,
   isChoiceQuestionType,
   isSubjectiveQuestionType,
-  getNextQuestionOptionLabel,
   normalizeQuestionChoiceOptions,
+  resizeQuestionChoiceOptions,
+  parseOptionalInteger,
 } from "../utils/question"
 import { uploadQuestionImage } from "../utils/upload"
 import { QuestionRichTextEditor } from "./question-rich-text-editor"
@@ -83,24 +86,44 @@ type QuestionFormPageProps = {
 function buildDefaultValues(initialValues?: QuestionDetails | null) {
   const type = initialValues?.type ?? "multiple_choice"
   const existingOptions = initialValues?.options ?? []
+  const normalizedChoiceOptionCount = Math.min(
+    Math.max(existingOptions.length, questionOptionMinCount),
+    questionOptionMaxCount,
+  )
+  const optionCount =
+    type === "true_false"
+      ? String(questionOptionMinCount)
+      : existingOptions.length > 0 && isChoiceQuestionType(type)
+        ? String(normalizedChoiceOptionCount)
+        : isChoiceQuestionType(type)
+          ? String(getDefaultQuestionOptionCount(type))
+          : ""
   const options =
-    existingOptions.length > 0
-      ? type === "multiple_choice" || type === "multiple_answer"
-        ? normalizeQuestionChoiceOptions(
+    type === "true_false"
+      ? getDefaultQuestionOptions(type).map((option, index) => ({
+          label: option.label,
+          content: existingOptions[index]?.content ?? option.content,
+          imageUrl: existingOptions[index]?.imageUrl ?? "",
+          isCorrect: false,
+        }))
+      : existingOptions.length > 0
+        ? type === "multiple_choice" || type === "multiple_answer"
+          ? normalizeQuestionChoiceOptions(
             existingOptions.map((option) => ({
               label: option.label,
               content: option.content,
               imageUrl: option.imageUrl ?? "",
               isCorrect: option.isCorrect,
             })),
+            normalizedChoiceOptionCount,
           )
-        : existingOptions.map((option) => ({
-            label: option.label,
-            content: option.content,
-            imageUrl: option.imageUrl ?? "",
-            isCorrect: option.isCorrect,
-          }))
-      : getDefaultQuestionOptions(type)
+          : existingOptions.map((option) => ({
+              label: option.label,
+              content: option.content,
+              imageUrl: option.imageUrl ?? "",
+              isCorrect: option.isCorrect,
+            }))
+        : getDefaultQuestionOptions(type, Number(optionCount || 0))
 
   return {
     examTypeId: initialValues?.examTypeId ? String(initialValues.examTypeId) : "",
@@ -114,8 +137,8 @@ function buildDefaultValues(initialValues?: QuestionDetails | null) {
     imageUrl: initialValues?.imageUrl ?? "",
     correctAnswerText: initialValues?.correctAnswerText ?? "",
     gradingRubric: initialValues?.gradingRubric ?? "",
-    manualExplanation: initialValues?.manualExplanation ?? "",
-    aiExplanation: initialValues?.aiExplanation ?? "",
+    explanation: initialValues?.explanation ?? "<p></p>",
+    optionCount,
     year: initialValues?.year ? String(initialValues.year) : "",
     points: String(initialValues?.points ?? 1),
     status: initialValues?.status ?? "draft",
@@ -175,7 +198,7 @@ export function QuestionFormPage({
     defaultValues,
   })
 
-  const { fields, replace, append } = useFieldArray({
+  const { fields, replace } = useFieldArray({
     control: form.control,
     name: "options",
   })
@@ -210,6 +233,11 @@ export function QuestionFormPage({
     name: "difficulty",
   }) as QuestionDifficulty
 
+  const watchedOptionCount = useWatch({
+    control: form.control,
+    name: "optionCount",
+  })
+
   const watchedCorrectAnswerText = useWatch({
     control: form.control,
     name: "correctAnswerText",
@@ -241,44 +269,51 @@ export function QuestionFormPage({
     (topic) => topic.subjectId === selectedSubjectId,
   )
 
-  function handleAddChoiceOption() {
-    const nextLabel = getNextQuestionOptionLabel(fields.length)
-
-    if (!nextLabel) {
-      return
-    }
-
-    append({
-      label: nextLabel,
-      content: "",
-      imageUrl: "",
-      isCorrect: false,
-    })
-  }
-
-  function handleRemoveChoiceOption(index: number) {
-    if (index < 2) {
-      return
-    }
-
-    const nextOptions = form.getValues("options").filter((_, optionIndex) => optionIndex !== index)
-
-    replace(normalizeQuestionChoiceOptions(nextOptions))
-    form.clearErrors("options")
-  }
-
   useEffect(() => {
-    if (watchedType === "multiple_choice" || watchedType === "multiple_answer" || watchedType === "true_false") {
-      if (fields.length === 0) {
-        replace(getDefaultQuestionOptions(watchedType))
+    if (!isChoiceQuestionType(watchedType)) {
+      if (fields.length > 0) {
+        replace([])
       }
+
+      if (watchedOptionCount) {
+        form.setValue("optionCount", "", {
+          shouldDirty: true,
+          shouldValidate: true,
+        })
+      }
+
       return
     }
 
-    if (fields.length > 0) {
-      replace([])
+    const nextOptionCount =
+      watchedType === "true_false"
+        ? questionOptionMinCount
+        : (() => {
+            const parsedOptionCount = parseOptionalInteger(watchedOptionCount ?? "")
+
+            if (parsedOptionCount !== null) {
+              return Math.min(
+                Math.max(parsedOptionCount, questionOptionMinCount),
+                questionOptionMaxCount,
+              )
+            }
+
+            return getDefaultQuestionOptionCount(watchedType)
+          })()
+
+    const nextOptionCountValue = String(nextOptionCount)
+
+    if (watchedOptionCount !== nextOptionCountValue) {
+      form.setValue("optionCount", nextOptionCountValue, {
+        shouldDirty: true,
+        shouldValidate: true,
+      })
     }
-  }, [fields.length, replace, watchedType])
+
+    if (fields.length !== nextOptionCount) {
+      replace(resizeQuestionChoiceOptions(form.getValues("options"), nextOptionCount))
+    }
+  }, [fields.length, form, replace, watchedOptionCount, watchedType])
 
   const rootError = form.formState.errors.root?.message
 
@@ -501,7 +536,7 @@ export function QuestionFormPage({
                   </Field>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2">
                   <Field data-invalid={Boolean(form.formState.errors.type)}>
                     <FieldContent>
                       <FieldLabel htmlFor={`${formId}-type`} className="required">
@@ -513,11 +548,37 @@ export function QuestionFormPage({
                         value={watchedType}
                         onValueChange={(value) => {
                           const nextType = value as QuestionType
+                          const currentOptionCount = parseOptionalInteger(
+                            form.getValues("optionCount"),
+                          )
+                          const nextOptionCount = isChoiceQuestionType(nextType)
+                            ? nextType === "true_false"
+                              ? questionOptionMinCount
+                              : currentOptionCount === null
+                                ? getDefaultQuestionOptionCount(nextType)
+                                : Math.min(
+                                    Math.max(currentOptionCount, questionOptionMinCount),
+                                    questionOptionMaxCount,
+                                  )
+                            : 0
+
                           form.setValue("type", nextType, { shouldDirty: true, shouldValidate: true })
-                          form.setValue("options", getDefaultQuestionOptions(nextType), {
-                            shouldDirty: true,
-                            shouldValidate: true,
-                          })
+                          form.setValue(
+                            "optionCount",
+                            isChoiceQuestionType(nextType) ? String(nextOptionCount) : "",
+                            {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            },
+                          )
+                          form.setValue(
+                            "options",
+                            getDefaultQuestionOptions(nextType, nextOptionCount),
+                            {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            },
+                          )
 
                           if (isSubjectiveQuestionType(nextType)) {
                             form.setValue("scoringRule", "", {
@@ -547,6 +608,62 @@ export function QuestionFormPage({
                       </Select>
                       <FieldDescription>{getQuestionTypeDescription(watchedType)}</FieldDescription>
                       <FieldError>{form.formState.errors.type?.message}</FieldError>
+                    </div>
+                  </Field>
+
+                  <Field data-invalid={Boolean(form.formState.errors.optionCount)}>
+                    <FieldContent>
+                      <FieldLabel htmlFor={`${formId}-option-count`} className="required">
+                        Option Count
+                      </FieldLabel>
+                    </FieldContent>
+                    <div className="flex flex-col gap-1.5">
+                      <Select
+                        value={
+                          watchedType === "true_false"
+                            ? String(questionOptionMinCount)
+                            : watchedOptionCount || ""
+                        }
+                        onValueChange={(value) =>
+                          form.setValue("optionCount", value, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          })
+                        }
+                        disabled={
+                          !isChoiceQuestionType(watchedType) || watchedType === "true_false"
+                        }
+                      >
+                        <SelectTrigger id={`${formId}-option-count`}>
+                          <SelectValue
+                            placeholder={
+                              isChoiceQuestionType(watchedType)
+                                ? "Select option count"
+                                : "Disabled for this question type"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from(
+                            {
+                              length: questionOptionMaxCount - questionOptionMinCount + 1,
+                            },
+                            (_, index) => questionOptionMinCount + index,
+                          ).map((count) => (
+                            <SelectItem key={count} value={String(count)}>
+                              {count} options
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FieldDescription>
+                        {watchedType === "true_false"
+                          ? "True / False questions always use 2 options."
+                          : isChoiceQuestionType(watchedType)
+                            ? "Choose how many answer choices this question uses."
+                            : "Disabled for short answer questions."}
+                      </FieldDescription>
+                      <FieldError>{form.formState.errors.optionCount?.message}</FieldError>
                     </div>
                   </Field>
 
@@ -744,13 +861,17 @@ export function QuestionFormPage({
                   </FieldLabel>
                 </FieldContent>
                 <div className="flex flex-col gap-1.5">
-                  <Controller
-                    control={form.control}
-                    name="content"
-                    render={({ field }) => (
-                      <QuestionRichTextEditor value={field.value} onChange={field.onChange} />
-                    )}
-                  />
+                    <Controller
+                      control={form.control}
+                      name="content"
+                      render={({ field }) => (
+                        <QuestionRichTextEditor
+                          id={`${formId}-content`}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
                   <FieldError>{form.formState.errors.content?.message}</FieldError>
                 </div>
               </Field>
@@ -814,7 +935,7 @@ export function QuestionFormPage({
                       </Field>
                     </FieldSet>
                   ) : (
-                    <FieldSet>
+                  <FieldSet>
                       <FieldLegend>Answer Choices</FieldLegend>
                       <div className="grid gap-4">
                         {fields.map((field, index) => (
@@ -829,27 +950,14 @@ export function QuestionFormPage({
                                   Option {index + 1}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <label className="flex items-center gap-2 text-sm text-foreground">
-                                  <input
-                                    type="checkbox"
-                                    className="size-4 rounded border-border text-primary focus:ring-primary"
-                                    {...form.register(`options.${index}.isCorrect` as const)}
-                                  />
-                                  Correct
-                                </label>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  className="text-destructive hover:bg-destructive/10 hover:text-destructive disabled:text-muted-foreground disabled:hover:bg-transparent"
-                                  onClick={() => handleRemoveChoiceOption(index)}
-                                  disabled={index < 2}
-                                  aria-label={`Remove option ${field.label}`}
-                                >
-                                  <Trash2Icon />
-                                </Button>
-                              </div>
+                              <label className="flex items-center gap-2 text-sm text-foreground">
+                                <input
+                                  type="checkbox"
+                                  className="size-4 rounded border-border text-primary focus:ring-primary"
+                                  {...form.register(`options.${index}.isCorrect` as const)}
+                                />
+                                Correct
+                              </label>
                             </div>
 
                             <div className="grid gap-3 md:grid-cols-2">
@@ -881,14 +989,6 @@ export function QuestionFormPage({
                           </div>
                         ))}
                       </div>
-                      {fields.length < questionOptionMaxCount ? (
-                        <div className="mt-4 flex justify-center">
-                          <Button type="button" variant="outline" onClick={handleAddChoiceOption}>
-                            <PlusIcon data-icon="inline-start" />
-                            Tambah Opsi
-                          </Button>
-                        </div>
-                      ) : null}
                     </FieldSet>
                   )}
 
@@ -936,7 +1036,7 @@ export function QuestionFormPage({
             <CardHeader>
               <CardTitle>Answer and Explanations</CardTitle>
               <CardDescription>
-                Store the answer key, rubric, and explanation metadata.
+                Store the answer key, rubric, and explanation content.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -982,41 +1082,28 @@ export function QuestionFormPage({
                   </div>
                 </Field>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Field data-invalid={Boolean(form.formState.errors.manualExplanation)}>
-                    <FieldContent>
-                      <FieldLabel htmlFor={`${formId}-manual-explanation`}>
-                        Manual Explanation
-                      </FieldLabel>
-                    </FieldContent>
-                    <div className="flex flex-col gap-1.5">
-                      <Textarea
-                        id={`${formId}-manual-explanation`}
-                        rows={5}
-                        placeholder="Manual explanation for reviewers."
-                        {...form.register("manualExplanation")}
-                      />
-                      <FieldError>{form.formState.errors.manualExplanation?.message}</FieldError>
-                    </div>
-                  </Field>
-
-                  <Field data-invalid={Boolean(form.formState.errors.aiExplanation)}>
-                    <FieldContent>
-                      <FieldLabel htmlFor={`${formId}-ai-explanation`}>
-                        AI Explanation
-                      </FieldLabel>
-                    </FieldContent>
-                    <div className="flex flex-col gap-1.5">
-                      <Textarea
-                        id={`${formId}-ai-explanation`}
-                        rows={5}
-                        placeholder="AI-generated explanation."
-                        {...form.register("aiExplanation")}
-                      />
-                      <FieldError>{form.formState.errors.aiExplanation?.message}</FieldError>
-                    </div>
-                  </Field>
-                </div>
+                <Field data-invalid={Boolean(form.formState.errors.explanation)}>
+                  <FieldContent>
+                    <FieldLabel htmlFor={`${formId}-explanation`}>
+                      Explanation
+                    </FieldLabel>
+                  </FieldContent>
+                  <div className="flex flex-col gap-1.5">
+                    <Controller
+                      control={form.control}
+                      name="explanation"
+                      render={({ field }) => (
+                        <QuestionRichTextEditor
+                          id={`${formId}-explanation`}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Explanation content"
+                        />
+                      )}
+                    />
+                    <FieldError>{form.formState.errors.explanation?.message}</FieldError>
+                  </div>
+                </Field>
               </FieldGroup>
             </CardContent>
           </Card>

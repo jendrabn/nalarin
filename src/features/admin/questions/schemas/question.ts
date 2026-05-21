@@ -2,6 +2,8 @@ import { z } from "zod"
 
 import {
   questionDifficultyValues,
+  questionOptionMaxCount,
+  questionOptionMinCount,
   questionStatusValues,
   questionTypeValues,
 } from "../constants"
@@ -35,16 +37,12 @@ export const questionFormSchema = z
       .trim()
       .max(10000, "Grading rubric is too long.")
       .default(""),
-    manualExplanation: z
+    explanation: z
       .string()
       .trim()
-      .max(10000, "Manual explanation is too long.")
+      .max(10000, "Explanation is too long.")
       .default(""),
-    aiExplanation: z
-      .string()
-      .trim()
-      .max(10000, "AI explanation is too long.")
-      .default(""),
+    optionCount: z.string().trim().default(""),
     year: z.string().trim().max(4, "Year is too long.").default(""),
     points: z.string().trim().min(1, "Points are required."),
     status: z.enum(questionStatusValues),
@@ -60,15 +58,36 @@ export const questionFormSchema = z
     }
 
     if (isChoiceQuestionType(value.type)) {
-      const optionCount = value.options.filter(
+      const optionCount = Number(value.optionCount)
+      const filledCount = value.options.filter(
         (option) => option.content.trim().length > 0 || option.imageUrl.trim().length > 0,
       ).length
+      const hasValidOptionCount =
+        Number.isInteger(optionCount) &&
+        optionCount >= questionOptionMinCount &&
+        optionCount <= questionOptionMaxCount
 
-      if (value.type !== "true_false" && optionCount < 2) {
+      if (!hasValidOptionCount) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["optionCount"],
+          message: `Select between ${questionOptionMinCount} and ${questionOptionMaxCount} options.`,
+        })
+      }
+
+      if (value.type !== "true_false" && filledCount < questionOptionMinCount) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["options"],
           message: "At least two options are required.",
+        })
+      }
+
+      if (hasValidOptionCount && value.options.length !== optionCount) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["options"],
+          message: "Options must match the selected option count.",
         })
       }
 
@@ -96,7 +115,15 @@ export const questionFormSchema = z
         }
       }
 
-      if (value.type === "true_false") {
+      if (value.type === "true_false" && hasValidOptionCount) {
+        if (optionCount !== questionOptionMinCount) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["optionCount"],
+            message: "True / False questions always use 2 options.",
+          })
+        }
+
         const normalized = value.correctAnswerText.trim().toLowerCase()
 
         if (normalized !== "true" && normalized !== "false") {
@@ -171,8 +198,7 @@ export const questionImportRowSchema = z.object({
   correctAnswerText: z.string().trim().default(""),
   scoringRule: z.string().trim().default(""),
   gradingRubric: z.string().trim().default(""),
-  manualExplanation: z.string().trim().default(""),
-  aiExplanation: z.string().trim().default(""),
+  explanation: z.string().trim().default(""),
   year: z.string().trim().default(""),
   points: z.string().trim().default(""),
   status: z.enum(questionStatusValues).default("draft"),

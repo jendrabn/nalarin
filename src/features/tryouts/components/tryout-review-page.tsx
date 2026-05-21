@@ -481,22 +481,8 @@ function hasExplanationContent(question: TryoutReviewQuestion) {
 function getExplanationItems(question: TryoutReviewQuestion) {
   const items: Array<{ label: string; content: string }> = []
 
-  if (question.question.manualExplanation) {
-    items.push({
-      label: "Pembahasan",
-      content: question.question.manualExplanation,
-    })
-  }
-
-  if (items.length === 0 && question.question.explanation) {
+  if (question.question.explanation) {
     items.push({ label: "Pembahasan", content: question.question.explanation })
-  }
-
-  if (items.length === 0 && question.question.aiExplanation) {
-    items.push({
-      label: "Pembahasan",
-      content: question.question.aiExplanation,
-    })
   }
 
   return items

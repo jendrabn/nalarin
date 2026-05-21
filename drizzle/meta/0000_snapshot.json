@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "75adaf96-25a3-4324-9e51-45e282ae5215",
+  "id": "d26a2d07-4649-490e-989b-f43595cfca77",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "blog_categories": {
@@ -2127,15 +2127,8 @@
           "notNull": false,
           "autoincrement": false
         },
-        "manual_explanation": {
-          "name": "manual_explanation",
-          "type": "longtext",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "ai_explanation": {
-          "name": "ai_explanation",
+        "explanation": {
+          "name": "explanation",
           "type": "longtext",
           "primaryKey": false,
           "notNull": false,

@@ -15,8 +15,6 @@ export type PracticeQuestionSnapshot = {
   scoringRule: "all_or_nothing" | "partial" | null
   imageUrl: string | null
   explanation: string | null
-  manualExplanation: string | null
-  aiExplanation: string | null
   year: number | null
   points: number
 }

@@ -10,7 +10,7 @@ import { questionTypeLabels } from "@/features/admin/questions/constants"
 import { getQuestionById } from "@/features/admin/questions/queries"
 import { previewQuestionContent, stripHtml } from "@/features/admin/questions/utils/question"
 
-type AiExplanationPageProps = {
+type QuestionExplanationPageProps = {
   params: Promise<{
     questionId: string
   }>
@@ -18,27 +18,29 @@ type AiExplanationPageProps = {
 
 export async function generateMetadata({
   params,
-}: AiExplanationPageProps): Promise<Metadata> {
+}: QuestionExplanationPageProps): Promise<Metadata> {
   const { questionId } = await params
   const id = Number(questionId)
 
   if (!Number.isFinite(id)) {
     return {
-      title: "AI Explanation",
-      description: "Review the AI explanation for a question.",
+      title: "Question Explanation",
+      description: "Review the explanation for a question.",
     }
   }
 
   const question = await getQuestionById(id)
 
   return {
-    title: question ? `AI Explanation - ${question.title || `Question ${question.id}`}` : "AI Explanation",
+    title: question
+      ? `Question Explanation - ${question.title || `Question ${question.id}`}`
+      : "Question Explanation",
     description:
-      "Review the AI explanation stored for this question and open the editor if needed.",
+      "Review the explanation stored for this question and open the editor if needed.",
   }
 }
 
-export default async function Page({ params }: AiExplanationPageProps) {
+export default async function Page({ params }: QuestionExplanationPageProps) {
   const { questionId } = await params
   const id = Number(questionId)
 
@@ -55,8 +57,8 @@ export default async function Page({ params }: AiExplanationPageProps) {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="AI Explanation"
-        subtitle="Review the stored explanation metadata for this question."
+        title="Question Explanation"
+        subtitle="Review the stored explanation for this question."
         actions={
           <Button asChild variant="outline">
             <Link href={`/admin/questions/${question.id}/edit`}>Back to Edit</Link>
@@ -65,24 +67,20 @@ export default async function Page({ params }: AiExplanationPageProps) {
       />
 
       <Card>
-          <CardHeader>
-            <CardTitle className="flex flex-wrap items-center gap-2">
-              {question.title || `Question ${question.id}`}
-              <Badge variant="outline">{questionTypeLabels[question.type]}</Badge>
-            </CardTitle>
-          <CardDescription>{previewQuestionContent(stripHtml(question.content), 180)}</CardDescription>
+        <CardHeader>
+          <CardTitle className="flex flex-wrap items-center gap-2">
+            {question.title || `Question ${question.id}`}
+            <Badge variant="outline">{questionTypeLabels[question.type]}</Badge>
+          </CardTitle>
+          <CardDescription>
+            {previewQuestionContent(stripHtml(question.content), 180)}
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-border/60 p-4">
-            <p className="text-sm font-medium text-foreground">AI Explanation</p>
+            <p className="text-sm font-medium text-foreground">Explanation</p>
             <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
-              {question.aiExplanation ?? "No AI explanation stored for this question."}
-            </p>
-          </div>
-          <div className="rounded-xl border border-border/60 p-4">
-            <p className="text-sm font-medium text-foreground">Manual Explanation</p>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
-              {question.manualExplanation ?? "No manual explanation stored for this question."}
+              {question.explanation ?? "No explanation stored for this question."}
             </p>
           </div>
           <div className="rounded-xl border border-border/60 p-4 md:col-span-2">

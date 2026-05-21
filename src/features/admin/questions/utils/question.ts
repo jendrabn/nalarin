@@ -85,16 +85,54 @@ export function getNextQuestionOptionLabel(index: number) {
   return questionOptionLabelValues[index] ?? null
 }
 
-export function normalizeQuestionChoiceOptions(options: QuestionOptionInput[]) {
-  return options.slice(0, questionOptionMaxCount).map((option, index) => ({
-    label: questionOptionLabelValues[index],
-    content: option.content,
-    imageUrl: option.imageUrl,
-    isCorrect: option.isCorrect,
+function normalizeQuestionOptionCount(count: number) {
+  if (!Number.isFinite(count)) {
+    return questionOptionMinCount
+  }
+
+  return Math.min(
+    Math.max(Math.trunc(count), questionOptionMinCount),
+    questionOptionMaxCount,
+  )
+}
+
+export function resizeQuestionChoiceOptions(
+  options: QuestionOptionInput[],
+  count: number,
+) {
+  const normalizedCount = normalizeQuestionOptionCount(count)
+
+  return questionOptionLabelValues.slice(0, normalizedCount).map((label, index) => ({
+    label,
+    content: options[index]?.content ?? "",
+    imageUrl: options[index]?.imageUrl ?? "",
+    isCorrect: Boolean(options[index]?.isCorrect),
   }))
 }
 
-export function getDefaultQuestionOptions(type: QuestionType): QuestionOptionInput[] {
+export function normalizeQuestionChoiceOptions(
+  options: QuestionOptionInput[],
+  count = options.length,
+) {
+  return resizeQuestionChoiceOptions(options, count)
+}
+
+export function getDefaultQuestionOptionCount(type: QuestionType) {
+  if (type === "true_false") {
+    return questionOptionMinCount
+  }
+
+  if (type === "multiple_choice" || type === "multiple_answer") {
+    return questionOptionMinCount
+  }
+
+  return 0
+}
+
+export function getDefaultQuestionOptions(
+  type: QuestionType,
+  count = getDefaultQuestionOptionCount(type),
+): QuestionOptionInput[] {
   if (type === "true_false") {
     return questionTrueFalseLabels.map((label) => ({
       label,
@@ -105,18 +143,17 @@ export function getDefaultQuestionOptions(type: QuestionType): QuestionOptionInp
   }
 
   if (type === "multiple_choice" || type === "multiple_answer") {
-    return questionOptionLabelValues.slice(0, questionOptionMinCount).map((label) => ({
-      label,
-      content: "",
-      imageUrl: "",
-      isCorrect: false,
-    }))
+    return resizeQuestionChoiceOptions([], count)
   }
 
   return []
 }
 
-export function ensureQuestionOptions(options: QuestionOptionInput[], type: QuestionType) {
+export function ensureQuestionOptions(
+  options: QuestionOptionInput[],
+  type: QuestionType,
+  count?: number,
+) {
   if (type === "true_false") {
     return getDefaultQuestionOptions(type).map((option, index) => ({
       ...option,
@@ -127,8 +164,8 @@ export function ensureQuestionOptions(options: QuestionOptionInput[], type: Ques
   }
 
   if (type === "multiple_choice" || type === "multiple_answer") {
-    return options.slice(0, questionOptionMaxCount).map((option, index) => ({
-      label: questionOptionLabelValues[index],
+    return resizeQuestionChoiceOptions(options, count ?? options.length).map((option) => ({
+      ...option,
       content: option.content.trim(),
       imageUrl: option.imageUrl.trim(),
       isCorrect: Boolean(option.isCorrect),

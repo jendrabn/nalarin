@@ -49,8 +49,7 @@ export const questionImportTemplateHeaders = [
   "correct_answer_text",
   "scoring_rule",
   "grading_rubric",
-  "manual_explanation",
-  "ai_explanation",
+  "explanation",
   "year",
   "points",
   "status",
@@ -74,7 +73,7 @@ export function createQuestionImportTemplateWorkbook() {
   const instructionsSheet = XLSX.utils.aoa_to_sheet([
     ["Field", "Guidance"],
     [
-      "title, question_content, image_url, grading_rubric, manual_explanation, ai_explanation, year, points, status",
+      "title, question_content, image_url, grading_rubric, explanation, year, points, status",
       "Use the same values you would enter in the create/edit form. Status accepts draft, published, or archived.",
     ],
     [
@@ -263,8 +262,7 @@ export async function parseQuestionImportWorkbook(
       correctAnswerText: cellValue(row, ["correct_answer_text", "correctAnswerText"]),
       scoringRule: cellValue(row, ["scoring_rule", "scoringRule"]),
       gradingRubric: cellValue(row, ["grading_rubric", "gradingRubric"]),
-      manualExplanation: cellValue(row, ["manual_explanation", "manualExplanation"]),
-      aiExplanation: cellValue(row, ["ai_explanation", "aiExplanation"]),
+      explanation: cellValue(row, ["explanation"]),
       year: cellValue(row, ["year"]),
       points: cellValue(row, ["points"]),
       status: cellValue(row, ["status"]),

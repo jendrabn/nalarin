@@ -286,7 +286,7 @@ export function QuestionImportWorkspace({ mode, lookups }: QuestionImportWorkspa
         <CardHeader>
           <CardTitle>{mode === "upload" ? "Upload Workbook" : "Preview Import"}</CardTitle>
           <CardDescription>
-            This template includes the following fields: exam_type_slug, subject_slug, topic_slug, question_type, difficulty, title, question_content, image_url, option_a to option_j, correct_answer, correct_answer_text, scoring_rule, grading_rubric, manual_explanation, ai_explanation, year, points, and status.
+            This template includes the following fields: exam_type_slug, subject_slug, topic_slug, question_type, difficulty, title, question_content, image_url, option_a to option_j, correct_answer, correct_answer_text, scoring_rule, grading_rubric, explanation, year, points, and status.
           </CardDescription>
         </CardHeader>
         <CardContent>

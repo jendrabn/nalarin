@@ -267,7 +267,14 @@ async function getTryoutSectionSummaries(sessionId: number): Promise<TryoutSecti
 
 function normalizeQuestionSnapshot(value: unknown): TryoutQuestionSnapshot {
   const snapshot = value as Partial<TryoutQuestionSnapshot>
-  const legacyExplanation = typeof snapshot.explanation === "string" ? snapshot.explanation : null
+  const legacyExplanation =
+    typeof snapshot.explanation === "string"
+      ? snapshot.explanation
+      : typeof (snapshot as { manualExplanation?: unknown }).manualExplanation === "string"
+        ? (snapshot as { manualExplanation?: string }).manualExplanation ?? null
+        : typeof (snapshot as { aiExplanation?: unknown }).aiExplanation === "string"
+          ? (snapshot as { aiExplanation?: string }).aiExplanation ?? null
+          : null
 
   return {
     id: Number(snapshot.id ?? 0),
@@ -278,9 +285,6 @@ function normalizeQuestionSnapshot(value: unknown): TryoutQuestionSnapshot {
     scoringRule: snapshot.scoringRule ?? null,
     imageUrl: typeof snapshot.imageUrl === "string" ? snapshot.imageUrl : null,
     explanation: legacyExplanation,
-    manualExplanation:
-      typeof snapshot.manualExplanation === "string" ? snapshot.manualExplanation : null,
-    aiExplanation: typeof snapshot.aiExplanation === "string" ? snapshot.aiExplanation : null,
     year: typeof snapshot.year === "number" ? snapshot.year : null,
     points: Number(snapshot.points ?? 0),
   }

@@ -204,21 +204,7 @@ function hasExplanationContent(question: PracticeSessionReviewQuestion) {
 function getExplanationItems(question: PracticeSessionReviewQuestion) {
   const items: Array<{ label: string; content: string }> = []
 
-  if (question.question.manualExplanation) {
-    items.push({
-      label: "Pembahasan Manual",
-      content: question.question.manualExplanation,
-    })
-  }
-
-  if (question.question.aiExplanation) {
-    items.push({
-      label: "Pembahasan AI",
-      content: question.question.aiExplanation,
-    })
-  }
-
-  if (items.length === 0 && question.question.explanation) {
+  if (question.question.explanation) {
     items.push({ label: "Pembahasan", content: question.question.explanation })
   }
 

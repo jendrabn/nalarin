@@ -246,8 +246,7 @@ export async function getTryoutReviewData(
       maxScore: schema.tryoutAnswers.maxScore,
       gradingStatus: schema.tryoutAnswers.gradingStatus,
       gradedAt: schema.tryoutAnswers.gradedAt,
-      manualExplanation: schema.questions.manualExplanation,
-      aiExplanation: schema.questions.aiExplanation,
+      explanation: schema.questions.explanation,
     })
     .from(schema.tryoutSessionQuestions)
     .innerJoin(
@@ -312,8 +311,7 @@ export async function getTryoutReviewData(
       points: Number(row.points ?? 0),
       question: {
         ...questionSnapshot,
-        manualExplanation: row.manualExplanation ?? questionSnapshot.manualExplanation,
-        aiExplanation: row.aiExplanation ?? questionSnapshot.aiExplanation,
+        explanation: row.explanation ?? questionSnapshot.explanation,
       },
       options: normalizeOptionSnapshot(row.optionSnapshot, row.questionSnapshot),
       correctAnswer: normalizeCorrectAnswerSnapshot(
@@ -546,7 +544,14 @@ function getReviewQuestionStatus(
 
 function normalizeQuestionSnapshot(value: unknown): TryoutQuestionSnapshot {
   const snapshot = value as Partial<TryoutQuestionSnapshot>
-  const legacyExplanation = typeof snapshot.explanation === "string" ? snapshot.explanation : null
+  const legacyExplanation =
+    typeof snapshot.explanation === "string"
+      ? snapshot.explanation
+      : typeof (snapshot as Partial<{ manualExplanation: unknown }>).manualExplanation === "string"
+        ? (snapshot as Partial<{ manualExplanation: unknown }>).manualExplanation
+        : typeof (snapshot as Partial<{ aiExplanation: unknown }>).aiExplanation === "string"
+          ? (snapshot as Partial<{ aiExplanation: unknown }>).aiExplanation
+          : null
 
   return {
     id: Number(snapshot.id ?? 0),
@@ -557,9 +562,6 @@ function normalizeQuestionSnapshot(value: unknown): TryoutQuestionSnapshot {
     scoringRule: snapshot.scoringRule ?? null,
     imageUrl: typeof snapshot.imageUrl === "string" ? snapshot.imageUrl : null,
     explanation: legacyExplanation,
-    manualExplanation:
-      typeof snapshot.manualExplanation === "string" ? snapshot.manualExplanation : null,
-    aiExplanation: typeof snapshot.aiExplanation === "string" ? snapshot.aiExplanation : null,
     year: typeof snapshot.year === "number" ? snapshot.year : null,
     points: Number(snapshot.points ?? 0),
   }

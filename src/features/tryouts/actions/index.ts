@@ -995,8 +995,7 @@ type TryoutQuestionSnapshotRow = {
   difficulty: "easy" | "medium" | "hard"
   scoringRule: "all_or_nothing" | "partial" | null
   imageUrl: string | null
-  manualExplanation: string | null
-  aiExplanation: string | null
+  explanation: string | null
   correctAnswerText: string | null
   year: number | null
   basePoints: string | number
@@ -1022,8 +1021,7 @@ async function getTryoutQuestionSnapshotRows(tryoutId: number) {
       difficulty: schema.questions.difficulty,
       scoringRule: schema.questions.scoringRule,
       imageUrl: schema.questions.imageUrl,
-      manualExplanation: schema.questions.manualExplanation,
-      aiExplanation: schema.questions.aiExplanation,
+      explanation: schema.questions.explanation,
       correctAnswerText: schema.questions.correctAnswerText,
       year: schema.questions.year,
       basePoints: schema.questions.points,
@@ -1091,9 +1089,7 @@ function buildTryoutSessionQuestions(
           difficulty: row.difficulty,
           scoringRule: row.scoringRule ?? null,
           imageUrl: row.imageUrl ?? null,
-          explanation: row.manualExplanation ?? row.aiExplanation ?? null,
-          manualExplanation: row.manualExplanation ?? null,
-          aiExplanation: row.aiExplanation ?? null,
+          explanation: row.explanation ?? null,
           year: row.year ?? null,
           points,
         },
