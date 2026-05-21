@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -16,7 +15,6 @@ import {
   ArrowRightIcon,
   BookOpenCheckIcon,
   CheckCircle2Icon,
-  CircleIcon,
   ClockIcon,
   FileTextIcon,
   FlagIcon,
@@ -37,18 +35,18 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Progress } from "@/components/ui/progress"
-import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+
+import {
+  QuestionContent,
+  QuestionExplanationPanel,
+  QuestionNavigation,
+  QuestionOptionField,
+  QuestionStatusPill,
+} from "@/features/question-room/components"
 
 import {
   confirmPracticeAnswerAction,
@@ -59,7 +57,6 @@ import {
 } from "../actions"
 import type {
   PracticeMode,
-  PracticeQuestionSnapshot,
   PracticeQuestionType,
   PracticeRoomAnswer,
   PracticeRoomData,
@@ -91,7 +88,6 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
     ),
   )
   const [answers, setAnswers] = useState<AnswerMap>(() => createInitialAnswerMap(session))
-  const [explanationOpen, setExplanationOpen] = useState<Record<number, boolean>>({})
   const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false)
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(() =>
     session.mode === "quiz" && session.durationMinutes
@@ -162,7 +158,7 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
     }, 1000)
 
     return () => window.clearInterval(interval)
-  }, [remainingSeconds, router, session.id, session.mode])
+  }, [remainingSeconds, router, session.id, session.mode, startTransition])
 
   useEffect(() => {
     if (session.status !== "in_progress") {
@@ -201,15 +197,13 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
       return
     }
 
-    const nextAnswer = {
-      ...currentAnswer,
-      selectedOptionKeys,
-      answerText: "",
-    }
-
     setAnswers((current) => ({
       ...current,
-      [question.id]: nextAnswer,
+      [question.id]: {
+        ...currentAnswer,
+        selectedOptionKeys,
+        answerText: "",
+      },
     }))
 
     startTransition(async () => {
@@ -341,26 +335,28 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
   if (!activeQuestion) {
     return (
       <main className="flex min-h-svh items-center justify-center bg-muted/35 px-4">
-        <Empty className="max-w-md border bg-card">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <FileTextIcon />
-            </EmptyMedia>
-            <EmptyTitle>Belum ada soal</EmptyTitle>
-            <EmptyDescription>
-              Sesi ini belum memiliki snapshot soal yang dapat dikerjakan.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <EmptyState />
       </main>
     )
   }
 
   const activeAnswer = getAnswer(activeQuestion.id)
-  const canFinish =
-    session.mode === "quiz" || confirmedCount === session.questions.length
+  const canFinish = session.mode === "quiz" || confirmedCount === session.questions.length
   const unansweredCount = session.totalQuestions - answeredCount
   const practiceUnconfirmedCount = session.totalQuestions - confirmedCount
+  const feedbackMode = session.mode === "practice" ? "practice" : "none"
+  const legendItems =
+    session.mode === "practice"
+      ? [
+          { className: "bg-primary", label: "Aktif" },
+          { className: "bg-chart-2", label: "Selesai" },
+          { className: "bg-destructive", label: "Salah" },
+        ]
+      : [
+          { className: "bg-primary", label: "Aktif" },
+          { className: "bg-primary/20", label: "Terjawab" },
+          { className: "bg-chart-3", label: "Ditandai" },
+        ]
 
   return (
     <main className="min-h-svh bg-muted/35">
@@ -386,11 +382,11 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
             <div className="flex shrink-0 items-center gap-2">
               <p className="text-xs font-medium text-muted-foreground">{progressValue}%</p>
               {session.mode === "quiz" ? (
-                <StatusPill icon={<ClockIcon />}>
+                <QuestionStatusPill icon={<ClockIcon />}>
                   <span suppressHydrationWarning>
                     {remainingSeconds === null ? "--:--" : formatDuration(remainingSeconds)}
                   </span>
-                </StatusPill>
+                </QuestionStatusPill>
               ) : null}
             </div>
           </div>
@@ -399,12 +395,36 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
 
       <div className="mx-auto grid w-full max-w-7xl items-start gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:px-8">
         <QuestionNavigation
-          mode={session.mode}
-          questions={session.questions}
-          answers={answers}
-          activeIndex={activeQuestionIndex}
-          highestReachableIndex={highestReachableIndex}
+          items={session.questions.map((question, index) => {
+            const answer = answers[question.id]
+            const answered = isQuestionAnswered(answer)
+            const lockedAnswer = isAnswerLocked(answer)
+            const wrongAnswer = session.mode === "practice" && lockedAnswer && answer?.isCorrect === false
+            const active = index === activeQuestionIndex
+            const locked = index > highestReachableIndex
+
+            return {
+              id: question.id,
+              label: question.orderIndex,
+              active,
+              answered,
+              locked,
+              flagged: session.mode === "quiz" && Boolean(answer?.isMarkedForReview),
+              status: wrongAnswer ? "wrong" : lockedAnswer ? "correct" : undefined,
+              ariaLabel: `Buka soal ${question.orderIndex}`,
+            } satisfies {
+              id: number
+              label: number
+              active: boolean
+              answered: boolean
+              locked: boolean
+              flagged: boolean
+              status?: "correct" | "wrong" | "pending" | "unanswered"
+              ariaLabel: string
+            }
+          })}
           onSelect={moveToQuestion}
+          legendItems={legendItems}
         />
 
         <section className="flex min-w-0 flex-col gap-4">
@@ -416,9 +436,7 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
                     <Badge variant="secondary">
                       Soal {activeQuestion.orderIndex}/{session.totalQuestions}
                     </Badge>
-                    <Badge variant="outline">
-                      {questionTypeLabels[activeQuestion.question.type]}
-                    </Badge>
+                    <Badge variant="outline">{questionTypeLabels[activeQuestion.question.type]}</Badge>
                   </div>
                 </div>
 
@@ -427,7 +445,11 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    className={activeAnswer.isMarkedForReview ? "bg-chart-3/10 text-chart-3 hover:bg-chart-3/15" : undefined}
+                    className={
+                      activeAnswer.isMarkedForReview
+                        ? "bg-chart-3/10 text-chart-3 hover:bg-chart-3/15"
+                        : undefined
+                    }
                     onClick={() => toggleFlag(activeQuestion)}
                     disabled={isPending}
                     aria-label={activeAnswer.isMarkedForReview ? "Hapus tanda soal" : "Tandai soal"}
@@ -440,28 +462,25 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
             </CardHeader>
 
             <CardContent className="flex flex-col gap-6 px-4 pb-5 pt-1 sm:px-5">
-              <QuestionContent question={activeQuestion} />
-              <AnswerControl
-                mode={session.mode}
+              <QuestionContent
+                content={activeQuestion.question.content}
+                imageUrl={activeQuestion.question.imageUrl}
+              />
+
+              <QuestionOptionField
                 question={activeQuestion}
                 answer={activeAnswer}
+                feedbackMode={feedbackMode}
                 isPending={isPending}
-                onChoiceChange={saveChoice}
-                onTextChange={saveTextAnswer}
-                onTextBlur={persistTextAnswer}
+                onChoiceChange={(selectedOptionKeys) => saveChoice(activeQuestion, selectedOptionKeys)}
+                onTextChange={(answerText) => saveTextAnswer(activeQuestion, answerText)}
+                onTextBlur={() => persistTextAnswer(activeQuestion)}
               />
 
               {session.mode === "practice" ? (
                 <PracticeFeedback
                   question={activeQuestion}
                   answer={activeAnswer}
-                  explanationOpen={Boolean(explanationOpen[activeQuestion.id])}
-                  onToggleExplanation={() =>
-                    setExplanationOpen((current) => ({
-                      ...current,
-                      [activeQuestion.id]: !current[activeQuestion.id],
-                    }))
-                  }
                 />
               ) : null}
 
@@ -495,23 +514,15 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
                 </div>
 
                 <div className="flex min-w-fit justify-end">
-                  {session.mode === "practice" || session.mode === "quiz" ? (
-                    <RoomPrimaryActions
-                      mode={session.mode}
-                      showConfirm={false}
-                      activeIndex={activeQuestionIndex}
-                      totalQuestions={session.questions.length}
-                      highestReachableIndex={highestReachableIndex}
-                      activeAnswer={activeAnswer}
-                      canFinish={canFinish}
-                      isPending={isPending}
-                      onConfirm={() => confirmAnswer(activeQuestion)}
-                      onFinish={() => setIsFinishDialogOpen(true)}
-                      onNext={() => moveToQuestion(activeQuestionIndex + 1)}
-                    />
-                  ) : isPending ? (
-                    <Loader2Icon className="animate-spin text-muted-foreground" />
-                  ) : null}
+                  <RoomPrimaryActions
+                    activeIndex={activeQuestionIndex}
+                    totalQuestions={session.questions.length}
+                    highestReachableIndex={highestReachableIndex}
+                    canFinish={canFinish}
+                    isPending={isPending}
+                    onFinish={() => setIsFinishDialogOpen(true)}
+                    onNext={() => moveToQuestion(activeQuestionIndex + 1)}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -535,54 +546,25 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
   )
 }
 
-function StatusPill({ icon, children }: { icon: ReactNode; children: ReactNode }) {
-  return (
-    <div className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm">
-      <span className="text-primary [&_svg]:size-4">{icon}</span>
-      <span className="text-sm font-semibold tabular-nums">{children}</span>
-    </div>
-  )
-}
-
 function RoomPrimaryActions({
-  mode,
-  showConfirm = true,
   activeIndex,
   totalQuestions,
   highestReachableIndex,
-  activeAnswer,
   canFinish,
   isPending,
-  onConfirm,
   onFinish,
   onNext,
 }: {
-  mode: PracticeMode
-  showConfirm?: boolean
   activeIndex: number
   totalQuestions: number
   highestReachableIndex: number
-  activeAnswer: PracticeRoomAnswer
   canFinish: boolean
   isPending: boolean
-  onConfirm: () => void
   onFinish: () => void
   onNext: () => void
 }) {
   return (
     <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-center">
-      {showConfirm && mode === "practice" && !isAnswerLocked(activeAnswer) ? (
-        <Button
-          type="button"
-          variant="outline-primary"
-          onClick={onConfirm}
-          disabled={!isQuestionAnswered(activeAnswer) || isPending}
-        >
-          <CheckCircle2Icon data-icon="inline-start" />
-          Konfirmasi
-        </Button>
-      ) : null}
-
       {activeIndex >= totalQuestions - 1 ? (
         <Button
           type="button"
@@ -597,11 +579,7 @@ function RoomPrimaryActions({
         <Button
           type="button"
           onClick={onNext}
-          disabled={
-            activeIndex >= totalQuestions - 1 ||
-            activeIndex + 1 > highestReachableIndex ||
-            isPending
-          }
+          disabled={activeIndex >= totalQuestions - 1 || activeIndex + 1 > highestReachableIndex || isPending}
         >
           Berikutnya
           <ArrowRightIcon data-icon="inline-end" />
@@ -611,411 +589,12 @@ function RoomPrimaryActions({
   )
 }
 
-function QuestionNavigation({
-  mode,
-  questions,
-  answers,
-  activeIndex,
-  highestReachableIndex,
-  onSelect,
-}: {
-  mode: PracticeMode
-  questions: PracticeRoomQuestion[]
-  answers: AnswerMap
-  activeIndex: number
-  highestReachableIndex: number
-  onSelect: (index: number) => void
-}) {
-  return (
-    <aside className="min-w-0 lg:self-start">
-      <Card className="max-w-full gap-0 py-0 shadow-sm">
-        <CardHeader className="px-4 py-4">
-          <CardTitle className="text-sm font-semibold">
-            Navigasi Soal
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="min-w-0 px-3 pb-3 pt-0">
-          <div className="max-w-full overflow-x-auto pb-1 lg:overflow-visible lg:pb-0">
-            <div className="grid w-max grid-flow-col auto-cols-[2.5rem] gap-2 pt-1.5 lg:w-auto lg:grid-flow-row lg:grid-cols-5">
-              {questions.map((question, index) => {
-                const answer = answers[question.id]
-                const answered = isQuestionAnswered(answer)
-                const lockedAnswer = isAnswerLocked(answer)
-                const wrongAnswer = mode === "practice" && lockedAnswer && answer?.isCorrect === false
-                const flagged = mode === "quiz" && Boolean(answer?.isMarkedForReview)
-                const active = index === activeIndex
-                const locked = index > highestReachableIndex
-
-                return (
-                  <button
-                    key={question.id}
-                    type="button"
-                    onClick={() => onSelect(index)}
-                    disabled={locked}
-                    aria-current={active ? "step" : undefined}
-                    className={cn(
-                      "relative grid size-10 place-items-center rounded-lg border text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-45",
-                      wrongAnswer
-                        ? active
-                          ? "border-destructive bg-destructive text-white"
-                          : "border-destructive/35 bg-destructive/10 text-destructive hover:bg-destructive/15"
-                        : active
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : lockedAnswer
-                          ? "border-chart-2/35 bg-chart-2/10 text-chart-2 hover:bg-chart-2/15"
-                          : answered
-                            ? "border-primary/35 bg-primary/10 text-primary hover:bg-primary/15"
-                            : "bg-background hover:bg-muted",
-                    )}
-                  >
-                    {question.orderIndex}
-                    {flagged ? (
-                      <span className="absolute -right-1 -top-1 size-2.5 rounded-full bg-chart-3 ring-2 ring-card" />
-                    ) : null}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          <div className="mt-4 flex items-center justify-between gap-3 text-[0.72rem] text-muted-foreground">
-            <LegendItem className="bg-primary" label="Aktif" />
-            <LegendItem className={mode === "practice" ? "bg-chart-2" : "bg-primary/20"} label={mode === "practice" ? "Selesai" : "Terjawab"} />
-            {mode === "practice" ? (
-              <LegendItem className="bg-destructive" label="Salah" />
-            ) : (
-              <LegendItem className="bg-chart-3" label="Ditandai" />
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </aside>
-  )
-}
-
-function LegendItem({ className, label }: { className: string; label: string }) {
-  return (
-    <span className="flex items-center gap-1.5">
-      <span className={cn("size-2 rounded-full", className)} />
-      {label}
-    </span>
-  )
-}
-
-function QuestionContent({ question }: { question: PracticeRoomQuestion }) {
-  return (
-    <div className="flex flex-col gap-4">
-      <div
-        className="max-w-none text-base leading-8 text-foreground [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5"
-        dangerouslySetInnerHTML={{ __html: question.question.content }}
-      />
-      {question.question.imageUrl ? (
-        <div className="overflow-hidden rounded-lg border bg-card">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={question.question.imageUrl} alt="" className="max-h-[420px] w-full object-contain" />
-        </div>
-      ) : null}
-    </div>
-  )
-}
-
-function AnswerControl({
-  mode,
-  question,
-  answer,
-  isPending,
-  onChoiceChange,
-  onTextChange,
-  onTextBlur,
-}: {
-  mode: PracticeMode
-  question: PracticeRoomQuestion
-  answer: PracticeRoomAnswer
-  isPending: boolean
-  onChoiceChange: (question: PracticeRoomQuestion, selectedOptionKeys: string[]) => void
-  onTextChange: (question: PracticeRoomQuestion, answerText: string) => void
-  onTextBlur: (question: PracticeRoomQuestion) => void
-}) {
-  const locked = mode === "practice" && isAnswerLocked(answer)
-  const [highlightedOption, setHighlightedOption] = useState<{
-    questionId: number
-    optionKey: string | null
-  } | null>(null)
-  const optionKeys = useMemo(() => question.options.map((option) => option.label), [question.options])
-  const highlightedOptionKey =
-    highlightedOption?.questionId === question.id ? highlightedOption.optionKey : null
-
-  const setHighlightedOptionKey = useCallback((optionKey: string | null) => {
-    setHighlightedOption({ questionId: question.id, optionKey })
-  }, [question.id])
-
-  const moveHighlight = useCallback((direction: 1 | -1) => {
-    if (locked || isPending || optionKeys.length === 0) {
-      return
-    }
-
-    setHighlightedOption((current) => {
-      const currentKey = current?.questionId === question.id ? current.optionKey : null
-      const currentIndex = currentKey ? optionKeys.indexOf(currentKey) : -1
-      const fallbackIndex = direction === 1 ? 0 : optionKeys.length - 1
-      const nextIndex =
-        currentIndex === -1
-          ? fallbackIndex
-          : (currentIndex + direction + optionKeys.length) % optionKeys.length
-
-      return {
-        questionId: question.id,
-        optionKey: optionKeys[nextIndex] ?? null,
-      }
-    })
-  }, [isPending, locked, optionKeys, question.id])
-
-  const selectHighlightedOption = useCallback(() => {
-    if (locked || isPending || !highlightedOptionKey) {
-      return
-    }
-
-    if (question.question.type === "multiple_answer") {
-      const nextKeys = answer.selectedOptionKeys.includes(highlightedOptionKey)
-        ? answer.selectedOptionKeys.filter((key) => key !== highlightedOptionKey)
-        : [...answer.selectedOptionKeys, highlightedOptionKey]
-
-      onChoiceChange(question, nextKeys)
-      return
-    }
-
-    onChoiceChange(question, [highlightedOptionKey])
-  }, [answer.selectedOptionKeys, highlightedOptionKey, isPending, locked, onChoiceChange, question])
-
-  useEffect(() => {
-    function handleKeyboardShortcut(event: KeyboardEvent) {
-      if (locked || isPending || optionKeys.length === 0 || isShortcutIgnoredTarget(event.target)) {
-        return
-      }
-
-      if (event.key === "ArrowDown") {
-        event.preventDefault()
-        moveHighlight(1)
-        return
-      }
-
-      if (event.key === "ArrowUp") {
-        event.preventDefault()
-        moveHighlight(-1)
-        return
-      }
-
-      if (event.key === "Enter") {
-        event.preventDefault()
-        selectHighlightedOption()
-        return
-      }
-
-      if (event.key === "Escape") {
-        event.preventDefault()
-        setHighlightedOptionKey(null)
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyboardShortcut)
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyboardShortcut)
-    }
-  }, [
-    answer.selectedOptionKeys,
-    highlightedOptionKey,
-    isPending,
-    locked,
-    moveHighlight,
-    onChoiceChange,
-    optionKeys,
-    question,
-    selectHighlightedOption,
-    setHighlightedOptionKey,
-  ])
-
-  if (question.question.type === "short_answer") {
-    return (
-      <div className="flex flex-col gap-2">
-        <label className="text-base font-semibold" htmlFor={`answer-${question.id}`}>
-          Jawaban
-        </label>
-        <Textarea
-          id={`answer-${question.id}`}
-          value={answer.answerText}
-          placeholder="Tulis jawaban singkat kamu di sini."
-          className="min-h-32 resize-y bg-background text-base"
-          disabled={isPending || locked}
-          onChange={(event) => onTextChange(question, event.target.value)}
-          onBlur={() => onTextBlur(question)}
-        />
-      </div>
-    )
-  }
-
-  if (question.options.length === 0) {
-    return (
-      <Empty className="border bg-muted/30 py-8">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <FileTextIcon />
-          </EmptyMedia>
-          <EmptyTitle>Opsi belum tersedia</EmptyTitle>
-          <EmptyDescription>Soal ini belum memiliki opsi jawaban.</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    )
-  }
-
-  return (
-    <div
-      className="flex flex-col gap-3"
-      aria-describedby={`answer-keyboard-help-${question.id}`}
-    >
-      <div className="grid gap-2">
-        {question.options.map((option) => {
-          const selected = answer.selectedOptionKeys.includes(option.label)
-          const multiple = question.question.type === "multiple_answer"
-          const optionId = `option-${question.id}-${option.label}`
-          const highlighted = highlightedOptionKey === option.label
-          const feedbackClass = getFeedbackClass({
-            mode,
-            locked,
-            selected,
-            isCorrectOption: isCorrectOptionForQuestion(question, option.label, option.content),
-            isAnswerCorrect: answer.isCorrect,
-          })
-
-          if (multiple) {
-            return (
-              <div
-                key={`${question.id}-${option.label}`}
-                className={cn(
-                  "flex min-h-12 items-center gap-3 rounded-lg border bg-background p-3 text-base transition-colors",
-                  locked || isPending ? "opacity-100" : "hover:border-primary/35 hover:bg-muted/45",
-                  feedbackClass ?? (selected && "border-primary bg-primary/10"),
-                  highlighted && !locked && "ring-3 ring-ring/35",
-                )}
-                onMouseEnter={() => setHighlightedOptionKey(option.label)}
-              >
-                <Checkbox
-                  id={optionId}
-                  checked={selected}
-                  disabled={isPending || locked}
-                  aria-label={`Pilih opsi ${option.label}`}
-                  onFocus={() => setHighlightedOptionKey(option.label)}
-                  onCheckedChange={(checked) => {
-                    setHighlightedOptionKey(option.label)
-                    const nextKeys =
-                      checked === true
-                        ? [...answer.selectedOptionKeys, option.label]
-                        : answer.selectedOptionKeys.filter((key) => key !== option.label)
-
-                    onChoiceChange(question, nextKeys)
-                  }}
-                />
-                <label
-                  htmlFor={optionId}
-                  className={cn(
-                    "min-w-0 flex-1 space-y-2 leading-7",
-                    isPending || locked ? "cursor-default" : "cursor-pointer",
-                  )}
-                >
-                  <span
-                    className="block [&_p]:mb-2"
-                    dangerouslySetInnerHTML={{ __html: option.content }}
-                  />
-                  {option.imageUrl ? (
-                    <span className="block overflow-hidden rounded-md border bg-card">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={option.imageUrl} alt="" className="max-h-56 w-full object-contain" />
-                    </span>
-                  ) : null}
-                </label>
-              </div>
-            )
-          }
-
-          return (
-            <button
-              key={`${question.id}-${option.label}`}
-              type="button"
-              disabled={isPending || locked}
-              onClick={() => {
-                setHighlightedOptionKey(option.label)
-                onChoiceChange(question, [option.label])
-              }}
-              className={cn(
-                "group flex min-h-12 items-center gap-3 rounded-lg border bg-background p-3 text-left text-base transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-100",
-                feedbackClass ??
-                  (selected ? "border-primary bg-primary/10" : "hover:border-primary/35 hover:bg-muted/45"),
-                highlighted && !locked && "ring-3 ring-ring/35",
-              )}
-              onFocus={() => setHighlightedOptionKey(option.label)}
-              onMouseEnter={() => setHighlightedOptionKey(option.label)}
-            >
-              <span
-                className={cn(
-                  "grid size-6 shrink-0 place-items-center rounded-full border text-xs font-semibold",
-                  selected
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border text-muted-foreground group-hover:border-primary/45",
-                )}
-              >
-                {option.label || <CircleIcon />}
-              </span>
-              <span className="min-w-0 flex-1 space-y-2">
-                <span className="block leading-7 [&_p]:mb-2" dangerouslySetInnerHTML={{ __html: option.content }} />
-                {option.imageUrl ? (
-                  <span className="block overflow-hidden rounded-md border bg-card">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={option.imageUrl} alt="" className="max-h-56 w-full object-contain" />
-                  </span>
-                ) : null}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-      <p
-        id={`answer-keyboard-help-${question.id}`}
-        className="text-center text-xs text-muted-foreground"
-      >
-        Gunakan tombol ↑↓ untuk pindah opsi, Enter untuk memilih, Esc untuk menghapus sorotan.
-      </p>
-    </div>
-  )
-}
-
-function isShortcutIgnoredTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) {
-    return false
-  }
-
-  if (target.closest('[role="dialog"], [role="alertdialog"]')) {
-    return true
-  }
-
-  const tagName = target.tagName.toLowerCase()
-
-  return (
-    tagName === "input" ||
-    tagName === "textarea" ||
-    tagName === "select" ||
-    target.isContentEditable
-  )
-}
-
 function PracticeFeedback({
   question,
   answer,
-  explanationOpen,
-  onToggleExplanation,
 }: {
   question: PracticeRoomQuestion
   answer: PracticeRoomAnswer
-  explanationOpen: boolean
-  onToggleExplanation: () => void
 }) {
   if (!isAnswerLocked(answer)) {
     return null
@@ -1024,73 +603,40 @@ function PracticeFeedback({
   return (
     <div className="flex flex-col gap-3 rounded-xl border bg-muted/25 p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <Badge
-          variant="outline"
+        <span
           className={cn(
+            "inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium",
             answer.isCorrect
-              ? "border-chart-2/30 bg-chart-2/10 text-chart-2"
-              : "border-destructive/30 bg-destructive/10 text-destructive",
+              ? "border-chart-2/35 bg-chart-2/10 text-chart-2"
+              : "border-destructive/35 bg-destructive/10 text-destructive",
           )}
         >
+          <FileTextIcon className="size-3.5" />
           {answer.isCorrect ? "Jawaban Benar" : "Jawaban Belum Tepat"}
-        </Badge>
-        <Button type="button" variant="outline" size="sm" onClick={onToggleExplanation}>
-          <FileTextIcon data-icon="inline-start" />
-          Pembahasan
-        </Button>
+        </span>
       </div>
 
-      {explanationOpen ? (
-        hasExplanationContent(question.question) ? (
-          <ExplanationContent question={question.question} />
-        ) : (
-          <Empty className="border bg-background py-8">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <FileTextIcon />
-              </EmptyMedia>
-              <EmptyTitle>Pembahasan belum tersedia</EmptyTitle>
-              <EmptyDescription>
-                Jawaban sudah terkunci, tetapi pembahasan untuk soal ini belum diisi.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        )
-      ) : null}
+      <QuestionExplanationPanel
+        question={question}
+        emptyTitle="Pembahasan belum tersedia"
+        emptyDescription="Jawaban sudah terkunci, tetapi pembahasan untuk soal ini belum diisi."
+      />
     </div>
   )
 }
 
-function ExplanationContent({ question }: { question: PracticeQuestionSnapshot }) {
-  const explanations = getExplanationItems(question)
-
+function EmptyState() {
   return (
-    <div className="flex flex-col gap-3">
-      {explanations.map((item) => (
-        <section key={item.label} className="rounded-lg border bg-background p-4">
-          <h3 className="mb-2 text-sm font-semibold">{item.label}</h3>
-          <div
-            className="text-sm leading-7 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
-            dangerouslySetInnerHTML={{ __html: item.content }}
-          />
-        </section>
-      ))}
-    </div>
+    <Empty className="max-w-md border bg-card">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <FileTextIcon />
+        </EmptyMedia>
+        <EmptyTitle>Belum ada soal</EmptyTitle>
+        <EmptyDescription>Sesi ini belum memiliki snapshot soal yang dapat dikerjakan.</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   )
-}
-
-function hasExplanationContent(question: PracticeQuestionSnapshot) {
-  return getExplanationItems(question).length > 0
-}
-
-function getExplanationItems(question: PracticeQuestionSnapshot) {
-  const items: Array<{ label: string; content: string }> = []
-
-  if (question.explanation) {
-    items.push({ label: "Pembahasan", content: question.explanation })
-  }
-
-  return items
 }
 
 function FinishDialog({
@@ -1130,9 +676,7 @@ function FinishDialog({
           <SummaryItem label="Total dijawab" value={answeredCount} />
           <SummaryItem label="Belum dijawab" value={unansweredCount} />
           <SummaryItem label="Waktu" value={formatDuration(durationSeconds)} />
-          {mode === "practice" ? (
-            <SummaryItem label="Belum dikonfirmasi" value={unconfirmedCount} />
-          ) : null}
+          {mode === "practice" ? <SummaryItem label="Belum dikonfirmasi" value={unconfirmedCount} /> : null}
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel asChild>
@@ -1141,7 +685,12 @@ function FinishDialog({
             </Button>
           </AlertDialogCancel>
           <AlertDialogAction asChild>
-            <Button type="button" className="bg-chart-2 text-white hover:bg-chart-2/90" disabled={disabled} onClick={onConfirm}>
+            <Button
+              type="button"
+              className="bg-chart-2 text-white hover:bg-chart-2/90"
+              disabled={disabled}
+              onClick={onConfirm}
+            >
               Selesai
             </Button>
           </AlertDialogAction>
@@ -1196,76 +745,6 @@ function isQuestionAnswered(answer: PracticeRoomAnswer | undefined) {
 
 function isAnswerLocked(answer: PracticeRoomAnswer | undefined) {
   return Boolean(answer?.gradedAt)
-}
-
-function getFeedbackClass({
-  mode,
-  locked,
-  selected,
-  isCorrectOption,
-  isAnswerCorrect,
-}: {
-  mode: PracticeMode
-  locked: boolean
-  selected: boolean
-  isCorrectOption: boolean
-  isAnswerCorrect: boolean | null
-}) {
-  if (mode !== "practice" || !locked) {
-    return null
-  }
-
-  const answerIsCorrect = isAnswerCorrect === true
-  const answerIsWrong = isAnswerCorrect === false
-
-  if (selected && answerIsCorrect) {
-    return "border-chart-2/35 bg-chart-2/10"
-  }
-
-  if (answerIsWrong && isCorrectOption) {
-    return "border-primary/35 bg-primary/10"
-  }
-
-  if (selected && answerIsWrong) {
-    return "border-destructive/35 bg-destructive/10"
-  }
-
-  return "opacity-70"
-}
-
-function isCorrectOptionForQuestion(
-  question: PracticeRoomQuestion,
-  optionLabel: string,
-  optionContent: string,
-) {
-  if (question.question.type !== "true_false") {
-    return question.correctAnswer.optionKeys.includes(optionLabel)
-  }
-
-  const normalizedCorrectAnswer = normalizeText(question.correctAnswer.answerText)
-  const normalizedOption = normalizeText(`${optionLabel} ${optionContent}`)
-
-  if (
-    normalizedCorrectAnswer === "true" ||
-    normalizedCorrectAnswer === "benar" ||
-    normalizedCorrectAnswer === "a"
-  ) {
-    return optionLabel === "A" || normalizedOption.includes("true") || normalizedOption.includes("benar")
-  }
-
-  if (
-    normalizedCorrectAnswer === "false" ||
-    normalizedCorrectAnswer === "salah" ||
-    normalizedCorrectAnswer === "b"
-  ) {
-    return optionLabel === "B" || normalizedOption.includes("false") || normalizedOption.includes("salah")
-  }
-
-  return question.correctAnswer.optionKeys.includes(optionLabel)
-}
-
-function normalizeText(value: string | null | undefined) {
-  return value?.trim().replace(/\s+/g, " ").toLowerCase() ?? ""
 }
 
 function getInitialRemainingSeconds(startedAt: string, durationMinutes: number) {

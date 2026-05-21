@@ -130,19 +130,31 @@ export async function getPracticeSessionSummary(
     return null
   }
 
-  const [sessionTotals] = await db
-    .select({
-      submittedAt: schema.practiceSessions.submittedAt,
-      gradedAt: schema.practiceSessions.gradedAt,
-      totalCorrect: schema.practiceSessions.totalCorrect,
-      totalWrong: schema.practiceSessions.totalWrong,
-      totalUnanswered: schema.practiceSessions.totalUnanswered,
-      totalScore: schema.practiceSessions.totalScore,
-      totalMaxScore: schema.practiceSessions.totalMaxScore,
-    })
-    .from(schema.practiceSessions)
-    .where(and(eq(schema.practiceSessions.id, sessionId), eq(schema.practiceSessions.userId, userId)))
-    .limit(1)
+  const [sessionTotals, explanationRows] = await Promise.all([
+    db
+      .select({
+        submittedAt: schema.practiceSessions.submittedAt,
+        gradedAt: schema.practiceSessions.gradedAt,
+        totalCorrect: schema.practiceSessions.totalCorrect,
+        totalWrong: schema.practiceSessions.totalWrong,
+        totalUnanswered: schema.practiceSessions.totalUnanswered,
+        totalScore: schema.practiceSessions.totalScore,
+        totalMaxScore: schema.practiceSessions.totalMaxScore,
+      })
+      .from(schema.practiceSessions)
+      .where(
+        and(eq(schema.practiceSessions.id, sessionId), eq(schema.practiceSessions.userId, userId)),
+      )
+      .limit(1),
+    db
+      .select({
+        sessionQuestionId: schema.practiceSessionQuestions.id,
+        explanation: schema.questions.explanation,
+      })
+      .from(schema.practiceSessionQuestions)
+      .innerJoin(schema.questions, eq(schema.practiceSessionQuestions.questionId, schema.questions.id))
+      .where(eq(schema.practiceSessionQuestions.practiceSessionId, sessionId)),
+  ])
 
   if (!sessionTotals) {
     return null
@@ -151,12 +163,21 @@ export async function getPracticeSessionSummary(
   const answerByQuestion = new Map(
     room.answers.map((answer) => [answer.sessionQuestionId, answer]),
   )
+  const explanationByQuestion = new Map(
+    explanationRows.map((row) => [row.sessionQuestionId, row.explanation ?? null]),
+  )
   const questions = room.questions.map<PracticeSessionReviewQuestion>((question) => {
     const answer = answerByQuestion.get(question.id) ?? null
     const answered = answer ? isAnswerFilled(answer) : false
+    const explanation =
+      explanationByQuestion.get(question.id) ?? question.question.explanation ?? null
 
     return {
       ...question,
+      question: {
+        ...question.question,
+        explanation,
+      },
       answer,
       status: !answered ? "unanswered" : answer?.isCorrect ? "correct" : "wrong",
     }
