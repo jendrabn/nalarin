@@ -196,7 +196,7 @@ export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
         <Card>
           <CardHeader>
             <CardTitle>Questions</CardTitle>
-            <CardDescription>Objective-only questions attached to this practice.</CardDescription>
+            <CardDescription>Questions attached to this practice.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-3">
@@ -242,7 +242,7 @@ export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
                 })
               ) : (
                 <div className="rounded-lg border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
-                  No objective questions configured.
+                  No questions configured.
                 </div>
               )}
             </div>

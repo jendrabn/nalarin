@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation"
 import type { ColumnDef, VisibilityState } from "@tanstack/react-table"
 import {
   FileDownIcon,
-  FileTextIcon,
   PencilLineIcon,
   PlusIcon,
   Trash2Icon,
@@ -60,11 +59,9 @@ function formatDateTime(value: Date) {
 
 function createColumns({
   onEdit,
-  onViewExplanation,
   onDelete,
 }: {
   onEdit: (question: QuestionRow) => void
-  onViewExplanation: (question: QuestionRow) => void
   onDelete: (question: QuestionRow) => void
 }): ColumnDef<QuestionRow>[] {
   return [
@@ -210,10 +207,6 @@ function createColumns({
                 <PencilLineIcon />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onViewExplanation(row.original)}>
-                <FileTextIcon />
-                Explanation
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onClick={() => onDelete(row.original)}>
                 <Trash2Icon />
@@ -235,8 +228,6 @@ export function QuestionsPage({ questions }: QuestionsPageProps) {
     () =>
       createColumns({
         onEdit: (question) => router.push(`/admin/questions/${question.id}/edit`),
-        onViewExplanation: (question) =>
-          router.push(`/admin/questions/${question.id}/explanation`),
         onDelete: setDeleteTarget,
       }),
     [router],

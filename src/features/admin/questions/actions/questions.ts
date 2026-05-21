@@ -141,7 +141,6 @@ function revalidateQuestionRoutes(questionId?: number) {
   if (questionId) {
     revalidatePath(`/admin/questions/${questionId}`)
     revalidatePath(`/admin/questions/${questionId}/edit`)
-    revalidatePath(`/admin/questions/${questionId}/explanation`)
   }
 }
 
@@ -525,7 +524,6 @@ export async function deleteQuestionsAction(
   uniqueQuestionIds.forEach((questionId) => {
     revalidatePath(`/admin/questions/${questionId}`)
     revalidatePath(`/admin/questions/${questionId}/edit`)
-    revalidatePath(`/admin/questions/${questionId}/explanation`)
   })
 
   return {
@@ -581,12 +579,14 @@ export async function importQuestionRowsAction(
     }
 
     const type = row.questionType
-    const options: QuestionOptionInput[] = questionOptionLabelValues.map((label) => ({
-      label,
-      content: row[`option${label}` as keyof QuestionImportRowValues],
-      imageUrl: "",
-      isCorrect: false,
-    }))
+    const options: QuestionOptionInput[] = questionOptionLabelValues
+      .map((label) => ({
+        label,
+        content: row[`option${label}` as keyof QuestionImportRowValues],
+        imageUrl: "",
+        isCorrect: false,
+      }))
+      .filter((option) => option.content.trim().length > 0)
 
     if (type === "multiple_choice") {
       const correctLabel = row.correctAnswer.toUpperCase()
@@ -608,18 +608,17 @@ export async function importQuestionRowsAction(
     }
 
     if (type === "true_false") {
-      options[0] = {
+      options.splice(0, options.length, {
         label: questionTrueFalseLabels[0],
         content: row.optionA || "True",
         imageUrl: "",
         isCorrect: false,
-      }
-      options[1] = {
+      }, {
         label: questionTrueFalseLabels[1],
         content: row.optionB || "False",
         imageUrl: "",
         isCorrect: false,
-      }
+      })
     }
 
     const parsed = parseQuestionValues({
@@ -636,6 +635,7 @@ export async function importQuestionRowsAction(
         row.correctAnswerText || (row.questionType === "true_false" ? row.correctAnswer : ""),
       gradingRubric: row.gradingRubric,
       explanation: row.explanation,
+      optionCount: isChoiceQuestionType(type) ? String(options.length) : "",
       year: row.year,
       points: row.points || "1",
       status: row.status,

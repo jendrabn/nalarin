@@ -5,12 +5,8 @@ export const practiceStatusValues = modelEnums.contentStatus.values
 export type PracticeStatus = ModelEnumValue<"contentStatus">
 export const practiceStatusLabels = modelEnums.contentStatus.labels
 
-export const objectiveQuestionTypes = [
-  "multiple_choice",
-  "multiple_answer",
-  "true_false",
-] as const
-export type ObjectiveQuestionType = (typeof objectiveQuestionTypes)[number]
+export const practiceQuestionTypes = modelEnums.questionType.values
+export type PracticeQuestionType = ModelEnumValue<"questionType">
 
 export const practiceColumnLabels = {
   title: "Title",

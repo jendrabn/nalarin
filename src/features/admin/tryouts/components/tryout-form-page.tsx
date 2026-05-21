@@ -921,7 +921,7 @@ export function TryoutFormPage({
                       <FieldSwitch
                         id={`${formId}-shuffle-options`}
                         label="Shuffle Options"
-                        description="Randomize answer options for supported objective questions."
+                        description="Randomize answer options for questions that support answer choices."
                         checked={Boolean(watchedValues.shuffleOptions)}
                         disabled={isLocked}
                         onCheckedChange={(checked) =>

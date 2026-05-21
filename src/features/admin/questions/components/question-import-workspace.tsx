@@ -71,8 +71,22 @@ function AvailableValuesReference({
 }: {
   lookups: QuestionImportWorkspaceProps["lookups"]
 }) {
+  const slugHierarchy = useMemo(
+    () =>
+      lookups.examTypes.map((examType) => ({
+        ...examType,
+        subjects: lookups.subjects
+          .filter((subject) => subject.examTypeId === examType.id)
+          .map((subject) => ({
+            ...subject,
+            topics: lookups.topics.filter((topic) => topic.subjectId === subject.id),
+          })),
+      })),
+    [lookups.examTypes, lookups.subjects, lookups.topics],
+  )
+
   return (
-      <Card>
+    <Card>
       <CardHeader>
         <CardTitle>Rules & Slugs</CardTitle>
         <CardDescription>
@@ -126,30 +140,63 @@ function AvailableValuesReference({
             <span className="font-medium text-foreground">correct_answer</span> uses option letters like <span className="font-medium text-foreground">A</span> or <span className="font-medium text-foreground">A,C</span>.
           </p>
           <p>
-            <span className="font-medium text-foreground">topic_slug</span> is optional.
+            <span className="font-medium text-foreground">topic_slug</span> is optional and must belong to the selected <span className="font-medium text-foreground">subject_slug</span>.
+          </p>
+          <p>
+            <span className="font-medium text-foreground">subject_slug</span> must belong to the selected <span className="font-medium text-foreground">exam_type_slug</span>.
           </p>
         </div>
 
         <div className="flex flex-col gap-4">
-          <SlugList title="Exam Type Slugs" slugs={lookups.examTypes.map((item) => item.slug)} />
-          <SlugList title="Subject Slugs" slugs={lookups.subjects.map((item) => item.slug)} />
-          <SlugList title="Topic Slugs" slugs={lookups.topics.map((item) => item.slug)} />
+          {slugHierarchy.map((examType) => (
+            <div key={examType.id} className="rounded-2xl border border-border/60 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-medium text-foreground">{examType.name}</p>
+                  <p className="text-xs text-muted-foreground">exam_type_slug</p>
+                </div>
+                <CopyableBadge value={examType.slug} />
+              </div>
+
+              <div className="mt-4 flex flex-col gap-3 border-l border-border/60 pl-4">
+                {examType.subjects.length > 0 ? (
+                  examType.subjects.map((subject) => (
+                    <div key={subject.id} className="rounded-xl border border-border/60 p-3">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="flex flex-col gap-1">
+                          <p className="text-sm font-medium text-foreground">{subject.name}</p>
+                          <p className="text-xs text-muted-foreground">subject_slug</p>
+                        </div>
+                        <CopyableBadge value={subject.slug} />
+                      </div>
+
+                      <div className="mt-3 flex flex-col gap-2">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                          topic_slug
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {subject.topics.length > 0 ? (
+                            subject.topics.map((topic) => (
+                              <CopyableBadge key={topic.id} value={topic.slug} />
+                            ))
+                          ) : (
+                            <span className="text-sm text-muted-foreground">
+                              No topics in this subject.
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No subjects in this exam type.</p>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>
-  )
-}
-
-function SlugList({ title, slugs }: { title: string; slugs: string[] }) {
-  return (
-    <div className="flex flex-col gap-3">
-      <p className="text-sm font-medium">{title}</p>
-      <div className="flex flex-wrap gap-2">
-        {slugs.map((slug) => (
-          <CopyableBadge key={slug} value={slug} />
-        ))}
-      </div>
-    </div>
   )
 }
 

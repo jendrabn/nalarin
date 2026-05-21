@@ -7,7 +7,6 @@ import { z } from "zod"
 import { db, schema } from "@/db"
 import { requireAdmin } from "@/features/auth/services/session"
 
-import { objectiveQuestionTypes, type ObjectiveQuestionType } from "../constants"
 import { getPracticeById } from "../queries"
 import { practiceFormSchema, type PracticeFormValues } from "../schemas"
 import { slugifyPractice } from "../utils/slug"
@@ -90,10 +89,6 @@ function isDuplicateEntryError(error: unknown) {
     "code" in error &&
     (error as { code?: string }).code === "ER_DUP_ENTRY"
   )
-}
-
-function isObjectiveQuestionType(value: string): value is ObjectiveQuestionType {
-  return objectiveQuestionTypes.some((questionType) => questionType === value)
 }
 
 function revalidatePracticeRoutes(practiceId?: number, slug?: string, previousSlug?: string) {
@@ -215,13 +210,6 @@ async function validateRelations(
       return {
         success: false as const,
         message: `Question ${questionIndex + 1} does not belong to the selected practice subject.`,
-      }
-    }
-
-    if (!isObjectiveQuestionType(existingQuestion.type)) {
-      return {
-        success: false as const,
-        message: `Question ${questionIndex + 1} uses manual grading or text input and cannot be added to this practice.`,
       }
     }
 
@@ -440,22 +428,21 @@ export async function publishPracticeAction(
   if (existingPractice.questions.length === 0) {
     return {
       success: false,
-      message: "Add at least one objective question before publishing.",
+      message: "Add at least one question before publishing.",
     }
   }
 
   const invalidQuestion = existingPractice.questions.find(
     (question) =>
       question.questionStatus !== "published" ||
-      question.subjectId !== existingPractice.subjectId ||
-      !isObjectiveQuestionType(question.questionType),
+      question.subjectId !== existingPractice.subjectId,
   )
 
   if (invalidQuestion) {
     return {
       success: false,
       message:
-        "All practice questions must be published objective questions from the selected subject.",
+        "All practice questions must be published questions from the selected subject.",
     }
   }
 

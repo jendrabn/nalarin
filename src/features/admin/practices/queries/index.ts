@@ -2,14 +2,13 @@
 
 import "server-only"
 
-import { desc, eq, inArray, sql } from "drizzle-orm"
+import { desc, eq, sql } from "drizzle-orm"
 
 import { db, schema } from "@/db"
 
-import { objectiveQuestionTypes } from "../constants"
 import type {
-  ObjectiveQuestionType,
   PracticeStatus,
+  PracticeQuestionType,
 } from "../constants"
 import type { ModelEnumValue } from "@/lib/model-enums"
 
@@ -43,7 +42,7 @@ export type PracticeQuestionDetails = {
   points: number | null
   questionTitle: string | null
   questionContent: string
-  questionType: ObjectiveQuestionType
+  questionType: PracticeQuestionType
   questionStatus: PracticeStatus
   subjectId: number
   subjectName: string
@@ -86,7 +85,7 @@ export type PracticeQuestionLookupOption = {
   topicName: string | null
   title: string | null
   content: string
-  type: ObjectiveQuestionType
+  type: PracticeQuestionType
   difficulty: ModelEnumValue<"questionDifficulty">
   status: PracticeStatus
   year: number | null
@@ -225,7 +224,7 @@ export async function getPracticeById(id: number) {
       ...question,
       points: question.points === null ? null : Number(question.points),
       questionTitle: question.questionTitle ?? null,
-      questionType: question.questionType as ObjectiveQuestionType,
+      questionType: question.questionType as PracticeQuestionType,
       topicName: question.topicName ?? null,
       basePoints: Number(question.basePoints),
       year: question.year ?? null,
@@ -282,7 +281,6 @@ export async function getAdminPracticeLookups() {
       .from(schema.questions)
       .innerJoin(schema.subjects, eq(schema.questions.subjectId, schema.subjects.id))
       .leftJoin(schema.topics, eq(schema.questions.topicId, schema.topics.id))
-      .where(inArray(schema.questions.type, [...objectiveQuestionTypes]))
       .orderBy(desc(schema.questions.updatedAt)),
   ])
 
@@ -295,7 +293,7 @@ export async function getAdminPracticeLookups() {
       topicId: question.topicId ?? null,
       topicName: question.topicName ?? null,
       title: question.title ?? null,
-      type: question.type as ObjectiveQuestionType,
+      type: question.type as PracticeQuestionType,
       year: question.year ?? null,
       points: Number(question.points),
     })),

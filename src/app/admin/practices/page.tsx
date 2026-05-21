@@ -5,7 +5,7 @@ import { getPractices } from "@/features/admin/practices/queries"
 
 export const metadata: Metadata = {
   title: "Practices",
-  description: "Manage objective-only practices and quizzes from the admin panel.",
+  description: "Manage practices and quizzes from the admin panel.",
 }
 
 export default async function Page() {

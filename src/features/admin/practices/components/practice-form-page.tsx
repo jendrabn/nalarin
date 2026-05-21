@@ -652,9 +652,9 @@ export function PracticeFormPage({
           <TabsContent value="questions">
             <Card>
               <CardHeader>
-                <CardTitle>Objective Questions</CardTitle>
+                <CardTitle>Questions</CardTitle>
                 <CardDescription>
-                  Only multiple choice, multiple answer, and true/false questions are available.
+                  Add any published question from the selected subject.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -820,7 +820,7 @@ export function PracticeFormPage({
                                     {questionBadge.label}
                                   </Badge>
                                 ) : (
-                                  <span className="text-sm text-muted-foreground">-</span>
+                        <span className="text-sm text-muted-foreground">-</span>
                                 )}
                               </TableCell>
                               <TableCell>
@@ -867,7 +867,7 @@ export function PracticeFormPage({
                       </div>
                     ) : (
                       <div className="rounded-lg border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
-                        No objective questions added to this practice.
+                        No questions added to this practice.
                       </div>
                     )}
                   </div>
@@ -954,7 +954,7 @@ export function PracticeFormPage({
               <Card>
                 <CardHeader>
                   <CardTitle>Questions</CardTitle>
-                  <CardDescription>Selected objective questions and point overrides.</CardDescription>
+                  <CardDescription>Selected questions and point overrides.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {questions.length > 0 ? (
@@ -1049,7 +1049,7 @@ export function PracticeFormPage({
                     </div>
                   ) : (
                     <div className="rounded-lg border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
-                      No objective questions added to this practice.
+                      No questions added to this practice.
                     </div>
                   )}
                 </CardContent>
