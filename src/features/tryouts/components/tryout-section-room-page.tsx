@@ -86,6 +86,8 @@ export function TryoutSectionRoomPage({ session }: { session: TryoutSectionRoomD
   )
   const [isPending, startTransition] = useTransition()
   const hasAutoSubmittedRef = useRef(false)
+  const sectionTimerRef = useRef<number | null>(null)
+  const remainingSecondsRef = useRef<number>(remainingSeconds)
 
   const answeredCount = useMemo(
     () => session.questions.filter((question) => isQuestionAnswered(answers[question.id])).length,
@@ -115,6 +117,31 @@ export function TryoutSectionRoomPage({ session }: { session: TryoutSectionRoomD
   const activeQuestionIndex =
     session.navigationMode === "sequential" ? Math.min(activeIndex, highestReachableIndex) : activeIndex
   const activeQuestion = session.questions[activeQuestionIndex] ?? null
+  const legendItems = useMemo(
+    () => [
+      { className: "bg-primary", label: "Aktif" },
+      { className: "bg-primary/20", label: "Terjawab" },
+      { className: "bg-chart-3", label: "Ditandai" },
+    ],
+    [],
+  )
+  const navigatorItems = useMemo(
+    () =>
+      session.questions.map((question, index) => {
+        const answer = answers[question.id]
+
+        return {
+          id: question.id,
+          label: question.displayOrder,
+          active: index === activeQuestionIndex,
+          answered: isQuestionAnswered(answer),
+          flagged: Boolean(answer?.isMarkedForReview),
+          locked: index > highestReachableIndex,
+          ariaLabel: `Buka soal ${question.displayOrder}`,
+        }
+      }),
+    [activeQuestionIndex, answers, highestReachableIndex, session.questions],
+  )
   const persistAnswer = useCallback(
     async (question: TryoutRoomQuestion, answer: TryoutRoomAnswer) =>
       saveTryoutAnswerAction({
@@ -126,6 +153,33 @@ export function TryoutSectionRoomPage({ session }: { session: TryoutSectionRoomD
       }),
     [session.section.id, session.sessionId],
   )
+  const moveToQuestion = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= session.questions.length || index > highestReachableIndex) {
+        return
+      }
+
+      if (index === activeQuestionIndex) {
+        return
+      }
+
+      const targetQuestion = session.questions[index]
+
+      setActiveIndex(index)
+      startTransition(async () => {
+        const result = await setTryoutCurrentQuestionAction({
+          sessionId: session.sessionId,
+          sectionSessionId: session.section.id,
+          orderIndex: targetQuestion.orderIndex,
+        })
+
+        if (!result.success) {
+          toast.error(result.message)
+        }
+      })
+    },
+    [activeQuestionIndex, highestReachableIndex, session.questions, session.section.id, session.sessionId, startTransition],
+  )
 
   useEffect(() => {
     if (session.sessionStatus !== "in_progress" || session.section.status !== "in_progress") {
@@ -134,37 +188,73 @@ export function TryoutSectionRoomPage({ session }: { session: TryoutSectionRoomD
   }, [router, session.section.status, session.sessionId, session.sessionStatus])
 
   useEffect(() => {
-    if (remainingSeconds <= 0) {
-      if (!hasAutoSubmittedRef.current) {
-        hasAutoSubmittedRef.current = true
-        toast.warning("Waktu section habis. Jawaban terakhir otomatis dikirim.")
-        startTransition(async () => {
-          if (activeQuestion) {
-            await persistAnswer(activeQuestion, answers[activeQuestion.id])
-          }
+    remainingSecondsRef.current = remainingSeconds
+  }, [remainingSeconds])
 
-          const result = await submitTryoutSectionAction({
-            sessionId: session.sessionId,
-            sectionSessionId: session.section.id,
-            autoSubmitted: true,
-          })
-
-          if (!result.success) {
-            toast.error(result.message)
-            return
-          }
-
-          router.replace(`/tryout-sessions/${session.sessionId}`)
-        })
-      }
+  useEffect(() => {
+    if (remainingSecondsRef.current <= 0 || sectionTimerRef.current !== null) {
       return
     }
 
-    const interval = window.setInterval(() => {
-      setRemainingSeconds((current) => Math.max(0, current - 1))
+    sectionTimerRef.current = window.setInterval(() => {
+      const current = remainingSecondsRef.current
+
+      if (current <= 1) {
+        remainingSecondsRef.current = 0
+        setRemainingSeconds(0)
+
+        if (sectionTimerRef.current !== null) {
+          window.clearInterval(sectionTimerRef.current)
+          sectionTimerRef.current = null
+        }
+
+        return
+      }
+
+      const next = current - 1
+      remainingSecondsRef.current = next
+      setRemainingSeconds(next)
     }, 1000)
 
-    return () => window.clearInterval(interval)
+    return () => {
+      if (sectionTimerRef.current !== null) {
+        window.clearInterval(sectionTimerRef.current)
+        sectionTimerRef.current = null
+      }
+    }
+  }, [session.section.id, session.sessionId])
+
+  useEffect(() => {
+    if (remainingSeconds !== 0 || hasAutoSubmittedRef.current) {
+      return
+    }
+
+    hasAutoSubmittedRef.current = true
+    toast.warning("Waktu section habis. Jawaban terakhir otomatis dikirim.")
+
+    if (sectionTimerRef.current !== null) {
+      window.clearInterval(sectionTimerRef.current)
+      sectionTimerRef.current = null
+    }
+
+    startTransition(async () => {
+      if (activeQuestion) {
+        await persistAnswer(activeQuestion, answers[activeQuestion.id])
+      }
+
+      const result = await submitTryoutSectionAction({
+        sessionId: session.sessionId,
+        sectionSessionId: session.section.id,
+        autoSubmitted: true,
+      })
+
+      if (!result.success) {
+        toast.error(result.message)
+        return
+      }
+
+      router.replace(`/tryout-sessions/${session.sessionId}`)
+    })
   }, [
     activeQuestion,
     answers,
@@ -178,27 +268,6 @@ export function TryoutSectionRoomPage({ session }: { session: TryoutSectionRoomD
 
   function getAnswer(questionId: number) {
     return answers[questionId] ?? createEmptyAnswer(questionId)
-  }
-
-  function moveToQuestion(index: number) {
-    if (index < 0 || index >= session.questions.length || index > highestReachableIndex) {
-      return
-    }
-
-    const targetQuestion = session.questions[index]
-
-    setActiveIndex(index)
-    startTransition(async () => {
-      const result = await setTryoutCurrentQuestionAction({
-        sessionId: session.sessionId,
-        sectionSessionId: session.section.id,
-        orderIndex: targetQuestion.orderIndex,
-      })
-
-      if (!result.success) {
-        toast.error(result.message)
-      }
-    })
   }
 
   function saveChoice(question: TryoutRoomQuestion, selectedOptionKeys: string[]) {
@@ -315,11 +384,6 @@ export function TryoutSectionRoomPage({ session }: { session: TryoutSectionRoomD
 
   const activeAnswer = getAnswer(activeQuestion.id)
   const unansweredCount = session.questions.length - answeredCount
-  const legendItems = [
-    { className: "bg-primary", label: "Aktif" },
-    { className: "bg-primary/20", label: "Terjawab" },
-    { className: "bg-chart-3", label: "Ditandai" },
-  ]
 
   return (
     <main className="min-h-svh bg-muted/35">
@@ -354,19 +418,7 @@ export function TryoutSectionRoomPage({ session }: { session: TryoutSectionRoomD
 
       <div className="mx-auto grid w-full max-w-7xl items-start gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:px-8">
         <QuestionNavigation
-          items={session.questions.map((question, index) => {
-            const answer = answers[question.id]
-
-            return {
-              id: question.id,
-              label: question.displayOrder,
-              active: index === activeQuestionIndex,
-              answered: isQuestionAnswered(answer),
-              flagged: Boolean(answer?.isMarkedForReview),
-              locked: index > highestReachableIndex,
-              ariaLabel: `Buka soal ${question.displayOrder}`,
-            }
-          })}
+          items={navigatorItems}
           onSelect={moveToQuestion}
           legendItems={legendItems}
         />

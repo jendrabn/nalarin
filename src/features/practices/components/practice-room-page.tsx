@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -96,6 +97,8 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
   )
   const [isPending, startTransition] = useTransition()
   const hasAutoSubmittedRef = useRef(false)
+  const quizTimerRef = useRef<number | null>(null)
+  const remainingSecondsRef = useRef<number | null>(remainingSeconds)
 
   const answeredCount = useMemo(
     () => session.questions.filter((question) => isQuestionAnswered(answers[question.id])).length,
@@ -126,38 +129,147 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
   const activeQuestionIndex =
     session.mode === "practice" ? Math.min(activeIndex, highestReachableIndex) : activeIndex
   const activeQuestion = session.questions[activeQuestionIndex] ?? null
+  const legendItems = useMemo(
+    () =>
+      session.mode === "practice"
+        ? [
+            { className: "bg-primary", label: "Aktif" },
+            { className: "bg-chart-2", label: "Selesai" },
+            { className: "bg-destructive", label: "Salah" },
+          ]
+        : [
+            { className: "bg-primary", label: "Aktif" },
+            { className: "bg-primary/20", label: "Terjawab" },
+            { className: "bg-chart-3", label: "Ditandai" },
+          ],
+    [session.mode],
+  )
+  const navigatorItems = useMemo(
+    () =>
+      session.questions.map((question, index) => {
+        const answer = answers[question.id]
+        const answered = isQuestionAnswered(answer)
+        const lockedAnswer = isAnswerLocked(answer)
+        const wrongAnswer = session.mode === "practice" && lockedAnswer && answer?.isCorrect === false
+        const active = index === activeQuestionIndex
+        const locked = index > highestReachableIndex
+
+        return {
+          id: question.id,
+          label: question.orderIndex,
+          active,
+          answered,
+          locked,
+          flagged: session.mode === "quiz" && Boolean(answer?.isMarkedForReview),
+          status: wrongAnswer ? "wrong" : lockedAnswer ? "correct" : undefined,
+          ariaLabel: `Buka soal ${question.orderIndex}`,
+        } satisfies {
+          id: number
+          label: number
+          active: boolean
+          answered: boolean
+          locked: boolean
+          flagged: boolean
+          status?: "correct" | "wrong" | "pending" | "unanswered"
+          ariaLabel: string
+        }
+      }),
+    [activeQuestionIndex, answers, highestReachableIndex, session.mode, session.questions],
+  )
+  const moveToQuestion = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= session.questions.length || index > highestReachableIndex) {
+        return
+      }
+
+      if (index === activeQuestionIndex) {
+        return
+      }
+
+      const targetQuestion = session.questions[index]
+
+      setActiveIndex(index)
+      startTransition(async () => {
+        const result = await setPracticeCurrentQuestionAction({
+          sessionId: session.id,
+          orderIndex: targetQuestion.orderIndex,
+        })
+
+        if (!result.success) {
+          toast.error(result.message)
+        }
+      })
+    },
+    [activeQuestionIndex, highestReachableIndex, session.id, session.questions, startTransition],
+  )
 
   useEffect(() => {
-    if (remainingSeconds === null || session.mode !== "quiz") {
+    remainingSecondsRef.current = remainingSeconds
+  }, [remainingSeconds])
+
+  useEffect(() => {
+    if (session.mode !== "quiz" || remainingSecondsRef.current === null || quizTimerRef.current !== null) {
       return
     }
 
-    if (remainingSeconds <= 0) {
-      if (!hasAutoSubmittedRef.current) {
-        hasAutoSubmittedRef.current = true
-        toast.warning("Waktu habis. Quiz otomatis disubmit.")
-        startTransition(async () => {
-          const result = await submitPracticeSessionAction({
-            sessionId: session.id,
-            autoSubmitted: true,
-          })
+    quizTimerRef.current = window.setInterval(() => {
+      const current = remainingSecondsRef.current
 
-          if (!result.success) {
-            toast.error(result.message)
-            return
-          }
-
-          router.replace(`/practice-sessions/${session.id}/result`)
-        })
+      if (current === null) {
+        return
       }
-      return
-    }
 
-    const interval = window.setInterval(() => {
-      setRemainingSeconds((current) => (current === null ? null : Math.max(0, current - 1)))
+      if (current <= 1) {
+        remainingSecondsRef.current = 0
+        setRemainingSeconds(0)
+
+        if (quizTimerRef.current !== null) {
+          window.clearInterval(quizTimerRef.current)
+          quizTimerRef.current = null
+        }
+
+        return
+      }
+
+      const next = current - 1
+      remainingSecondsRef.current = next
+      setRemainingSeconds(next)
     }, 1000)
 
-    return () => window.clearInterval(interval)
+    return () => {
+      if (quizTimerRef.current !== null) {
+        window.clearInterval(quizTimerRef.current)
+        quizTimerRef.current = null
+      }
+    }
+  }, [session.id, session.mode])
+
+  useEffect(() => {
+    if (session.mode !== "quiz" || remainingSeconds !== 0 || hasAutoSubmittedRef.current) {
+      return
+    }
+
+    hasAutoSubmittedRef.current = true
+    toast.warning("Waktu habis. Quiz otomatis disubmit.")
+
+    if (quizTimerRef.current !== null) {
+      window.clearInterval(quizTimerRef.current)
+      quizTimerRef.current = null
+    }
+
+    startTransition(async () => {
+      const result = await submitPracticeSessionAction({
+        sessionId: session.id,
+        autoSubmitted: true,
+      })
+
+      if (!result.success) {
+        toast.error(result.message)
+        return
+      }
+
+      router.replace(`/practice-sessions/${session.id}/result`)
+    })
   }, [remainingSeconds, router, session.id, session.mode, startTransition])
 
   useEffect(() => {
@@ -168,26 +280,6 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
 
   function getAnswer(questionId: number) {
     return answers[questionId] ?? createEmptyAnswer(questionId)
-  }
-
-  function moveToQuestion(index: number) {
-    if (index < 0 || index >= session.questions.length || index > highestReachableIndex) {
-      return
-    }
-
-    const targetQuestion = session.questions[index]
-
-    setActiveIndex(index)
-    startTransition(async () => {
-      const result = await setPracticeCurrentQuestionAction({
-        sessionId: session.id,
-        orderIndex: targetQuestion.orderIndex,
-      })
-
-      if (!result.success) {
-        toast.error(result.message)
-      }
-    })
   }
 
   function saveChoice(question: PracticeRoomQuestion, selectedOptionKeys: string[]) {
@@ -345,18 +437,6 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
   const unansweredCount = session.totalQuestions - answeredCount
   const practiceUnconfirmedCount = session.totalQuestions - confirmedCount
   const feedbackMode = session.mode === "practice" ? "practice" : "none"
-  const legendItems =
-    session.mode === "practice"
-      ? [
-          { className: "bg-primary", label: "Aktif" },
-          { className: "bg-chart-2", label: "Selesai" },
-          { className: "bg-destructive", label: "Salah" },
-        ]
-      : [
-          { className: "bg-primary", label: "Aktif" },
-          { className: "bg-primary/20", label: "Terjawab" },
-          { className: "bg-chart-3", label: "Ditandai" },
-        ]
 
   return (
     <main className="min-h-svh bg-muted/35">
@@ -395,34 +475,7 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
 
       <div className="mx-auto grid w-full max-w-7xl items-start gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:px-8">
         <QuestionNavigation
-          items={session.questions.map((question, index) => {
-            const answer = answers[question.id]
-            const answered = isQuestionAnswered(answer)
-            const lockedAnswer = isAnswerLocked(answer)
-            const wrongAnswer = session.mode === "practice" && lockedAnswer && answer?.isCorrect === false
-            const active = index === activeQuestionIndex
-            const locked = index > highestReachableIndex
-
-            return {
-              id: question.id,
-              label: question.orderIndex,
-              active,
-              answered,
-              locked,
-              flagged: session.mode === "quiz" && Boolean(answer?.isMarkedForReview),
-              status: wrongAnswer ? "wrong" : lockedAnswer ? "correct" : undefined,
-              ariaLabel: `Buka soal ${question.orderIndex}`,
-            } satisfies {
-              id: number
-              label: number
-              active: boolean
-              answered: boolean
-              locked: boolean
-              flagged: boolean
-              status?: "correct" | "wrong" | "pending" | "unanswered"
-              ariaLabel: string
-            }
-          })}
+          items={navigatorItems}
           onSelect={moveToQuestion}
           legendItems={legendItems}
         />

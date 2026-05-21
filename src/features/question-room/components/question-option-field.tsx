@@ -1,9 +1,11 @@
 "use client"
 
 import {
+  memo,
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react"
 import { CircleIcon, FileTextIcon } from "lucide-react"
@@ -16,17 +18,7 @@ import { cn } from "@/lib/utils"
 import { getOptionFeedbackClass, isCorrectOptionForQuestion, type QuestionFeedbackMode } from "../utils"
 import type { QuestionAnswerLike, QuestionRoomLike } from "../types"
 
-export function QuestionOptionField({
-  question,
-  answer,
-  feedbackMode = "none",
-  readOnly = false,
-  isPending = false,
-  onChoiceChange,
-  onTextChange,
-  onTextBlur,
-  keyboardHint = "Gunakan tombol ↑↓ untuk pindah opsi, Enter untuk memilih, Esc untuk menghapus sorotan.",
-}: {
+type QuestionOptionFieldProps = {
   question: QuestionRoomLike
   answer: QuestionAnswerLike
   feedbackMode?: QuestionFeedbackMode
@@ -36,7 +28,19 @@ export function QuestionOptionField({
   onTextChange?: (answerText: string) => void
   onTextBlur?: () => void
   keyboardHint?: string
-}) {
+}
+
+function QuestionOptionFieldBase({
+  question,
+  answer,
+  feedbackMode = "none",
+  readOnly = false,
+  isPending = false,
+  onChoiceChange,
+  onTextChange,
+  onTextBlur,
+  keyboardHint = "Gunakan tombol atas/bawah untuk pindah opsi, Enter untuk memilih, Esc untuk menghapus sorotan.",
+}: QuestionOptionFieldProps) {
   const isLocked = readOnly || (feedbackMode !== "none" && Boolean(answer.gradedAt))
   const isInteractive = !readOnly && !isPending && !isLocked
   const [highlightedOption, setHighlightedOption] = useState<{
@@ -44,8 +48,28 @@ export function QuestionOptionField({
     optionKey: string | null
   } | null>(null)
   const optionKeys = useMemo(() => question.options.map((option) => option.label), [question.options])
+  const selectedOptionKeysRef = useRef(answer.selectedOptionKeys)
+  const onChoiceChangeRef = useRef(onChoiceChange)
+  const questionTypeRef = useRef(question.question.type)
   const highlightedOptionKey =
     highlightedOption?.questionId === question.id ? highlightedOption.optionKey : null
+  const highlightedOptionKeyRef = useRef<string | null>(highlightedOptionKey)
+
+  useEffect(() => {
+    selectedOptionKeysRef.current = answer.selectedOptionKeys
+  }, [answer.selectedOptionKeys])
+
+  useEffect(() => {
+    onChoiceChangeRef.current = onChoiceChange
+  }, [onChoiceChange])
+
+  useEffect(() => {
+    questionTypeRef.current = question.question.type
+  }, [question.question.type])
+
+  useEffect(() => {
+    highlightedOptionKeyRef.current = highlightedOptionKey
+  }, [highlightedOptionKey])
 
   const moveHighlight = useCallback(
     (direction: 1 | -1) => {
@@ -72,21 +96,26 @@ export function QuestionOptionField({
   )
 
   const selectHighlightedOption = useCallback(() => {
-    if (!isInteractive || !highlightedOptionKey || !onChoiceChange) {
+    const choiceChange = onChoiceChangeRef.current
+    const selectedOptionKeys = selectedOptionKeysRef.current
+    const questionType = questionTypeRef.current
+    const currentHighlightedOptionKey = highlightedOptionKeyRef.current
+
+    if (!isInteractive || !currentHighlightedOptionKey || !choiceChange) {
       return
     }
 
-    if (question.question.type === "multiple_answer") {
-      const nextKeys = answer.selectedOptionKeys.includes(highlightedOptionKey)
-        ? answer.selectedOptionKeys.filter((key) => key !== highlightedOptionKey)
-        : [...answer.selectedOptionKeys, highlightedOptionKey]
+    if (questionType === "multiple_answer") {
+      const nextKeys = selectedOptionKeys.includes(currentHighlightedOptionKey)
+        ? selectedOptionKeys.filter((key) => key !== currentHighlightedOptionKey)
+        : [...selectedOptionKeys, currentHighlightedOptionKey]
 
-      onChoiceChange(nextKeys)
+      choiceChange(nextKeys)
       return
     }
 
-    onChoiceChange([highlightedOptionKey])
-  }, [answer.selectedOptionKeys, highlightedOptionKey, isInteractive, onChoiceChange, question.question.type])
+    choiceChange([currentHighlightedOptionKey])
+  }, [isInteractive])
 
   useEffect(() => {
     if (!isInteractive || optionKeys.length === 0) {
@@ -335,3 +364,19 @@ function isShortcutIgnoredTarget(target: EventTarget | null) {
     target.isContentEditable
   )
 }
+
+function areQuestionOptionFieldPropsEqual(
+  previousProps: QuestionOptionFieldProps,
+  nextProps: QuestionOptionFieldProps,
+) {
+  return (
+    previousProps.question === nextProps.question &&
+    previousProps.answer === nextProps.answer &&
+    previousProps.feedbackMode === nextProps.feedbackMode &&
+    previousProps.readOnly === nextProps.readOnly &&
+    previousProps.isPending === nextProps.isPending &&
+    previousProps.keyboardHint === nextProps.keyboardHint
+  )
+}
+
+export const QuestionOptionField = memo(QuestionOptionFieldBase, areQuestionOptionFieldPropsEqual)

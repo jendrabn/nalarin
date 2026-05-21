@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, type ReactNode } from "react"
+import { memo, useEffect, useRef, type ReactNode } from "react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -22,7 +22,7 @@ export type QuestionNavigatorLegendItem = {
   className: string
 }
 
-export function QuestionNavigation({
+function QuestionNavigationBase({
   title = "Navigasi Soal",
   items,
   onSelect,
@@ -107,6 +107,8 @@ export function QuestionNavigation({
     </aside>
   )
 }
+
+export const QuestionNavigation = memo(QuestionNavigationBase)
 
 function getNavigatorToneClass(item: QuestionNavigatorItem) {
   if (item.active && item.status === "wrong") {
