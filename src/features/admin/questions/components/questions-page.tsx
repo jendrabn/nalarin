@@ -10,6 +10,7 @@ import {
   PlusIcon,
   Trash2Icon,
   EllipsisVerticalIcon,
+  EyeIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -34,12 +35,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 
 import { deleteQuestionAction, deleteQuestionsAction } from "../actions"
 import { questionColumnLabels } from "../constants"
-import type { QuestionRow } from "../queries"
+import { getQuestionById, type QuestionDetails, type QuestionRow } from "../queries"
 import { previewQuestionContent } from "../utils/question"
+import { QuestionPreviewCard } from "../../components/question-preview-card"
 
 type QuestionsPageProps = {
   questions: QuestionRow[]
@@ -58,9 +67,11 @@ function formatDateTime(value: Date) {
 }
 
 function createColumns({
+  onView,
   onEdit,
   onDelete,
 }: {
+  onView: (question: QuestionRow) => void
   onEdit: (question: QuestionRow) => void
   onDelete: (question: QuestionRow) => void
 }): ColumnDef<QuestionRow>[] {
@@ -203,6 +214,10 @@ function createColumns({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => onView(row.original)}>
+                <EyeIcon />
+                View
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(row.original)}>
                 <PencilLineIcon />
                 Edit
@@ -223,10 +238,24 @@ function createColumns({
 export function QuestionsPage({ questions }: QuestionsPageProps) {
   const router = useRouter()
   const [deleteTarget, setDeleteTarget] = useState<QuestionRow | null>(null)
+  const [viewTarget, setViewTarget] = useState<QuestionDetails | null>(null)
+  const [viewLoading, setViewLoading] = useState(false)
 
   const columns = useMemo(
     () =>
       createColumns({
+        onView: async (question) => {
+          setViewTarget(null)
+          setViewLoading(true)
+          try {
+            const detail = await getQuestionById(question.id)
+            setViewTarget(detail)
+          } catch {
+            toast.error("Failed to load question preview.")
+          } finally {
+            setViewLoading(false)
+          }
+        },
         onEdit: (question) => router.push(`/admin/questions/${question.id}/edit`),
         onDelete: setDeleteTarget,
       }),
@@ -329,6 +358,61 @@ export function QuestionsPage({ questions }: QuestionsPageProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog
+        open={Boolean(viewTarget) || viewLoading}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewTarget(null)
+            setViewLoading(false)
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl sm:max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle>Question Preview</DialogTitle>
+            <DialogDescription>
+              Read-only preview of the selected question, including options and explanation.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="-mx-4 max-h-[70vh] overflow-y-auto px-4 no-scrollbar">
+            {viewLoading ? (
+              <div className="rounded-lg border border-dashed border-border/60 p-6 text-sm text-muted-foreground">
+                Loading preview...
+              </div>
+            ) : viewTarget ? (
+              <QuestionPreviewCard
+                question={{
+                  id: viewTarget.id,
+                  orderLabel: `Question #${viewTarget.id}`,
+                  title: viewTarget.title,
+                  content: viewTarget.content,
+                  imageUrl: viewTarget.imageUrl,
+                  explanation: viewTarget.explanation,
+                  type: viewTarget.type,
+                  status: viewTarget.status,
+                  subjectName: viewTarget.subjectName,
+                  topicName: viewTarget.topicName,
+                  year: viewTarget.year,
+                  points: viewTarget.points,
+                  correctAnswerText: viewTarget.correctAnswerText,
+                  options: viewTarget.options.map((option) => ({
+                    label: option.label,
+                    content: option.content,
+                    imageUrl: option.imageUrl,
+                    isCorrect: option.isCorrect,
+                  })),
+                }}
+              />
+            ) : (
+              <div className="rounded-lg border border-dashed border-border/60 p-6 text-sm text-muted-foreground">
+                No question selected.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

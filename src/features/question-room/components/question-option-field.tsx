@@ -48,6 +48,7 @@ function QuestionOptionFieldBase({
   onTextBlur,
   keyboardHint = "Gunakan tombol atas/bawah untuk pindah opsi, Enter untuk memilih, Esc untuk menghapus sorotan.",
 }: QuestionOptionFieldProps) {
+  const compact = true
   const isLocked = readOnly || (feedbackMode !== "none" && Boolean(answer.gradedAt))
   const isInteractive = !readOnly && !isPending && !isLocked
   const [highlightedOption, setHighlightedOption] = useState<{
@@ -169,8 +170,8 @@ function QuestionOptionFieldBase({
     if (readOnly) {
       return (
         <div className="flex flex-col gap-2">
-          <span className="text-base font-semibold">Jawaban</span>
-          <div className="rounded-lg border bg-muted/20 px-4 py-3 text-base leading-7 text-foreground">
+          <span className="text-sm font-semibold">Jawaban</span>
+          <div className="rounded-lg border bg-muted/20 px-3 py-2 text-sm leading-6 text-foreground">
             {answer.answerText.trim() || "Kosong"}
           </div>
         </div>
@@ -179,7 +180,7 @@ function QuestionOptionFieldBase({
 
     return (
       <div className="flex flex-col gap-2">
-        <label className="text-base font-semibold" htmlFor={`answer-${question.id}`}>
+        <label className="text-sm font-semibold" htmlFor={`answer-${question.id}`}>
           Jawaban
         </label>
         <Input
@@ -212,10 +213,10 @@ function QuestionOptionFieldBase({
 
   return (
     <div
-      className="flex flex-col gap-3"
+      className={cn("flex flex-col", compact ? "gap-2" : "gap-3")}
       aria-describedby={!readOnly && !isLocked ? `answer-keyboard-help-${question.id}` : undefined}
     >
-      <div className="grid gap-2">
+      <div className={cn("grid", compact ? "gap-1.5" : "gap-2")}>
         {question.options.map((option, index) => {
           const displayLabel = getOptionDisplayLabel(index, option.label)
           const selected = answer.selectedOptionKeys.includes(option.label)
@@ -234,7 +235,8 @@ function QuestionOptionFieldBase({
               <div
                 key={`${question.id}-${option.label}`}
                 className={cn(
-                  "flex min-h-12 items-center gap-3 rounded-lg border bg-background p-3 text-base transition-colors",
+                  "flex min-h-11 items-center rounded-lg border bg-background transition-colors",
+                  compact ? "gap-2 px-2.5 py-1.5 text-sm" : "gap-3 p-3 text-base",
                   isInteractive ? "hover:border-primary/35 hover:bg-muted/45" : "opacity-100",
                   feedbackClass ?? (selected && "border-primary bg-primary/10"),
                   highlighted && isInteractive && "ring-3 ring-ring/35",
@@ -245,7 +247,13 @@ function QuestionOptionFieldBase({
                   }
                 }}
               >
-                <Badge variant="outline" className="min-w-8 justify-center px-2 font-semibold tabular-nums">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "justify-center font-semibold tabular-nums",
+                    compact ? "min-w-7 px-1.5 text-[11px]" : "min-w-8 px-2",
+                  )}
+                >
                   {displayLabel}
                 </Badge>
                 <Checkbox
@@ -275,13 +283,17 @@ function QuestionOptionFieldBase({
                 <label
                   htmlFor={`option-${question.id}-${option.label}`}
                   className={cn(
-                    "min-w-0 flex-1 leading-7",
+                    "min-w-0 flex-1",
+                    compact ? "leading-6" : "leading-7",
                     isInteractive ? "cursor-pointer" : "cursor-default",
                   )}
                 >
-                  <span className="block [&_p]:mb-2" dangerouslySetInnerHTML={{ __html: option.content }} />
+                  <span
+                    className={cn("block", compact ? "[&_p]:mb-1.5" : "[&_p]:mb-2")}
+                    dangerouslySetInnerHTML={{ __html: option.content }}
+                  />
                   {option.imageUrl ? (
-                    <span className="mt-2 block overflow-hidden rounded-md border bg-card">
+                    <span className={cn("mt-2 block overflow-hidden rounded-md border bg-card", compact && "mt-1.5")}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={option.imageUrl} alt="" className="max-h-56 w-full object-contain" />
                     </span>
@@ -305,7 +317,8 @@ function QuestionOptionFieldBase({
                 onChoiceChange([option.label])
               }}
               className={cn(
-                "group flex min-h-12 items-center gap-3 rounded-lg border bg-background p-3 text-left text-base transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-100",
+                "group flex min-h-11 items-center rounded-lg border bg-background text-left transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-100",
+                compact ? "gap-2 px-2.5 py-1.5 text-sm" : "gap-3 p-3 text-base",
                 feedbackClass ??
                   (selected ? "border-primary bg-primary/10" : isInteractive ? "hover:border-primary/35 hover:bg-muted/45" : undefined),
                 highlighted && isInteractive && "ring-3 ring-ring/35",
@@ -321,13 +334,22 @@ function QuestionOptionFieldBase({
                 }
               }}
             >
-              <Badge variant="outline" className="min-w-8 justify-center px-2 font-semibold tabular-nums">
+              <Badge
+                variant="outline"
+                className={cn(
+                  "justify-center font-semibold tabular-nums",
+                  compact ? "min-w-7 px-1.5 text-[11px]" : "min-w-8 px-2",
+                )}
+              >
                 {displayLabel}
               </Badge>
-              <span className="min-w-0 flex-1">
-                <span className="block leading-7 [&_p]:mb-2" dangerouslySetInnerHTML={{ __html: option.content }} />
+              <span className={cn("min-w-0 flex-1", compact ? "leading-6" : "leading-7")}>
+                <span
+                  className={cn("block", compact ? "[&_p]:mb-1.5" : "[&_p]:mb-2")}
+                  dangerouslySetInnerHTML={{ __html: option.content }}
+                />
                 {option.imageUrl ? (
-                  <span className="mt-2 block overflow-hidden rounded-md border bg-card">
+                  <span className={cn("mt-2 block overflow-hidden rounded-md border bg-card", compact && "mt-1.5")}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={option.imageUrl} alt="" className="max-h-56 w-full object-contain" />
                   </span>

@@ -50,13 +50,13 @@ export function QuestionPreviewCard({
 
   const roomQuestion: QuestionRoomLike = {
     id: question.id,
-      question: {
-        title: question.title,
-        content: question.content,
-        imageUrl: question.imageUrl,
-        type: question.type,
-        explanation: question.explanation,
-      },
+    question: {
+      title: question.title,
+      content: question.content,
+      imageUrl: question.imageUrl,
+      type: question.type,
+      explanation: question.explanation,
+    },
     options: question.options.map((option) => ({
       label: option.label,
       content: option.content,
@@ -77,33 +77,42 @@ export function QuestionPreviewCard({
 
   return (
     <Card className={cn("gap-0 overflow-hidden py-0 shadow-sm", className)}>
-      <CardHeader className="px-4 py-4 sm:px-5">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{question.orderLabel}</Badge>
-            <Badge variant="soft" className={typeBadge.className}>
+      <CardHeader className="px-4 py-3 sm:px-4">
+        <div className="flex flex-col gap-2.5">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge variant="secondary" className="px-2 py-0.5 text-[11px]">
+              {question.orderLabel}
+            </Badge>
+            <Badge variant="soft" className={cn(typeBadge.className, "px-2 py-0.5 text-[11px]")}>
               {typeBadge.label}
             </Badge>
-            <Badge variant="soft" className={statusBadge.className}>
+            <Badge variant="soft" className={cn(statusBadge.className, "px-2 py-0.5 text-[11px]")}>
               {statusBadge.label}
             </Badge>
-            <Badge variant="outline">{question.points} pts</Badge>
-            {question.year ? <Badge variant="outline">{question.year}</Badge> : null}
+            <Badge variant="outline" className="px-2 py-0.5 text-[11px]">
+              {question.points} pts
+            </Badge>
+            {question.year ? (
+              <Badge variant="outline" className="px-2 py-0.5 text-[11px]">
+                {question.year}
+              </Badge>
+            ) : null}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
             <span className="font-medium text-foreground">{question.subjectName}</span>
             {question.topicName ? <span>/{question.topicName}</span> : null}
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-5 px-4 pb-5 pt-1 sm:px-5">
+      <CardContent className="flex flex-col gap-4 px-4 pb-4 pt-0 sm:px-4">
         <QuestionContent
           title={question.title ?? undefined}
           content={question.content}
           imageUrl={question.imageUrl}
-          contentClassName="text-sm leading-7"
+          titleClassName="text-sm"
+          contentClassName="text-sm leading-6"
         />
 
         <QuestionOptionField
@@ -114,12 +123,12 @@ export function QuestionPreviewCard({
         />
 
         {question.explanation ? (
-          <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-4 sm:px-5">
+          <div className="rounded-xl border border-border/60 bg-muted/20 px-3 py-3">
             <QuestionContent
               title="Pembahasan"
               content={question.explanation}
-              contentClassName="text-sm leading-7"
               titleClassName="text-sm font-semibold"
+              contentClassName="text-sm leading-6"
             />
           </div>
         ) : null}
