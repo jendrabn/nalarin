@@ -67,6 +67,20 @@ function DescriptionCell({ description }: { description?: string | null }) {
   )
 }
 
+function formatDateTimeLocal(value?: Date | null) {
+  if (!value) {
+    return ""
+  }
+
+  const year = value.getFullYear()
+  const month = String(value.getMonth() + 1).padStart(2, "0")
+  const day = String(value.getDate()).padStart(2, "0")
+  const hour = String(value.getHours()).padStart(2, "0")
+  const minute = String(value.getMinutes()).padStart(2, "0")
+
+  return `${year}-${month}-${day}T${hour}:${minute}`
+}
+
 export function ExamTypesPage({
   examTypes,
   defaultEditExamType = null,
@@ -200,7 +214,7 @@ export function ExamTypesPage({
         open={Boolean(editingExamType)}
         mode="edit"
         title="Edit Exam Type"
-        description="Update the exam type name and description."
+        description="Update the exam type details, schedule, and information content."
         submitLabel="Save changes"
         initialValues={
           editingExamType
@@ -208,6 +222,14 @@ export function ExamTypesPage({
                 name: editingExamType.name,
                 description: editingExamType.description ?? "",
                 logoUrl: editingExamType.logoUrl ?? "",
+                countdownTitle: editingExamType.countdownTitle ?? "",
+                countdownTargetAt: formatDateTimeLocal(editingExamType.countdownTargetAt),
+                registrationStartAt: formatDateTimeLocal(editingExamType.registrationStartAt),
+                registrationEndAt: formatDateTimeLocal(editingExamType.registrationEndAt),
+                examStartAt: formatDateTimeLocal(editingExamType.examStartAt),
+                examEndAt: formatDateTimeLocal(editingExamType.examEndAt),
+                announcementAt: formatDateTimeLocal(editingExamType.announcementAt),
+                informationContent: editingExamType.informationContent ?? "",
               }
             : undefined
         }

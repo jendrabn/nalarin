@@ -10,6 +10,14 @@ export type ExamTypeRow = {
   slug: string
   description: string | null
   logoUrl: string | null
+  countdownTitle: string | null
+  countdownTargetAt: Date | null
+  registrationStartAt: Date | null
+  registrationEndAt: Date | null
+  examStartAt: Date | null
+  examEndAt: Date | null
+  announcementAt: Date | null
+  informationContent: string | null
   subjectCount: number
   topicCount: number
   questionCount: number
@@ -30,6 +38,14 @@ function selectExamTypeColumns() {
     slug: schema.examTypes.slug,
     description: schema.examTypes.description,
     logoUrl: schema.examTypes.logoUrl,
+    countdownTitle: schema.examTypes.countdownTitle,
+    countdownTargetAt: schema.examTypes.countdownTargetAt,
+    registrationStartAt: schema.examTypes.registrationStartAt,
+    registrationEndAt: schema.examTypes.registrationEndAt,
+    examStartAt: schema.examTypes.examStartAt,
+    examEndAt: schema.examTypes.examEndAt,
+    announcementAt: schema.examTypes.announcementAt,
+    informationContent: schema.examTypes.informationContent,
     createdAt: schema.examTypes.createdAt,
     updatedAt: schema.examTypes.updatedAt,
   } as const
@@ -84,6 +100,14 @@ export async function getExamTypes() {
     ...row,
     description: row.description ?? null,
     logoUrl: row.logoUrl ?? null,
+    countdownTitle: row.countdownTitle ?? null,
+    countdownTargetAt: row.countdownTargetAt ?? null,
+    registrationStartAt: row.registrationStartAt ?? null,
+    registrationEndAt: row.registrationEndAt ?? null,
+    examStartAt: row.examStartAt ?? null,
+    examEndAt: row.examEndAt ?? null,
+    announcementAt: row.announcementAt ?? null,
+    informationContent: row.informationContent ?? null,
     subjectCount: counts.subjectCounts.get(row.id) ?? 0,
     topicCount: counts.topicCounts.get(row.id) ?? 0,
     questionCount: counts.questionCounts.get(row.id) ?? 0,

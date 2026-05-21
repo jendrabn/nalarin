@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -20,12 +21,11 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 
 import { archiveTryoutAction, publishTryoutAction } from "../actions"
+import { QuestionPreviewCard } from "../../components/question-preview-card"
 import type { TryoutDetails } from "../queries"
-import { previewText } from "../utils/tryout"
 
 type TryoutDetailPageProps = {
   tryout: TryoutDetails
@@ -44,10 +44,28 @@ function formatDateTime(value: Date | null) {
   }).format(value)
 }
 
+function DetailItem({
+  label,
+  value,
+}: {
+  label: string
+  value: ReactNode
+}) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-medium text-foreground">{value}</div>
+    </div>
+  )
+}
+
 export function TryoutDetailPage({ tryout }: TryoutDetailPageProps) {
   const router = useRouter()
   const [dialogType, setDialogType] = useState<DialogType>(null)
-  const statusLabel = getModelEnumBadgeMeta("contentStatus", tryout.status).label
+  const statusBadge = getModelEnumBadgeMeta("contentStatus", tryout.status)
+  const navigationBadge = getModelEnumBadgeMeta("navigationMode", tryout.navigationMode)
 
   async function handleConfirm() {
     if (!dialogType) {
@@ -91,7 +109,7 @@ export function TryoutDetailPage({ tryout }: TryoutDetailPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title={tryout.title}
-        subtitle={`${tryout.examTypeName} · ${tryout.slug}`}
+        subtitle={`${tryout.examTypeName} / ${tryout.slug}`}
         actions={
           <div className="flex flex-wrap gap-2">
             {tryout.status === "draft" ? (
@@ -118,56 +136,93 @@ export function TryoutDetailPage({ tryout }: TryoutDetailPageProps) {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="grid gap-4">
         <Card>
           <CardHeader>
             <CardTitle>Overview</CardTitle>
-            <CardDescription>Publication, access, schedule, and scoring summary.</CardDescription>
+            <CardDescription>
+              Publication, access, schedule, scoring, and configuration summary.
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 text-sm">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Status</span>
-                <span className="font-medium">{statusLabel}</span>
+          <CardContent className="flex flex-col gap-5">
+            {tryout.description ? (
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-4 text-sm leading-7 text-muted-foreground">
+                {tryout.description}
               </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Access</span>
-                <span className="font-medium">{tryout.isFree ? "Free" : "Paid"}</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Sections</span>
-                <span className="font-medium tabular-nums">{tryout.sectionCount}</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Questions</span>
-                <span className="font-medium tabular-nums">{tryout.questionCount}</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Sessions</span>
-                <span className="font-medium tabular-nums">{tryout.sessionCount}</span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Starts</span>
-                <span className="text-right">{formatDateTime(tryout.startsAt)}</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Ends</span>
-                <span className="text-right">{formatDateTime(tryout.endsAt)}</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Published</span>
-                <span className="text-right">{formatDateTime(tryout.publishedAt)}</span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Penalty</span>
-                <span className="font-medium tabular-nums">{tryout.wrongAnswerPenalty}</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Navigation</span>
-                <span className="font-medium">{tryout.navigationMode}</span>
-              </div>
+            ) : null}
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <DetailItem
+                label="Status"
+                value={
+                  <Badge variant="soft" className={statusBadge.className}>
+                    {statusBadge.label}
+                  </Badge>
+                }
+              />
+              <DetailItem
+                label="Access"
+                value={<Badge variant={tryout.isFree ? "secondary" : "outline"}>{tryout.isFree ? "Free" : "Paid"}</Badge>}
+              />
+              <DetailItem label="Exam type" value={tryout.examTypeName} />
+              <DetailItem label="Sections" value={tryout.sectionCount} />
+              <DetailItem label="Questions" value={tryout.questionCount} />
+              <DetailItem label="Sessions" value={tryout.sessionCount} />
+              <DetailItem label="Starts" value={formatDateTime(tryout.startsAt)} />
+              <DetailItem label="Ends" value={formatDateTime(tryout.endsAt)} />
+              <DetailItem label="Published" value={formatDateTime(tryout.publishedAt)} />
+              <DetailItem
+                label="Result release"
+                value={tryout.resultReleaseAt ? formatDateTime(tryout.resultReleaseAt) : "-"}
+              />
+              <DetailItem
+                label="Ranking release"
+                value={tryout.rankingReleaseAt ? formatDateTime(tryout.rankingReleaseAt) : "-"}
+              />
+              <DetailItem
+                label="Explanation release"
+                value={tryout.explanationReleaseAt ? formatDateTime(tryout.explanationReleaseAt) : "-"}
+              />
+              <DetailItem
+                label="Review before submit"
+                value={tryout.allowReviewBeforeSubmit ? "Enabled" : "Disabled"}
+              />
+              <DetailItem
+                label="Show result"
+                value={tryout.showResultAfterSubmit ? "Enabled" : "Disabled"}
+              />
+              <DetailItem
+                label="Show ranking"
+                value={tryout.showRankingAfterSubmit ? "Enabled" : "Disabled"}
+              />
+              <DetailItem
+                label="Show explanation"
+                value={tryout.showExplanationAfterSubmit ? "Enabled" : "Disabled"}
+              />
+              <DetailItem
+                label="Shuffle questions"
+                value={tryout.shuffleQuestions ? "Enabled" : "Disabled"}
+              />
+              <DetailItem
+                label="Shuffle options"
+                value={tryout.shuffleOptions ? "Enabled" : "Disabled"}
+              />
+              <DetailItem
+                label="Enforce end time"
+                value={tryout.enforceEndTime ? "Enabled" : "Disabled"}
+              />
+              <DetailItem label="Penalty" value={tryout.wrongAnswerPenalty} />
+              <DetailItem
+                label="Navigation"
+                value={
+                  <Badge variant="soft" className={navigationBadge.className}>
+                    {navigationBadge.label}
+                  </Badge>
+                }
+              />
+              <DetailItem label="Slug" value={<span className="break-all font-mono text-xs">{tryout.slug}</span>} />
+              <DetailItem label="Created" value={formatDateTime(tryout.createdAt)} />
+              <DetailItem label="Updated" value={formatDateTime(tryout.updatedAt)} />
             </div>
           </CardContent>
         </Card>
@@ -175,54 +230,50 @@ export function TryoutDetailPage({ tryout }: TryoutDetailPageProps) {
         <Card>
           <CardHeader>
             <CardTitle>Sections</CardTitle>
-            <CardDescription>Section timing and attached questions.</CardDescription>
+            <CardDescription>Section timing and question previews.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-4">
               {tryout.sections.length > 0 ? (
                 tryout.sections.map((section) => (
-                  <div key={section.id} className="rounded-lg border border-border/60 p-4">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <h2 className="font-medium text-foreground">{section.title}</h2>
-                        <p className="text-sm text-muted-foreground">
-                          {section.subjectName} · {section.durationMinutes} minutes
+                  <div key={section.id} className="rounded-xl border border-border/60 bg-card p-4">
+                    <div className="flex flex-col gap-3 border-b border-border/60 pb-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <h2 className="text-base font-semibold text-foreground">{section.title}</h2>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {section.subjectName} / {section.durationMinutes} minutes
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <Badge variant="secondary">{section.questionCount} questions</Badge>
+                        {section.wrongAnswerPenalty !== null ? (
+                          <Badge variant="outline">Penalty {section.wrongAnswerPenalty}</Badge>
+                        ) : null}
                       </div>
                     </div>
-                    <div className="mt-3 flex flex-col gap-2">
-                      {section.questions.map((question) => {
-                        const typeBadge = getModelEnumBadgeMeta("questionType", question.questionType)
-                        const statusBadgeMeta = getModelEnumBadgeMeta("contentStatus", question.questionStatus)
 
-                        return (
-                          <div
-                            key={question.id}
-                            className="flex flex-col gap-2 rounded-lg bg-muted/35 p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-                          >
-                            <div className="min-w-0">
-                              <p className="truncate font-medium text-foreground">
-                                {previewText(question.questionTitle ?? question.questionContent)}
-                              </p>
-                              <p className="text-muted-foreground">
-                                #{question.orderIndex} · {question.subjectName}
-                              </p>
-                            </div>
-                            <div className="flex shrink-0 flex-wrap gap-2">
-                              <Badge variant="soft" className={typeBadge.className}>
-                                {typeBadge.label}
-                              </Badge>
-                              <Badge variant="soft" className={statusBadgeMeta.className}>
-                                {statusBadgeMeta.label}
-                              </Badge>
-                              <Badge variant="outline">{question.points ?? question.basePoints} pts</Badge>
-                            </div>
-                          </div>
-                        )
-                      })}
+                    <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                      {section.questions.map((question) => (
+                        <QuestionPreviewCard
+                          key={question.id}
+                          question={{
+                            id: question.id,
+                            orderLabel: `Soal ${question.orderIndex}`,
+                            title: question.questionTitle,
+                            content: question.questionContent,
+                            imageUrl: question.questionImageUrl,
+                            explanation: question.explanation,
+                            type: question.questionType,
+                            status: question.questionStatus,
+                            subjectName: question.subjectName,
+                            topicName: question.topicName,
+                            year: null,
+                            points: question.points ?? question.basePoints,
+                            correctAnswerText: question.correctAnswerText,
+                            options: question.options,
+                          }}
+                        />
+                      ))}
                     </div>
                   </div>
                 ))

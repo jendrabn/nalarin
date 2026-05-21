@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -20,12 +21,11 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 
 import { archivePracticeAction, deletePracticeAction, publishPracticeAction } from "../actions"
+import { QuestionPreviewCard } from "../../components/question-preview-card"
 import type { PracticeDetails } from "../queries"
-import { previewText } from "../utils/practice"
 
 type PracticeDetailPageProps = {
   practice: PracticeDetails
@@ -42,6 +42,23 @@ function formatDateTime(value: Date | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(value)
+}
+
+function DetailItem({
+  label,
+  value,
+}: {
+  label: string
+  value: ReactNode
+}) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-medium text-foreground">{value}</div>
+    </div>
+  )
 }
 
 export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
@@ -137,58 +154,45 @@ export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+      <div className="grid gap-4">
         <Card>
           <CardHeader>
             <CardTitle>Overview</CardTitle>
-            <CardDescription>Publication, access, and quiz timing.</CardDescription>
+            <CardDescription>Publication, access, timing, and content summary.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 text-sm">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Status</span>
-                <Badge variant="soft" className={statusBadge.className}>
-                  {statusBadge.label}
-                </Badge>
+          <CardContent className="flex flex-col gap-5">
+            {practice.description ? (
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-4 text-sm leading-7 text-muted-foreground">
+                {practice.description}
               </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Access</span>
-                <Badge variant={practice.isFree ? "secondary" : "outline"}>
-                  {practice.isFree ? "Free" : "Paid"}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Quiz duration</span>
-                <span className="font-medium tabular-nums">
-                  {practice.quizDurationMinutes ? `${practice.quizDurationMinutes} minutes` : "-"}
-                </span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Exam type</span>
-                <span className="text-right font-medium">{practice.examTypeName}</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Subject</span>
-                <span className="text-right font-medium">{practice.subjectName}</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Topic</span>
-                <span className="text-right font-medium">{practice.topicName ?? "-"}</span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Questions</span>
-                <span className="font-medium tabular-nums">{practice.questionCount}</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Sessions</span>
-                <span className="font-medium tabular-nums">{practice.sessionCount}</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Published</span>
-                <span className="text-right">{formatDateTime(practice.publishedAt)}</span>
-              </div>
+            ) : null}
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <DetailItem
+                label="Status"
+                value={
+                  <Badge variant="soft" className={statusBadge.className}>
+                    {statusBadge.label}
+                  </Badge>
+                }
+              />
+              <DetailItem
+                label="Access"
+                value={<Badge variant={practice.isFree ? "secondary" : "outline"}>{practice.isFree ? "Free" : "Paid"}</Badge>}
+              />
+              <DetailItem
+                label="Quiz duration"
+                value={practice.quizDurationMinutes ? `${practice.quizDurationMinutes} minutes` : "-"}
+              />
+              <DetailItem label="Exam type" value={practice.examTypeName} />
+              <DetailItem label="Subject" value={practice.subjectName} />
+              <DetailItem label="Topic" value={practice.topicName ?? "-"} />
+              <DetailItem label="Questions" value={practice.questionCount} />
+              <DetailItem label="Sessions" value={practice.sessionCount} />
+              <DetailItem label="Published" value={formatDateTime(practice.publishedAt)} />
+              <DetailItem label="Slug" value={<span className="break-all font-mono text-xs">{practice.slug}</span>} />
+              <DetailItem label="Created" value={formatDateTime(practice.createdAt)} />
+              <DetailItem label="Updated" value={formatDateTime(practice.updatedAt)} />
             </div>
           </CardContent>
         </Card>
@@ -196,50 +200,32 @@ export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
         <Card>
           <CardHeader>
             <CardTitle>Questions</CardTitle>
-            <CardDescription>Questions attached to this practice.</CardDescription>
+            <CardDescription>Preview of each question with answer highlighting.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-3">
+            <div className="grid gap-4 xl:grid-cols-2">
               {practice.questions.length > 0 ? (
-                practice.questions.map((question) => {
-                  const typeBadge = getModelEnumBadgeMeta("questionType", question.questionType)
-                  const statusBadgeMeta = getModelEnumBadgeMeta(
-                    "contentStatus",
-                    question.questionStatus,
-                  )
-
-                  return (
-                    <div
-                      key={question.id}
-                      className="flex flex-col gap-3 rounded-lg border border-border/60 p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div className="min-w-0">
-                        <p className="line-clamp-1 font-medium text-foreground">
-                          {previewText(question.questionTitle ?? question.questionContent)}
-                        </p>
-                        <p className="line-clamp-2 text-muted-foreground">
-                          {previewText(question.questionContent)}
-                        </p>
-                        <p className="mt-1 text-muted-foreground">
-                          #{question.orderIndex} / {question.subjectName} /{" "}
-                          {question.topicName ?? "No topic"}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 flex-wrap gap-2">
-                        <Badge variant="soft" className={typeBadge.className}>
-                          {typeBadge.label}
-                        </Badge>
-                        <Badge variant="soft" className={statusBadgeMeta.className}>
-                          {statusBadgeMeta.label}
-                        </Badge>
-                        <Badge variant="outline">
-                          {question.points ?? question.basePoints} pts
-                        </Badge>
-                        <Badge variant="outline">{question.year ?? "No year"}</Badge>
-                      </div>
-                    </div>
-                  )
-                })
+                practice.questions.map((question) => (
+                  <QuestionPreviewCard
+                    key={question.id}
+                    question={{
+                      id: question.id,
+                      orderLabel: `Soal ${question.orderIndex}`,
+                      title: question.questionTitle,
+                      content: question.questionContent,
+                      imageUrl: question.questionImageUrl,
+                      explanation: question.explanation,
+                      type: question.questionType,
+                      status: question.questionStatus,
+                      subjectName: question.subjectName,
+                      topicName: question.topicName,
+                      year: question.year,
+                      points: question.points ?? question.basePoints,
+                      correctAnswerText: question.correctAnswerText,
+                      options: question.options,
+                    }}
+                  />
+                ))
               ) : (
                 <div className="rounded-lg border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
                   No questions configured.

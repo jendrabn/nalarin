@@ -2,7 +2,7 @@
 
 import "server-only"
 
-import { desc, eq, sql } from "drizzle-orm"
+import { desc, eq, inArray, sql } from "drizzle-orm"
 
 import { db, schema } from "@/db"
 
@@ -42,13 +42,24 @@ export type PracticeQuestionDetails = {
   points: number | null
   questionTitle: string | null
   questionContent: string
+  questionImageUrl: string | null
   questionType: PracticeQuestionType
   questionStatus: PracticeStatus
   subjectId: number
   subjectName: string
   topicName: string | null
+  correctAnswerText: string | null
+  explanation: string | null
   basePoints: number
   year: number | null
+  options: PracticeQuestionOptionDetails[]
+}
+
+export type PracticeQuestionOptionDetails = {
+  label: string
+  content: string
+  imageUrl: string | null
+  isCorrect: boolean
 }
 
 export type PracticeDetails = PracticeRow & {
@@ -193,11 +204,14 @@ export async function getPracticeById(id: number) {
         points: schema.practiceQuestions.points,
         questionTitle: schema.questions.title,
         questionContent: schema.questions.content,
+        questionImageUrl: schema.questions.imageUrl,
         questionType: schema.questions.type,
         questionStatus: schema.questions.status,
         subjectId: schema.questions.subjectId,
         subjectName: schema.subjects.name,
         topicName: schema.topics.name,
+        correctAnswerText: schema.questions.correctAnswerText,
+        explanation: schema.questions.explanation,
         basePoints: schema.questions.points,
         year: schema.questions.year,
       })
@@ -215,6 +229,39 @@ export async function getPracticeById(id: number) {
       .where(eq(schema.practiceSessions.practiceId, id)),
   ])
 
+  const questionIds = questions.map((question) => question.questionId)
+  const optionRows =
+    questionIds.length > 0
+      ? await db
+          .select({
+            questionId: schema.questionOptions.questionId,
+            label: schema.questionOptions.label,
+            content: schema.questionOptions.content,
+            imageUrl: schema.questionOptions.imageUrl,
+            isCorrect: schema.questionOptions.isCorrect,
+          })
+          .from(schema.questionOptions)
+          .where(inArray(schema.questionOptions.questionId, questionIds))
+          .orderBy(schema.questionOptions.questionId, schema.questionOptions.id)
+      : []
+
+  const optionsByQuestionId = new Map<number, PracticeQuestionOptionDetails[]>(
+    questionIds.map((questionId) => [questionId, []]),
+  )
+
+  for (const option of optionRows) {
+    const currentOptions = optionsByQuestionId.get(option.questionId) ?? []
+
+    currentOptions.push({
+      label: option.label,
+      content: option.content,
+      imageUrl: option.imageUrl ?? null,
+      isCorrect: option.isCorrect,
+    })
+
+    optionsByQuestionId.set(option.questionId, currentOptions)
+  }
+
   return {
     ...normalizePracticeRow(practice, {
       questionCount: questions.length,
@@ -224,10 +271,14 @@ export async function getPracticeById(id: number) {
       ...question,
       points: question.points === null ? null : Number(question.points),
       questionTitle: question.questionTitle ?? null,
+      questionImageUrl: question.questionImageUrl ?? null,
       questionType: question.questionType as PracticeQuestionType,
       topicName: question.topicName ?? null,
+      correctAnswerText: question.correctAnswerText ?? null,
+      explanation: question.explanation ?? null,
       basePoints: Number(question.basePoints),
       year: question.year ?? null,
+      options: optionsByQuestionId.get(question.questionId) ?? [],
     })),
   } satisfies PracticeDetails
 }

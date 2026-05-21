@@ -8,8 +8,9 @@ import {
   useRef,
   useState,
 } from "react"
-import { CircleIcon, FileTextIcon } from "lucide-react"
+import { FileTextIcon } from "lucide-react"
 
+import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Input } from "@/components/ui/input"
@@ -28,6 +29,12 @@ type QuestionOptionFieldProps = {
   onTextChange?: (answerText: string) => void
   onTextBlur?: () => void
   keyboardHint?: string
+}
+
+const optionDisplayLabels = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"] as const
+
+function getOptionDisplayLabel(index: number, fallbackLabel: string) {
+  return optionDisplayLabels[index] ?? fallbackLabel
 }
 
 function QuestionOptionFieldBase({
@@ -209,7 +216,8 @@ function QuestionOptionFieldBase({
       aria-describedby={!readOnly && !isLocked ? `answer-keyboard-help-${question.id}` : undefined}
     >
       <div className="grid gap-2">
-        {question.options.map((option) => {
+        {question.options.map((option, index) => {
+          const displayLabel = getOptionDisplayLabel(index, option.label)
           const selected = answer.selectedOptionKeys.includes(option.label)
           const highlighted = highlightedOptionKey === option.label
           const isMultipleAnswer = question.question.type === "multiple_answer"
@@ -237,11 +245,14 @@ function QuestionOptionFieldBase({
                   }
                 }}
               >
+                <Badge variant="outline" className="min-w-8 justify-center px-2 font-semibold tabular-nums">
+                  {displayLabel}
+                </Badge>
                 <Checkbox
                   id={`option-${question.id}-${option.label}`}
                   checked={selected}
                   disabled={!isInteractive}
-                  aria-label={`Pilih opsi ${option.label}`}
+                  aria-label={`Pilih opsi ${displayLabel}`}
                   onFocus={() => {
                     if (isInteractive) {
                       setHighlightedOption({ questionId: question.id, optionKey: option.label })
@@ -310,16 +321,9 @@ function QuestionOptionFieldBase({
                 }
               }}
             >
-              <span
-                className={cn(
-                  "grid size-6 shrink-0 place-items-center rounded-full border text-xs font-semibold",
-                  selected
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border text-muted-foreground group-hover:border-primary/45",
-                )}
-              >
-                {option.label || <CircleIcon />}
-              </span>
+              <Badge variant="outline" className="min-w-8 justify-center px-2 font-semibold tabular-nums">
+                {displayLabel}
+              </Badge>
               <span className="min-w-0 flex-1">
                 <span className="block leading-7 [&_p]:mb-2" dangerouslySetInnerHTML={{ __html: option.content }} />
                 {option.imageUrl ? (

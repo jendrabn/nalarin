@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useId, useMemo } from "react"
-import { useForm, useWatch } from "react-hook-form"
+import { useForm, useWatch, type UseFormRegister } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 
@@ -47,6 +47,14 @@ function buildDefaultValues(initialValues?: ExamTypeFormValues): ExamTypeFormVal
     name: initialValues?.name ?? "",
     description: initialValues?.description ?? "",
     logoUrl: initialValues?.logoUrl ?? "",
+    countdownTitle: initialValues?.countdownTitle ?? "",
+    countdownTargetAt: initialValues?.countdownTargetAt ?? "",
+    registrationStartAt: initialValues?.registrationStartAt ?? "",
+    registrationEndAt: initialValues?.registrationEndAt ?? "",
+    examStartAt: initialValues?.examStartAt ?? "",
+    examEndAt: initialValues?.examEndAt ?? "",
+    announcementAt: initialValues?.announcementAt ?? "",
+    informationContent: initialValues?.informationContent ?? "",
   }
 }
 
@@ -113,14 +121,15 @@ export function ExamTypeFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl sm:max-h-[85vh]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
-        <form id={formId} onSubmit={handleSubmit}>
-          <FieldGroup>
+        <form id={formId} onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <div className="-mx-4 max-h-[50vh] overflow-y-auto px-4 no-scrollbar">
+            <FieldGroup>
             <input type="hidden" {...form.register("logoUrl")} />
             {rootError ? (
               <p className="text-sm text-destructive" aria-live="polite">
@@ -161,6 +170,88 @@ export function ExamTypeFormDialog({
               </div>
             </Field>
 
+            <Field data-invalid={Boolean(form.formState.errors.countdownTitle)}>
+              <FieldContent>
+                <FieldLabel htmlFor={`${formId}-countdown-title`}>Countdown Title</FieldLabel>
+              </FieldContent>
+              <div className="flex flex-col gap-1.5">
+                <Input
+                  id={`${formId}-countdown-title`}
+                  placeholder="Exam registration ends in"
+                  aria-invalid={Boolean(form.formState.errors.countdownTitle)}
+                  {...form.register("countdownTitle")}
+                />
+                <FieldError>{form.formState.errors.countdownTitle?.message}</FieldError>
+              </div>
+            </Field>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <DateTimeField
+                formId={formId}
+                name="countdownTargetAt"
+                label="Countdown Target At"
+                placeholder="Select countdown target"
+                error={form.formState.errors.countdownTargetAt?.message}
+                register={form.register}
+              />
+              <DateTimeField
+                formId={formId}
+                name="registrationStartAt"
+                label="Registration Start At"
+                placeholder="Select registration start"
+                error={form.formState.errors.registrationStartAt?.message}
+                register={form.register}
+              />
+              <DateTimeField
+                formId={formId}
+                name="registrationEndAt"
+                label="Registration End At"
+                placeholder="Select registration end"
+                error={form.formState.errors.registrationEndAt?.message}
+                register={form.register}
+              />
+              <DateTimeField
+                formId={formId}
+                name="examStartAt"
+                label="Exam Start At"
+                placeholder="Select exam start"
+                error={form.formState.errors.examStartAt?.message}
+                register={form.register}
+              />
+              <DateTimeField
+                formId={formId}
+                name="examEndAt"
+                label="Exam End At"
+                placeholder="Select exam end"
+                error={form.formState.errors.examEndAt?.message}
+                register={form.register}
+              />
+              <DateTimeField
+                formId={formId}
+                name="announcementAt"
+                label="Announcement At"
+                placeholder="Select announcement time"
+                error={form.formState.errors.announcementAt?.message}
+                register={form.register}
+              />
+            </div>
+
+            <Field data-invalid={Boolean(form.formState.errors.informationContent)}>
+              <FieldContent>
+                <FieldLabel htmlFor={`${formId}-information-content`}>Information Content</FieldLabel>
+              </FieldContent>
+              <div className="flex flex-col gap-1.5">
+                <Textarea
+                  id={`${formId}-information-content`}
+                  rows={6}
+                  placeholder="Paste rich text or HTML content for exam information."
+                  aria-invalid={Boolean(form.formState.errors.informationContent)}
+                  {...form.register("informationContent")}
+                />
+                <FieldError>{form.formState.errors.informationContent?.message}</FieldError>
+              </div>
+            </Field>
+
             <LogoUploadField
               label="Logo"
               value={logoUrl}
@@ -172,9 +263,10 @@ export function ExamTypeFormDialog({
                 })
               }
             />
-          </FieldGroup>
+            </FieldGroup>
+          </div>
 
-          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
@@ -185,5 +277,45 @@ export function ExamTypeFormDialog({
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function DateTimeField({
+  formId,
+  name,
+  label,
+  placeholder,
+  error,
+  register,
+}: {
+  formId: string
+  name:
+    | "countdownTargetAt"
+    | "registrationStartAt"
+    | "registrationEndAt"
+    | "examStartAt"
+    | "examEndAt"
+    | "announcementAt"
+  label: string
+  placeholder: string
+  error?: string
+  register: UseFormRegister<ExamTypeFormValues>
+}) {
+  return (
+    <Field data-invalid={Boolean(error)}>
+      <FieldContent>
+        <FieldLabel htmlFor={`${formId}-${name}`}>{label}</FieldLabel>
+      </FieldContent>
+      <div className="flex flex-col gap-1.5">
+        <Input
+          id={`${formId}-${name}`}
+          type="datetime-local"
+          placeholder={placeholder}
+          aria-invalid={Boolean(error)}
+          {...register(name)}
+        />
+        <FieldError>{error}</FieldError>
+      </div>
+    </Field>
   )
 }

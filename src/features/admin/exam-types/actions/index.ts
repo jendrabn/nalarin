@@ -33,8 +33,28 @@ function parseExamTypeValues(values: ExamTypeFormValues) {
       name: validated.data.name.trim(),
       description: normalizeNullableText(validated.data.description),
       logoUrl: normalizeNullableText(validated.data.logoUrl),
+      countdownTitle: normalizeNullableText(validated.data.countdownTitle),
+      countdownTargetAt: parseNullableDateTime(validated.data.countdownTargetAt),
+      registrationStartAt: parseNullableDateTime(validated.data.registrationStartAt),
+      registrationEndAt: parseNullableDateTime(validated.data.registrationEndAt),
+      examStartAt: parseNullableDateTime(validated.data.examStartAt),
+      examEndAt: parseNullableDateTime(validated.data.examEndAt),
+      announcementAt: parseNullableDateTime(validated.data.announcementAt),
+      informationContent: normalizeNullableText(validated.data.informationContent),
     },
   }
+}
+
+function parseNullableDateTime(value: string) {
+  const trimmed = value.trim()
+
+  if (!trimmed) {
+    return null
+  }
+
+  const parsed = new Date(trimmed)
+
+  return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
 function revalidateExamTypeRoutes() {
@@ -91,6 +111,14 @@ export async function updateExamTypeAction(
         slug,
         description: parsed.data.description,
         logoUrl: parsed.data.logoUrl,
+        countdownTitle: parsed.data.countdownTitle,
+        countdownTargetAt: parsed.data.countdownTargetAt,
+        registrationStartAt: parsed.data.registrationStartAt,
+        registrationEndAt: parsed.data.registrationEndAt,
+        examStartAt: parsed.data.examStartAt,
+        examEndAt: parsed.data.examEndAt,
+        announcementAt: parsed.data.announcementAt,
+        informationContent: parsed.data.informationContent,
       })
       .where(eq(schema.examTypes.id, examTypeId))
 
