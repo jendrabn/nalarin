@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { QuestionNavigation, type QuestionNavigatorItem, type QuestionNavigatorLegendItem } from "./question-navigation"
 import { QuestionReviewCard } from "./question-review-card"
 import type { QuestionAnswerLike, QuestionRoomLike } from "../types"
+import type { AiExplanationAccess } from "@/features/ai-explanations/types"
 
 export function QuestionReviewWorkspace({
   items,
@@ -21,6 +22,7 @@ export function QuestionReviewWorkspace({
   correctAnswerLabel,
   legendItems,
   explanationAvailable = true,
+  aiExplanation,
   explanationEmptyTitle,
   explanationEmptyDescription,
   navigationTitle = "Navigasi Soal",
@@ -44,6 +46,7 @@ export function QuestionReviewWorkspace({
   correctAnswerLabel: string
   legendItems?: QuestionNavigatorLegendItem[]
   explanationAvailable?: boolean
+  aiExplanation?: AiExplanationAccess
   explanationEmptyTitle?: string
   explanationEmptyDescription?: string
   navigationTitle?: string
@@ -70,6 +73,7 @@ export function QuestionReviewWorkspace({
           answerLabel={answerLabel}
           correctAnswerLabel={correctAnswerLabel}
           explanationAvailable={explanationAvailable}
+          aiExplanation={aiExplanation}
           explanationEmptyTitle={explanationEmptyTitle}
           explanationEmptyDescription={explanationEmptyDescription}
         />

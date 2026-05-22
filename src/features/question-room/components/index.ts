@@ -1,4 +1,5 @@
 export * from "./question-content"
+export * from "./question-ai-explanation"
 export * from "./question-explanation-panel"
 export * from "./question-navigation"
 export * from "./question-option-field"

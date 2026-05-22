@@ -13,7 +13,13 @@ import { QuestionReviewWorkspace } from "@/features/question-room/components"
 
 import type { PracticeSessionReviewQuestion, PracticeSessionSummary } from "../types"
 
-export function PracticeReviewPage({ summary }: { summary: PracticeSessionSummary }) {
+export function PracticeReviewPage({
+  summary,
+  aiExplanationEnabled = false,
+}: {
+  summary: PracticeSessionSummary
+  aiExplanationEnabled?: boolean
+}) {
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0)
   const reviewQuestions = summary.questions
   const activeQuestion = reviewQuestions[activeQuestionIndex] ?? reviewQuestions[0]
@@ -62,6 +68,12 @@ export function PracticeReviewPage({ summary }: { summary: PracticeSessionSummar
             }
             answerLabel={getUserAnswerLabel(activeQuestion)}
             correctAnswerLabel={getCorrectAnswerLabel(activeQuestion)}
+            aiExplanation={{
+              enabled: aiExplanationEnabled,
+              sessionType: "practice",
+              sessionId: summary.id,
+              sessionQuestionId: activeQuestion.id,
+            }}
             legendItems={[
               { className: "bg-primary", label: "Aktif" },
               { className: "bg-chart-2", label: "Benar" },

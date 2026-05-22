@@ -9,6 +9,7 @@ import { QuestionContent } from "./question-content"
 import { QuestionExplanationPanel } from "./question-explanation-panel"
 import { QuestionOptionField } from "./question-option-field"
 import type { QuestionAnswerLike, QuestionRoomLike } from "../types"
+import type { AiExplanationAccess } from "@/features/ai-explanations/types"
 
 export function QuestionReviewCard({
   question,
@@ -20,6 +21,7 @@ export function QuestionReviewCard({
   explanationEmptyTitle = "Pembahasan belum tersedia",
   explanationEmptyDescription = "Admin belum menambahkan pembahasan untuk soal ini.",
   explanationAvailable = true,
+  aiExplanation,
   className,
 }: {
   question: QuestionRoomLike & { question: { title: string | null; content: string; imageUrl: string | null; explanation: string | null } }
@@ -31,6 +33,7 @@ export function QuestionReviewCard({
   explanationEmptyTitle?: string
   explanationEmptyDescription?: string
   explanationAvailable?: boolean
+  aiExplanation?: AiExplanationAccess
   className?: string
 }) {
   const safeAnswer = answer ?? {
@@ -41,6 +44,16 @@ export function QuestionReviewCard({
   }
   const answerIsEmpty =
     !answer || (answer.answerText.trim().length === 0 && answer.selectedOptionKeys.length === 0)
+  const hasAiExplanationAccess = aiExplanation?.enabled === true
+  const explanationQuestion = explanationAvailable
+    ? question
+    : {
+        ...question,
+        question: {
+          ...question.question,
+          explanation: null,
+        },
+      }
 
   return (
     <Card className={cn("gap-0 overflow-hidden py-0 shadow-sm", className)}>
@@ -95,9 +108,10 @@ export function QuestionReviewCard({
             <AnswerBox label="Jawaban benar" value={correctAnswerLabel} />
           </div>
 
-          {explanationAvailable ? (
+          {explanationAvailable || hasAiExplanationAccess ? (
             <QuestionExplanationPanel
-              question={question}
+              question={explanationQuestion}
+              aiExplanation={aiExplanation}
               emptyTitle={explanationEmptyTitle}
               emptyDescription={explanationEmptyDescription}
               className="mt-1"

@@ -115,6 +115,7 @@ export type TryoutReleaseState = {
 
 export type TryoutPlanReleaseState = TryoutReleaseState & {
   allowedByPlan: boolean
+  aiAllowedByPlan?: boolean
 }
 
 export type TryoutResultSession = {

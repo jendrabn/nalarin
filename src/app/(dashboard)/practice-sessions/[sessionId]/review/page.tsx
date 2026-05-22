@@ -2,9 +2,12 @@ import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 
 import type { SiteUser } from "@/components/site-navbar"
+import type { PlanCode } from "@/config/plans"
+import { PLAN_CONFIG } from "@/config/plans"
 import { PracticeSessionPageShell } from "@/features/practices/components/practice-session-page-shell"
 import { PracticeReviewPage } from "@/features/practices/components/practice-review-page"
 import { requireUser } from "@/features/auth/services/session"
+import { getCurrentActiveSubscription } from "@/features/premium/queries"
 import { getPracticeSessionSummary } from "@/features/practices/queries/session"
 
 export const metadata: Metadata = {
@@ -27,7 +30,10 @@ export default async function Page({
     notFound()
   }
 
-  const summary = await getPracticeSessionSummary(id, user.id)
+  const [summary, subscription] = await Promise.all([
+    getPracticeSessionSummary(id, user.id),
+    getCurrentActiveSubscription(user.id),
+  ])
 
   if (!summary) {
     notFound()
@@ -43,10 +49,14 @@ export default async function Page({
     avatarUrl: user.avatarUrl,
     role: user.role,
   }
+  const planCode: PlanCode = subscription?.planCode ?? "free"
 
   return (
     <PracticeSessionPageShell user={siteUser}>
-      <PracticeReviewPage summary={summary} />
+      <PracticeReviewPage
+        summary={summary}
+        aiExplanationEnabled={PLAN_CONFIG[planCode].access.aiExplanation}
+      />
     </PracticeSessionPageShell>
   )
 }

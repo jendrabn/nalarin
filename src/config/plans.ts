@@ -18,6 +18,7 @@ export const PLAN_CONFIG = {
       paidTryouts: false,
       ranking: false,
       fullExplanation: false,
+      aiExplanation: false,
     },
   },
   pro: {
@@ -39,6 +40,7 @@ export const PLAN_CONFIG = {
       paidTryouts: true,
       ranking: true,
       fullExplanation: true,
+      aiExplanation: true,
     },
   },
   max: {
@@ -60,6 +62,7 @@ export const PLAN_CONFIG = {
       paidTryouts: true,
       ranking: true,
       fullExplanation: true,
+      aiExplanation: true,
     },
   },
 } as const;

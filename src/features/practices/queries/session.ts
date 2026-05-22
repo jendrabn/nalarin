@@ -130,7 +130,7 @@ export async function getPracticeSessionSummary(
     return null
   }
 
-  const [sessionTotals, explanationRows] = await Promise.all([
+  const [sessionTotalRows, explanationRows] = await Promise.all([
     db
       .select({
         submittedAt: schema.practiceSessions.submittedAt,
@@ -155,6 +155,8 @@ export async function getPracticeSessionSummary(
       .innerJoin(schema.questions, eq(schema.practiceSessionQuestions.questionId, schema.questions.id))
       .where(eq(schema.practiceSessionQuestions.practiceSessionId, sessionId)),
   ])
+
+  const sessionTotals = sessionTotalRows[0]
 
   if (!sessionTotals) {
     return null

@@ -1,7 +1,10 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
+import type { PlanCode } from "@/config/plans"
+import { PLAN_CONFIG } from "@/config/plans"
 import { requireUser } from "@/features/auth/services/session"
+import { getCurrentActiveSubscription } from "@/features/premium/queries"
 import { PracticeRoomPage } from "@/features/practices/components/practice-room-page"
 import { getPracticeSessionRoom } from "@/features/practices/queries/session"
 
@@ -25,11 +28,21 @@ export default async function Page({
     notFound()
   }
 
-  const session = await getPracticeSessionRoom(id, user.id)
+  const [session, subscription] = await Promise.all([
+    getPracticeSessionRoom(id, user.id),
+    getCurrentActiveSubscription(user.id),
+  ])
 
   if (!session) {
     notFound()
   }
 
-  return <PracticeRoomPage session={session} />
+  const planCode: PlanCode = subscription?.planCode ?? "free"
+
+  return (
+    <PracticeRoomPage
+      session={session}
+      aiExplanationEnabled={PLAN_CONFIG[planCode].access.aiExplanation}
+    />
+  )
 }

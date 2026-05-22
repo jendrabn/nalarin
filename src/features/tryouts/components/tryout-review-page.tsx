@@ -16,6 +16,7 @@ import type { TryoutReviewData, TryoutReviewQuestion, TryoutReviewSection } from
 export function TryoutReviewPage({ data }: { data: TryoutReviewData }) {
   const explanationsAvailable =
     data.explanationRelease.available && data.explanationRelease.allowedByPlan
+  const aiExplanationEnabled = data.explanationRelease.aiAllowedByPlan === true
   const reviewEntries = useMemo(() => buildReviewEntries(data.sections), [data.sections])
   const sectionEntries = useMemo(() => buildSectionEntries(reviewEntries), [reviewEntries])
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0)
@@ -85,12 +86,22 @@ export function TryoutReviewPage({ data }: { data: TryoutReviewData }) {
               answerLabel={getUserAnswerLabel(activeEntry.question)}
               correctAnswerLabel={getCorrectAnswerLabel(activeEntry.question)}
               explanationAvailable={explanationsAvailable}
+              aiExplanation={{
+                enabled: aiExplanationEnabled,
+                sessionType: "tryout",
+                sessionId: data.session.id,
+                sessionQuestionId: activeEntry.question.id,
+              }}
               explanationEmptyTitle={
-                explanationsAvailable ? "Pembahasan belum tersedia" : "Pembahasan Terkunci"
+                explanationsAvailable || aiExplanationEnabled
+                  ? "Pembahasan belum tersedia"
+                  : "Pembahasan Terkunci"
               }
               explanationEmptyDescription={
                 explanationsAvailable
                   ? "Admin belum menambahkan pembahasan untuk soal ini."
+                  : aiExplanationEnabled
+                    ? "Pembahasan manual belum tersedia. Kamu tetap bisa meminta Pembahasan AI."
                   : "Pembahasan mengikuti jadwal rilis dan akses paket aktif."
               }
               legendItems={[

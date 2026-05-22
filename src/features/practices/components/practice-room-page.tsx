@@ -78,7 +78,13 @@ const questionTypeLabels: Record<PracticeQuestionType, string> = {
   true_false: "Benar/Salah",
 }
 
-export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
+export function PracticeRoomPage({
+  session,
+  aiExplanationEnabled = false,
+}: {
+  session: PracticeRoomData
+  aiExplanationEnabled?: boolean
+}) {
   const router = useRouter()
   const [activeIndex, setActiveIndex] = useState(() =>
     Math.max(
@@ -534,6 +540,8 @@ export function PracticeRoomPage({ session }: { session: PracticeRoomData }) {
                 <PracticeFeedback
                   question={activeQuestion}
                   answer={activeAnswer}
+                  sessionId={session.id}
+                  aiExplanationEnabled={aiExplanationEnabled}
                 />
               ) : null}
 
@@ -645,9 +653,13 @@ function RoomPrimaryActions({
 function PracticeFeedback({
   question,
   answer,
+  sessionId,
+  aiExplanationEnabled,
 }: {
   question: PracticeRoomQuestion
   answer: PracticeRoomAnswer
+  sessionId: number
+  aiExplanationEnabled: boolean
 }) {
   if (!isAnswerLocked(answer)) {
     return null
@@ -671,6 +683,12 @@ function PracticeFeedback({
 
       <QuestionExplanationPanel
         question={question}
+        aiExplanation={{
+          enabled: aiExplanationEnabled,
+          sessionType: "practice",
+          sessionId,
+          sessionQuestionId: question.id,
+        }}
         emptyTitle="Pembahasan belum tersedia"
         emptyDescription="Jawaban sudah terkunci, tetapi pembahasan untuk soal ini belum diisi."
       />

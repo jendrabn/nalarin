@@ -204,6 +204,7 @@ export async function getTryoutReviewData(
     now,
   )
   const explanationsAllowedByPlan = PLAN_CONFIG[planCode].access.fullExplanation
+  const aiExplanationsAllowedByPlan = PLAN_CONFIG[planCode].access.aiExplanation
 
   if (!resultRelease.available) {
     return {
@@ -212,6 +213,7 @@ export async function getTryoutReviewData(
       explanationRelease: {
         ...explanationRelease,
         allowedByPlan: explanationsAllowedByPlan,
+        aiAllowedByPlan: aiExplanationsAllowedByPlan,
       },
       sections: [],
     }
@@ -333,6 +335,7 @@ export async function getTryoutReviewData(
     explanationRelease: {
       ...explanationRelease,
       allowedByPlan: explanationsAllowedByPlan,
+      aiAllowedByPlan: aiExplanationsAllowedByPlan,
     },
     sections: Array.from(sectionMap.values()),
   }
@@ -548,9 +551,9 @@ function normalizeQuestionSnapshot(value: unknown): TryoutQuestionSnapshot {
     typeof snapshot.explanation === "string"
       ? snapshot.explanation
       : typeof (snapshot as Partial<{ manualExplanation: unknown }>).manualExplanation === "string"
-        ? (snapshot as Partial<{ manualExplanation: unknown }>).manualExplanation
+        ? (snapshot as Partial<{ manualExplanation: string }>).manualExplanation ?? null
         : typeof (snapshot as Partial<{ aiExplanation: unknown }>).aiExplanation === "string"
-          ? (snapshot as Partial<{ aiExplanation: unknown }>).aiExplanation
+          ? (snapshot as Partial<{ aiExplanation: string }>).aiExplanation ?? null
           : null
 
   return {

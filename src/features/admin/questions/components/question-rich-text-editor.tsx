@@ -103,7 +103,7 @@ export function QuestionRichTextEditor({
     editable: !disabled,
     editorProps: {
       attributes: {
-        id,
+        ...(id ? { id } : {}),
         class:
           "min-h-[18rem] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-0 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border [&_img]:border-border/60 [&_img]:shadow-sm",
       },
