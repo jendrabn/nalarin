@@ -48,6 +48,10 @@ const ALLOWED_HTML_TAGS = new Set([
   "code",
   "pre",
   "br",
+  "figure",
+  "figcaption",
+  "img",
+  "a",
 ])
 
 const BASE_REQUIRED_SECTION_TITLES = [
@@ -55,6 +59,17 @@ const BASE_REQUIRED_SECTION_TITLES = [
   "Penjelasan Konsep",
   "Tips dan Trik",
 ]
+
+const AI_EXPLANATION_CACHE_TTL_MS = 15 * 60 * 1000
+const AI_EXPLANATION_CACHE_MAX_ENTRIES = 500
+const AI_EXPLANATION_CACHE_VERSION = "friendly-v1"
+
+type AiExplanationCacheEntry = {
+  html: string
+  expiresAt: number
+}
+
+const aiExplanationCache = new Map<string, AiExplanationCacheEntry>()
 
 export async function userCanAccessAiExplanation(userId: number) {
   const planCode = await getActivePlanCode(userId)
@@ -86,13 +101,83 @@ export async function generateAiExplanation(input: AiExplanationRequest) {
     } as const
   }
 
+  // Temporary per-process cache. POST Route Handlers are user-specific and are
+  // not route-cached by Next, so cache only after access/context validation.
+  const cacheKey = getAiExplanationCacheKey(input)
+  const cachedHtml = getCachedAiExplanation(cacheKey)
+
+  if (cachedHtml) {
+    return {
+      success: true,
+      status: 200,
+      html: cachedHtml,
+      cached: true,
+    } as const
+  }
+
   const html = await requestAiExplanationHtml(context)
+  setCachedAiExplanation(cacheKey, html)
 
   return {
     success: true,
     status: 200,
     html,
+    cached: false,
   } as const
+}
+
+function getAiExplanationCacheKey(input: AiExplanationRequest) {
+  return `${AI_EXPLANATION_CACHE_VERSION}:${input.userId}:${input.sessionType}:${input.sessionId}:${input.sessionQuestionId}`
+}
+
+function getCachedAiExplanation(key: string) {
+  const entry = aiExplanationCache.get(key)
+
+  if (!entry) {
+    return null
+  }
+
+  if (entry.expiresAt <= Date.now()) {
+    aiExplanationCache.delete(key)
+    return null
+  }
+
+  return entry.html
+}
+
+function setCachedAiExplanation(key: string, html: string) {
+  cleanupAiExplanationCache()
+
+  aiExplanationCache.set(key, {
+    html,
+    expiresAt: Date.now() + AI_EXPLANATION_CACHE_TTL_MS,
+  })
+}
+
+function cleanupAiExplanationCache() {
+  const now = Date.now()
+
+  for (const [key, entry] of aiExplanationCache) {
+    if (entry.expiresAt <= now) {
+      aiExplanationCache.delete(key)
+    }
+  }
+
+  if (aiExplanationCache.size <= AI_EXPLANATION_CACHE_MAX_ENTRIES) {
+    return
+  }
+
+  const overflow = aiExplanationCache.size - AI_EXPLANATION_CACHE_MAX_ENTRIES
+  let removed = 0
+
+  for (const key of aiExplanationCache.keys()) {
+    aiExplanationCache.delete(key)
+    removed += 1
+
+    if (removed >= overflow) {
+      break
+    }
+  }
 }
 
 async function getActivePlanCode(userId: number): Promise<PlanCode> {
@@ -326,13 +411,16 @@ async function requestAiExplanationFromProvider(
     },
     body: JSON.stringify({
       model: env.AI_MODEL_EXPLANATION_GENERATION,
-      temperature: 0.25,
-      max_tokens: 3200,
+      temperature: 0.2,
+      top_p: 0.9,
+      frequency_penalty: 0.15,
+      presence_penalty: 0,
+      max_tokens: 3600,
       messages: [
         {
           role: "system",
           content:
-            "Kamu adalah tutor ahli persiapan ujian. Ikuti prompt user-facing dari PRD secara ketat: pembahasan harus jelas, terstruktur, rinci, konkret, dan mudah dipahami. Respons hanya berupa HTML fragment yang aman, tanpa markdown, tanpa tag html/body, tanpa script, tanpa style inline.",
+            "You are an expert exam-preparation tutor and friendly Indonesian educational writer. Follow the user's template strictly. Write the final explanation in natural Bahasa Indonesia with a warm second-person tone using 'kamu'. Never call the learner 'user', 'pengguna', 'siswa', or 'peserta' in the output. Keep standard technical, Latin, or English terms as-is when they are normally used as-is. Never invent facts, formulas, sources, images, or reasoning that cannot be supported by the provided question context. If the context is insufficient, explicitly say that you do not know or that the available information is not enough. Return only a safe HTML fragment: no markdown, no html/body tags, no scripts, no inline styles, and no CSS classes.",
         },
         {
           role: "user",
@@ -373,52 +461,68 @@ function buildAiExplanationPrompt(
     ? `\nPembahasan dari admin:\n${toPlainText(context.manualExplanation)}\n`
     : ""
 
-  return `Kamu adalah tutor ahli untuk persiapan ujian ${context.examTypeName} - ${context.subjectName}.
+  return `You are an expert tutor for ${context.examTypeName} - ${context.subjectName}.
 
-Buat pembahasan yang jelas, terstruktur, rinci, dan mudah dipahami untuk soal berikut.
+Create a high-quality explanation for the following exam-preparation question. The explanation must be clear, structured, concrete, and easy to understand.
+
+IMPORTANT LANGUAGE RULE:
+- Write the explanation content in Bahasa Indonesia.
+- Keep standard technical, Latin, or English terms as-is when translating them would sound unnatural or reduce precision.
 
 ---
-INFORMASI SOAL
-Tipe soal: ${context.question.type}
-Materi/Topik: ${context.topicName ?? "-"}
-Soal: ${toPlainText(context.question.content)}
-${context.options.length > 0 ? `Opsi:\n${optionsBlock}` : ""}
-Kunci jawaban: ${correctAnswer}
-Jawaban user: ${userAnswer}
-Status jawaban user: ${answerStatus}
+QUESTION INFORMATION
+Question type: ${context.question.type}
+Topic: ${context.topicName ?? "-"}
+Question: ${toPlainText(context.question.content)}
+${context.options.length > 0 ? `Options:\n${optionsBlock}` : ""}
+Correct answer: ${correctAnswer}
+Learner answer (refer to this as "jawaban kamu" in the output): ${userAnswer}
+Learner answer status: ${answerStatus}
 ${manualExplanation}
 ---
 
-INSTRUKSI PEMBAHASAN:
+EXPLANATION INSTRUCTIONS:
 
-Tulis pembahasan dengan urutan berikut. Gunakan heading <h3> yang jelas untuk setiap bagian:
+Write the explanation in this exact section order. Use a clear <h3> heading for each section:
 
 1. Jawaban yang Benar
-   Sebutkan kunci jawaban dan jelaskan secara singkat mengapa jawaban tersebut benar. Mulai dari konsep atau prinsip yang mendasari, bukan sekadar menyatakan "jawaban yang benar adalah...".
+   State the correct answer and explain why it is correct. Start from the underlying concept or principle, not merely "the answer is...".
 
 2. Penjelasan Konsep
-   Jelaskan konsep, teori, atau materi inti yang diuji soal ini secara mendalam. Gunakan bahasa yang mudah dipahami. Sertakan contoh konkret jika membantu pemahaman. Jangan hanya menghitung hasil akhir; jelaskan cara berpikirnya.
+   Explain the core concept, theory, or reasoning being tested. Use simple but precise language. Include concrete examples when useful. Do not only compute the final result; explain the thinking process and why each step matters.
 
-3. Analisis Jawaban User
-   Hanya jika user menjawab salah atau kosong. Jelaskan dengan empati mengapa jawaban user kurang tepat. Identifikasi kemungkinan miskonsepsi atau jebakan yang membuat user memilih jawaban tersebut, lalu luruskan.
+3. Analisis Jawaban Kamu
+   Include this section only when the learner answer is wrong, empty, or not graded. Explain empathetically why the learner's answer is not quite right. Identify the likely misconception or trap, then correct it.
 
 4. Tips dan Trik
-   Berikan 1-2 strategi atau cara cepat untuk menyelesaikan soal serupa di ujian nyata. Fokus pada pendekatan yang praktis dan hemat waktu. Tutup dengan satu kalimat poin kunci yang harus diingat user.
+   Give 1-2 practical strategies or time-saving techniques for similar exam questions. Close with one key sentence the user should remember.
 
-ATURAN PENULISAN:
-- Setiap bagian wajib substantif. Jangan memberi jawaban satu kalimat.
-- Untuk soal sangat sederhana, tetap jelaskan minimal satu cara utama dan satu cara alternatif/cek cepat.
-- Gunakan Bahasa Indonesia yang baik, jelas, dan tidak kaku.
-- Hindari kalimat pembuka seperti "Baik, saya akan menjelaskan..." atau "Tentu saja...".
-- Langsung masuk ke konten pada setiap bagian.
-- Jika status jawaban user adalah "benar", lewati bagian "Analisis Jawaban User" dan beri apresiasi singkat di bagian "Tips dan Trik".
-- Jangan membuat bagian "Analisis Pilihan Jawaban" atau "Rangkuman" agar pembahasan tidak bertele-tele.
-- Respons wajib berupa HTML fragment saja, bukan Markdown.
-- Setiap bagian wajib dibungkus <section> dan memakai heading <h3>.
-- Gunakan tag <section>, <h3>, <p>, <ul>, <ol>, <li>, <strong>, dan <em>.
-- Jangan memakai tabel, link, class, style, atribut HTML, tag html, tag body, atau tag script.
-- Jangan mengarang data di luar konteks soal. Jika konteks terbatas, jelaskan berdasarkan informasi yang tersedia.
-${correctionInstruction ? `\nINSTRUKSI KOREKSI:\n${correctionInstruction}` : ""}`
+CRITICAL ACCURACY RULES:
+- Never fabricate facts, formulas, concepts, sources, image URLs, or reasoning.
+- Use only the question, options, correct answer, learner answer, topic, exam context, and manual explanation provided above.
+- If the correct reasoning cannot be determined from the available context, explicitly say in Bahasa Indonesia: "Saya tidak tahu dari konteks soal yang tersedia" or "Informasi pada soal belum cukup untuk memastikan alasan lengkapnya."
+- Do not present uncertain assumptions as facts. If you make an inference, label it clearly as an inference from the available context.
+- The correct answer is provided by the system. You may explain it, but if the reasoning is unclear from the question context, say so instead of inventing a reason.
+
+WRITING RULES:
+- Every included section must be substantive. Do not answer with a single short sentence.
+- For very simple questions, still explain one main method and one quick check or alternative way to verify the answer.
+- Use natural, clear, non-stiff Bahasa Indonesia.
+- Use a friendly second-person tone. Address the learner as "kamu", not "user", "pengguna", "siswa", or "peserta".
+- When discussing the learner answer, write phrases such as "Jawaban kamu adalah...", "Pilihanmu menunjukkan...", or "Kamu sudah benar saat...".
+- Never output phrases like "Jawaban user", "User memilih", "status jawaban user", or any wording that sounds like internal product data.
+- Avoid opening phrases like "Baik, saya akan menjelaskan..." or "Tentu saja...".
+- Go directly into the substance of each section.
+- If the learner answer status is "benar", skip "Analisis Jawaban Kamu" and include a brief positive reinforcement in "Tips dan Trik".
+- Do not create "Analisis Pilihan Jawaban" or "Rangkuman" sections; keep the explanation focused.
+- Return an HTML fragment only, not Markdown.
+- Each section must be wrapped in <section> and must use <h3>.
+- Allowed text tags: <section>, <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>, <code>, <pre>, and <br>.
+- Optional visual aid: if, and only if, you are confident a stable public HTTPS image URL from a reputable educational/reference source is directly relevant, include it as <figure><img src="https://..." alt="..."><figcaption>...</figcaption></figure>. Do not invent image URLs. Omit the visual aid when unsure.
+- You may include a plain supporting source link only when it is directly relevant and public HTTPS, using <a href="https://...">label</a>.
+- Do not use tables, CSS classes, inline styles, html/body tags, or scripts.
+- Do not hallucinate facts beyond the question context. If context is limited, say you do not know from the available context instead of filling the gap with guesses.
+${correctionInstruction ? `\nCORRECTION INSTRUCTION:\n${correctionInstruction}` : ""}`
 }
 
 function validateAiExplanationHtml(html: string, context: AiExplanationContext) {
@@ -446,10 +550,17 @@ function validateAiExplanationHtml(html: string, context: AiExplanationContext) 
 
   const plainText = toPlainText(html)
 
-  if (plainText.length < 700) {
+  if (plainText.length < 550) {
     return {
       valid: false,
       reason: "pembahasan terlalu pendek dan tidak substantif",
+    }
+  }
+
+  if (hasUnfriendlyLearnerLabel(plainText)) {
+    return {
+      valid: false,
+      reason: "pembahasan masih memakai label internal seperti user/pengguna/siswa",
     }
   }
 
@@ -462,13 +573,13 @@ function buildStructuredFallbackHtml(context: AiExplanationContext, providerHtml
   const userAnswer = getUserAnswerLabel(context)
   const providerText = toPlainText(providerHtml)
   const providerInsight =
-    providerText.length >= 80
+    providerText.length >= 80 && !hasUnfriendlyLearnerLabel(providerText)
       ? `<p>${escapeHtml(providerText)}</p>`
       : ""
   const sections = [
     buildFallbackSection(
       "Jawaban yang Benar",
-      `<p>Kunci jawaban untuk soal ini adalah <strong>${escapeHtml(correctAnswer)}</strong>. Jawaban tersebut menjadi acuan karena sesuai dengan informasi dan aturan penyelesaian yang ada pada soal.</p>${providerInsight}`,
+      `<p>Jawaban yang benar adalah <strong>${escapeHtml(correctAnswer)}</strong>.</p>${providerInsight || "<p>Informasi pada soal belum cukup untuk memastikan alasan lengkapnya tanpa membuat asumsi tambahan.</p>"}`,
     ),
     buildFallbackSection(
       "Penjelasan Konsep",
@@ -479,7 +590,7 @@ function buildStructuredFallbackHtml(context: AiExplanationContext, providerHtml
   if (answerStatus !== "benar") {
     sections.push(
       buildFallbackSection(
-        "Analisis Jawaban User",
+        "Analisis Jawaban Kamu",
         answerStatus === "tidak dijawab"
           ? `<p>Kamu belum menjawab soal ini. Untuk soal seperti ini, mulai dari identifikasi apa yang ditanyakan, tandai informasi penting, lalu eliminasi pilihan yang jelas tidak sesuai.</p>`
           : `<p>Jawaban kamu adalah <strong>${escapeHtml(userAnswer)}</strong>. Jawaban ini belum tepat dibandingkan kunci <strong>${escapeHtml(correctAnswer)}</strong>. Kemungkinan jebakannya adalah terlalu cepat memilih jawaban sebelum memastikan seluruh langkah atau alasan sudah sesuai dengan pertanyaan.</p>`,
@@ -497,6 +608,18 @@ function buildStructuredFallbackHtml(context: AiExplanationContext, providerHtml
   return sections.join("")
 }
 
+function hasUnfriendlyLearnerLabel(value: string) {
+  return [
+    /\buser\b/i,
+    /jawaban\s+pengguna/i,
+    /pengguna\s+memilih/i,
+    /jawaban\s+siswa/i,
+    /siswa\s+memilih/i,
+    /jawaban\s+peserta/i,
+    /peserta\s+memilih/i,
+  ].some((pattern) => pattern.test(value))
+}
+
 function buildFallbackSection(title: string, content: string) {
   return `<section><h3>${escapeHtml(title)}</h3>${content}</section>`
 }
@@ -505,7 +628,7 @@ function getRequiredSectionTitles(context: AiExplanationContext) {
   const titles = [...BASE_REQUIRED_SECTION_TITLES]
 
   if (getAnswerStatus(context.answer) !== "benar") {
-    titles.splice(2, 0, "Analisis Jawaban User")
+    titles.splice(2, 0, "Analisis Jawaban Kamu")
   }
 
   return titles
@@ -527,7 +650,7 @@ function convertMarkdownLikeHeadingsToHtml(value: string) {
   const knownTitles = [
     "Jawaban yang Benar",
     "Penjelasan Konsep",
-    "Analisis Jawaban User",
+    "Analisis Jawaban Kamu",
     "Tips dan Trik",
   ]
   const lines = value.split(/\r?\n/)
@@ -596,21 +719,102 @@ function sanitizeAiExplanationHtml(value: string) {
     .replace(/<\s*(script|style|iframe|object|embed|link|meta|base)[^>]*\/?\s*>/gi, "")
 
   return withoutDangerousBlocks.replace(
-    /<\s*(\/?)\s*([a-zA-Z][a-zA-Z0-9-]*)(?:\s[^>]*)?>/g,
-    (_match, closing: string, tagName: string) => {
+    /<\s*(\/?)\s*([a-zA-Z][a-zA-Z0-9-]*)([^>]*)>/g,
+    (_match, closing: string, tagName: string, rawAttributes: string) => {
       const tag = tagName.toLowerCase()
 
       if (!ALLOWED_HTML_TAGS.has(tag)) {
         return ""
       }
 
+      if (closing) {
+        return tag === "img" || tag === "br" ? "" : `</${tag}>`
+      }
+
       if (tag === "br") {
         return "<br>"
       }
 
-      return closing ? `</${tag}>` : `<${tag}>`
+      if (tag === "img") {
+        const src = getSafeHttpsAttribute(rawAttributes, "src")
+
+        if (!src || !isLikelyImageUrl(src)) {
+          return ""
+        }
+
+        const alt = getSafeTextAttribute(rawAttributes, "alt") ?? "Ilustrasi pembahasan"
+
+        return `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" loading="lazy" referrerpolicy="no-referrer">`
+      }
+
+      if (tag === "a") {
+        const href = getSafeHttpsAttribute(rawAttributes, "href")
+
+        if (!href) {
+          return ""
+        }
+
+        return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">`
+      }
+
+      return `<${tag}>`
     },
   )
+}
+
+function getSafeHttpsAttribute(rawAttributes: string, name: string) {
+  const value = getRawAttribute(rawAttributes, name)
+
+  if (!value) {
+    return null
+  }
+
+  try {
+    const url = new URL(value)
+
+    if (url.protocol !== "https:") {
+      return null
+    }
+
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
+function getSafeTextAttribute(rawAttributes: string, name: string) {
+  const value = getRawAttribute(rawAttributes, name)
+
+  if (!value) {
+    return null
+  }
+
+  return value.replace(/\s+/g, " ").trim().slice(0, 160)
+}
+
+function getRawAttribute(rawAttributes: string, name: string) {
+  const pattern = new RegExp(`${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, "i")
+  const match = rawAttributes.match(pattern)
+
+  return match?.[1] ?? match?.[2] ?? match?.[3] ?? null
+}
+
+function isLikelyImageUrl(value: string) {
+  try {
+    const url = new URL(value)
+    const pathname = url.pathname.toLowerCase()
+
+    return (
+      pathname.endsWith(".jpg") ||
+      pathname.endsWith(".jpeg") ||
+      pathname.endsWith(".png") ||
+      pathname.endsWith(".webp") ||
+      pathname.endsWith(".gif") ||
+      pathname.endsWith(".svg")
+    )
+  } catch {
+    return false
+  }
 }
 
 function normalizeQuestionSnapshot(value: unknown): PracticeQuestionSnapshot {
