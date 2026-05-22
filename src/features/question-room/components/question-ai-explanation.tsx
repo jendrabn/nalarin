@@ -92,7 +92,7 @@ export function QuestionAiExplanation({
           ) : (
             <SparklesIcon data-icon="inline-start" />
           )}
-          {isLoading ? "Membuat..." : "Lihat Pembahasan AI"}
+          {isLoading ? "Memuat Pembahasan..." : "Lihat Pembahasan AI"}
         </Button>
       </div>
 

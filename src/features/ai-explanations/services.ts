@@ -60,17 +60,6 @@ const BASE_REQUIRED_SECTION_TITLES = [
   "Tips dan Trik",
 ]
 
-const AI_EXPLANATION_CACHE_TTL_MS = 15 * 60 * 1000
-const AI_EXPLANATION_CACHE_MAX_ENTRIES = 500
-const AI_EXPLANATION_CACHE_VERSION = "friendly-v1"
-
-type AiExplanationCacheEntry = {
-  html: string
-  expiresAt: number
-}
-
-const aiExplanationCache = new Map<string, AiExplanationCacheEntry>()
-
 export async function userCanAccessAiExplanation(userId: number) {
   const planCode = await getActivePlanCode(userId)
 
@@ -101,83 +90,13 @@ export async function generateAiExplanation(input: AiExplanationRequest) {
     } as const
   }
 
-  // Temporary per-process cache. POST Route Handlers are user-specific and are
-  // not route-cached by Next, so cache only after access/context validation.
-  const cacheKey = getAiExplanationCacheKey(input)
-  const cachedHtml = getCachedAiExplanation(cacheKey)
-
-  if (cachedHtml) {
-    return {
-      success: true,
-      status: 200,
-      html: cachedHtml,
-      cached: true,
-    } as const
-  }
-
   const html = await requestAiExplanationHtml(context)
-  setCachedAiExplanation(cacheKey, html)
 
   return {
     success: true,
     status: 200,
     html,
-    cached: false,
   } as const
-}
-
-function getAiExplanationCacheKey(input: AiExplanationRequest) {
-  return `${AI_EXPLANATION_CACHE_VERSION}:${input.userId}:${input.sessionType}:${input.sessionId}:${input.sessionQuestionId}`
-}
-
-function getCachedAiExplanation(key: string) {
-  const entry = aiExplanationCache.get(key)
-
-  if (!entry) {
-    return null
-  }
-
-  if (entry.expiresAt <= Date.now()) {
-    aiExplanationCache.delete(key)
-    return null
-  }
-
-  return entry.html
-}
-
-function setCachedAiExplanation(key: string, html: string) {
-  cleanupAiExplanationCache()
-
-  aiExplanationCache.set(key, {
-    html,
-    expiresAt: Date.now() + AI_EXPLANATION_CACHE_TTL_MS,
-  })
-}
-
-function cleanupAiExplanationCache() {
-  const now = Date.now()
-
-  for (const [key, entry] of aiExplanationCache) {
-    if (entry.expiresAt <= now) {
-      aiExplanationCache.delete(key)
-    }
-  }
-
-  if (aiExplanationCache.size <= AI_EXPLANATION_CACHE_MAX_ENTRIES) {
-    return
-  }
-
-  const overflow = aiExplanationCache.size - AI_EXPLANATION_CACHE_MAX_ENTRIES
-  let removed = 0
-
-  for (const key of aiExplanationCache.keys()) {
-    aiExplanationCache.delete(key)
-    removed += 1
-
-    if (removed >= overflow) {
-      break
-    }
-  }
 }
 
 async function getActivePlanCode(userId: number): Promise<PlanCode> {
