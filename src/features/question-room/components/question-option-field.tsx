@@ -250,8 +250,8 @@ function QuestionOptionFieldBase({
                 <Badge
                   variant="outline"
                   className={cn(
-                    "justify-center font-semibold tabular-nums",
-                    compact ? "min-w-7 px-1.5 text-[11px]" : "min-w-8 px-2",
+                    "grid shrink-0 aspect-square place-items-center rounded-full px-0 font-semibold tabular-nums leading-none",
+                    compact ? "size-7 text-[11px]" : "size-8 text-xs",
                   )}
                 >
                   {displayLabel}
@@ -337,8 +337,8 @@ function QuestionOptionFieldBase({
               <Badge
                 variant="outline"
                 className={cn(
-                  "justify-center font-semibold tabular-nums",
-                  compact ? "min-w-7 px-1.5 text-[11px]" : "min-w-8 px-2",
+                  "grid shrink-0 aspect-square place-items-center rounded-full px-0 font-semibold tabular-nums leading-none",
+                  compact ? "size-7 text-[11px]" : "size-8 text-xs",
                 )}
               >
                 {displayLabel}

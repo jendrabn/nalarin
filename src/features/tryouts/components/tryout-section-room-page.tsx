@@ -405,6 +405,16 @@ export function TryoutSectionRoomPage({ session }: { session: TryoutSectionRoomD
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="shrink-0"
+              onClick={() => router.push(`/tryout-sessions/${session.sessionId}`)}
+            >
+              <ArrowLeftIcon data-icon="inline-start" />
+              Kembali
+            </Button>
             <Progress value={progressValue} className="h-2 flex-1" />
             <div className="flex shrink-0 items-center gap-2">
               <p className="text-xs font-medium text-muted-foreground">{progressValue}%</p>

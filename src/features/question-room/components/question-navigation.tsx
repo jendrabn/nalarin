@@ -3,7 +3,6 @@
 import { memo, useEffect, useRef, type ReactNode } from "react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
 export type QuestionNavigatorItem = {
@@ -90,10 +89,8 @@ function QuestionNavigationBase({
             </div>
           </div>
 
-          {legendItems?.length ? <Separator className="my-4" /> : null}
-
           {legendItems?.length ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 text-[0.72rem] text-muted-foreground">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[0.72rem] text-muted-foreground">
               {legendItems.map((item) => (
                 <span key={item.label} className="flex items-center gap-1.5">
                   <span className={cn("size-2 rounded-full", item.className)} />

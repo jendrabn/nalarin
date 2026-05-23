@@ -464,6 +464,16 @@ export function PracticeRoomPage({
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="shrink-0"
+              onClick={() => router.push(`/practice-sessions/${session.id}`)}
+            >
+              <ArrowLeftIcon data-icon="inline-start" />
+              Kembali
+            </Button>
             <Progress value={progressValue} className="h-2 flex-1" />
             <div className="flex shrink-0 items-center gap-2">
               <p className="text-xs font-medium text-muted-foreground">{progressValue}%</p>

@@ -1,29 +1,25 @@
 import Link from "next/link"
 import {
-  ArrowRightIcon,
   BarChart3Icon,
   BookOpenIcon,
   CheckCircle2Icon,
   CircleSlashIcon,
-  FileTextIcon,
   TargetIcon,
-  TrophyIcon,
   TrendingDownIcon,
   TrendingUpIcon,
-  XCircleIcon,
 } from "lucide-react"
 import type { ReactNode } from "react"
 
 import { PageHeader } from "@/components/page-header"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 
+import { ActivityCard } from "./progress-activity-card"
+
 import type {
-  ProgressActivityItem,
   ProgressExamType,
   ProgressPageData,
   ProgressSummary,
@@ -50,7 +46,7 @@ export function ProgressPage({ data }: { data: ProgressPageData }) {
           activeExamType={data.activeExamType}
         />
 
-        <section className="flex flex-col gap-3">
+        <section className="flex flex-col gap-2">
           <SummaryGrid summary={data.summary} />
         </section>
 
@@ -201,25 +197,27 @@ function SummaryCard({
 
   return (
     <Card className={cn("shadow-sm", toneClass.card)}>
-      <CardContent className="flex flex-col gap-4 p-4 sm:p-5">
+      <CardContent className="flex flex-col gap-3 p-3.5 sm:p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-medium text-muted-foreground">{label}</p>
-            <p className={cn("mt-2 text-2xl font-semibold tabular-nums", toneClass.value)}>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {label}
+            </p>
+            <p className={cn("mt-1.5 text-xl font-semibold tabular-nums sm:text-2xl", toneClass.value)}>
               {value}
             </p>
           </div>
           <span
             className={cn(
-              "grid size-9 shrink-0 place-items-center rounded-lg [&_svg]:size-4",
+              "grid size-8 shrink-0 place-items-center rounded-lg [&_svg]:size-3.5",
               toneClass.icon,
             )}
           >
             {icon}
           </span>
         </div>
-        {progress !== undefined ? <Progress value={progress} className="h-2" /> : null}
-        <p className="text-sm leading-6 text-muted-foreground">{helper}</p>
+        {progress !== undefined ? <Progress value={progress} className="h-1.5" /> : null}
+        <p className="text-xs leading-5 text-muted-foreground sm:text-sm">{helper}</p>
       </CardContent>
     </Card>
   )
@@ -276,124 +274,6 @@ function TopicCard({
   )
 }
 
-function ActivityCard({ activities }: { activities: ProgressActivityItem[] }) {
-  return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle>Riwayat Aktivitas</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {activities.length > 0 ? (
-          <div className="flex flex-col gap-3">
-            {activities.map((activity) => (
-              <ActivityRow key={`${activity.type}-${activity.id}`} activity={activity} />
-            ))}
-          </div>
-        ) : (
-          <Empty className="border bg-muted/20 py-10">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <FileTextIcon />
-              </EmptyMedia>
-              <EmptyTitle>Belum Ada Aktivitas</EmptyTitle>
-              <EmptyDescription>
-                Aktivitas akan muncul setelah kamu menyelesaikan latihan atau tryout.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-function ActivityRow({ activity }: { activity: ProgressActivityItem }) {
-  const activityLabel = getActivityTypeLabel(activity)
-
-  return (
-    <article className="rounded-xl border bg-background p-4">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex min-w-0 gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary [&_svg]:size-4">
-            {activity.type === "practice" ? <BookOpenIcon /> : <TrophyIcon />}
-          </span>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant={activity.type === "practice" ? "secondary" : "outline"}>
-                {activityLabel}
-              </Badge>
-              <Badge variant="outline">{activity.examTypeName}</Badge>
-            </div>
-            <h2 className="mt-2 line-clamp-2 text-base font-semibold leading-snug text-foreground">
-              {activity.title}
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {activity.completedAt ? formatDate(activity.completedAt) : "Tanggal tidak tersedia"}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3 lg:min-w-80">
-          <div className="grid grid-cols-3 gap-2 text-center text-xs">
-            <ActivityMetric
-              icon={<CheckCircle2Icon />}
-              label="Benar"
-              value={activity.correct}
-              className="text-chart-2"
-            />
-            <ActivityMetric
-              icon={<XCircleIcon />}
-              label="Salah"
-              value={activity.wrong}
-              className="text-destructive"
-            />
-            <ActivityMetric
-              icon={<TargetIcon />}
-              label="Skor"
-              value={`${formatNumber(activity.score)} / ${formatNumber(activity.maxScore)}`}
-              className="text-primary"
-            />
-          </div>
-          {activity.reviewHref ? (
-            <Button asChild variant="outline-primary" className="w-full">
-              <Link href={activity.reviewHref}>
-                Review
-                <ArrowRightIcon data-icon="inline-end" />
-              </Link>
-            </Button>
-          ) : (
-            <Button disabled variant="outline" className="w-full">
-              Review Belum Tersedia
-            </Button>
-          )}
-        </div>
-      </div>
-    </article>
-  )
-}
-
-function ActivityMetric({
-  icon,
-  label,
-  value,
-  className,
-}: {
-  icon: ReactNode
-  label: string
-  value: ReactNode
-  className?: string
-}) {
-  return (
-    <div className="rounded-lg bg-muted/45 p-2">
-      <p className={cn("flex items-center justify-center gap-1 font-semibold tabular-nums", className)}>
-        <span className="[&_svg]:size-3.5">{icon}</span>
-        {value}
-      </p>
-      <p className="mt-1 text-muted-foreground">{label}</p>
-    </div>
-  )
-}
-
 const summaryToneClasses = {
   primary: {
     card: "border-primary/20 bg-primary/5",
@@ -427,22 +307,8 @@ function buildProgressHref(examTypeSlug: string) {
   return `/progress/${examTypeSlug}`
 }
 
-function getActivityTypeLabel(activity: ProgressActivityItem) {
-  if (activity.type === "tryout") {
-    return "Tryout"
-  }
-
-  return activity.practiceMode === "quiz" ? "Quiz" : "Latihan"
-}
-
 function formatNumber(value: number) {
   return new Intl.NumberFormat("id-ID", {
     maximumFractionDigits: 1,
   }).format(value)
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-  }).format(new Date(value))
 }
