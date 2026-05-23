@@ -17,13 +17,16 @@ type AiExplanationResponse = {
 export function QuestionAiExplanation({
   access,
   className,
+  readingMode = "default",
 }: {
   access: AiExplanationAccess
   className?: string
+  readingMode?: "default" | "comfortable"
 }) {
   const [html, setHtml] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const isComfortable = readingMode === "comfortable"
 
   if (!access.enabled) {
     return null
@@ -104,7 +107,10 @@ export function QuestionAiExplanation({
 
       {html ? (
         <div
-          className="mt-4 text-sm leading-7 [&_a]:font-medium [&_a]:text-amber-700 [&_a]:underline [&_a]:underline-offset-4 [&_figcaption]:mt-2 [&_figcaption]:text-xs [&_figcaption]:text-muted-foreground [&_figure]:my-4 [&_figure]:overflow-hidden [&_figure]:rounded-xl [&_figure]:border [&_figure]:bg-background/70 [&_figure]:p-2 [&_h3]:mb-2 [&_h3]:mt-4 [&_h3:first-child]:mt-0 [&_h3]:font-semibold [&_img]:max-h-80 [&_img]:w-full [&_img]:rounded-lg [&_img]:object-contain [&_li]:mb-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
+          className={cn(
+            "mt-4 [&_a]:font-medium [&_a]:text-amber-700 [&_a]:underline [&_a]:underline-offset-4 [&_figcaption]:mt-2 [&_figcaption]:text-muted-foreground [&_figure]:my-4 [&_figure]:overflow-hidden [&_figure]:rounded-xl [&_figure]:border [&_figure]:bg-background/70 [&_figure]:p-2 [&_h3]:mb-2 [&_h3]:mt-4 [&_h3:first-child]:mt-0 [&_h3]:font-semibold [&_img]:max-h-80 [&_img]:w-full [&_img]:rounded-lg [&_img]:object-contain [&_li]:mb-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5",
+            isComfortable ? "text-[1.03rem] leading-8 [&_figcaption]:text-sm [&_h3]:text-base" : "text-sm leading-7 [&_figcaption]:text-xs [&_h3]:text-sm",
+          )}
           dangerouslySetInnerHTML={{ __html: html }}
         />
       ) : null}

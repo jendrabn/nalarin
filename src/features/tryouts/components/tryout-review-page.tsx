@@ -60,6 +60,7 @@ export function TryoutReviewPage({ data }: { data: TryoutReviewData }) {
               onSectionChange={setActiveQuestionIndex}
             />
             <QuestionReviewWorkspace
+              readingMode="comfortable"
               items={reviewEntries.map((entry) => ({
                 id: entry.question.id,
                 label: entry.globalIndex + 1,
@@ -102,14 +103,8 @@ export function TryoutReviewPage({ data }: { data: TryoutReviewData }) {
                   ? "Admin belum menambahkan pembahasan untuk soal ini."
                   : aiExplanationEnabled
                     ? "Pembahasan manual belum tersedia. Kamu tetap bisa meminta Pembahasan AI."
-                  : "Pembahasan mengikuti jadwal rilis dan akses paket aktif."
+                    : "Pembahasan mengikuti jadwal rilis dan akses paket aktif."
               }
-              legendItems={[
-                { className: "bg-primary", label: "Aktif" },
-                { className: "bg-chart-2", label: "Benar" },
-                { className: "bg-destructive", label: "Salah" },
-                { className: "bg-muted-foreground", label: "Kosong" },
-              ]}
             />
           </>
         ) : (

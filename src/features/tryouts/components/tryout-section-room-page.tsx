@@ -117,14 +117,6 @@ export function TryoutSectionRoomPage({ session }: { session: TryoutSectionRoomD
   const activeQuestionIndex =
     session.navigationMode === "sequential" ? Math.min(activeIndex, highestReachableIndex) : activeIndex
   const activeQuestion = session.questions[activeQuestionIndex] ?? null
-  const legendItems = useMemo(
-    () => [
-      { className: "bg-primary", label: "Aktif" },
-      { className: "bg-primary/20", label: "Terjawab" },
-      { className: "bg-chart-3", label: "Ditandai" },
-    ],
-    [],
-  )
   const navigatorItems = useMemo(
     () =>
       session.questions.map((question, index) => {
@@ -430,7 +422,6 @@ export function TryoutSectionRoomPage({ session }: { session: TryoutSectionRoomD
         <QuestionNavigation
           items={navigatorItems}
           onSelect={moveToQuestion}
-          legendItems={legendItems}
         />
 
         <section className="flex min-w-0 flex-col gap-4">
@@ -467,6 +458,7 @@ export function TryoutSectionRoomPage({ session }: { session: TryoutSectionRoomD
               <QuestionContent
                 content={activeQuestion.question.content}
                 imageUrl={activeQuestion.question.imageUrl}
+                readingMode="comfortable"
               />
 
               <QuestionOptionField
@@ -474,6 +466,7 @@ export function TryoutSectionRoomPage({ session }: { session: TryoutSectionRoomD
                 answer={activeAnswer}
                 feedbackMode="none"
                 isPending={isPending}
+                readingMode="comfortable"
                 onChoiceChange={(selectedOptionKeys) => saveChoice(activeQuestion, selectedOptionKeys)}
                 onTextChange={(answerText) => saveTextAnswer(activeQuestion, answerText)}
                 onTextBlur={() => persistTextAnswer(activeQuestion)}

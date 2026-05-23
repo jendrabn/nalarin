@@ -43,6 +43,7 @@ export function PracticeReviewPage({
 
         {reviewQuestions.length > 0 && activeQuestion ? (
           <QuestionReviewWorkspace
+            readingMode="comfortable"
             items={reviewQuestions.map((question, index) => ({
               id: question.id,
               label: question.orderIndex,
@@ -74,12 +75,6 @@ export function PracticeReviewPage({
               sessionId: summary.id,
               sessionQuestionId: activeQuestion.id,
             }}
-            legendItems={[
-              { className: "bg-primary", label: "Aktif" },
-              { className: "bg-chart-2", label: "Benar" },
-              { className: "bg-destructive", label: "Salah" },
-              { className: "bg-muted-foreground", label: "Kosong" },
-            ]}
           />
         ) : (
           <Empty className="min-h-[24rem] border bg-card">

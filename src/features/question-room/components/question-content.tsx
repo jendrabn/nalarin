@@ -10,6 +10,7 @@ export function QuestionContent({
   contentClassName,
   titleClassName,
   imageClassName,
+  readingMode = "default",
 }: {
   title?: ReactNode
   content: string
@@ -18,13 +19,27 @@ export function QuestionContent({
   contentClassName?: string
   titleClassName?: string
   imageClassName?: string
+  readingMode?: "default" | "comfortable"
 }) {
+  const isComfortable = readingMode === "comfortable"
+
   return (
     <article className={cn("flex flex-col gap-4", className)}>
-      {title ? <h2 className={cn("text-base font-semibold text-foreground", titleClassName)}>{title}</h2> : null}
+      {title ? (
+        <h2
+          className={cn(
+            isComfortable ? "text-lg font-semibold" : "text-base font-semibold",
+            "text-foreground",
+            titleClassName,
+          )}
+        >
+          {title}
+        </h2>
+      ) : null}
       <div
         className={cn(
-          "max-w-none text-base leading-8 text-foreground [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5",
+          "max-w-none text-foreground [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5",
+          isComfortable ? "text-[1.08rem] leading-8" : "text-base leading-8",
           contentClassName,
         )}
         dangerouslySetInnerHTML={{ __html: content }}
@@ -38,4 +53,3 @@ export function QuestionContent({
     </article>
   )
 }
-

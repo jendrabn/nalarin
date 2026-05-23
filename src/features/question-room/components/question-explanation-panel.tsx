@@ -14,14 +14,17 @@ export function QuestionExplanationPanel({
   emptyTitle = "Pembahasan belum tersedia",
   emptyDescription = "Admin belum menambahkan pembahasan untuk soal ini.",
   className,
+  readingMode = "default",
 }: {
   question: Pick<QuestionRoomLike, "question">
   aiExplanation?: AiExplanationAccess
   emptyTitle?: string
   emptyDescription?: string
   className?: string
+  readingMode?: "default" | "comfortable"
 }) {
   const explanations = getQuestionExplanationItems(question)
+  const isComfortable = readingMode === "comfortable"
 
   if (explanations.length === 0 && !aiExplanation?.enabled) {
     return (
@@ -43,6 +46,7 @@ export function QuestionExplanationPanel({
         <QuestionAiExplanation
           key={`${aiExplanation.sessionType}-${aiExplanation.sessionId}-${aiExplanation.sessionQuestionId}`}
           access={aiExplanation}
+          readingMode={readingMode}
         />
       ) : null}
       {explanations.length === 0 ? (
@@ -57,10 +61,13 @@ export function QuestionExplanationPanel({
         </Empty>
       ) : null}
       {explanations.map((item) => (
-        <section key={item.label} className="rounded-lg border bg-background p-4">
-          <h3 className="mb-2 text-sm font-semibold">{item.label}</h3>
+        <section key={item.label} className={cn("rounded-lg border bg-background", isComfortable ? "p-5" : "p-4")}>
+          <h3 className={cn("mb-2 font-semibold", isComfortable ? "text-base" : "text-sm")}>{item.label}</h3>
           <div
-            className="text-sm leading-7 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
+            className={cn(
+              "[&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5",
+              isComfortable ? "text-[1.03rem] leading-8" : "text-sm leading-7",
+            )}
             dangerouslySetInnerHTML={{ __html: item.content }}
           />
         </section>

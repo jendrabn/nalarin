@@ -5,7 +5,7 @@ import type { ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
 
-import { QuestionNavigation, type QuestionNavigatorItem, type QuestionNavigatorLegendItem } from "./question-navigation"
+import { QuestionNavigation, type QuestionNavigatorItem } from "./question-navigation"
 import { QuestionReviewCard } from "./question-review-card"
 import type { QuestionAnswerLike, QuestionRoomLike } from "../types"
 import type { AiExplanationAccess } from "@/features/ai-explanations/types"
@@ -20,12 +20,12 @@ export function QuestionReviewWorkspace({
   questionBadges,
   answerLabel,
   correctAnswerLabel,
-  legendItems,
   explanationAvailable = true,
   aiExplanation,
   explanationEmptyTitle,
   explanationEmptyDescription,
-  navigationTitle = "Navigasi Soal",
+  navigationTitle,
+  readingMode = "default",
   className,
 }: {
   items: QuestionNavigatorItem[]
@@ -44,12 +44,12 @@ export function QuestionReviewWorkspace({
   questionBadges: ReactNode
   answerLabel: string
   correctAnswerLabel: string
-  legendItems?: QuestionNavigatorLegendItem[]
   explanationAvailable?: boolean
   aiExplanation?: AiExplanationAccess
   explanationEmptyTitle?: string
   explanationEmptyDescription?: string
   navigationTitle?: string
+  readingMode?: "default" | "comfortable"
   className?: string
 }) {
   const canGoPrevious = activeIndex > 0
@@ -60,7 +60,6 @@ export function QuestionReviewWorkspace({
       <QuestionNavigation
         title={navigationTitle}
         items={items}
-        legendItems={legendItems}
         onSelect={onActiveIndexChange}
       />
 
@@ -76,6 +75,7 @@ export function QuestionReviewWorkspace({
           aiExplanation={aiExplanation}
           explanationEmptyTitle={explanationEmptyTitle}
           explanationEmptyDescription={explanationEmptyDescription}
+          readingMode={readingMode}
         />
 
         <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">

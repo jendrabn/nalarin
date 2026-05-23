@@ -22,6 +22,7 @@ export function QuestionReviewCard({
   explanationEmptyDescription = "Admin belum menambahkan pembahasan untuk soal ini.",
   explanationAvailable = true,
   aiExplanation,
+  readingMode = "default",
   className,
 }: {
   question: QuestionRoomLike & { question: { title: string | null; content: string; imageUrl: string | null; explanation: string | null } }
@@ -34,6 +35,7 @@ export function QuestionReviewCard({
   explanationEmptyDescription?: string
   explanationAvailable?: boolean
   aiExplanation?: AiExplanationAccess
+  readingMode?: "default" | "comfortable"
   className?: string
 }) {
   const safeAnswer = answer ?? {
@@ -72,7 +74,7 @@ export function QuestionReviewCard({
           title={question.question.title ? null : undefined}
           content={question.question.content}
           imageUrl={question.question.imageUrl}
-          contentClassName="text-sm leading-7"
+          readingMode={readingMode}
         />
 
         <QuestionOptionField
@@ -80,6 +82,7 @@ export function QuestionReviewCard({
           answer={safeAnswer}
           readOnly
           feedbackMode="review"
+          readingMode={readingMode}
         />
 
         <div className="flex flex-col gap-3 rounded-xl border bg-muted/25 p-4">
@@ -104,8 +107,13 @@ export function QuestionReviewCard({
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
-            <AnswerBox label="Jawaban kamu" value={answerLabel} muted={answerIsEmpty} />
-            <AnswerBox label="Jawaban benar" value={correctAnswerLabel} />
+            <AnswerBox
+              label="Jawaban kamu"
+              value={answerLabel}
+              muted={answerIsEmpty}
+              readingMode={readingMode}
+            />
+            <AnswerBox label="Jawaban benar" value={correctAnswerLabel} readingMode={readingMode} />
           </div>
 
           {explanationAvailable || hasAiExplanationAccess ? (
@@ -115,6 +123,7 @@ export function QuestionReviewCard({
               emptyTitle={explanationEmptyTitle}
               emptyDescription={explanationEmptyDescription}
               className="mt-1"
+              readingMode={readingMode}
             />
           ) : (
             <Empty className="border bg-muted/20 py-7">
@@ -137,15 +146,27 @@ function AnswerBox({
   label,
   value,
   muted,
+  readingMode = "default",
 }: {
   label: string
   value: string
   muted?: boolean
+  readingMode?: "default" | "comfortable"
 }) {
+  const isComfortable = readingMode === "comfortable"
+
   return (
     <div className="rounded-lg border bg-background p-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={cn("mt-1 text-sm font-medium", muted && "text-muted-foreground")}>{value}</p>
+      <p className={cn("text-muted-foreground", isComfortable ? "text-sm" : "text-xs")}>{label}</p>
+      <p
+        className={cn(
+          "mt-1 font-medium",
+          isComfortable ? "text-base leading-7" : "text-sm",
+          muted && "text-muted-foreground",
+        )}
+      >
+        {value}
+      </p>
     </div>
   )
 }

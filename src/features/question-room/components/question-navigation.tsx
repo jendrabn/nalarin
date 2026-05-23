@@ -22,10 +22,9 @@ export type QuestionNavigatorLegendItem = {
 }
 
 function QuestionNavigationBase({
-  title = "Navigasi Soal",
+  title,
   items,
   onSelect,
-  legendItems,
   className,
   contentClassName,
   gridClassName,
@@ -33,7 +32,6 @@ function QuestionNavigationBase({
   title?: string
   items: QuestionNavigatorItem[]
   onSelect: (index: number) => void
-  legendItems?: QuestionNavigatorLegendItem[]
   className?: string
   contentClassName?: string
   gridClassName?: string
@@ -58,10 +56,12 @@ function QuestionNavigationBase({
   return (
     <aside className={cn("min-w-0 lg:self-start", className)}>
       <Card className="gap-0 overflow-hidden py-0 shadow-sm">
-        <CardHeader className="px-4 py-4">
-          <CardTitle className="text-sm font-semibold">{title}</CardTitle>
-        </CardHeader>
-        <CardContent className={cn("min-w-0 px-3 pb-3 pt-0", contentClassName)}>
+        {title ? (
+          <CardHeader className="px-4 py-4">
+            <CardTitle className="text-sm font-semibold">{title}</CardTitle>
+          </CardHeader>
+        ) : null}
+        <CardContent className={cn("min-w-0 px-3 pb-3", title ? "pt-0" : "pt-3", contentClassName)}>
           <div ref={containerRef} className="overflow-x-auto pb-1 pr-1 [-webkit-overflow-scrolling:touch]">
             <div
               className={cn(
@@ -88,17 +88,6 @@ function QuestionNavigationBase({
               ))}
             </div>
           </div>
-
-          {legendItems?.length ? (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[0.72rem] text-muted-foreground">
-              {legendItems.map((item) => (
-                <span key={item.label} className="flex items-center gap-1.5">
-                  <span className={cn("size-2 rounded-full", item.className)} />
-                  {item.label}
-                </span>
-              ))}
-            </div>
-          ) : null}
         </CardContent>
       </Card>
     </aside>

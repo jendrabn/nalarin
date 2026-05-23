@@ -135,21 +135,6 @@ export function PracticeRoomPage({
   const activeQuestionIndex =
     session.mode === "practice" ? Math.min(activeIndex, highestReachableIndex) : activeIndex
   const activeQuestion = session.questions[activeQuestionIndex] ?? null
-  const legendItems = useMemo(
-    () =>
-      session.mode === "practice"
-        ? [
-            { className: "bg-primary", label: "Aktif" },
-            { className: "bg-chart-2", label: "Selesai" },
-            { className: "bg-destructive", label: "Salah" },
-          ]
-        : [
-            { className: "bg-primary", label: "Aktif" },
-            { className: "bg-primary/20", label: "Terjawab" },
-            { className: "bg-chart-3", label: "Ditandai" },
-          ],
-    [session.mode],
-  )
   const navigatorItems = useMemo(
     () =>
       session.questions.map((question, index) => {
@@ -493,7 +478,6 @@ export function PracticeRoomPage({
         <QuestionNavigation
           items={navigatorItems}
           onSelect={moveToQuestion}
-          legendItems={legendItems}
         />
 
         <section className="flex min-w-0 flex-col gap-4">
@@ -534,6 +518,7 @@ export function PracticeRoomPage({
               <QuestionContent
                 content={activeQuestion.question.content}
                 imageUrl={activeQuestion.question.imageUrl}
+                readingMode="comfortable"
               />
 
               <QuestionOptionField
@@ -541,6 +526,7 @@ export function PracticeRoomPage({
                 answer={activeAnswer}
                 feedbackMode={feedbackMode}
                 isPending={isPending}
+                readingMode="comfortable"
                 onChoiceChange={(selectedOptionKeys) => saveChoice(activeQuestion, selectedOptionKeys)}
                 onTextChange={(answerText) => saveTextAnswer(activeQuestion, answerText)}
                 onTextBlur={() => persistTextAnswer(activeQuestion)}
@@ -701,6 +687,7 @@ function PracticeFeedback({
         }}
         emptyTitle="Pembahasan belum tersedia"
         emptyDescription="Jawaban sudah terkunci, tetapi pembahasan untuk soal ini belum diisi."
+        readingMode="comfortable"
       />
     </div>
   )

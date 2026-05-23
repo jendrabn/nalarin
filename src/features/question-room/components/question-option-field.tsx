@@ -25,6 +25,7 @@ type QuestionOptionFieldProps = {
   feedbackMode?: QuestionFeedbackMode
   readOnly?: boolean
   isPending?: boolean
+  readingMode?: "default" | "comfortable"
   onChoiceChange?: (selectedOptionKeys: string[]) => void
   onTextChange?: (answerText: string) => void
   onTextBlur?: () => void
@@ -43,12 +44,14 @@ function QuestionOptionFieldBase({
   feedbackMode = "none",
   readOnly = false,
   isPending = false,
+  readingMode = "default",
   onChoiceChange,
   onTextChange,
   onTextBlur,
   keyboardHint = "Gunakan tombol atas/bawah untuk pindah opsi, Enter untuk memilih, Esc untuk menghapus sorotan.",
 }: QuestionOptionFieldProps) {
-  const compact = true
+  const isComfortable = readingMode === "comfortable"
+  const compact = !isComfortable
   const isLocked = readOnly || (feedbackMode !== "none" && Boolean(answer.gradedAt))
   const isInteractive = !readOnly && !isPending && !isLocked
   const [highlightedOption, setHighlightedOption] = useState<{
@@ -170,8 +173,13 @@ function QuestionOptionFieldBase({
     if (readOnly) {
       return (
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-semibold">Jawaban</span>
-          <div className="rounded-lg border bg-muted/20 px-3 py-2 text-sm leading-6 text-foreground">
+          <span className={cn("font-semibold", isComfortable ? "text-base" : "text-sm")}>Jawaban</span>
+          <div
+            className={cn(
+              "rounded-lg border bg-muted/20 text-foreground",
+              isComfortable ? "px-4 py-3 text-base leading-7" : "px-3 py-2 text-sm leading-6",
+            )}
+          >
             {answer.answerText.trim() || "Kosong"}
           </div>
         </div>
@@ -180,14 +188,20 @@ function QuestionOptionFieldBase({
 
     return (
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold" htmlFor={`answer-${question.id}`}>
+        <label
+          className={cn("font-semibold", isComfortable ? "text-base" : "text-sm")}
+          htmlFor={`answer-${question.id}`}
+        >
           Jawaban
         </label>
         <Input
           id={`answer-${question.id}`}
           value={answer.answerText}
           placeholder="Tulis jawaban singkat kamu di sini."
-          className="h-12 bg-background px-4 text-base"
+          className={cn(
+            "h-12 bg-background px-4",
+            isComfortable ? "text-[1.05rem]" : "text-base",
+          )}
           disabled={isPending || isLocked}
           readOnly={isLocked}
           onChange={(event) => onTextChange?.(event.target.value)}
@@ -236,7 +250,7 @@ function QuestionOptionFieldBase({
                 key={`${question.id}-${option.label}`}
                 className={cn(
                   "flex min-h-11 items-center rounded-lg border bg-background transition-colors",
-                  compact ? "gap-2 px-2.5 py-1.5 text-sm" : "gap-3 p-3 text-base",
+                  compact ? "gap-2 px-2.5 py-1.5 text-sm" : "gap-3 px-3.5 py-2 text-[1.04rem]",
                   isInteractive ? "hover:border-primary/35 hover:bg-muted/45" : "opacity-100",
                   feedbackClass ?? (selected && "border-primary bg-primary/10"),
                   highlighted && isInteractive && "ring-3 ring-ring/35",
@@ -251,7 +265,7 @@ function QuestionOptionFieldBase({
                   variant="outline"
                   className={cn(
                     "grid shrink-0 aspect-square place-items-center rounded-full px-0 font-semibold tabular-nums leading-none",
-                    compact ? "size-7 text-[11px]" : "size-8 text-xs",
+                    compact ? "size-7 text-[11px]" : "size-8 text-sm",
                   )}
                 >
                   {displayLabel}
@@ -318,7 +332,7 @@ function QuestionOptionFieldBase({
               }}
               className={cn(
                 "group flex min-h-11 items-center rounded-lg border bg-background text-left transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-100",
-                compact ? "gap-2 px-2.5 py-1.5 text-sm" : "gap-3 p-3 text-base",
+                compact ? "gap-2 px-2.5 py-1.5 text-sm" : "gap-3 px-3.5 py-2 text-[1.04rem]",
                 feedbackClass ??
                   (selected ? "border-primary bg-primary/10" : isInteractive ? "hover:border-primary/35 hover:bg-muted/45" : undefined),
                 highlighted && isInteractive && "ring-3 ring-ring/35",
@@ -338,7 +352,7 @@ function QuestionOptionFieldBase({
                 variant="outline"
                 className={cn(
                   "grid shrink-0 aspect-square place-items-center rounded-full px-0 font-semibold tabular-nums leading-none",
-                  compact ? "size-7 text-[11px]" : "size-8 text-xs",
+                  compact ? "size-7 text-[11px]" : "size-8 text-sm",
                 )}
               >
                 {displayLabel}
@@ -363,7 +377,7 @@ function QuestionOptionFieldBase({
       {!readOnly && !isLocked ? (
         <p
           id={`answer-keyboard-help-${question.id}`}
-          className="text-center text-xs text-muted-foreground"
+          className={cn("text-center text-muted-foreground", isComfortable ? "text-sm" : "text-xs")}
         >
           {keyboardHint}
         </p>
@@ -401,6 +415,7 @@ function areQuestionOptionFieldPropsEqual(
     previousProps.feedbackMode === nextProps.feedbackMode &&
     previousProps.readOnly === nextProps.readOnly &&
     previousProps.isPending === nextProps.isPending &&
+    previousProps.readingMode === nextProps.readingMode &&
     previousProps.keyboardHint === nextProps.keyboardHint
   )
 }
