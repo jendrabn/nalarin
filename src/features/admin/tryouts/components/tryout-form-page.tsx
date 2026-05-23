@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Card,
   CardContent,
@@ -268,6 +269,7 @@ export function TryoutFormPage({
   const formId = useId()
   const [step, setStep] = useState<WizardStep>("details")
   const [massPoints, setMassPoints] = useState<Record<number, string>>({})
+  const [selectedQuestionIdsBySection, setSelectedQuestionIdsBySection] = useState<string[][]>([])
   const [pickerSectionIndex, setPickerSectionIndex] = useState<number | null>(null)
   const [draggedQuestion, setDraggedQuestion] = useState<DraggedQuestion | null>(null)
   const [submitIntent, setSubmitIntent] = useState<SubmitIntent | null>(null)
@@ -347,6 +349,7 @@ export function TryoutFormPage({
         questions: [],
       },
     ])
+    setSelectedQuestionIdsBySection((current) => [...current, []])
   }
 
   function removeSection(sectionIndex: number) {
@@ -357,11 +360,12 @@ export function TryoutFormPage({
     setSections(
       sections
         .filter((_, index) => index !== sectionIndex)
-        .map((section, index) => ({
+      .map((section, index) => ({
           ...section,
           orderIndex: String(index + 1),
         })),
     )
+    setSelectedQuestionIdsBySection((current) => current.filter((_, index) => index !== sectionIndex))
   }
 
   function updateSectionQuestions(
@@ -412,11 +416,44 @@ export function TryoutFormPage({
     toast.success(`${selectedQuestions.length} question(s) added.`)
   }
 
+  function toggleQuestionSelection(
+    sectionIndex: number,
+    questionId: string,
+    checked: boolean,
+  ) {
+    setSelectedQuestionIdsBySection((current) => {
+      const next = [...current]
+      const sectionSelection = next[sectionIndex] ?? []
+
+      next[sectionIndex] = checked
+        ? sectionSelection.includes(questionId)
+          ? sectionSelection
+          : [...sectionSelection, questionId]
+        : sectionSelection.filter((id) => id !== questionId)
+
+      return next
+    })
+  }
+
+  function toggleAllQuestionSelection(
+    sectionIndex: number,
+    questionIds: string[],
+    checked: boolean,
+  ) {
+    setSelectedQuestionIdsBySection((current) => {
+      const next = [...current]
+      next[sectionIndex] = checked ? questionIds : []
+      return next
+    })
+  }
+
   function removeQuestion(sectionIndex: number, questionIndex: number) {
     const section = sections[sectionIndex]
     if (!section) {
       return
     }
+
+    const removedQuestion = section.questions[questionIndex]
 
     updateSectionQuestions(
       sectionIndex,
@@ -427,6 +464,15 @@ export function TryoutFormPage({
           orderIndex: String(index + 1),
         })),
     )
+
+    if (removedQuestion) {
+      setSelectedQuestionIdsBySection((current) => {
+        const next = [...current]
+        const sectionSelection = next[sectionIndex] ?? []
+        next[sectionIndex] = sectionSelection.filter((questionId) => questionId !== removedQuestion.questionId)
+        return next
+      })
+    }
   }
 
   function reorderQuestion(sectionIndex: number, fromIndex: number, toIndex: number) {
@@ -471,14 +517,29 @@ export function TryoutFormPage({
       return
     }
 
+    const selectedQuestionIds = selectedQuestionIdsBySection[sectionIndex] ?? []
+    const selectedQuestionIdSet = new Set(selectedQuestionIds)
+    const selectedQuestions = section.questions.filter((question) =>
+      selectedQuestionIdSet.has(question.questionId),
+    )
+
+    if (selectedQuestions.length === 0) {
+      toast.error("Select questions before overriding points.")
+      return
+    }
+
     updateSectionQuestions(
       sectionIndex,
-      section.questions.map((question) => ({
-        ...question,
-        points: value,
-      })),
+      section.questions.map((question) =>
+        selectedQuestionIdSet.has(question.questionId)
+          ? {
+              ...question,
+              points: value,
+            }
+          : question,
+      ),
     )
-    toast.success("Points overridden for this section.")
+    toast.success("Points overridden for selected questions.")
   }
 
   function applyActionError(result: {
@@ -677,6 +738,7 @@ export function TryoutFormPage({
                               shouldDirty: true,
                               shouldValidate: true,
                             })
+                            setSelectedQuestionIdsBySection([])
                           }}
                         >
                           <SelectTrigger id={`${formId}-exam-type`}>
@@ -983,6 +1045,16 @@ export function TryoutFormPage({
                 const selectedQuestionIds = new Set(
                   sectionQuestions.map((question) => question.questionId),
                 )
+                const sectionSelectedQuestionIds = selectedQuestionIdsBySection[sectionIndex] ?? []
+                const sectionSelectedQuestionIdSet = new Set(sectionSelectedQuestionIds)
+                const selectedSectionQuestions = sectionQuestions.filter((question) =>
+                  sectionSelectedQuestionIdSet.has(question.questionId),
+                )
+                const areAllSectionQuestionsSelected =
+                  sectionQuestions.length > 0 &&
+                  selectedSectionQuestions.length === sectionQuestions.length
+                const areSomeSectionQuestionsSelected =
+                  selectedSectionQuestions.length > 0 && !areAllSectionQuestionsSelected
                 const availableQuestions = lookups.questions.filter(
                   (question) =>
                     question.status === "published" &&
@@ -1048,6 +1120,11 @@ export function TryoutFormPage({
                                     : item,
                                 )
                                 setSections(nextSections)
+                                setSelectedQuestionIdsBySection((current) => {
+                                  const next = [...current]
+                                  next[sectionIndex] = []
+                                  return next
+                                })
                               }}
                             >
                               <SelectTrigger id={`${formId}-section-${sectionIndex}-subject`}>
@@ -1130,6 +1207,7 @@ export function TryoutFormPage({
                                   <Button
                                     type="button"
                                     variant="outline"
+                                    disabled={(selectedQuestionIdsBySection[sectionIndex] ?? []).length === 0}
                                     onClick={() => applyMassPoints(sectionIndex)}
                                   >
                                     <RotateCcwIcon data-icon="inline-start" />
@@ -1149,9 +1227,30 @@ export function TryoutFormPage({
 
                             {sectionQuestions.length > 0 ? (
                               <div className="overflow-hidden rounded-2xl border border-border/60">
-                                <Table>
+                                  <Table>
                                   <TableHeader>
                                     <TableRow>
+                                      {!isLocked ? (
+                                        <TableHead className="w-12">
+                                          <Checkbox
+                                            checked={
+                                              areAllSectionQuestionsSelected
+                                                ? true
+                                                : areSomeSectionQuestionsSelected
+                                                  ? "indeterminate"
+                                                  : false
+                                            }
+                                            onCheckedChange={(checked) =>
+                                              toggleAllQuestionSelection(
+                                                sectionIndex,
+                                                sectionQuestions.map((question) => question.questionId),
+                                                checked === true,
+                                              )
+                                            }
+                                            aria-label="Select all questions"
+                                          />
+                                        </TableHead>
+                                      ) : null}
                                       <TableHead className="w-10">
                                         <span className="sr-only">Order</span>
                                       </TableHead>
@@ -1229,6 +1328,21 @@ export function TryoutFormPage({
                                             setDraggedQuestion(null)
                                           }}
                                         >
+                                          {!isLocked ? (
+                                            <TableCell>
+                                              <Checkbox
+                                                checked={sectionSelectedQuestionIdSet.has(question.questionId)}
+                                                onCheckedChange={(checked) =>
+                                                  toggleQuestionSelection(
+                                                    sectionIndex,
+                                                    question.questionId,
+                                                    checked === true,
+                                                  )
+                                                }
+                                                aria-label={`Select question ${questionIndex + 1}`}
+                                              />
+                                            </TableCell>
+                                          ) : null}
                                           <TableCell>
                                             <input
                                               type="hidden"

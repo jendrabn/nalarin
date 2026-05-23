@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Field,
@@ -185,6 +186,7 @@ export function PracticeFormPage({
   const formId = useId()
   const [step, setStep] = useState<WizardStep>("details")
   const [massPoints, setMassPoints] = useState("")
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
   const [draggedQuestion, setDraggedQuestion] = useState<DraggedQuestion | null>(null)
   const [submitIntent, setSubmitIntent] = useState<SubmitIntent | null>(null)
@@ -212,6 +214,13 @@ export function PracticeFormPage({
   const selectedExamType = lookups.examTypes.find((examType) => examType.id === selectedExamTypeId)
   const selectedSubject = lookups.subjects.find((subject) => subject.id === selectedSubjectId)
   const selectedTopic = lookups.topics.find((topic) => String(topic.id) === watchedValues.topicId)
+  const selectedQuestionIdSet = useMemo(() => new Set(selectedQuestionIds), [selectedQuestionIds])
+  const selectedQuestions = useMemo(
+    () => questions.filter((question) => selectedQuestionIdSet.has(question.questionId)),
+    [questions, selectedQuestionIdSet],
+  )
+  const areAllQuestionsSelected = questions.length > 0 && selectedQuestions.length === questions.length
+  const areSomeQuestionsSelected = selectedQuestions.length > 0 && !areAllQuestionsSelected
   const filteredSubjects = lookups.subjects.filter(
     (subject) => subject.examTypeId === selectedExamTypeId,
   )
@@ -235,6 +244,20 @@ export function PracticeFormPage({
     })
   }
 
+  function toggleQuestionSelection(questionId: string, checked: boolean) {
+    setSelectedQuestionIds((current) =>
+      checked
+        ? current.includes(questionId)
+          ? current
+          : [...current, questionId]
+        : current.filter((id) => id !== questionId),
+    )
+  }
+
+  function toggleAllQuestionSelection(checked: boolean) {
+    setSelectedQuestionIds(checked ? questions.map((question) => question.questionId) : [])
+  }
+
   function addQuestionsFromPicker(selectedQuestions: PracticeQuestionLookupOption[]) {
     setQuestions([
       ...questions,
@@ -250,6 +273,8 @@ export function PracticeFormPage({
   }
 
   function removeQuestion(questionIndex: number) {
+    const removedQuestion = questions[questionIndex]
+
     setQuestions(
       questions
         .filter((_, index) => index !== questionIndex)
@@ -258,6 +283,12 @@ export function PracticeFormPage({
           orderIndex: String(index + 1),
         })),
     )
+
+    if (removedQuestion) {
+      setSelectedQuestionIds((current) =>
+        current.filter((questionId) => questionId !== removedQuestion.questionId),
+      )
+    }
   }
 
   function reorderQuestion(fromIndex: number, toIndex: number) {
@@ -290,18 +321,22 @@ export function PracticeFormPage({
       return
     }
 
-    if (questions.length === 0) {
-      toast.error("Add questions before overriding points.")
+    if (selectedQuestions.length === 0) {
+      toast.error("Select questions before overriding points.")
       return
     }
 
     setQuestions(
-      questions.map((question) => ({
-        ...question,
-        points: value,
-      })),
+      questions.map((question) =>
+        selectedQuestionIdSet.has(question.questionId)
+          ? {
+              ...question,
+              points: value,
+            }
+          : question,
+      ),
     )
-    toast.success("Points overridden for all selected questions.")
+    toast.success("Points overridden for selected questions.")
   }
 
   function applyActionError(result: {
@@ -488,6 +523,7 @@ export function PracticeFormPage({
                             shouldDirty: true,
                             shouldValidate: true,
                           })
+                          setSelectedQuestionIds([])
                         }}
                       >
                         <SelectTrigger id={`${formId}-exam-type`}>
@@ -681,6 +717,7 @@ export function PracticeFormPage({
                           <Button
                             type="button"
                             variant="outline"
+                            disabled={selectedQuestions.length === 0}
                             onClick={applyMassPoints}
                           >
                             <RotateCcwIcon data-icon="inline-start" />
@@ -703,6 +740,23 @@ export function PracticeFormPage({
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          {!isLocked ? (
+                            <TableHead className="w-12">
+                              <Checkbox
+                                checked={
+                                  areAllQuestionsSelected
+                                    ? true
+                                    : areSomeQuestionsSelected
+                                      ? "indeterminate"
+                                      : false
+                                }
+                                onCheckedChange={(checked) =>
+                                  toggleAllQuestionSelection(checked === true)
+                                }
+                                aria-label="Select all questions"
+                              />
+                            </TableHead>
+                          ) : null}
                           <TableHead className="w-10">
                             <span className="sr-only">Order</span>
                           </TableHead>
@@ -765,6 +819,17 @@ export function PracticeFormPage({
                                 setDraggedQuestion(null)
                               }}
                             >
+                              {!isLocked ? (
+                                <TableCell>
+                                  <Checkbox
+                                    checked={selectedQuestionIdSet.has(question.questionId)}
+                                    onCheckedChange={(checked) =>
+                                      toggleQuestionSelection(question.questionId, checked === true)
+                                    }
+                                    aria-label={`Select question ${questionIndex + 1}`}
+                                  />
+                                </TableCell>
+                              ) : null}
                               <TableCell>
                                 <input
                                   type="hidden"
