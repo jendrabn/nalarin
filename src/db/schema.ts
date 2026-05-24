@@ -1061,6 +1061,11 @@ export const monthlyUsage = mysqlTable(
     tryoutSessionsCount: int('tryout_sessions_count', { unsigned: true })
       .default(0)
       .notNull(),
+    aiExplanationSessionsCount: int('ai_explanation_sessions_count', {
+      unsigned: true,
+    })
+      .default(0)
+      .notNull(),
     ...auditColumns(),
   },
   (table) => [

@@ -4,6 +4,7 @@ import { and, asc, desc, eq, sql } from "drizzle-orm"
 
 import { PLAN_CONFIG, type PlanCode } from "@/config/plans"
 import { db, schema } from "@/db"
+import { canAccessAiExplanationForPlan } from "@/features/ai-explanations/services"
 
 import type {
   TryoutCorrectAnswerSnapshot,
@@ -75,7 +76,7 @@ export async function getTryoutResultData(
     },
     explanationRelease: {
       ...explanationRelease,
-      allowedByPlan: PLAN_CONFIG[planCode].access.fullExplanation,
+      allowedByPlan: true,
     },
     sections,
   }
@@ -203,8 +204,8 @@ export async function getTryoutReviewData(
     },
     now,
   )
-  const explanationsAllowedByPlan = PLAN_CONFIG[planCode].access.fullExplanation
-  const aiExplanationsAllowedByPlan = PLAN_CONFIG[planCode].access.aiExplanation
+  const explanationsAllowedByPlan = true
+  const aiExplanationsAllowedByPlan = await canAccessAiExplanationForPlan(userId, planCode)
 
   if (!resultRelease.available) {
     return {

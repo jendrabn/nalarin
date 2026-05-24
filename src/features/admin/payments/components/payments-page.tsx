@@ -1,13 +1,24 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { EllipsisVerticalIcon, EyeIcon } from "lucide-react"
+import { CheckIcon, EllipsisVerticalIcon, EyeIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { AdminDataTable, SortableHeader } from "@/components/admin-data-table"
 import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +28,7 @@ import {
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 import { formatAdminDateTime, formatCurrencyIDR } from "@/lib/format"
 
-import { deletePaymentsAction } from "../actions"
+import { approveManualPaymentAction, deletePaymentsAction } from "../actions"
 import type { AdminPaymentRow } from "../queries"
 import { ManualSubscriptionDialog } from "./manual-subscription-dialog"
 
@@ -33,6 +44,31 @@ type PaymentsPageProps = {
 
 export function PaymentsPage({ payments, users }: PaymentsPageProps) {
   const router = useRouter()
+  const [approveTarget, setApproveTarget] = useState<AdminPaymentRow | null>(null)
+  const [isApproving, setIsApproving] = useState(false)
+
+  async function handleApprovePayment() {
+    if (!approveTarget) {
+      return
+    }
+
+    setIsApproving(true)
+
+    try {
+      const result = await approveManualPaymentAction(approveTarget.id)
+
+      if (!result.success) {
+        toast.error(result.message)
+        return
+      }
+
+      toast.success("Manual payment approved.")
+      router.refresh()
+      setApproveTarget(null)
+    } finally {
+      setIsApproving(false)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -240,6 +276,12 @@ export function PaymentsPage({ payments, users }: PaymentsPageProps) {
                       <EyeIcon />
                       View
                     </DropdownMenuItem>
+                    {row.original.gateway === "manual" && row.original.status === "pending" ? (
+                      <DropdownMenuItem onClick={() => setApproveTarget(row.original)}>
+                        <CheckIcon />
+                        Approve
+                      </DropdownMenuItem>
+                    ) : null}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -247,6 +289,37 @@ export function PaymentsPage({ payments, users }: PaymentsPageProps) {
           },
         ]}
       />
+
+      <AlertDialog
+        open={approveTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setApproveTarget(null)
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Approve this payment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will create an active subscription for {approveTarget?.userName ?? "the user"}{" "}
+              and mark the pending manual payment as paid.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isApproving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isApproving}
+              onClick={(event) => {
+                event.preventDefault()
+                void handleApprovePayment()
+              }}
+            >
+              {isApproving ? "Approving..." : "Approve Payment"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

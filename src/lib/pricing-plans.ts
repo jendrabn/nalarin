@@ -29,6 +29,8 @@ export function getPricingPlanViews(): PricingPlanView[] {
 
 function getPlanBullets(plan: Plan) {
   const bullets = [
+    "Pembahasan biasa gratis untuk semua plan",
+    formatPlanLimit(plan.limits.aiExplanationsPerMonth, "pembahasan AI"),
     formatPlanLimit(plan.limits.practiceSessionsPerMonth, "latihan"),
     formatPlanLimit(plan.limits.quizSessionsPerMonth, "quiz"),
     formatPlanLimit(
@@ -37,12 +39,8 @@ function getPlanBullets(plan: Plan) {
     ),
   ]
 
-  if (plan.access.ranking && plan.access.fullExplanation) {
-    bullets.push(
-      plan.limits.practiceSessionsPerMonth === null
-        ? "Akses paling lengkap"
-        : "Ranking dan pembahasan penuh",
-    )
+  if (plan.access.ranking) {
+    bullets.push("Ranking tryout")
   }
 
   return bullets

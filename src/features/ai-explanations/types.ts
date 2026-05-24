@@ -11,6 +11,8 @@ export type AiExplanationAccess = {
   sessionType: AiExplanationSessionType
   sessionId: number
   sessionQuestionId: number
+  limitPerMonth?: number | null
+  usedThisMonth?: number
 }
 
 export type AiExplanationAnswerContext = {

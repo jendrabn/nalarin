@@ -225,6 +225,11 @@ export function ProfilePage({ profile }: ProfilePageProps) {
       value: profile.plan.usage.tryoutSessionsCount,
       limit: profile.plan.limits.tryoutSessionsPerMonth,
     },
+    {
+      label: "Pembahasan AI",
+      value: profile.plan.usage.aiExplanationSessionsCount,
+      limit: profile.plan.limits.aiExplanationsPerMonth,
+    },
   ]
 
   const deleteDisabled =

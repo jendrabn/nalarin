@@ -10,6 +10,7 @@ export const PLAN_CONFIG = {
       practiceSessionsPerMonth: 5,
       quizSessionsPerMonth: 2,
       tryoutSessionsPerMonth: 1,
+      aiExplanationsPerMonth: 10,
     },
     access: {
       freePractices: true,
@@ -17,8 +18,6 @@ export const PLAN_CONFIG = {
       freeTryouts: true,
       paidTryouts: false,
       ranking: false,
-      fullExplanation: false,
-      aiExplanation: false,
     },
   },
   pro: {
@@ -32,6 +31,7 @@ export const PLAN_CONFIG = {
       practiceSessionsPerMonth: 50,
       quizSessionsPerMonth: 20,
       tryoutSessionsPerMonth: 5,
+      aiExplanationsPerMonth: 250,
     },
     access: {
       freePractices: true,
@@ -39,8 +39,6 @@ export const PLAN_CONFIG = {
       freeTryouts: true,
       paidTryouts: true,
       ranking: true,
-      fullExplanation: true,
-      aiExplanation: true,
     },
   },
   max: {
@@ -54,6 +52,7 @@ export const PLAN_CONFIG = {
       practiceSessionsPerMonth: null,
       quizSessionsPerMonth: null,
       tryoutSessionsPerMonth: null,
+      aiExplanationsPerMonth: null,
     },
     access: {
       freePractices: true,
@@ -61,8 +60,6 @@ export const PLAN_CONFIG = {
       freeTryouts: true,
       paidTryouts: true,
       ranking: true,
-      fullExplanation: true,
-      aiExplanation: true,
     },
   },
 } as const;

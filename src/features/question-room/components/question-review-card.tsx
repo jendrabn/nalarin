@@ -46,7 +46,7 @@ export function QuestionReviewCard({
   }
   const answerIsEmpty =
     !answer || (answer.answerText.trim().length === 0 && answer.selectedOptionKeys.length === 0)
-  const hasAiExplanationAccess = aiExplanation?.enabled === true
+  const hasAiExplanation = Boolean(aiExplanation)
   const explanationQuestion = explanationAvailable
     ? question
     : {
@@ -116,7 +116,7 @@ export function QuestionReviewCard({
             <AnswerBox label="Jawaban benar" value={correctAnswerLabel} readingMode={readingMode} />
           </div>
 
-          {explanationAvailable || hasAiExplanationAccess ? (
+          {explanationAvailable || hasAiExplanation ? (
             <QuestionExplanationPanel
               question={explanationQuestion}
               aiExplanation={aiExplanation}

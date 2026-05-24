@@ -1,6 +1,6 @@
 import "server-only"
 
-import { and, eq, gt } from "drizzle-orm"
+import { and, eq, gt, sql } from "drizzle-orm"
 
 import { env } from "@/config/env"
 import { PLAN_CONFIG, type PlanCode } from "@/config/plans"
@@ -63,17 +63,30 @@ const BASE_REQUIRED_SECTION_TITLES = [
 export async function userCanAccessAiExplanation(userId: number) {
   const planCode = await getActivePlanCode(userId)
 
-  return PLAN_CONFIG[planCode].access.aiExplanation
+  return canAccessAiExplanationForPlan(userId, planCode)
+}
+
+export async function canAccessAiExplanationForPlan(userId: number, planCode: PlanCode) {
+  const limit = getAiExplanationMonthlyLimit(planCode)
+
+  if (limit === null) {
+    return true
+  }
+
+  const used = await getAiExplanationUsageCount(userId)
+
+  return used < limit
 }
 
 export async function generateAiExplanation(input: AiExplanationRequest) {
   const planCode = await getActivePlanCode(input.userId)
+  const access = await getAiExplanationUsageState(input.userId, planCode)
 
-  if (!PLAN_CONFIG[planCode].access.aiExplanation) {
+  if (!access.enabled) {
     return {
       success: false,
       status: 403,
-      message: "Pembahasan AI hanya tersedia untuk paket Pro dan Max.",
+      message: buildAiExplanationLimitMessage(planCode, access.used, access.limit),
     } as const
   }
 
@@ -90,13 +103,28 @@ export async function generateAiExplanation(input: AiExplanationRequest) {
     } as const
   }
 
-  const html = await requestAiExplanationHtml(context)
+  const reservation = await reserveAiExplanationUsage(input.userId, planCode)
 
-  return {
-    success: true,
-    status: 200,
-    html,
-  } as const
+  if (!reservation.success) {
+    return {
+      success: false,
+      status: 403,
+      message: reservation.message,
+    } as const
+  }
+
+  try {
+    const html = await requestAiExplanationHtml(context)
+
+    return {
+      success: true,
+      status: 200,
+      html,
+    } as const
+  } catch (error) {
+    await releaseAiExplanationUsage(input.userId, reservation.period)
+    throw error
+  }
 }
 
 async function getActivePlanCode(userId: number): Promise<PlanCode> {
@@ -114,6 +142,129 @@ async function getActivePlanCode(userId: number): Promise<PlanCode> {
     .limit(1)
 
   return subscription?.planCode ?? "free"
+}
+
+function getAiExplanationMonthlyLimit(planCode: PlanCode) {
+  return PLAN_CONFIG[planCode].limits.aiExplanationsPerMonth
+}
+
+function getMonthlyUsagePeriod(date = new Date()) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+
+  return `${year}-${month}-01`
+}
+
+async function getAiExplanationUsageState(userId: number, planCode: PlanCode) {
+  const limit = getAiExplanationMonthlyLimit(planCode)
+  const used = await getAiExplanationUsageCount(userId)
+
+  return {
+    enabled: limit === null || used < limit,
+    limit,
+    used,
+  }
+}
+
+async function getAiExplanationUsageCount(userId: number) {
+  const period = getMonthlyUsagePeriod(new Date())
+  const [usage] = await db
+    .select({
+      aiExplanationSessionsCount: schema.monthlyUsage.aiExplanationSessionsCount,
+    })
+    .from(schema.monthlyUsage)
+    .where(and(eq(schema.monthlyUsage.userId, userId), eq(schema.monthlyUsage.period, period)))
+    .limit(1)
+
+  return usage?.aiExplanationSessionsCount ?? 0
+}
+
+async function reserveAiExplanationUsage(userId: number, planCode: PlanCode) {
+  const limit = getAiExplanationMonthlyLimit(planCode)
+
+  if (limit === null) {
+    return { success: true as const, period: null as string | null }
+  }
+
+  const now = new Date()
+  const period = getMonthlyUsagePeriod(now)
+  const result = await db.transaction(async (tx) => {
+    await tx
+      .insert(schema.monthlyUsage)
+      .values({
+        userId,
+        period,
+        practiceSessionsCount: 0,
+        quizSessionsCount: 0,
+        tryoutSessionsCount: 0,
+        aiExplanationSessionsCount: 0,
+      })
+      .onDuplicateKeyUpdate({
+        set: {
+          updatedAt: now,
+        },
+      })
+
+    const [usage] = await tx
+      .select({
+        aiExplanationSessionsCount: schema.monthlyUsage.aiExplanationSessionsCount,
+      })
+      .from(schema.monthlyUsage)
+      .where(and(eq(schema.monthlyUsage.userId, userId), eq(schema.monthlyUsage.period, period)))
+      .limit(1)
+      .for("update")
+
+    if ((usage?.aiExplanationSessionsCount ?? 0) >= limit) {
+      return null
+    }
+
+    await tx
+      .update(schema.monthlyUsage)
+      .set({
+        aiExplanationSessionsCount: sql`${schema.monthlyUsage.aiExplanationSessionsCount} + 1`,
+        updatedAt: now,
+      })
+      .where(and(eq(schema.monthlyUsage.userId, userId), eq(schema.monthlyUsage.period, period)))
+
+    return { success: true as const, period }
+  })
+
+  if (!result) {
+    return {
+      success: false as const,
+      message: buildAiExplanationLimitMessage(planCode, limit, limit),
+    }
+  }
+
+  return result
+}
+
+async function releaseAiExplanationUsage(userId: number, period: string | null) {
+  if (!period) {
+    return
+  }
+
+  await db
+    .update(schema.monthlyUsage)
+    .set({
+      aiExplanationSessionsCount: sql`GREATEST(${schema.monthlyUsage.aiExplanationSessionsCount} - 1, 0)`,
+    })
+    .where(and(eq(schema.monthlyUsage.userId, userId), eq(schema.monthlyUsage.period, period)))
+}
+
+function buildAiExplanationLimitMessage(
+  planCode: PlanCode,
+  used: number,
+  limit: number | null,
+) {
+  if (limit === null) {
+    return "Pembahasan AI tersedia tanpa batas untuk paket ini."
+  }
+
+  const planName = PLAN_CONFIG[planCode].name
+  const quotaText = `${used}/${limit}`
+
+  return `Limit Pembahasan AI bulan ini sudah habis (${quotaText}). Paket ${planName} tetap menyediakan pembahasan biasa, atau kamu bisa upgrade paket untuk limit yang lebih besar.`
 }
 
 async function getPracticeAiExplanationContext({

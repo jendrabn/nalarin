@@ -26,7 +26,7 @@ export function QuestionExplanationPanel({
   const explanations = getQuestionExplanationItems(question)
   const isComfortable = readingMode === "comfortable"
 
-  if (explanations.length === 0 && !aiExplanation?.enabled) {
+  if (explanations.length === 0 && !aiExplanation) {
     return (
       <Empty className={cn("border bg-muted/20 py-7", className)}>
         <EmptyHeader>
@@ -42,7 +42,7 @@ export function QuestionExplanationPanel({
 
   return (
     <div className={cn("flex flex-col gap-3", className)}>
-      {aiExplanation?.enabled ? (
+      {aiExplanation ? (
         <QuestionAiExplanation
           key={`${aiExplanation.sessionType}-${aiExplanation.sessionId}-${aiExplanation.sessionQuestionId}`}
           access={aiExplanation}

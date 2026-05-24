@@ -84,6 +84,7 @@ CREATE TABLE `monthly_usage` (
 	`practice_sessions_count` int unsigned NOT NULL DEFAULT 0,
 	`quiz_sessions_count` int unsigned NOT NULL DEFAULT 0,
 	`tryout_sessions_count` int unsigned NOT NULL DEFAULT 0,
+	`ai_explanation_sessions_count` int unsigned NOT NULL DEFAULT 0,
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `monthly_usage_id` PRIMARY KEY(`id`),

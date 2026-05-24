@@ -41,6 +41,7 @@ export async function getAccountProfile(userId: number) {
         practiceSessionsCount: true,
         quizSessionsCount: true,
         tryoutSessionsCount: true,
+        aiExplanationSessionsCount: true,
       },
     }),
   ])
@@ -83,6 +84,7 @@ export async function getAccountProfile(userId: number) {
         practiceSessionsCount: usage?.practiceSessionsCount ?? 0,
         quizSessionsCount: usage?.quizSessionsCount ?? 0,
         tryoutSessionsCount: usage?.tryoutSessionsCount ?? 0,
+        aiExplanationSessionsCount: usage?.aiExplanationSessionsCount ?? 0,
       },
     },
   }

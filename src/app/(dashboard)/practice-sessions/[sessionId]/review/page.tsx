@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation"
 
 import type { SiteUser } from "@/components/site-navbar"
 import type { PlanCode } from "@/config/plans"
-import { PLAN_CONFIG } from "@/config/plans"
+import { canAccessAiExplanationForPlan } from "@/features/ai-explanations/services"
 import { PracticeSessionPageShell } from "@/features/practices/components/practice-session-page-shell"
 import { PracticeReviewPage } from "@/features/practices/components/practice-review-page"
 import { requireUser } from "@/features/auth/services/session"
@@ -50,12 +50,13 @@ export default async function Page({
     role: user.role,
   }
   const planCode: PlanCode = subscription?.planCode ?? "free"
+  const aiExplanationEnabled = await canAccessAiExplanationForPlan(user.id, planCode)
 
   return (
     <PracticeSessionPageShell user={siteUser}>
       <PracticeReviewPage
         summary={summary}
-        aiExplanationEnabled={PLAN_CONFIG[planCode].access.aiExplanation}
+        aiExplanationEnabled={aiExplanationEnabled}
       />
     </PracticeSessionPageShell>
   )

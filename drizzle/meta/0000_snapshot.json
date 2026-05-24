@@ -660,19 +660,27 @@
           "autoincrement": false,
           "default": 0
         },
-        "tryout_sessions_count": {
-          "name": "tryout_sessions_count",
-          "type": "int unsigned",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
+          "tryout_sessions_count": {
+            "name": "tryout_sessions_count",
+            "type": "int unsigned",
+            "primaryKey": false,
+            "notNull": true,
+            "autoincrement": false,
+            "default": 0
+          },
+          "ai_explanation_sessions_count": {
+            "name": "ai_explanation_sessions_count",
+            "type": "int unsigned",
+            "primaryKey": false,
+            "notNull": true,
+            "autoincrement": false,
+            "default": 0
+          },
+          "created_at": {
+            "name": "created_at",
+            "type": "timestamp",
+            "primaryKey": false,
+            "notNull": true,
           "autoincrement": false,
           "default": "(now())"
         },

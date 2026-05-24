@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState } from "react"
 import { Loader2Icon, SparklesIcon } from "lucide-react"
 import { toast } from "sonner"
@@ -29,7 +30,45 @@ export function QuestionAiExplanation({
   const isComfortable = readingMode === "comfortable"
 
   if (!access.enabled) {
-    return null
+    const limitLabel =
+      typeof access.limitPerMonth === "number"
+        ? `${access.usedThisMonth ?? 0}/${access.limitPerMonth}`
+        : null
+
+    return (
+      <section
+        className={cn(
+          "rounded-xl border border-amber-300/55 bg-amber-50 p-4 shadow-[0_12px_28px_rgba(120,53,15,0.08)] dark:border-amber-300/25 dark:bg-[linear-gradient(135deg,rgba(69,26,3,0.65),rgba(28,25,23,0.96)_55%,rgba(12,10,9,0.98))]",
+          className,
+        )}
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-amber-300/60 bg-amber-100/80 text-amber-700 dark:bg-amber-300/15 dark:text-amber-200">
+              <SparklesIcon className="size-4" />
+            </span>
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-amber-950 dark:text-amber-50">
+                Pembahasan AI Terkunci
+              </h3>
+              <p className="text-sm leading-6 text-amber-900/80 dark:text-amber-100/80">
+                {limitLabel
+                  ? `Limit Pembahasan AI bulan ini sudah habis (${limitLabel}).`
+                  : "Akses Pembahasan AI belum aktif untuk sesi ini."}
+              </p>
+            </div>
+          </div>
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="w-full border-amber-300/60 bg-background/80 text-amber-950 hover:bg-amber-100 hover:text-amber-950 dark:border-amber-300/30 dark:bg-transparent dark:text-amber-50 dark:hover:bg-amber-300/10 sm:w-auto"
+          >
+            <Link href="/pricing">Lihat Paket</Link>
+          </Button>
+        </div>
+      </section>
+    )
   }
 
   async function handleGenerate() {
