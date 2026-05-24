@@ -20,6 +20,14 @@ export type PremiumPendingPayment = {
   planCode: PlanCode
   planName: string
   amount: number
+  originalAmount: number
+  discountAmount: number
+  voucher: {
+    id: number
+    code: string
+    name: string
+    discountPercent: number
+  } | null
   status: "pending"
   gateway: "midtrans" | "manual"
   gatewayOrderId: string | null
@@ -41,6 +49,28 @@ export type ManualPaymentConfig = {
   methods: ManualPaymentMethod[]
 }
 
+export type PremiumVoucherPreview = {
+  voucherId: number
+  code: string
+  name: string
+  discountPercent: number
+  originalAmount: number
+  discountAmount: number
+  finalAmount: number
+  promoLabel: string | null
+  promoDescription: string | null
+}
+
+export type PublicVoucherPromo = {
+  id: number
+  code: string
+  name: string
+  discountPercent: number
+  promoLabel: string | null
+  promoDescription: string | null
+  endsAt: string
+}
+
 export type PremiumActionResult<T = undefined> =
   | {
       success: true
@@ -59,6 +89,7 @@ export type PremiumActionResult<T = undefined> =
         | "expired"
         | "gateway_error"
         | "manual_payment_unavailable"
+        | "voucher_invalid"
       message: string
       data?: T
     }

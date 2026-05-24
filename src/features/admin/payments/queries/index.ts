@@ -39,6 +39,12 @@ export type AdminPaymentRow = {
   avatarUrl: string | null
   planCode: PlanCode
   amount: number
+  voucherId: number | null
+  voucherCodeSnapshot: string | null
+  voucherNameSnapshot: string | null
+  voucherDiscountPercent: number | null
+  originalAmount: number | null
+  discountAmount: number
   status: PaymentStatus
   gateway: PaymentGateway
   paymentMethod: PaymentMethod | null
@@ -89,6 +95,12 @@ function selectPaymentColumns() {
     avatarUrl: schema.users.avatarUrl,
     planCode: schema.payments.planCode,
     amount: schema.payments.amount,
+    voucherId: schema.payments.voucherId,
+    voucherCodeSnapshot: schema.payments.voucherCodeSnapshot,
+    voucherNameSnapshot: schema.payments.voucherNameSnapshot,
+    voucherDiscountPercent: schema.payments.voucherDiscountPercent,
+    originalAmount: schema.payments.originalAmount,
+    discountAmount: schema.payments.discountAmount,
     status: schema.payments.status,
     gateway: schema.payments.gateway,
     paymentMethod: schema.payments.paymentMethod,
@@ -116,6 +128,12 @@ function mapPaymentRow(row: {
   avatarUrl: string | null
   planCode: PlanCode
   amount: number
+  voucherId: number | null
+  voucherCodeSnapshot: string | null
+  voucherNameSnapshot: string | null
+  voucherDiscountPercent: number | null
+  originalAmount: number | null
+  discountAmount: number
   status: PaymentStatus
   gateway: PaymentGateway
   paymentMethod: PaymentMethod | null

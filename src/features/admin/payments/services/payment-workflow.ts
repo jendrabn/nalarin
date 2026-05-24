@@ -33,6 +33,10 @@ type ActivationTarget = Pick<
   | "subscriptionId"
   | "userId"
   | "planCode"
+  | "voucherId"
+  | "originalAmount"
+  | "discountAmount"
+  | "amount"
   | "status"
   | "gateway"
   | "paymentMethod"
@@ -74,6 +78,10 @@ export async function activatePaymentSubscription(
         subscriptionId: schema.payments.subscriptionId,
         userId: schema.payments.userId,
         planCode: schema.payments.planCode,
+        voucherId: schema.payments.voucherId,
+        originalAmount: schema.payments.originalAmount,
+        discountAmount: schema.payments.discountAmount,
+        amount: schema.payments.amount,
         status: schema.payments.status,
         gateway: schema.payments.gateway,
         paymentMethod: schema.payments.paymentMethod,
@@ -100,7 +108,61 @@ export async function activatePaymentSubscription(
       }
     }
 
+    async function createRedemptionIfNeeded(): Promise<
+      | { success: true }
+      | { success: false; message: string }
+    > {
+      if (!currentPayment.voucherId || currentPayment.discountAmount <= 0) {
+        return { success: true }
+      }
+
+      const existingRedemptionRows = await tx
+        .select({
+          id: schema.voucherRedemptions.id,
+        })
+        .from(schema.voucherRedemptions)
+        .where(eq(schema.voucherRedemptions.paymentId, currentPayment.id))
+        .limit(1)
+
+      if (existingRedemptionRows[0]) {
+        return { success: true }
+      }
+
+      const existingVoucherRedemptionRows = await tx
+        .select({
+          id: schema.voucherRedemptions.id,
+        })
+        .from(schema.voucherRedemptions)
+        .where(eq(schema.voucherRedemptions.voucherId, currentPayment.voucherId))
+        .limit(1)
+
+      if (existingVoucherRedemptionRows[0]) {
+        return {
+          success: false,
+          message: "Voucher has already been redeemed.",
+        }
+      }
+
+      await tx.insert(schema.voucherRedemptions).values({
+        voucherId: currentPayment.voucherId,
+        userId: currentPayment.userId,
+        paymentId: currentPayment.id,
+        originalAmount: currentPayment.originalAmount ?? currentPayment.amount,
+        discountAmount: currentPayment.discountAmount,
+        finalAmount: currentPayment.amount,
+        redeemedAt: now,
+      })
+
+      return { success: true }
+    }
+
     if (currentPayment.subscriptionId) {
+      const redemptionResult = await createRedemptionIfNeeded()
+
+      if (!redemptionResult.success) {
+        return redemptionResult
+      }
+
       await tx
         .update(schema.payments)
         .set({
@@ -155,6 +217,12 @@ export async function activatePaymentSubscription(
       getPlanRank(currentPayment.planCode) > getPlanRank(activeSubscription.planCode)
 
     if (activeSubscription && !shouldReplaceSubscription) {
+      const redemptionResult = await createRedemptionIfNeeded()
+
+      if (!redemptionResult.success) {
+        return redemptionResult
+      }
+
       await tx
         .update(schema.payments)
         .set({
@@ -177,6 +245,12 @@ export async function activatePaymentSubscription(
           attachedExistingSubscription: false,
         },
       }
+    }
+
+    const redemptionResult = await createRedemptionIfNeeded()
+
+    if (!redemptionResult.success) {
+      return redemptionResult
     }
 
     if (activeSubscription && shouldReplaceSubscription) {

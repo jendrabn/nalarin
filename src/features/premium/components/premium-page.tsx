@@ -5,8 +5,10 @@ import { PageHeader } from "@/components/page-header"
 import { getMidtransSnapScriptUrl } from "@/lib/midtrans"
 import { getPricingPlanViews } from "@/lib/pricing-plans"
 import type { CurrentUser } from "@/features/auth/services/session"
+import { getPublicVoucherPromos } from "@/features/vouchers/services"
 
 import { PremiumCheckout } from "./premium-checkout"
+import { PublicVoucherList } from "./public-voucher-list"
 import { getPremiumSubscriptionState } from "../queries"
 import type { ManualPaymentConfig, PremiumUser } from "../types"
 
@@ -16,9 +18,12 @@ type PremiumPageProps = {
 
 export async function PremiumPage({ user }: PremiumPageProps) {
   const plans = getPricingPlanViews()
-  const state = user
-    ? await getPremiumSubscriptionState(user.id)
-    : { currentSubscription: null, pendingPayment: null }
+  const [state, publicVouchers] = await Promise.all([
+    user
+      ? getPremiumSubscriptionState(user.id)
+      : Promise.resolve({ currentSubscription: null, pendingPayment: null }),
+    getPublicVoucherPromos(),
+  ])
   const siteUser: SiteUser = user
     ? {
         name: user.name,
@@ -71,6 +76,8 @@ export async function PremiumPage({ user }: PremiumPageProps) {
               subtitle="Pilih paket belajar yang sesuai dengan targetmu untuk membuka latihan, tryout, pembahasan, dan fitur premium lainnya."
             />
           </div>
+
+          <PublicVoucherList vouchers={publicVouchers} />
 
           <PremiumCheckout
             user={premiumUser}

@@ -11,6 +11,12 @@ type PaymentRow = {
   id: number
   planCode: PlanCode
   amount: number
+  voucherId: number | null
+  voucherCodeSnapshot: string | null
+  voucherNameSnapshot: string | null
+  voucherDiscountPercent: number | null
+  originalAmount: number | null
+  discountAmount: number
   status: "pending"
   gateway: "midtrans" | "manual"
   gatewayOrderId: string | null
@@ -76,6 +82,12 @@ export async function getVisiblePendingPayment(
       id: schema.payments.id,
       planCode: schema.payments.planCode,
       amount: schema.payments.amount,
+      voucherId: schema.payments.voucherId,
+      voucherCodeSnapshot: schema.payments.voucherCodeSnapshot,
+      voucherNameSnapshot: schema.payments.voucherNameSnapshot,
+      voucherDiscountPercent: schema.payments.voucherDiscountPercent,
+      originalAmount: schema.payments.originalAmount,
+      discountAmount: schema.payments.discountAmount,
       status: schema.payments.status,
       gateway: schema.payments.gateway,
       gatewayOrderId: schema.payments.gatewayOrderId,
@@ -108,6 +120,20 @@ export function mapPendingPayment(payment: PaymentRow): NonNullable<PremiumPendi
     planCode: payment.planCode,
     planName: PLAN_CONFIG[payment.planCode].name,
     amount: payment.amount,
+    originalAmount: payment.originalAmount ?? payment.amount,
+    discountAmount: payment.discountAmount,
+    voucher:
+      payment.voucherId &&
+      payment.voucherCodeSnapshot &&
+      payment.voucherNameSnapshot &&
+      payment.voucherDiscountPercent
+        ? {
+            id: payment.voucherId,
+            code: payment.voucherCodeSnapshot,
+            name: payment.voucherNameSnapshot,
+            discountPercent: payment.voucherDiscountPercent,
+          }
+        : null,
     status: "pending",
     gateway: payment.gateway,
     gatewayOrderId: payment.gatewayOrderId ?? null,

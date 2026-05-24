@@ -19,11 +19,16 @@ import {
   createMidtransSnapTransaction,
 } from "@/lib/midtrans"
 import { getCurrentUser } from "@/features/auth/services/session"
+import {
+  validateVoucherForCheckout,
+  type VoucherApplication,
+} from "@/features/vouchers/services"
 
 import type {
   PremiumActionResult,
   PremiumPaymentPayload,
   PremiumPendingPayment,
+  PremiumVoucherPreview,
 } from "../types"
 import { mapPendingPayment } from "../queries"
 
@@ -35,6 +40,12 @@ type PendingPaymentRow = {
   id: number
   planCode: PlanCode
   amount: number
+  voucherId: number | null
+  voucherCodeSnapshot: string | null
+  voucherNameSnapshot: string | null
+  voucherDiscountPercent: number | null
+  originalAmount: number | null
+  discountAmount: number
   status: "pending"
   gateway: "midtrans" | "manual"
   gatewayOrderId: string | null
@@ -48,6 +59,12 @@ const pendingPaymentColumns = {
   id: schema.payments.id,
   planCode: schema.payments.planCode,
   amount: schema.payments.amount,
+  voucherId: schema.payments.voucherId,
+  voucherCodeSnapshot: schema.payments.voucherCodeSnapshot,
+  voucherNameSnapshot: schema.payments.voucherNameSnapshot,
+  voucherDiscountPercent: schema.payments.voucherDiscountPercent,
+  originalAmount: schema.payments.originalAmount,
+  discountAmount: schema.payments.discountAmount,
   status: schema.payments.status,
   gateway: schema.payments.gateway,
   gatewayOrderId: schema.payments.gatewayOrderId,
@@ -57,8 +74,75 @@ const pendingPaymentColumns = {
   createdAt: schema.payments.createdAt,
 } as const
 
+export async function previewPremiumVoucherAction(
+  planCode: PlanCode,
+  voucherCode: string,
+): Promise<PremiumActionResult<PremiumVoucherPreview>> {
+  const user = await getCurrentUser()
+
+  if (!user) {
+    return {
+      success: false,
+      code: "unauthenticated",
+      message: "Silakan login terlebih dahulu untuk menggunakan voucher.",
+    }
+  }
+
+  if (!isPaidPlanCode(planCode)) {
+    return {
+      success: false,
+      code: "invalid_plan",
+      message: "Voucher hanya berlaku untuk paket Pro atau Max.",
+    }
+  }
+
+  const now = new Date()
+  const [pendingPayment, activeSubscription] = await Promise.all([
+    getLatestPendingPayment(user.id),
+    getActiveSubscriptionForCheckout(user.id, now),
+  ])
+
+  if (pendingPayment && !isExpired(pendingPayment.expiredAt, now)) {
+    return {
+      success: false,
+      code: "pending_exists",
+      message:
+        "Masih ada pembayaran pending. Batalkan pembayaran tersebut sebelum menggunakan voucher.",
+    }
+  }
+
+  if (activeSubscription) {
+    return {
+      success: false,
+      code: "active_plan",
+      message: "Voucher tidak dapat digunakan saat subscription Pro/Max masih aktif.",
+    }
+  }
+
+  const result = await validateVoucherForCheckout({
+    code: voucherCode,
+    planCode,
+    userId: user.id,
+    now,
+  })
+
+  if (!result.success) {
+    return {
+      success: false,
+      code: "voucher_invalid",
+      message: result.message,
+    }
+  }
+
+  return {
+    success: true,
+    data: result.data,
+  }
+}
+
 export async function startPremiumCheckoutAction(
   planCode: PlanCode,
+  voucherCode?: string,
 ): Promise<PremiumActionResult<PremiumPaymentPayload>> {
   if (!env.PAYMENT_GATEWAY_ENABLED) {
     return {
@@ -143,14 +227,43 @@ export async function startPremiumCheckoutAction(
         message: "Downgrade dari Max ke Pro tidak tersedia.",
       }
     }
+
+    if (voucherCode?.trim()) {
+      return {
+        success: false,
+        code: "voucher_invalid",
+        message: "Voucher tidak dapat digunakan saat subscription Pro/Max masih aktif.",
+      }
+    }
   }
 
-  const amount = getPlanFinalPrice(planCode)
+  const voucher = await resolveCheckoutVoucher({
+    voucherCode,
+    planCode,
+    userId: user.id,
+  })
+
+  if (!voucher.success) {
+    return voucher
+  }
+
+  const pricing = getCheckoutPricing(planCode, voucher.data)
+  const amount = pricing.finalAmount
   const orderId = createOrderId(user.id, planCode)
   const expiredAt = new Date(now.getTime() + PAYMENT_EXPIRY_MS)
   const rawPayload = {
     provider: "midtrans_snap",
     planCode,
+    originalAmount: pricing.originalAmount,
+    discountAmount: pricing.discountAmount,
+    voucher: voucher.data
+      ? {
+          id: voucher.data.voucherId,
+          code: voucher.data.code,
+          name: voucher.data.name,
+          discountPercent: voucher.data.discountPercent,
+        }
+      : null,
     amount,
     createdFrom: "premium_pricing",
   }
@@ -160,6 +273,12 @@ export async function startPremiumCheckoutAction(
     .values({
       userId: user.id,
       planCode,
+      voucherId: voucher.data?.voucherId ?? null,
+      voucherCodeSnapshot: voucher.data?.code ?? null,
+      voucherNameSnapshot: voucher.data?.name ?? null,
+      voucherDiscountPercent: voucher.data?.discountPercent ?? null,
+      originalAmount: pricing.originalAmount,
+      discountAmount: pricing.discountAmount,
       amount,
       status: "pending",
       gateway: "midtrans",
@@ -220,6 +339,16 @@ export async function startPremiumCheckoutAction(
       planCode,
       planName: PLAN_CONFIG[planCode].name,
       amount,
+      originalAmount: pricing.originalAmount,
+      discountAmount: pricing.discountAmount,
+      voucher: voucher.data
+        ? {
+            id: voucher.data.voucherId,
+            code: voucher.data.code,
+            name: voucher.data.name,
+            discountPercent: voucher.data.discountPercent,
+          }
+        : null,
       status: "pending",
       gateway: "midtrans",
       gatewayOrderId: orderId,
@@ -262,6 +391,7 @@ export async function startPremiumCheckoutAction(
 
 export async function startManualPaymentAction(
   planCode: PlanCode,
+  voucherCode?: string,
 ): Promise<PremiumActionResult<PremiumPaymentPayload>> {
   if (env.PAYMENT_GATEWAY_ENABLED) {
     return {
@@ -340,14 +470,43 @@ export async function startManualPaymentAction(
         message: "Downgrade dari Max ke Pro tidak tersedia.",
       }
     }
+
+    if (voucherCode?.trim()) {
+      return {
+        success: false,
+        code: "voucher_invalid",
+        message: "Voucher tidak dapat digunakan saat subscription Pro/Max masih aktif.",
+      }
+    }
   }
 
-  const amount = getPlanFinalPrice(planCode)
+  const voucher = await resolveCheckoutVoucher({
+    voucherCode,
+    planCode,
+    userId: user.id,
+  })
+
+  if (!voucher.success) {
+    return voucher
+  }
+
+  const pricing = getCheckoutPricing(planCode, voucher.data)
+  const amount = pricing.finalAmount
   const orderId = createManualOrderId(user.id, planCode)
   const expiredAt = new Date(now.getTime() + PAYMENT_EXPIRY_MS)
   const rawPayload = {
     provider: "manual_ewallet",
     planCode,
+    originalAmount: pricing.originalAmount,
+    discountAmount: pricing.discountAmount,
+    voucher: voucher.data
+      ? {
+          id: voucher.data.voucherId,
+          code: voucher.data.code,
+          name: voucher.data.name,
+          discountPercent: voucher.data.discountPercent,
+        }
+      : null,
     amount,
     createdFrom: "premium_pricing",
     confirmationTarget: "whatsapp",
@@ -358,6 +517,12 @@ export async function startManualPaymentAction(
     .values({
       userId: user.id,
       planCode,
+      voucherId: voucher.data?.voucherId ?? null,
+      voucherCodeSnapshot: voucher.data?.code ?? null,
+      voucherNameSnapshot: voucher.data?.name ?? null,
+      voucherDiscountPercent: voucher.data?.discountPercent ?? null,
+      originalAmount: pricing.originalAmount,
+      discountAmount: pricing.discountAmount,
       amount,
       status: "pending",
       gateway: "manual",
@@ -378,6 +543,16 @@ export async function startManualPaymentAction(
     planCode,
     planName: PLAN_CONFIG[planCode].name,
     amount,
+    originalAmount: pricing.originalAmount,
+    discountAmount: pricing.discountAmount,
+    voucher: voucher.data
+      ? {
+          id: voucher.data.voucherId,
+          code: voucher.data.code,
+          name: voucher.data.name,
+          discountPercent: voucher.data.discountPercent,
+        }
+      : null,
     status: "pending",
     gateway: "manual",
     gatewayOrderId: orderId,
@@ -600,6 +775,67 @@ function createOrderId(userId: number, planCode: PlanCode) {
 function createManualOrderId(userId: number, planCode: PlanCode) {
   const suffix = crypto.randomBytes(4).toString("hex")
   return `MANUAL-${userId}-${planCode}-${Date.now()}-${suffix}`
+}
+
+async function resolveCheckoutVoucher({
+  voucherCode,
+  planCode,
+  userId,
+}: {
+  voucherCode?: string
+  planCode: PlanCode
+  userId: number
+}): Promise<
+  | { success: true; data: VoucherApplication | null }
+  | {
+      success: false
+      code: "voucher_invalid"
+      message: string
+    }
+> {
+  if (!voucherCode?.trim()) {
+    return {
+      success: true,
+      data: null,
+    }
+  }
+
+  const result = await validateVoucherForCheckout({
+    code: voucherCode,
+    planCode,
+    userId,
+  })
+
+  if (!result.success) {
+    return {
+      success: false,
+      code: "voucher_invalid",
+      message: result.message,
+    }
+  }
+
+  return {
+    success: true,
+    data: result.data,
+  }
+}
+
+function getCheckoutPricing(planCode: PlanCode, voucher: VoucherApplication | null) {
+  if (voucher) {
+    return {
+      originalAmount: voucher.originalAmount,
+      discountAmount: voucher.discountAmount,
+      finalAmount: voucher.finalAmount,
+    }
+  }
+
+  const amount = getPlanFinalPrice(planCode)
+
+  return {
+    originalAmount: amount,
+    discountAmount: 0,
+    finalAmount: amount,
+  }
 }
 
 function revalidatePremiumPage() {

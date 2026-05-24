@@ -13,6 +13,7 @@ import { PricingPlanCards } from "@/components/pricing-plan-cards"
 import {
   cancelPremiumPaymentAction,
   continuePremiumPaymentAction,
+  previewPremiumVoucherAction,
   startManualPaymentAction,
   startPremiumCheckoutAction,
 } from "../actions"
@@ -21,8 +22,9 @@ import type {
   PremiumPendingPayment,
   PremiumSubscriptionSummary,
   PremiumUser,
+  PremiumVoucherPreview,
 } from "../types"
-import { CheckoutConfirmationDialog } from "./checkout-confirmation-dialog"
+import { MidtransPaymentDialog } from "./midtrans-payment-dialog"
 import { ManualPaymentDialog } from "./manual-payment-dialog"
 import { PendingPaymentSection } from "./pending-payment-section"
 import { useSnapPayment } from "../hooks/use-snap-payment"
@@ -54,8 +56,12 @@ export function PremiumCheckout({
   const [selectedPlan, setSelectedPlan] = useState<PricingPlanView | null>(null)
   const [selectedManualPlan, setSelectedManualPlan] = useState<PricingPlanView | null>(null)
   const [processing, setProcessing] = useState<"start" | "continue" | "cancel" | null>(null)
+  const [voucherProcessing, setVoucherProcessing] = useState(false)
+  const [voucherCode, setVoucherCode] = useState("")
+  const [appliedVoucher, setAppliedVoucher] = useState<PremiumVoucherPreview | null>(null)
   const currentPlanCode = currentSubscription?.planCode ?? "free"
   const currentPlan = plans.find((plan) => plan.code === currentPlanCode) ?? plans[0]
+  const activeCheckoutPlan = selectedPlan ?? selectedManualPlan
 
   const cardItems = useMemo(
     () =>
@@ -97,11 +103,61 @@ export function PremiumCheckout({
     }
 
     if (!paymentGatewayEnabled) {
+      resetVoucherForPlan(plan.code)
       setSelectedManualPlan(plan)
       return
     }
 
+    resetVoucherForPlan(plan.code)
     setSelectedPlan(plan)
+  }
+
+  const resetVoucherForPlan = (nextPlanCode?: PlanCode) => {
+    if (
+      appliedVoucher &&
+      nextPlanCode &&
+      appliedVoucher.originalAmount !==
+        plans.find((item) => item.code === nextPlanCode)?.finalPrice
+    ) {
+      setAppliedVoucher(null)
+    }
+  }
+
+  const handleApplyVoucher = async () => {
+    if (!activeCheckoutPlan || activeCheckoutPlan.code === "free") {
+      return
+    }
+
+    setVoucherProcessing(true)
+
+    try {
+      const result = await previewPremiumVoucherAction(
+        activeCheckoutPlan.code,
+        voucherCode,
+      )
+
+      if (!result.success) {
+        if (result.code === "unauthenticated") {
+          router.push("/login")
+          return
+        }
+
+        toast.error(result.message)
+        router.refresh()
+        return
+      }
+
+      setVoucherCode(result.data.code)
+      setAppliedVoucher(result.data)
+      toast.success("Voucher berhasil digunakan.")
+    } finally {
+      setVoucherProcessing(false)
+    }
+  }
+
+  const handleRemoveVoucher = () => {
+    setAppliedVoucher(null)
+    setVoucherCode("")
   }
 
   const handleStartCheckout = async () => {
@@ -112,7 +168,10 @@ export function PremiumCheckout({
     setProcessing("start")
 
     try {
-      const result = await startPremiumCheckoutAction(selectedPlan.code)
+      const result = await startPremiumCheckoutAction(
+        selectedPlan.code,
+        appliedVoucher?.code,
+      )
 
       if (!result.success) {
         if (result.code === "unauthenticated") {
@@ -137,6 +196,7 @@ export function PremiumCheckout({
       }
 
       setSelectedPlan(null)
+      handleRemoveVoucher()
       openSnapPayment({
         snapToken: result.data.snapToken,
         paymentUrl: result.data.paymentUrl,
@@ -196,7 +256,10 @@ export function PremiumCheckout({
     setProcessing("start")
 
     try {
-      const result = await startManualPaymentAction(selectedManualPlan.code)
+      const result = await startManualPaymentAction(
+        selectedManualPlan.code,
+        appliedVoucher?.code,
+      )
 
       if (!result.success) {
         if (result.code === "unauthenticated") {
@@ -216,6 +279,7 @@ export function PremiumCheckout({
             whatsappNumber: manualPayment.whatsappNumber,
           })
           setSelectedManualPlan(null)
+          handleRemoveVoucher()
           router.refresh()
           return
         }
@@ -232,6 +296,7 @@ export function PremiumCheckout({
         whatsappNumber: manualPayment.whatsappNumber,
       })
       setSelectedManualPlan(null)
+      handleRemoveVoucher()
       router.refresh()
     } finally {
       setProcessing(null)
@@ -290,28 +355,42 @@ export function PremiumCheckout({
         <PricingPlanCards plans={cardItems} onSelectPlan={handleSelectPlan} />
       </div>
 
-      <CheckoutConfirmationDialog
+      <MidtransPaymentDialog
         plan={selectedPlan}
+        voucherCode={voucherCode}
+        appliedVoucher={appliedVoucher}
+        voucherProcessing={voucherProcessing}
         processing={processing === "start"}
         onOpenChange={(open) => {
           if (!open) {
             setSelectedPlan(null)
+            handleRemoveVoucher()
           }
         }}
         onContinue={handleStartCheckout}
+        onVoucherCodeChange={setVoucherCode}
+        onApplyVoucher={handleApplyVoucher}
+        onRemoveVoucher={handleRemoveVoucher}
       />
 
       <ManualPaymentDialog
         plan={selectedManualPlan}
         manualPayment={manualPayment}
         pendingPayment={pendingPayment?.gateway === "manual" ? pendingPayment : null}
+        voucherCode={voucherCode}
+        appliedVoucher={appliedVoucher}
+        voucherProcessing={voucherProcessing}
         processing={processing === "start"}
         onOpenChange={(open) => {
           if (!open) {
             setSelectedManualPlan(null)
+            handleRemoveVoucher()
           }
         }}
         onConfirm={handleConfirmManualPayment}
+        onVoucherCodeChange={setVoucherCode}
+        onApplyVoucher={handleApplyVoucher}
+        onRemoveVoucher={handleRemoveVoucher}
       />
     </>
   )

@@ -914,6 +914,42 @@ export const subscriptions = mysqlTable(
   ],
 );
 
+export const vouchers = mysqlTable(
+  'vouchers',
+  {
+    id: int('id', { unsigned: true }).autoincrement().primaryKey(),
+    name: varchar('name', { length: 255 }).notNull(),
+    code: varchar('code', { length: 64 }).notNull(),
+    startsAt: timestamp('starts_at', { mode: 'date' }).notNull(),
+    endsAt: timestamp('ends_at', { mode: 'date' }).notNull(),
+    discountPercent: int('discount_percent', { unsigned: true }).notNull(),
+    isPublic: boolean('is_public').default(false).notNull(),
+    promoLabel: varchar('promo_label', { length: 255 }),
+    promoDescription: text('promo_description'),
+    isActive: boolean('is_active').default(true).notNull(),
+    internalNotes: text('internal_notes'),
+    createdBy: int('created_by', { unsigned: true }).references(() => users.id),
+    deletedAt: timestamp('deleted_at', { mode: 'date' }),
+    ...auditColumns(),
+  },
+  (table) => [
+    uniqueIndex('vouchers_code_uq').on(table.code),
+    index('vouchers_public_active_idx').on(
+      table.isPublic,
+      table.isActive,
+      table.deletedAt,
+      table.startsAt,
+      table.endsAt,
+    ),
+    index('vouchers_active_period_idx').on(
+      table.isActive,
+      table.deletedAt,
+      table.startsAt,
+      table.endsAt,
+    ),
+  ],
+);
+
 export const payments = mysqlTable(
   'payments',
   {
@@ -925,6 +961,14 @@ export const payments = mysqlTable(
       () => subscriptions.id,
     ),
     planCode: planCodeEnum.notNull(),
+    voucherId: int('voucher_id', { unsigned: true }).references(() => vouchers.id),
+    voucherCodeSnapshot: varchar('voucher_code_snapshot', { length: 64 }),
+    voucherNameSnapshot: varchar('voucher_name_snapshot', { length: 255 }),
+    voucherDiscountPercent: int('voucher_discount_percent', { unsigned: true }),
+    originalAmount: bigint('original_amount', { mode: 'number', unsigned: true }),
+    discountAmount: bigint('discount_amount', { mode: 'number', unsigned: true })
+      .default(0)
+      .notNull(),
     amount: bigint('amount', { mode: 'number', unsigned: true }).notNull(),
     status: paymentStatusEnum.notNull(),
     gateway: paymentGatewayEnum.notNull(),
@@ -951,11 +995,50 @@ export const payments = mysqlTable(
       table.status,
       table.createdAt,
     ),
+    index('payments_voucher_status_idx').on(
+      table.voucherId,
+      table.status,
+      table.createdAt,
+    ),
     index('payments_status_gateway_idx').on(
       table.status,
       table.gateway,
       table.createdAt,
     ),
+  ],
+);
+
+export const voucherRedemptions = mysqlTable(
+  'voucher_redemptions',
+  {
+    id: int('id', { unsigned: true }).autoincrement().primaryKey(),
+    voucherId: int('voucher_id', { unsigned: true })
+      .notNull()
+      .references(() => vouchers.id),
+    userId: int('user_id', { unsigned: true })
+      .notNull()
+      .references(() => users.id),
+    paymentId: int('payment_id', { unsigned: true })
+      .notNull()
+      .references(() => payments.id),
+    originalAmount: bigint('original_amount', { mode: 'number', unsigned: true })
+      .notNull(),
+    discountAmount: bigint('discount_amount', { mode: 'number', unsigned: true })
+      .notNull(),
+    finalAmount: bigint('final_amount', { mode: 'number', unsigned: true })
+      .notNull(),
+    redeemedAt: timestamp('redeemed_at', { mode: 'date' }).notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex('voucher_redemptions_payment_uq').on(table.paymentId),
+    uniqueIndex('voucher_redemptions_voucher_uq').on(table.voucherId),
+    index('voucher_redemptions_voucher_user_idx').on(table.voucherId, table.userId),
+    index('voucher_redemptions_voucher_redeemed_idx').on(
+      table.voucherId,
+      table.redeemedAt,
+    ),
+    index('voucher_redemptions_user_redeemed_idx').on(table.userId, table.redeemedAt),
   ],
 );
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MobileBottomNavigation } from "@/components/mobile-bottom-navigation";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -31,6 +32,7 @@ export default function RootLayout({
       >
         <TooltipProvider>
           {children}
+          <MobileBottomNavigation />
           <Toaster richColors />
         </TooltipProvider>
       </body>

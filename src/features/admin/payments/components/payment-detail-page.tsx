@@ -170,7 +170,29 @@ export function PaymentDetailPage({ payment, backHref }: PaymentDetailPageProps)
                 label="Subscription"
                 value={payment.subscriptionId ? `#${payment.subscriptionId}` : "-"}
               />
-              <DetailItem label="Amount" value={formatCurrencyIDR(payment.amount)} />
+              <DetailItem label="Final Amount" value={formatCurrencyIDR(payment.amount)} />
+              <DetailItem
+                label="Original Amount"
+                value={formatCurrencyIDR(payment.originalAmount ?? payment.amount)}
+              />
+              <DetailItem
+                label="Voucher Discount"
+                value={formatCurrencyIDR(payment.discountAmount)}
+              />
+              <DetailItem
+                label="Voucher"
+                value={
+                  payment.voucherId ? (
+                    <Button variant="link" className="h-auto p-0" asChild>
+                      <Link href={`/admin/vouchers/${payment.voucherId}`}>
+                        {payment.voucherCodeSnapshot ?? `#${payment.voucherId}`}
+                      </Link>
+                    </Button>
+                  ) : (
+                    "-"
+                  )
+                }
+              />
               <DetailItem label="Order ID" value={payment.gatewayOrderId ?? "-"} />
               <DetailItem
                 label="Gateway Transaction ID"
