@@ -63,6 +63,14 @@ CREATE TABLE `exam_types` (
 	`slug` varchar(191) NOT NULL,
 	`description` text,
 	`logo_url` varchar(2048),
+	`countdown_title` varchar(255),
+	`countdown_target_at` timestamp,
+	`registration_start_at` timestamp,
+	`registration_end_at` timestamp,
+	`exam_start_at` timestamp,
+	`exam_end_at` timestamp,
+	`announcement_at` timestamp,
+	`information_content` longtext,
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `exam_types_id` PRIMARY KEY(`id`),
@@ -99,6 +107,12 @@ CREATE TABLE `payments` (
 	`user_id` int unsigned NOT NULL,
 	`subscription_id` int unsigned,
 	`plan_code` enum('free','pro','max') NOT NULL,
+	`voucher_id` int unsigned,
+	`voucher_code_snapshot` varchar(64),
+	`voucher_name_snapshot` varchar(255),
+	`voucher_discount_percent` int unsigned,
+	`original_amount` bigint unsigned,
+	`discount_amount` bigint unsigned NOT NULL DEFAULT 0,
 	`amount` bigint unsigned NOT NULL,
 	`status` enum('pending','paid','failed','expired','cancelled','refunded') NOT NULL,
 	`gateway` enum('midtrans','manual') NOT NULL,
@@ -497,6 +511,41 @@ CREATE TABLE `users` (
 	CONSTRAINT `users_google_id_uq` UNIQUE(`google_id`)
 );
 --> statement-breakpoint
+CREATE TABLE `voucher_redemptions` (
+	`id` int unsigned AUTO_INCREMENT NOT NULL,
+	`voucher_id` int unsigned NOT NULL,
+	`user_id` int unsigned NOT NULL,
+	`payment_id` int unsigned NOT NULL,
+	`original_amount` bigint unsigned NOT NULL,
+	`discount_amount` bigint unsigned NOT NULL,
+	`final_amount` bigint unsigned NOT NULL,
+	`redeemed_at` timestamp NOT NULL,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `voucher_redemptions_id` PRIMARY KEY(`id`),
+	CONSTRAINT `voucher_redemptions_payment_uq` UNIQUE(`payment_id`),
+	CONSTRAINT `voucher_redemptions_voucher_uq` UNIQUE(`voucher_id`)
+);
+--> statement-breakpoint
+CREATE TABLE `vouchers` (
+	`id` int unsigned AUTO_INCREMENT NOT NULL,
+	`name` varchar(255) NOT NULL,
+	`code` varchar(64) NOT NULL,
+	`starts_at` timestamp NOT NULL,
+	`ends_at` timestamp NOT NULL,
+	`discount_percent` int unsigned NOT NULL,
+	`is_public` boolean NOT NULL DEFAULT false,
+	`promo_label` varchar(255),
+	`promo_description` text,
+	`is_active` boolean NOT NULL DEFAULT true,
+	`internal_notes` text,
+	`created_by` int unsigned,
+	`deleted_at` timestamp,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `vouchers_id` PRIMARY KEY(`id`),
+	CONSTRAINT `vouchers_code_uq` UNIQUE(`code`)
+);
+--> statement-breakpoint
 ALTER TABLE `blog_posts` ADD CONSTRAINT `blog_posts_category_id_blog_categories_id_fk` FOREIGN KEY (`category_id`) REFERENCES `blog_categories`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `blog_posts` ADD CONSTRAINT `blog_posts_author_id_users_id_fk` FOREIGN KEY (`author_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `email_change_tokens` ADD CONSTRAINT `email_change_tokens_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -505,6 +554,7 @@ ALTER TABLE `monthly_usage` ADD CONSTRAINT `monthly_usage_user_id_users_id_fk` F
 ALTER TABLE `password_reset_tokens` ADD CONSTRAINT `password_reset_tokens_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `payments` ADD CONSTRAINT `payments_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `payments` ADD CONSTRAINT `payments_subscription_id_subscriptions_id_fk` FOREIGN KEY (`subscription_id`) REFERENCES `subscriptions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `payments` ADD CONSTRAINT `payments_voucher_id_vouchers_id_fk` FOREIGN KEY (`voucher_id`) REFERENCES `vouchers`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `practice_answers` ADD CONSTRAINT `practice_answers_practice_session_id_practice_sessions_id_fk` FOREIGN KEY (`practice_session_id`) REFERENCES `practice_sessions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `practice_answers` ADD CONSTRAINT `practice_answers_practice_session_question_id_practice_session_questions_id_fk` FOREIGN KEY (`practice_session_question_id`) REFERENCES `practice_session_questions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `practice_questions` ADD CONSTRAINT `practice_questions_practice_id_practices_id_fk` FOREIGN KEY (`practice_id`) REFERENCES `practices`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -546,6 +596,10 @@ ALTER TABLE `tryouts` ADD CONSTRAINT `tryouts_exam_type_id_exam_types_id_fk` FOR
 ALTER TABLE `tryouts` ADD CONSTRAINT `tryouts_created_by_users_id_fk` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `user_progress_snapshots` ADD CONSTRAINT `user_progress_snapshots_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `user_sessions` ADD CONSTRAINT `user_sessions_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `voucher_redemptions` ADD CONSTRAINT `voucher_redemptions_voucher_id_vouchers_id_fk` FOREIGN KEY (`voucher_id`) REFERENCES `vouchers`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `voucher_redemptions` ADD CONSTRAINT `voucher_redemptions_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `voucher_redemptions` ADD CONSTRAINT `voucher_redemptions_payment_id_payments_id_fk` FOREIGN KEY (`payment_id`) REFERENCES `payments`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `vouchers` ADD CONSTRAINT `vouchers_created_by_users_id_fk` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX `blog_posts_public_listing_idx` ON `blog_posts` (`status`,`published_at`);--> statement-breakpoint
 CREATE INDEX `blog_posts_category_listing_idx` ON `blog_posts` (`category_id`,`status`,`published_at`);--> statement-breakpoint
 CREATE INDEX `blog_posts_author_listing_idx` ON `blog_posts` (`author_id`,`status`,`created_at`);--> statement-breakpoint
@@ -554,6 +608,7 @@ CREATE INDEX `email_verification_tokens_user_validity_idx` ON `email_verificatio
 CREATE INDEX `monthly_usage_period_idx` ON `monthly_usage` (`period`);--> statement-breakpoint
 CREATE INDEX `password_reset_tokens_user_validity_idx` ON `password_reset_tokens` (`user_id`,`invalidated_at`,`used_at`,`expires_at`);--> statement-breakpoint
 CREATE INDEX `payments_user_status_idx` ON `payments` (`user_id`,`status`,`created_at`);--> statement-breakpoint
+CREATE INDEX `payments_voucher_status_idx` ON `payments` (`voucher_id`,`status`,`created_at`);--> statement-breakpoint
 CREATE INDEX `payments_status_gateway_idx` ON `payments` (`status`,`gateway`,`created_at`);--> statement-breakpoint
 CREATE INDEX `practice_answers_session_grading_idx` ON `practice_answers` (`practice_session_id`,`grading_status`,`graded_at`);--> statement-breakpoint
 CREATE INDEX `practice_answers_grading_queue_idx` ON `practice_answers` (`grading_status`,`question_type`,`updated_at`);--> statement-breakpoint
@@ -601,4 +656,9 @@ CREATE INDEX `user_progress_snapshots_user_snapshot_date_idx` ON `user_progress_
 CREATE INDEX `user_sessions_user_validity_idx` ON `user_sessions` (`user_id`,`revoked_at`,`expires_at`);--> statement-breakpoint
 CREATE INDEX `user_sessions_expires_at_idx` ON `user_sessions` (`expires_at`);--> statement-breakpoint
 CREATE INDEX `users_role_status_idx` ON `users` (`role`,`status`);--> statement-breakpoint
-CREATE INDEX `users_status_created_at_idx` ON `users` (`status`,`created_at`);
+CREATE INDEX `users_status_created_at_idx` ON `users` (`status`,`created_at`);--> statement-breakpoint
+CREATE INDEX `voucher_redemptions_voucher_user_idx` ON `voucher_redemptions` (`voucher_id`,`user_id`);--> statement-breakpoint
+CREATE INDEX `voucher_redemptions_voucher_redeemed_idx` ON `voucher_redemptions` (`voucher_id`,`redeemed_at`);--> statement-breakpoint
+CREATE INDEX `voucher_redemptions_user_redeemed_idx` ON `voucher_redemptions` (`user_id`,`redeemed_at`);--> statement-breakpoint
+CREATE INDEX `vouchers_public_active_idx` ON `vouchers` (`is_public`,`is_active`,`deleted_at`,`starts_at`,`ends_at`);--> statement-breakpoint
+CREATE INDEX `vouchers_active_period_idx` ON `vouchers` (`is_active`,`deleted_at`,`starts_at`,`ends_at`);

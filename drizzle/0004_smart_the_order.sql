@@ -1,1 +1,0 @@
-ALTER TABLE `voucher_redemptions` ADD CONSTRAINT `voucher_redemptions_voucher_uq` UNIQUE(`voucher_id`);
