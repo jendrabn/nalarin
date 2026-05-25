@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   ChevronDownIcon,
   ChevronRightIcon,
+  LogInIcon,
   MenuIcon,
 } from "lucide-react";
 
@@ -151,18 +152,19 @@ function GuestActions({ stacked = false }: { stacked?: boolean }) {
   return (
     <div className={stacked ? "flex flex-col gap-2" : "flex items-center gap-2"}>
       <Button
-        variant="ghost"
-        className={stacked ? "h-11 w-full" : undefined}
+        variant="cta"
+        size="xl"
+        className={
+          stacked
+            ? "h-12 w-full rounded-full px-5 text-base"
+            : "h-10 rounded-full px-4 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30"
+        }
         asChild
       >
-        <Link href="/login">Masuk</Link>
-      </Button>
-      <Button
-        variant="outline-primary"
-        className={stacked ? "h-11 w-full" : undefined}
-        asChild
-      >
-        <Link href="/register">Daftar</Link>
+        <Link href="/login">
+          <LogInIcon data-icon="inline-start" />
+          <span>Masuk / Daftar</span>
+        </Link>
       </Button>
     </div>
   );

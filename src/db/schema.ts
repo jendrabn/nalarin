@@ -153,6 +153,8 @@ export const users = mysqlTable(
     emailVerifiedAt: timestamp('email_verified_at', { mode: 'date' }),
     passwordHash: varchar('password_hash', { length: 255 }),
     googleId: varchar('google_id', { length: 255 }),
+    facebookId: varchar('facebook_id', { length: 255 }),
+    appleId: varchar('apple_id', { length: 255 }),
     avatarUrl: varchar('avatar_url', { length: 2048 }),
     role: userRoleEnum.default('user').notNull(),
     status: userStatusEnum.default('active').notNull(),
@@ -165,6 +167,8 @@ export const users = mysqlTable(
   (table) => [
     uniqueIndex('users_email_uq').on(table.email),
     uniqueIndex('users_google_id_uq').on(table.googleId),
+    uniqueIndex('users_facebook_id_uq').on(table.facebookId),
+    uniqueIndex('users_apple_id_uq').on(table.appleId),
     index('users_role_status_idx').on(table.role, table.status),
     index('users_status_created_at_idx').on(table.status, table.createdAt),
   ],

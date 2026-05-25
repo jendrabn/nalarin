@@ -27,11 +27,24 @@ const googleUserSchema = z.object({
 
 export type GoogleUser = z.infer<typeof googleUserSchema>;
 
+function requireGoogleConfig() {
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GOOGLE_REDIRECT_URI) {
+    throw new Error("google_not_configured");
+  }
+
+  return {
+    clientId: env.GOOGLE_CLIENT_ID,
+    clientSecret: env.GOOGLE_CLIENT_SECRET,
+    redirectUri: env.GOOGLE_REDIRECT_URI,
+  };
+}
+
 export function createGoogleAuthorizationUrl(state: string) {
+  const config = requireGoogleConfig();
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
 
-  url.searchParams.set("client_id", env.GOOGLE_CLIENT_ID);
-  url.searchParams.set("redirect_uri", env.GOOGLE_REDIRECT_URI);
+  url.searchParams.set("client_id", config.clientId);
+  url.searchParams.set("redirect_uri", config.redirectUri);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("scope", "openid email profile");
   url.searchParams.set("state", state);
@@ -41,15 +54,17 @@ export function createGoogleAuthorizationUrl(state: string) {
 }
 
 export async function getGoogleUser(code: string) {
+  const config = requireGoogleConfig();
+
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: new URLSearchParams({
-      client_id: env.GOOGLE_CLIENT_ID,
-      client_secret: env.GOOGLE_CLIENT_SECRET,
-      redirect_uri: env.GOOGLE_REDIRECT_URI,
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      redirect_uri: config.redirectUri,
       grant_type: "authorization_code",
       code,
     }),

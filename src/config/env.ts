@@ -23,6 +23,8 @@ const booleanFromString = z
   .transform((value) => value === 'true');
 
 const GOOGLE_CALLBACK_PATH = '/api/auth/google/callback';
+const FACEBOOK_CALLBACK_PATH = '/api/auth/facebook/callback';
+const APPLE_CALLBACK_PATH = '/api/auth/apple/callback';
 
 const envSchema = z
   .object({
@@ -39,9 +41,22 @@ const envSchema = z
     SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(365),
     BCRYPT_ROUNDS: z.coerce.number().int().min(4).max(31),
 
-    GOOGLE_CLIENT_ID: nonEmptyString,
-    GOOGLE_CLIENT_SECRET: nonEmptyString,
-    GOOGLE_REDIRECT_URI: urlString,
+    GOOGLE_AUTH_ENABLED: booleanFromString,
+    GOOGLE_CLIENT_ID: optionalString,
+    GOOGLE_CLIENT_SECRET: optionalString,
+    GOOGLE_REDIRECT_URI: optionalUrl,
+
+    FACEBOOK_AUTH_ENABLED: booleanFromString,
+    FACEBOOK_CLIENT_ID: optionalString,
+    FACEBOOK_CLIENT_SECRET: optionalString,
+    FACEBOOK_REDIRECT_URI: optionalUrl,
+
+    APPLE_AUTH_ENABLED: booleanFromString,
+    APPLE_CLIENT_ID: optionalString,
+    APPLE_TEAM_ID: optionalString,
+    APPLE_KEY_ID: optionalString,
+    APPLE_PRIVATE_KEY: optionalString,
+    APPLE_REDIRECT_URI: optionalUrl,
 
     EMAIL_PROVIDER: z.enum(['resend', 'smtp']),
     MAIL_FROM: nonEmptyString,
@@ -182,17 +197,93 @@ const envSchema = z
       }
     }
 
-    const expectedGoogleRedirectUri = new URL(
-      GOOGLE_CALLBACK_PATH,
-      value.APP_URL,
-    ).toString();
+    if (value.GOOGLE_AUTH_ENABLED) {
+      for (const key of [
+        'GOOGLE_CLIENT_ID',
+        'GOOGLE_CLIENT_SECRET',
+        'GOOGLE_REDIRECT_URI',
+      ] as const) {
+        if (!value[key]) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key],
+            message: `${key} is required when GOOGLE_AUTH_ENABLED=true.`,
+          });
+        }
+      }
 
-    if (value.GOOGLE_REDIRECT_URI !== expectedGoogleRedirectUri) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['GOOGLE_REDIRECT_URI'],
-        message: `GOOGLE_REDIRECT_URI harus sama persis dengan ${expectedGoogleRedirectUri}.`,
-      });
+      const expectedGoogleRedirectUri = new URL(
+        GOOGLE_CALLBACK_PATH,
+        value.APP_URL,
+      ).toString();
+
+      if (value.GOOGLE_REDIRECT_URI !== expectedGoogleRedirectUri) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['GOOGLE_REDIRECT_URI'],
+          message: `GOOGLE_REDIRECT_URI must exactly match ${expectedGoogleRedirectUri}.`,
+        });
+      }
+    }
+
+    if (value.FACEBOOK_AUTH_ENABLED) {
+      for (const key of [
+        'FACEBOOK_CLIENT_ID',
+        'FACEBOOK_CLIENT_SECRET',
+        'FACEBOOK_REDIRECT_URI',
+      ] as const) {
+        if (!value[key]) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key],
+            message: `${key} is required when FACEBOOK_AUTH_ENABLED=true.`,
+          });
+        }
+      }
+
+      const expectedFacebookRedirectUri = new URL(
+        FACEBOOK_CALLBACK_PATH,
+        value.APP_URL,
+      ).toString();
+
+      if (value.FACEBOOK_REDIRECT_URI !== expectedFacebookRedirectUri) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['FACEBOOK_REDIRECT_URI'],
+          message: `FACEBOOK_REDIRECT_URI must exactly match ${expectedFacebookRedirectUri}.`,
+        });
+      }
+    }
+
+    if (value.APPLE_AUTH_ENABLED) {
+      for (const key of [
+        'APPLE_CLIENT_ID',
+        'APPLE_TEAM_ID',
+        'APPLE_KEY_ID',
+        'APPLE_PRIVATE_KEY',
+        'APPLE_REDIRECT_URI',
+      ] as const) {
+        if (!value[key]) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key],
+            message: `${key} is required when APPLE_AUTH_ENABLED=true.`,
+          });
+        }
+      }
+
+      const expectedAppleRedirectUri = new URL(
+        APPLE_CALLBACK_PATH,
+        value.APP_URL,
+      ).toString();
+
+      if (value.APPLE_REDIRECT_URI !== expectedAppleRedirectUri) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['APPLE_REDIRECT_URI'],
+          message: `APPLE_REDIRECT_URI must exactly match ${expectedAppleRedirectUri}.`,
+        });
+      }
     }
   });
 

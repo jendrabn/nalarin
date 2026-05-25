@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { env } from "@/config/env";
 import { db, schema } from "@/db";
-import { getGoogleUser } from "@/features/auth/services/google-oauth";
+import { getFacebookUser } from "@/features/auth/services/facebook-oauth";
 import {
   createAuthenticatedSession,
   getSession,
@@ -18,7 +18,7 @@ function fallbackName(email: string) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!env.GOOGLE_AUTH_ENABLED) {
+  if (!env.FACEBOOK_AUTH_ENABLED) {
     return redirectWithError(request, "auth_provider_disabled");
   }
 
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   const session = await getSession();
 
   if (oauthError) {
-    return redirectWithError(request, "google_cancelled");
+    return redirectWithError(request, "facebook_cancelled");
   }
 
   if (!code || !state || !session.oauthState || state !== session.oauthState) {
@@ -36,30 +36,31 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const googleUser = await getGoogleUser(code);
-
-    if (!googleUser.email_verified) {
-      return redirectWithError(request, "google_email_unverified");
-    }
-
-    const email = googleUser.email.toLowerCase();
-    const existingByEmail = await db.query.users.findFirst({
-      where: eq(schema.users.email, email),
+    const facebookUser = await getFacebookUser(code);
+    const existingByFacebookId = await db.query.users.findFirst({
+      where: eq(schema.users.facebookId, facebookUser.id),
     });
 
-    let user =
-      existingByEmail ??
-      (await db.query.users.findFirst({
-        where: eq(schema.users.googleId, googleUser.sub),
-      }));
+    if (!facebookUser.email && !existingByFacebookId) {
+      return redirectWithError(request, "facebook_email_missing");
+    }
+
+    const email = facebookUser.email?.toLowerCase();
+    const existingByEmail = email
+      ? await db.query.users.findFirst({
+          where: eq(schema.users.email, email),
+        })
+      : null;
+
+    let user = existingByEmail ?? existingByFacebookId;
 
     if (existingByEmail) {
-      if (!existingByEmail.googleId) {
-        return redirectWithError(request, "google_account_not_linked");
+      if (!existingByEmail.facebookId) {
+        return redirectWithError(request, "facebook_account_not_linked");
       }
 
-      if (existingByEmail.googleId !== googleUser.sub) {
-        return redirectWithError(request, "google_account_mismatch");
+      if (existingByEmail.facebookId !== facebookUser.id) {
+        return redirectWithError(request, "facebook_account_mismatch");
       }
     }
 
@@ -67,13 +68,13 @@ export async function GET(request: NextRequest) {
       return redirectWithError(request, "account_inactive");
     }
 
-    if (!user) {
+    if (!user && email) {
       await db.insert(schema.users).values({
-        name: googleUser.name ?? fallbackName(email),
+        name: facebookUser.name ?? fallbackName(email),
         email,
         emailVerifiedAt: new Date(),
-        googleId: googleUser.sub,
-        avatarUrl: googleUser.picture,
+        facebookId: facebookUser.id,
+        avatarUrl: facebookUser.picture?.data?.url,
         role: "user",
         status: "active",
       });
@@ -81,13 +82,13 @@ export async function GET(request: NextRequest) {
       user = await db.query.users.findFirst({
         where: eq(schema.users.email, email),
       });
-    } else {
+    } else if (user) {
       await db
         .update(schema.users)
         .set({
-          email,
+          email: email ?? user.email,
           emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
-          avatarUrl: googleUser.picture ?? user.avatarUrl,
+          avatarUrl: facebookUser.picture?.data?.url ?? user.avatarUrl,
           updatedAt: new Date(),
         })
         .where(eq(schema.users.id, user.id));
@@ -106,11 +107,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "auth_failed";
 
-    if (message.startsWith("google_")) {
+    if (message.startsWith("facebook_")) {
       return redirectWithError(request, message);
     }
 
-    console.error("Google login failed:", error);
+    console.error("Facebook login failed:", error);
     return redirectWithError(request, "auth_failed");
   }
 }

@@ -70,6 +70,7 @@ export async function createAuthenticatedSession(user: {
   session.role = user.role;
   session.expiresAt = expiresAt.toISOString();
   session.oauthState = undefined;
+  session.oauthNonce = undefined;
   await session.save();
 }
 

@@ -9,6 +9,7 @@ export type AuthSessionData = {
   role?: "user" | "admin";
   expiresAt?: string;
   oauthState?: string;
+  oauthNonce?: string;
 };
 
 export const sessionTtlSeconds = env.SESSION_TTL_DAYS * 24 * 60 * 60;

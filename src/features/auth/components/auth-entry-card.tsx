@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { SiteLogo } from "@/components/site-logo";
 import { Button } from "@/components/ui/button";
+import { env } from "@/config/env";
 import {
   AppleIcon,
   FacebookIcon,
@@ -9,6 +10,27 @@ import {
 } from "@/features/auth/components/provider-icons";
 
 export function AuthEntryCard() {
+  const providers = [
+    {
+      enabled: env.GOOGLE_AUTH_ENABLED,
+      action: "/api/auth/google",
+      label: "Lanjutkan dengan Google",
+      icon: <GoogleIcon />,
+    },
+    {
+      enabled: env.FACEBOOK_AUTH_ENABLED,
+      action: "/api/auth/facebook",
+      label: "Lanjutkan dengan Facebook",
+      icon: <FacebookIcon />,
+    },
+    {
+      enabled: env.APPLE_AUTH_ENABLED,
+      action: "/api/auth/apple",
+      label: "Lanjutkan dengan Apple",
+      icon: <AppleIcon />,
+    },
+  ].filter((provider) => provider.enabled);
+
   return (
     <div className="w-full max-w-[25rem] px-5">
       <div className="flex flex-col items-center text-center">
@@ -22,42 +44,24 @@ export function AuthEntryCard() {
       </div>
 
       <div className="mt-8 flex flex-col gap-3">
-        <form action="/api/auth/google" method="GET">
-          <Button
-            type="submit"
-            variant="outline"
-            className="relative h-12 w-full justify-center px-4 text-center text-base"
-          >
-            <span className="absolute left-4 flex items-center">
-              <GoogleIcon />
-            </span>
-            <span>Lanjutkan dengan Google</span>
-          </Button>
-        </form>
+        {providers.map((provider) => (
+          <form key={provider.action} action={provider.action} method="GET">
+            <Button
+              type="submit"
+              variant="outline"
+              className="relative h-12 w-full justify-center px-4 text-center text-base"
+            >
+              <span className="absolute left-4 flex items-center">{provider.icon}</span>
+              <span>{provider.label}</span>
+            </Button>
+          </form>
+        ))}
 
-        <Button
-          type="button"
-          variant="outline"
-          disabled
-          className="relative h-12 w-full justify-center px-4 text-center text-base"
-        >
-          <span className="absolute left-4 flex items-center">
-            <FacebookIcon />
-          </span>
-          <span>Lanjutkan dengan Facebook</span>
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          disabled
-          className="relative h-12 w-full justify-center px-4 text-center text-base"
-        >
-          <span className="absolute left-4 flex items-center">
-            <AppleIcon />
-          </span>
-          <span>Lanjutkan dengan Apple</span>
-        </Button>
+        {providers.length === 0 ? (
+          <p className="rounded-md border border-dashed px-4 py-3 text-center text-sm text-muted-foreground">
+            Login sedang tidak tersedia.
+          </p>
+        ) : null}
       </div>
 
       <p className="mt-7 text-center text-xs leading-6 text-muted-foreground">

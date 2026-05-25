@@ -2,11 +2,11 @@ import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { env } from "@/config/env";
-import { createGoogleAuthorizationUrl } from "@/features/auth/services/google-oauth";
+import { createFacebookAuthorizationUrl } from "@/features/auth/services/facebook-oauth";
 import { getSession } from "@/features/auth/services/session";
 
 export async function GET() {
-  if (!env.GOOGLE_AUTH_ENABLED) {
+  if (!env.FACEBOOK_AUTH_ENABLED) {
     return NextResponse.redirect(new URL("/login?error=auth_provider_disabled", env.APP_URL));
   }
 
@@ -16,5 +16,5 @@ export async function GET() {
   session.oauthState = state;
   await session.save();
 
-  return NextResponse.redirect(createGoogleAuthorizationUrl(state));
+  return NextResponse.redirect(createFacebookAuthorizationUrl(state));
 }

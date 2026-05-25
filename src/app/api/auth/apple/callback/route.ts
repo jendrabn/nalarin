@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { env } from "@/config/env";
 import { db, schema } from "@/db";
-import { getGoogleUser } from "@/features/auth/services/google-oauth";
+import { getAppleUser } from "@/features/auth/services/apple-oauth";
 import {
   createAuthenticatedSession,
   getSession,
@@ -18,7 +18,7 @@ function fallbackName(email: string) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!env.GOOGLE_AUTH_ENABLED) {
+  if (!env.APPLE_AUTH_ENABLED) {
     return redirectWithError(request, "auth_provider_disabled");
   }
 
@@ -28,38 +28,49 @@ export async function GET(request: NextRequest) {
   const session = await getSession();
 
   if (oauthError) {
-    return redirectWithError(request, "google_cancelled");
+    return redirectWithError(request, "apple_cancelled");
   }
 
-  if (!code || !state || !session.oauthState || state !== session.oauthState) {
+  if (
+    !code ||
+    !state ||
+    !session.oauthState ||
+    !session.oauthNonce ||
+    state !== session.oauthState
+  ) {
     return redirectWithError(request, "invalid_oauth_state");
   }
 
   try {
-    const googleUser = await getGoogleUser(code);
-
-    if (!googleUser.email_verified) {
-      return redirectWithError(request, "google_email_unverified");
-    }
-
-    const email = googleUser.email.toLowerCase();
-    const existingByEmail = await db.query.users.findFirst({
-      where: eq(schema.users.email, email),
+    const appleUser = await getAppleUser(code, session.oauthNonce);
+    const existingByAppleId = await db.query.users.findFirst({
+      where: eq(schema.users.appleId, appleUser.sub),
     });
 
-    let user =
-      existingByEmail ??
-      (await db.query.users.findFirst({
-        where: eq(schema.users.googleId, googleUser.sub),
-      }));
+    if (!appleUser.email && !existingByAppleId) {
+      return redirectWithError(request, "apple_email_missing");
+    }
+
+    if (appleUser.email && !appleUser.emailVerified) {
+      return redirectWithError(request, "apple_email_unverified");
+    }
+
+    const email = appleUser.email?.toLowerCase();
+    const existingByEmail = email
+      ? await db.query.users.findFirst({
+          where: eq(schema.users.email, email),
+        })
+      : null;
+
+    let user = existingByEmail ?? existingByAppleId;
 
     if (existingByEmail) {
-      if (!existingByEmail.googleId) {
-        return redirectWithError(request, "google_account_not_linked");
+      if (!existingByEmail.appleId) {
+        return redirectWithError(request, "apple_account_not_linked");
       }
 
-      if (existingByEmail.googleId !== googleUser.sub) {
-        return redirectWithError(request, "google_account_mismatch");
+      if (existingByEmail.appleId !== appleUser.sub) {
+        return redirectWithError(request, "apple_account_mismatch");
       }
     }
 
@@ -67,13 +78,12 @@ export async function GET(request: NextRequest) {
       return redirectWithError(request, "account_inactive");
     }
 
-    if (!user) {
+    if (!user && email) {
       await db.insert(schema.users).values({
-        name: googleUser.name ?? fallbackName(email),
+        name: fallbackName(email),
         email,
         emailVerifiedAt: new Date(),
-        googleId: googleUser.sub,
-        avatarUrl: googleUser.picture,
+        appleId: appleUser.sub,
         role: "user",
         status: "active",
       });
@@ -81,13 +91,12 @@ export async function GET(request: NextRequest) {
       user = await db.query.users.findFirst({
         where: eq(schema.users.email, email),
       });
-    } else {
+    } else if (user) {
       await db
         .update(schema.users)
         .set({
-          email,
+          email: email ?? user.email,
           emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
-          avatarUrl: googleUser.picture ?? user.avatarUrl,
           updatedAt: new Date(),
         })
         .where(eq(schema.users.id, user.id));
@@ -106,11 +115,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "auth_failed";
 
-    if (message.startsWith("google_")) {
+    if (message.startsWith("apple_")) {
       return redirectWithError(request, message);
     }
 
-    console.error("Google login failed:", error);
+    console.error("Apple login failed:", error);
     return redirectWithError(request, "auth_failed");
   }
 }
