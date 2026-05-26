@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "2f09eb35-1b9b-43f8-9e1e-3fa05abd90d4",
+  "id": "bf4d128f-2ed0-4187-b429-30a67ba3182b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "blog_categories": {
@@ -660,27 +660,27 @@
           "autoincrement": false,
           "default": 0
         },
-          "tryout_sessions_count": {
-            "name": "tryout_sessions_count",
-            "type": "int unsigned",
-            "primaryKey": false,
-            "notNull": true,
-            "autoincrement": false,
-            "default": 0
-          },
-          "ai_explanation_sessions_count": {
-            "name": "ai_explanation_sessions_count",
-            "type": "int unsigned",
-            "primaryKey": false,
-            "notNull": true,
-            "autoincrement": false,
-            "default": 0
-          },
-          "created_at": {
-            "name": "created_at",
-            "type": "timestamp",
-            "primaryKey": false,
-            "notNull": true,
+        "tryout_sessions_count": {
+          "name": "tryout_sessions_count",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "ai_explanation_sessions_count": {
+          "name": "ai_explanation_sessions_count",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
           "autoincrement": false,
           "default": "(now())"
         },
@@ -4488,6 +4488,20 @@
           "notNull": false,
           "autoincrement": false
         },
+        "facebook_id": {
+          "name": "facebook_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "apple_id": {
+          "name": "apple_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "avatar_url": {
           "name": "avatar_url",
           "type": "varchar(2048)",
@@ -4569,6 +4583,20 @@
           "name": "users_google_id_uq",
           "columns": [
             "google_id"
+          ],
+          "isUnique": true
+        },
+        "users_facebook_id_uq": {
+          "name": "users_facebook_id_uq",
+          "columns": [
+            "facebook_id"
+          ],
+          "isUnique": true
+        },
+        "users_apple_id_uq": {
+          "name": "users_apple_id_uq",
+          "columns": [
+            "apple_id"
           ],
           "isUnique": true
         },

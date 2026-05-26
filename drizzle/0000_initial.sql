@@ -498,6 +498,8 @@ CREATE TABLE `users` (
 	`email_verified_at` timestamp,
 	`password_hash` varchar(255),
 	`google_id` varchar(255),
+	`facebook_id` varchar(255),
+	`apple_id` varchar(255),
 	`avatar_url` varchar(2048),
 	`role` enum('user','admin') NOT NULL DEFAULT 'user',
 	`status` enum('active','inactive','suspended') NOT NULL DEFAULT 'active',
@@ -509,7 +511,9 @@ CREATE TABLE `users` (
 	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `users_id` PRIMARY KEY(`id`),
 	CONSTRAINT `users_email_uq` UNIQUE(`email`),
-	CONSTRAINT `users_google_id_uq` UNIQUE(`google_id`)
+	CONSTRAINT `users_google_id_uq` UNIQUE(`google_id`),
+	CONSTRAINT `users_facebook_id_uq` UNIQUE(`facebook_id`),
+	CONSTRAINT `users_apple_id_uq` UNIQUE(`apple_id`)
 );
 --> statement-breakpoint
 CREATE TABLE `voucher_redemptions` (
