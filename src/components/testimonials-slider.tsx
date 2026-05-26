@@ -43,8 +43,8 @@ export function TestimonialsSlider() {
               Belajar Terasa Lebih Terarah
             </h2>
             <p className="mt-4 text-base leading-7 text-muted-foreground">
-              Cerita singkat dari pelajar yang ingin membangun kebiasaan
-              latihan lebih konsisten sebelum hari ujian.
+              Cerita dan pengalaman belajar dari pejuang PTN yang menggunakan
+              Nalarin.id
             </p>
           </div>
           <div className="flex items-center gap-2">

@@ -47,38 +47,38 @@ export const examCategories = [
 
 export const featureHighlights = [
   {
-    title: "Bank Soal Bertahap",
-    description: "Filter soal berdasarkan jenis tes, subject, dan topik supaya sesi belajar tidak melebar.",
+    title: "Bank Soal",
+    description: "Pilih soal berdasarkan topik, tingkat kesulitan, dan jenis ujian untuk belajar lebih fokus",
     icon: BookOpenCheckIcon,
   },
   {
     title: "Mode Latihan",
-    description: "Belajar tanpa timer dengan ruang review yang lebih santai untuk menguatkan konsep.",
+    description: "Kerjakan soal tanpa batas waktu dan pelajari pembahasan dengan lebih santai",
     icon: PenLineIcon,
   },
   {
     title: "Mode Quiz",
-    description: "Simulasi singkat dengan timer untuk melatih keputusan cepat sebelum tryout penuh.",
+    description: "Kerjakan soal dengan durasi tertentu untuk melatih kecepatan dan ketepatan",
     icon: TimerIcon,
   },
   {
     title: "Tryout Rutin",
-    description: "Multi-section dan durasi berbeda per section agar simulasi terasa lebih realistis.",
+    description: "Simulasi tryout dengan sistem dan durasi yang dibuat menyerupai ujian asli",
     icon: Layers3Icon,
   },
   {
     title: "Ranking Dinamis",
-    description: "Urutan ranking dihitung dari skor, section yang dikerjakan, akurasi, durasi, dan waktu submit.",
+    description: "Lihat peringkatmu dan bandingkan hasil dengan peserta lainnya secara realtime",
     icon: BarChart3Icon,
   },
   {
     title: "Review Pembahasan",
-    description: "Cek jawaban, alasan, dan pembahasan saat hasil latihan atau tryout sudah tersedia.",
+    description: "Pelajari kembali jawaban dan pembahasan setelah latihan atau tryout selesai",
     icon: RotateCcwIcon,
   },
   {
     title: "Progress Tracking",
-    description: "Pantau akurasi, topik kuat, topik lemah, dan tren skor agar belajar berikutnya lebih presisi.",
+    description: "Pantau perkembangan belajar, akurasi, dan peningkatan skor dari waktu ke waktu",
     icon: TrendingUpIcon,
   },
 ];
