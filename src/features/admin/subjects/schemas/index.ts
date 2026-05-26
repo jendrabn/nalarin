@@ -11,6 +11,7 @@ export const subjectFormSchema = z.object({
     .refine(
       (value) =>
         value === "" ||
+        value.startsWith("/images/") ||
         value.startsWith("/uploads/") ||
         value.startsWith("https://") ||
         value.startsWith("http://"),

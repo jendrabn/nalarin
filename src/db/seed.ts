@@ -17,6 +17,26 @@ const taxonomySeedItemSchema = z.object({
   order_index: z.number().int().positive().optional(),
 });
 
+const optionalDateTimeSeedSchema = z
+  .string()
+  .trim()
+  .datetime()
+  .nullable()
+  .optional()
+  .transform((value) => (value ? new Date(value) : null));
+
+const examTypeSeedItemSchema = taxonomySeedItemSchema.extend({
+  logoUrl: z.string().trim().max(2048).nullable().optional(),
+  countdownTitle: z.string().trim().max(255).nullable().optional(),
+  countdownTargetAt: optionalDateTimeSeedSchema,
+  registrationStartAt: optionalDateTimeSeedSchema,
+  registrationEndAt: optionalDateTimeSeedSchema,
+  examStartAt: optionalDateTimeSeedSchema,
+  examEndAt: optionalDateTimeSeedSchema,
+  announcementAt: optionalDateTimeSeedSchema,
+  informationContent: z.string().trim().nullable().optional(),
+});
+
 const subjectSeedItemSchema = taxonomySeedItemSchema.extend({
   exam_type_slug: z.string().trim().min(1),
 });
@@ -26,7 +46,7 @@ const topicSeedItemSchema = taxonomySeedItemSchema.extend({
 });
 
 const seedDataSchema = z.object({
-  exam_types: z.array(taxonomySeedItemSchema).min(1),
+  exam_types: z.array(examTypeSeedItemSchema).min(1),
   subjects: z.array(subjectSeedItemSchema).min(1),
   topics: z.array(topicSeedItemSchema).min(1),
   blog_categories: z.array(taxonomySeedItemSchema).min(1),
@@ -50,12 +70,30 @@ async function seedExamTypes(seedData: SeedData) {
         name: examType.name,
         slug: examType.slug,
         description: examType.description ?? null,
+        logoUrl: examType.logoUrl ?? null,
+        countdownTitle: examType.countdownTitle ?? null,
+        countdownTargetAt: examType.countdownTargetAt,
+        registrationStartAt: examType.registrationStartAt,
+        registrationEndAt: examType.registrationEndAt,
+        examStartAt: examType.examStartAt,
+        examEndAt: examType.examEndAt,
+        announcementAt: examType.announcementAt,
+        informationContent: examType.informationContent ?? null,
       })),
     )
     .onDuplicateKeyUpdate({
       set: {
         name: sql`values(${schema.examTypes.name})`,
         description: sql`values(${schema.examTypes.description})`,
+        logoUrl: sql`values(${schema.examTypes.logoUrl})`,
+        countdownTitle: sql`values(${schema.examTypes.countdownTitle})`,
+        countdownTargetAt: sql`values(${schema.examTypes.countdownTargetAt})`,
+        registrationStartAt: sql`values(${schema.examTypes.registrationStartAt})`,
+        registrationEndAt: sql`values(${schema.examTypes.registrationEndAt})`,
+        examStartAt: sql`values(${schema.examTypes.examStartAt})`,
+        examEndAt: sql`values(${schema.examTypes.examEndAt})`,
+        announcementAt: sql`values(${schema.examTypes.announcementAt})`,
+        informationContent: sql`values(${schema.examTypes.informationContent})`,
         updatedAt: new Date(),
       },
     });

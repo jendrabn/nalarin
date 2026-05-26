@@ -10,6 +10,7 @@ export const examTypeFormSchema = z.object({
     .refine(
       (value) =>
         value === "" ||
+        value.startsWith("/images/") ||
         value.startsWith("/uploads/") ||
         value.startsWith("https://") ||
         value.startsWith("http://"),
