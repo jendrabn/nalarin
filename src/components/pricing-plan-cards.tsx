@@ -46,7 +46,7 @@ export function PricingPlanCards({
   return (
     <div
       className={cn(
-        "grid w-full grid-cols-1 gap-5 lg:grid-cols-3",
+        "grid w-full grid-cols-1 gap-5 pt-4 lg:grid-cols-3",
         className,
       )}
     >
@@ -54,12 +54,19 @@ export function PricingPlanCards({
         <Card
           key={plan.code}
           className={cn(
-            "relative rounded-lg bg-card shadow-xl shadow-primary/5 ring-1 ring-foreground/10",
+            "relative overflow-visible rounded-lg bg-card shadow-xl shadow-primary/5 ring-1 ring-foreground/10",
             featured
               ? "scale-[1.02] bg-primary/[0.03] shadow-primary/15 ring-2 ring-primary"
               : "transition-all hover:-translate-y-0.5 hover:shadow-primary/10",
           )}
         >
+          {plan.code === "pro" ? (
+            <div className="absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2">
+              <span className="inline-flex h-7 items-center rounded-full border border-primary/20 bg-primary px-3.5 text-xs font-bold uppercase tracking-[0.14em] text-primary-foreground shadow-lg shadow-primary/25">
+                Paling populer
+              </span>
+            </div>
+          ) : null}
           <CardHeader className="gap-4 p-6">
             <div className="flex items-center justify-between gap-3">
               <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
