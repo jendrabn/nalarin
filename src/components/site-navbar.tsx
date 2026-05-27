@@ -42,6 +42,8 @@ type SiteNavbarProps = {
   user: SiteUser;
 };
 
+const siteNavLinks = [{ label: "Beranda", href: "/" }, ...navLinks];
+
 export function SiteNavbar({ user }: SiteNavbarProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/78 shadow-sm shadow-primary/5 backdrop-blur-xl">
@@ -62,7 +64,7 @@ export function SiteNavbar({ user }: SiteNavbarProps) {
                 </SheetHeader>
                 <div className="flex flex-1 flex-col px-4 pb-4 pt-16">
                   <div className="rounded-2xl bg-secondary/65 p-2 ring-1 ring-border/70">
-                    {navLinks.map((link) => (
+                    {siteNavLinks.map((link) => (
                       <SheetClose key={link.href} asChild>
                         <Button
                           variant="ghost"
@@ -127,7 +129,7 @@ export function SiteNavbar({ user }: SiteNavbarProps) {
             <SiteLogo />
           </div>
           <div className="flex items-center justify-center gap-2.5">
-            {navLinks.map((link) => (
+            {siteNavLinks.map((link) => (
               <Button
                 key={link.href}
                 variant="ghost"
@@ -157,7 +159,7 @@ function GuestActions({ stacked = false }: { stacked?: boolean }) {
         className={
           stacked
             ? "h-12 w-full rounded-full px-5 text-base"
-            : "h-10 rounded-full px-4 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30"
+            : "h-10 rounded-full px-4 shadow-md shadow-primary/20 hover:!translate-y-0 hover:!scale-100 hover:shadow-lg hover:shadow-primary/30"
         }
         asChild
       >

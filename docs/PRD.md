@@ -83,7 +83,7 @@ User dapat:
 - Melihat ranking tryout jika plan mengizinkan.
 - Melihat progress belajar.
 - Mengubah profil.
-- Membeli plan Pro atau Max jika tidak sedang memiliki subscription aktif.
+- Membeli plan Pro atau Max untuk exam type tertentu jika belum memiliki subscription aktif untuk exam type tersebut.
 
 ### 4.3 Admin
 
@@ -93,9 +93,10 @@ Admin dapat:
 - Manage subscribers dan payment.
 - Approve payment manual.
 - Cancel subscription.
-- Force downgrade user ke Free.
-- Menambahkan subscription manual (hanya untuk plan Pro atau Max).
-- Mengedit nama dan deskripsi exam type yang sudah ada (tidak dapat menambah atau menghapus exam type pada MVP).
+- Force downgrade user ke Free untuk exam type tertentu.
+- Menambahkan subscription manual (hanya untuk plan Pro atau Max) per exam type.
+- Mengubah nilai plan per exam type: harga, diskon, kuota, dan akses (fitur Manage Plans).
+- Mengedit nama, deskripsi, logo, cover, dan informasi jadwal exam type yang sudah ada. Admin tidak dapat menambah atau menghapus exam type pada MVP.
 - Manage subjects/subtest.
 - Manage topics.
 - Manage questions.
@@ -113,127 +114,82 @@ Admin dapat:
 
 ### 5.1 Jenis Plan
 
-| Plan | Harga | Durasi | Deskripsi |
+| Plan | Harga Default | Durasi | Deskripsi |
 |---|---:|---|---|
 | Free | Rp0 | Permanen | Akses dasar dan konten gratis terbatas |
-| Pro | Rp50.000/bulan | 1 bulan | Akses lebih luas untuk latihan dan tryout |
-| Max | Rp100.000/bulan | 1 bulan | Akses paling lengkap untuk user intensif |
+| Pro | Dikonfigurasi admin per exam type | 30 hari | Akses lebih luas untuk latihan dan tryout |
+| Max | Dikonfigurasi admin per exam type | 30 hari | Akses paling lengkap untuk user intensif |
+
+Harga, diskon, dan kuota setiap plan **berbeda per exam type** dan dikelola admin melalui panel admin. Tidak ada nilai harga global yang hardcoded di kode.
 
 ### 5.2 Ketentuan Plan
 
-- Plan disimpan sebagai **TypeScript/JavaScript config object**, bukan tabel database.
-- Admin tidak memiliki CRUD plan.
-- Config plan memuat kode plan, nama plan, harga, diskon persen, durasi, limit fitur, dan akses fitur.
-- Status plan aktif user diambil dari tabel `subscriptions`, bukan dari field cache di `users`.
-- Jika tidak ada subscription berbayar aktif, user dianggap menggunakan plan Free.
-- User hanya dapat membeli plan baru jika tidak memiliki subscription berbayar aktif.
-- Tidak ada fitur renewal sebelum masa aktif berakhir.
-- Jika subscription Pro/Max expired atau dibatalkan, akses user kembali ke Free.
+- Plan terdiri dari tiga tier yang fixed: **Free**, **Pro**, dan **Max**. Tier ini tidak dapat ditambah atau dihapus.
+- Nilai setiap tier (harga, diskon, kuota, akses) **bersifat per exam type** dan disimpan di tabel database `exam_type_plans`, bukan di config file. Admin dapat mengubah nilai ini melalui panel admin.
+- **Subscription user bersifat per exam type.** Seorang user yang subscribe ke Pro UTBK mendapatkan akses Pro hanya untuk konten UTBK. Untuk mendapat akses Pro di exam type lain, user perlu berlangganan secara terpisah.
+- Jika user tidak memiliki subscription berbayar aktif untuk exam type tertentu, user dianggap menggunakan plan Free untuk exam type tersebut.
+- Status plan aktif user diambil dari tabel `subscriptions` dengan filter `exam_type_id`. Tidak ada field cache di `users`.
+- Subscription berbayar berdurasi **30 hari** (satu bulan). Tidak ada opsi durasi lain pada MVP.
+- **Renewal otomatis perpanjang waktu:** Jika user membeli ulang saat subscription masih aktif, `ends_at` subscription diperpanjang dari nilai `ends_at` sebelumnya (bukan dari waktu sekarang) sebesar 30 hari. Jika subscription sudah expired, subscription baru dimulai dari waktu sekarang. Dengan demikian user tidak kehilangan sisa masa aktif saat renew lebih awal.
+- Satu user hanya boleh memiliki satu subscription aktif per exam type pada satu waktu.
+- Jika subscription expired atau dibatalkan, akses user untuk exam type tersebut kembali ke Free.
 - Pembayaran dapat dilakukan melalui **Midtrans** (otomatis via webhook) atau melalui **transfer manual** yang diverifikasi dan diapprove oleh admin.
-- Harga checkout dihitung dari harga plan dan diskon persen di config.
+- Harga checkout diambil dari `exam_type_plans` berdasarkan exam type dan plan code yang dipilih, dikurangi diskon persen yang dikonfigurasi admin.
 
-### 5.3 Contoh Plan Config
+### 5.3 Struktur Plan Per Exam Type
 
-Bagian ini adalah contoh struktur config, bukan tabel database.
+Tidak ada config plan yang hardcoded di kode. Semua nilai plan disimpan di tabel `exam_type_plans` (lihat Section 10.6a). Saat exam type baru di-seed, sistem membuat tiga record `exam_type_plans` otomatis (Free, Pro, Max) dengan nilai default berikut sebagai titik awal:
 
-```ts
-export const PLAN_CONFIG = {
-  free: {
-    name: 'Free',
-    price: 0,
-    discountPercent: 0,
-    durationDays: null,
-    limits: {
-      practiceSessionsPerMonth: 5,
-      quizSessionsPerMonth: 2,
-      tryoutSessionsPerMonth: 1,
-    },
-    access: {
-      freePractices: true,
-      paidPractices: false,
-      freeTryouts: true,
-      paidTryouts: false,
-      ranking: false,
-      manualExplanation: false,
-      aiExplanation: false,
-    },
-  },
-  pro: {
-    name: 'Pro',
-    price: 50000,
-    discountPercent: 0,
-    durationDays: 30,
-    limits: {
-      practiceSessionsPerMonth: 50,
-      quizSessionsPerMonth: 20,
-      tryoutSessionsPerMonth: 5,
-    },
-    access: {
-      freePractices: true,
-      paidPractices: true,
-      freeTryouts: true,
-      paidTryouts: true,
-      ranking: true,
-      manualExplanation: true,
-      aiExplanation: true,
-    },
-  },
-  max: {
-    name: 'Max',
-    price: 100000,
-    discountPercent: 0,
-    durationDays: 30,
-    limits: {
-      practiceSessionsPerMonth: null,
-      quizSessionsPerMonth: null,
-      tryoutSessionsPerMonth: null,
-    },
-    access: {
-      freePractices: true,
-      paidPractices: true,
-      freeTryouts: true,
-      paidTryouts: true,
-      ranking: true,
-      manualExplanation: true,
-      aiExplanation: true,
-    },
-  },
-}
-```
+| Field | Free | Pro | Max |
+|---|---|---|---|
+| price | 0 | 50.000 | 100.000 |
+| discount_percent | 0 | 25 | 50 |
+| duration_days | null (permanen) | 30 | 30 |
+| practice_sessions_per_month | 5 | 50 | null (unlimited) |
+| quiz_sessions_per_month | 2 | 20 | null |
+| tryout_sessions_per_month | 1 | 5 | null |
+| ai_explanations_per_month | 10 | 250 | null |
+| access_free_practices | true | true | true |
+| access_paid_practices | false | true | true |
+| access_free_tryouts | true | true | true |
+| access_paid_tryouts | false | true | true |
+| access_ranking | false | true | true |
+| access_manual_explanation | false | true | true |
+| access_ai_explanation | false | true | true |
+
+Nilai `null` pada kolom kuota berarti **unlimited** (tidak ada batas). Admin dapat mengubah semua nilai di atas melalui panel admin per exam type. Tier Free, Pro, dan Max tidak dapat dihapus atau ditambah.
 
 ### 5.4 Active Plan Source of Truth
 
 - Source of truth plan aktif adalah tabel `subscriptions`.
-- `users` tidak menyimpan `current_plan_code` dan `plan_expires_at`.
-- Helper aplikasi membaca subscription aktif user untuk menentukan plan.
-- Jika tidak ada subscription aktif, helper mengembalikan Free.
-- Hanya boleh ada satu subscription berstatus `active` per user di service layer.
+- `users` tidak menyimpan `current_plan_code` maupun `plan_expires_at`.
+- Helper aplikasi membaca subscription aktif user **per exam type** untuk menentukan plan yang berlaku di konteks tersebut.
+- Jika tidak ada subscription aktif untuk exam type tertentu, helper mengembalikan Free untuk exam type tersebut.
+- Hanya boleh ada satu subscription berstatus `active` per kombinasi `user_id + exam_type_id` di service layer.
+- Nilai plan (harga, kuota, akses) dibaca dari tabel `exam_type_plans` berdasarkan `exam_type_id` dan `plan_code` subscription aktif user.
 - Proses expired/downgrade wajib idempotent agar aman ketika cron dan lazy check berjalan bersamaan.
 
 ### 5.5 Payment dan Subscription
 
-- User memilih Pro atau Max.
+- User memilih exam type, lalu memilih plan Pro atau Max untuk exam type tersebut.
 - Sistem membuat payment record dengan status `pending` dan `subscription_id = null`.
 - Sistem membuat transaksi Midtrans dan menyimpan `gateway_order_id` dan `payment_url`.
-- Jika pembayaran sukses (webhook Midtrans diterima), sistem membuat subscription baru dengan status `active`, lalu mengisi `payments.subscription_id` dengan ID subscription baru tersebut.
+- Jika pembayaran sukses (webhook Midtrans diterima), sistem membuat atau memperpanjang subscription (lihat aturan renewal di Section 5.2), lalu mengisi `payments.subscription_id`.
 - Untuk pembayaran manual yang di-approve admin, admin membuat subscription aktif secara manual dan mengisi `payments.subscription_id`.
-- Setelah subscription aktif selama 1 bulan (atau sesuai durasi plan), status menjadi `expired`.
-- Selama subscription aktif, user tidak dapat membeli plan baru.
-- Sistem mencegah user memiliki lebih dari satu payment berstatus `pending` pada satu waktu, tanpa memandang gateway (Midtrans maupun manual). Jika payment pending sudah ada, sistem menampilkan link atau instruksi pembayaran yang sama.
-- User boleh membatalkan payment pending dari UI untuk mengganti plan sebelum membayar.
-- Jika admin cancel subscription aktif, subscription langsung menjadi `cancelled` dan user kembali ke Free.
+- Sistem mencegah user memiliki lebih dari satu payment berstatus `pending` per exam type pada satu waktu. Jika payment pending sudah ada untuk exam type yang sama, sistem menampilkan link atau instruksi pembayaran yang sama.
+- User boleh membatalkan payment pending dari UI.
+- Jika admin cancel subscription aktif, subscription langsung menjadi `cancelled` dan akses user untuk exam type tersebut kembali ke Free.
 - Payment sukses dari Midtrans wajib diproses secara idempotent berdasarkan gateway order/transaction id.
 
 ### 5.6 Hierarki Akses Plan dan Setting Konten
 
-Akses user terhadap fitur adalah gabungan dari **akses plan** dan **setting konten**.
+Akses user terhadap fitur adalah gabungan dari **akses plan untuk exam type terkait** dan **setting konten**.
 
-Contoh:
-
-- Jika tryout menampilkan ranking tetapi plan user tidak mengizinkan ranking, user tidak dapat melihat ranking.
-- Jika plan user mengizinkan pembahasan manual (`manualExplanation`) tetapi practice/tryout belum merilis pembahasan, pembahasan tetap tidak tampil.
-- Pembahasan AI (`aiExplanation`) tersedia per-soal on-demand di halaman review — hanya dikendalikan oleh plan user, tidak bergantung pada `show_explanation_after_submit`, jadwal rilis konten, maupun apakah pembahasan manual tersedia. User Pro/Max dapat meminta Pembahasan AI bahkan jika admin belum mengisi pembahasan manual.
-- Dengan kata lain, akses pembahasan manual membutuhkan dua kondisi: setting konten mengizinkan **dan** plan user mengizinkan. Akses Pembahasan AI hanya membutuhkan satu kondisi: plan user mengizinkan (`aiExplanation = true`).
+- Konten (practice, tryout) selalu berelasi ke satu exam type melalui subject-nya. Akses user ke konten tersebut ditentukan oleh plan aktif user untuk exam type yang sama.
+- Jika tryout menampilkan ranking tetapi plan user untuk exam type tersebut tidak mengizinkan ranking, user tidak dapat melihat ranking.
+- Jika plan user mengizinkan pembahasan manual (`access_manual_explanation`) tetapi practice/tryout belum merilis pembahasan, pembahasan tetap tidak tampil.
+- Pembahasan AI (`access_ai_explanation`) tersedia per-soal on-demand — hanya dikendalikan oleh plan user untuk exam type konten tersebut, tidak bergantung pada `show_explanation_after_submit`, jadwal rilis konten, maupun apakah pembahasan manual tersedia.
+- Akses pembahasan manual membutuhkan dua kondisi: setting konten mengizinkan **dan** plan user mengizinkan. Akses Pembahasan AI hanya membutuhkan satu kondisi: plan user mengizinkan (`access_ai_explanation = true`).
 
 ### 5.7 Jadwal Rilis Hasil, Ranking, dan Pembahasan Tryout
 
@@ -468,8 +424,8 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 - Akses **pembahasan manual** di dalam halaman review dikendalikan oleh `show_explanation_after_submit`. Jika `false`, kolom pembahasan manual disembunyikan.
 - Jika `result_release_at` diisi dan belum tiba, review belum dapat diakses meskipun session sudah submitted/graded.
 - Jika `explanation_release_at` diisi dan belum tiba, pembahasan manual disembunyikan meskipun review sudah dapat diakses.
-- Akses pembahasan manual juga mengikuti plan user (`manualExplanation`). Jika plan tidak mengizinkan, kolom pembahasan manual disembunyikan meskipun setting konten mengizinkan.
-- **Pembahasan AI tersedia secara terpisah**, tidak bergantung pada `show_explanation_after_submit` maupun jadwal rilis. Akses hanya dikendalikan oleh plan user (`aiExplanation = true` untuk Pro dan Max). Lihat subseksi "Fitur Pembahasan AI" di bawah.
+- Akses pembahasan manual juga mengikuti plan user (`access_manual_explanation`). Jika plan tidak mengizinkan, kolom pembahasan manual disembunyikan meskipun setting konten mengizinkan.
+- **Pembahasan AI tersedia secara terpisah**, tidak bergantung pada `show_explanation_after_submit` maupun jadwal rilis. Akses hanya dikendalikan oleh plan user (`access_ai_explanation = true` untuk Pro dan Max). Lihat subseksi "Fitur Pembahasan AI" di bawah.
 - Untuk practice session, tidak ada jadwal rilis. Akses pembahasan manual hanya dikendalikan oleh toggle `show_explanation_after_submit` pada practice dan plan user.
 
 #### Konten Halaman Review
@@ -495,7 +451,7 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 - Poin yang didapat dan poin maksimal soal tersebut.
 - Jika jawaban salah dan tryout memiliki penalti, tampilkan pengurangan poin (contoh: "−0.25 poin").
 - Pembahasan manual — jika tersedia sesuai setting dan plan. Pembahasan tidak di-snapshot; jika admin memperbarui pembahasan setelah session berjalan, review menampilkan pembahasan terbaru.
-- Tombol **"Pembahasan AI"** — ditampilkan di setiap soal jika plan user mengizinkan (`aiExplanation = true`). Jika plan tidak mengizinkan, tombol tidak ditampilkan atau ditampilkan dengan state terkunci beserta CTA upgrade.
+- Tombol **"Pembahasan AI"** — ditampilkan di setiap soal jika plan user mengizinkan (`access_ai_explanation = true`). Jika plan tidak mengizinkan, tombol tidak ditampilkan atau ditampilkan dengan state terkunci beserta CTA upgrade.
 
 **Breakdown per section (khusus tryout):**
 - Nama section.
@@ -712,13 +668,37 @@ Admin **tidak dapat** membuat user baru dari panel admin. Pembuatan akun hanya m
 
 Admin dapat:
 
-- Melihat daftar payment.
+- Melihat daftar payment dan subscription.
 - Melihat detail payment.
 - Approve payment manual (lihat Flow 14.7).
-- Cancel subscription aktif.
-- Force downgrade user ke Free.
-- Menambahkan subscription manual hanya untuk `plan_code = pro` atau `max`. Admin tidak dapat membuat subscription manual dengan `plan_code = free` karena status Free sudah otomatis berlaku saat tidak ada subscription berbayar aktif.
-- Untuk subscription dengan source `admin_grant`, admin **wajib menentukan `ends_at` secara manual** saat membuat subscription. Tidak ada pengisian durasi otomatis. Admin bebas menentukan rentang tanggal aktif (misalnya 7 hari trial, 30 hari kompensasi, atau durasi lain sesuai kebutuhan).
+- Cancel subscription aktif untuk exam type tertentu.
+- Force downgrade user ke Free untuk exam type tertentu.
+- Menambahkan subscription manual hanya untuk `plan_code = pro` atau `max` per exam type. Admin tidak dapat membuat subscription manual dengan `plan_code = free` karena status Free sudah otomatis berlaku saat tidak ada subscription berbayar aktif untuk exam type tersebut.
+- Untuk subscription dengan source `admin_grant`, admin **wajib menentukan `ends_at` secara manual** saat membuat subscription. Tidak ada pengisian durasi otomatis.
+
+### 8.2a Manage Plans
+
+Admin dapat mengubah nilai plan per exam type. Tier (Free, Pro, Max) tidak dapat ditambah atau dihapus.
+
+Nilai yang dapat diubah per tier per exam type:
+
+| Field | Keterangan |
+|---|---|
+| price | Harga dalam Rupiah. Free selalu 0 dan tidak dapat diubah. |
+| discount_percent | Diskon dalam persen (0–100). Harga final = price × (1 - discount_percent / 100). |
+| practice_sessions_per_month | Kuota Mode Latihan per bulan. null = unlimited. |
+| quiz_sessions_per_month | Kuota Mode Quiz per bulan. null = unlimited. |
+| tryout_sessions_per_month | Kuota tryout per bulan. null = unlimited. |
+| ai_explanations_per_month | Kuota Pembahasan AI per bulan. null = unlimited. |
+| access_free_practices | Boolean — akses practice gratis. |
+| access_paid_practices | Boolean — akses practice berbayar. |
+| access_free_tryouts | Boolean — akses tryout gratis. |
+| access_paid_tryouts | Boolean — akses tryout berbayar. |
+| access_ranking | Boolean — melihat ranking tryout. |
+| access_manual_explanation | Boolean — melihat pembahasan manual. |
+| access_ai_explanation | Boolean — menggunakan Pembahasan AI. |
+
+Admin hanya dapat mengubah nilai yang ada. Tidak dapat menambah field baru atau membuat tier baru. Admin bebas menentukan rentang tanggal aktif (misalnya 7 hari trial, 30 hari kompensasi, atau durasi lain sesuai kebutuhan).
 
 ### 8.3 Manage Question
 
@@ -1152,12 +1132,55 @@ Menyimpan tipe ujian yang didukung, seperti UTBK, UTUL UGM, SIMAK UI, dan CPNS.
 | id | Primary key |
 | name | Nama tipe exam, misalnya UTBK |
 | slug | Slug unik |
-| description | Deskripsi |
+| description | Deskripsi singkat |
 | logo_url | URL logo exam type, nullable |
+| cover_url | URL gambar cover/banner halaman exam type, nullable |
+| countdown_title | Judul countdown (misalnya "Pendaftaran UTBK 2026 Dibuka"), nullable |
+| countdown_target_at | Target waktu countdown, DATETIME nullable |
+| registration_start_at | Jadwal pembukaan pendaftaran ujian asli, DATETIME nullable |
+| registration_end_at | Jadwal penutupan pendaftaran ujian asli, DATETIME nullable |
+| exam_start_at | Jadwal mulai ujian asli, DATETIME nullable |
+| exam_end_at | Jadwal selesai ujian asli, DATETIME nullable |
+| announcement_at | Jadwal pengumuman hasil ujian asli, DATETIME nullable |
+| information_content | Konten informasi exam type dalam format rich text/HTML, nullable — digunakan untuk halaman detail exam type |
 | created_at | Tanggal dibuat |
 | updated_at | Tanggal update |
 
-Data awal exam type disimpan di database melalui seed: UTBK, UTUL UGM, SIMAK UI, dan CPNS. Admin dapat mengedit nama, deskripsi, dan logo exam type yang sudah ada melalui panel admin, tetapi tidak dapat menambah atau menghapus exam type pada MVP.
+Data awal exam type disimpan di database melalui seed: UTBK, UTUL UGM, SIMAK UI, dan CPNS. Admin dapat mengedit semua field di atas melalui panel admin, tetapi tidak dapat menambah atau menghapus exam type pada MVP.
+
+Saat exam type di-seed, sistem otomatis membuat tiga record `exam_type_plans` (Free, Pro, Max) dengan nilai default untuk exam type tersebut (lihat Section 10.6a).
+
+### 10.6a exam_type_plans
+
+Menyimpan konfigurasi nilai plan (Free, Pro, Max) per exam type. Admin dapat mengubah nilai melalui panel admin. Tier tidak dapat ditambah atau dihapus.
+
+| Field | Keterangan |
+|---|---|
+| id | Primary key |
+| exam_type_id | FK exam_types |
+| plan_code | enum PlanCode (`free`, `pro`, `max`) |
+| name | Nama tampilan plan, misalnya "Free", "Pro", "Max" |
+| description | Deskripsi singkat plan, nullable |
+| price | Harga dalam Rupiah (integer). Selalu 0 untuk Free. |
+| discount_percent | Diskon dalam persen (0–100). Harga final checkout = `price × (1 - discount_percent / 100)`. |
+| duration_days | Durasi langganan dalam hari. null = permanen (untuk Free). Saat ini selalu 30 untuk Pro dan Max. |
+| practice_sessions_per_month | Kuota sesi Mode Latihan per bulan. null = unlimited. |
+| quiz_sessions_per_month | Kuota sesi Mode Quiz per bulan. null = unlimited. |
+| tryout_sessions_per_month | Kuota tryout session per bulan. null = unlimited. |
+| ai_explanations_per_month | Kuota request Pembahasan AI per bulan. null = unlimited. |
+| access_free_practices | Boolean — akses practice yang `is_free = true`. |
+| access_paid_practices | Boolean — akses practice yang `is_free = false`. |
+| access_free_tryouts | Boolean — akses tryout yang `is_free = true`. |
+| access_paid_tryouts | Boolean — akses tryout yang `is_free = false`. |
+| access_ranking | Boolean — melihat leaderboard ranking tryout. |
+| access_manual_explanation | Boolean — melihat pembahasan manual di halaman review. |
+| access_ai_explanation | Boolean — menggunakan fitur Pembahasan AI per soal. |
+| created_at | Tanggal dibuat |
+| updated_at | Tanggal update |
+
+**Constraint:** Kombinasi `(exam_type_id, plan_code)` harus unik — tepat satu record per tier per exam type.
+
+**Seeding:** Saat sistem di-seed, setiap exam type mendapatkan tiga record otomatis (Free, Pro, Max) dengan nilai default sesuai Section 5.3.
 
 ### 10.7 subjects
 
@@ -1505,7 +1528,8 @@ Menyimpan langganan berbayar user untuk plan Pro atau Max.
 |---|---|
 | id | Primary key |
 | user_id | FK users |
-| plan_code | enum PlanCode — hanya `pro` atau `max` yang dapat dibuat melalui sistem (baik Midtrans maupun admin manual). Nilai `free` tidak digunakan sebagai subscription record. |
+| exam_type_id | FK exam_types — exam type yang dilanggani user. Subscription bersifat per exam type. |
+| plan_code | enum PlanCode — hanya `pro` atau `max` yang dapat dibuat melalui sistem. Nilai `free` tidak digunakan sebagai subscription record. |
 | status | enum SubscriptionStatus |
 | source | enum SubscriptionSource |
 | starts_at | Waktu mulai |
@@ -1525,6 +1549,7 @@ Menyimpan transaksi pembayaran Midtrans maupun transfer manual.
 |---|---|
 | id | Primary key |
 | user_id | FK users |
+| exam_type_id | FK exam_types — exam type yang dibayarkan. Denormalisasi dari subscription untuk kemudahan query dan audit. |
 | subscription_id | FK subscriptions, nullable. Null saat payment pertama dibuat (menunggu konfirmasi). Diisi dengan ID subscription setelah: (a) webhook Midtrans sukses diterima dan subscription dibuat, atau (b) admin mengapprove payment manual dan subscription diaktifkan. |
 | plan_code | enum PlanCode |
 | amount | Bigint, nominal pembayaran dalam Rupiah tanpa desimal |
@@ -1551,6 +1576,7 @@ Menyimpan pemakaian bulanan user untuk enforcement limit plan.
 |---|---|
 | id | Primary key |
 | user_id | FK users |
+| exam_type_id | FK exam_types — kuota dilacak per exam type. Satu user dapat memiliki record monthly_usage terpisah per exam type per bulan. |
 | period | DATE, selalu hari pertama bulan dalam format YYYY-MM-01 |
 | practice_sessions_count | Jumlah sesi Mode Latihan bulan ini |
 | quiz_sessions_count | Jumlah sesi Mode Quiz bulan ini |
@@ -1633,6 +1659,7 @@ Menyimpan artikel blog, metadata SEO, tag, dan statistik tampilan.
 | users | google_id (jika tidak null, dijaga di service layer) |
 | user_sessions | session_token_hash |
 | exam_types | slug |
+| exam_type_plans | exam_type_id + plan_code |
 | subjects | exam_type_id + slug |
 | topics | subject_id + slug |
 | questions | tidak wajib unik |
@@ -1649,13 +1676,13 @@ Menyimpan artikel blog, metadata SEO, tag, dan statistik tampilan.
 | tryout_section_sessions | tryout_session_id + tryout_section_id |
 | tryout_session_questions | tryout_session_id + tryout_question_id |
 | tryout_answers | tryout_session_question_id |
-| monthly_usage | user_id + period |
+| monthly_usage | user_id + exam_type_id + period |
 | user_progress_snapshots | user_id + exam_type_id + subject_id |
 | payments | subscription_id — **ketika tidak null, harus unik secara global: satu payment per subscription** (one-to-one). Karena `subscription_id` hanya diisi setelah subscription dibuat, tidak akan ada dua payment yang merujuk ke subscription yang sama. Dijaga di service layer dengan transaction. |
 | blog_categories | slug |
 | blog_posts | slug |
 
-Catatan: karena MySQL tidak mendukung partial unique index sederhana untuk semua kasus, beberapa aturan seperti satu subscription aktif per user dan satu payment pending aktif per user dijaga di service layer dengan transaction/locking.
+Catatan: karena MySQL tidak mendukung partial unique index sederhana untuk semua kasus, beberapa aturan seperti satu subscription aktif per kombinasi `user_id + exam_type_id` dan satu payment pending aktif per `user_id + exam_type_id` dijaga di service layer dengan transaction/locking.
 
 ---
 
@@ -1721,8 +1748,9 @@ Nilai batas di atas adalah acuan awal dan dapat disesuaikan berdasarkan monitori
 
 ### 13.2 Session Creation dan Monthly Usage
 
-- Monthly usage dicek sebelum membuat session.
-- Counter diincrement dalam transaction yang sama dengan pembuatan session.
+- Monthly usage dicek sebelum membuat session, dengan scope **per user per exam type per bulan**.
+- Kuota yang dicek diambil dari `exam_type_plans` berdasarkan `exam_type_id` konten dan `plan_code` subscription aktif user untuk exam type tersebut.
+- Counter diincrement dalam transaction yang sama dengan pembuatan session, pada record `monthly_usage` dengan `user_id + exam_type_id + period` yang sesuai. Jika record belum ada, dibuat otomatis saat increment pertama.
 - Period usage mengikuti `created_at` session dengan format bulan YYYY-MM-01.
 - Session `cancelled` tetap dihitung dalam monthly usage, kecuali dibatalkan admin karena error sistem.
 - Ketika user memilih "Mulai Baru" pada session yang masih `in_progress`, session lama di-cancel (tetap dihitung) dan session baru dibuat (counter diincrement kembali). Desain ini disengaja.
@@ -1803,18 +1831,21 @@ Setelah seluruh tryout session di-submit (semua section selesai):
 ### 13.7 Subscription dan Payment
 
 - **Saat `tryout_section_sessions` dibuat** (bersamaan dengan `tryout_session`), sistem mengisi `wrong_answer_penalty` pada setiap section session dari nilai efektif: gunakan `tryout_sections.wrong_answer_penalty` jika tidak null, fallback ke `tryouts.wrong_answer_penalty`. Nilai ini tidak berubah meskipun admin mengubah konfigurasi penalti setelah session dibuat.
-- Active plan dibaca dari subscription aktif (`status = active` **AND** `ends_at > NOW()`). Pengecekan `ends_at > NOW()` dilakukan secara **langsung di query** sehingga sistem selalu memberikan hasil yang benar tanpa harus mengandalkan cron untuk memperbarui status.
-- Cron job opsional (rekomendasi: setiap jam) memperbarui `status = expired` untuk record yang `status = active` AND `ends_at <= NOW()`. Cron ini bukan untuk correctness (lazy check sudah cover itu) melainkan untuk kebersihan data — agar kolom `status` di database mencerminkan kondisi aktual dan memudahkan query analitik tanpa perlu selalu join ke kondisi `ends_at`. Operasi ini harus idempotent (UPDATE hanya jika belum `expired`).
-- Jika tidak ada subscription aktif (atau semua expired), user dianggap Free.
+- Subscription bersifat per exam type. Satu user dapat memiliki beberapa subscription aktif untuk exam type yang berbeda secara bersamaan.
+- Hanya boleh ada satu subscription berstatus `active` per kombinasi `user_id + exam_type_id`. Dijaga di service layer.
+- Active plan dibaca dari subscription aktif (`status = active` **AND** `ends_at > NOW()`) dengan filter `exam_type_id`. Pengecekan dilakukan secara **langsung di query** sehingga sistem selalu memberikan hasil yang benar tanpa harus mengandalkan cron.
+- Cron job opsional (rekomendasi: setiap jam) memperbarui `status = expired` untuk record yang `status = active` AND `ends_at <= NOW()`. Cron ini untuk kebersihan data, bukan untuk correctness. Operasi ini harus idempotent.
+- Jika tidak ada subscription aktif untuk exam type tertentu, user dianggap Free untuk exam type tersebut. Nilai kuota dan akses Free diambil dari `exam_type_plans` dengan `plan_code = free` dan `exam_type_id` yang sesuai.
+- **Aturan renewal:** Jika subscription masih aktif saat user membeli ulang, `ends_at` diperpanjang dari nilai `ends_at` yang ada sebesar `duration_days` (30 hari). Jika subscription sudah expired atau tidak ada, subscription baru dibuat dengan `starts_at = NOW()` dan `ends_at = NOW() + 30 hari`.
+- Harga checkout diambil dari `exam_type_plans.price` dikurangi `exam_type_plans.discount_percent`. Tidak boleh membaca harga dari tempat lain.
 - Payment dibuat dengan `subscription_id = null` saat checkout dimulai.
-- Setelah pembayaran sukses (Midtrans webhook atau admin approve), subscription baru dibuat dan `payments.subscription_id` diisi.
+- Setelah pembayaran sukses (Midtrans webhook atau admin approve), subscription dibuat atau diperpanjang dan `payments.subscription_id` diisi.
 - Pembayaran sukses dari Midtrans wajib diproses idempotent berdasarkan `gateway_order_id`.
-- **Jika webhook sukses Midtrans diterima untuk payment yang sudah berstatus `cancelled`, webhook diabaikan (no-op) dan tidak membuat subscription baru. Event ini wajib di-log untuk keperluan monitoring dan audit.**
-- Pending payment ganda dicegah.
+- **Jika webhook sukses Midtrans diterima untuk payment yang sudah berstatus `cancelled`, webhook diabaikan (no-op) dan tidak membuat atau memperpanjang subscription. Event ini wajib di-log.**
+- Pending payment ganda per `user_id + exam_type_id` dicegah di service layer.
 - User boleh cancel payment pending sendiri sebelum membayar.
-- Cron/lazy check expired subscription harus idempotent.
-- Admin cancel subscription aktif mengisi `cancelled_at = NOW()` dan `cancelled_by_admin_id`, mengubah status menjadi `cancelled`, dan langsung mengembalikan akses user ke Free.
-- Admin hanya dapat membuat subscription manual untuk `plan_code = pro` atau `max`.
+- Admin cancel subscription aktif mengisi `cancelled_at = NOW()` dan `cancelled_by_admin_id`, mengubah status menjadi `cancelled`, dan langsung mengembalikan akses user ke Free untuk exam type tersebut.
+- Admin hanya dapat membuat subscription manual untuk `plan_code = pro` atau `max` per exam type.
 - Untuk subscription dengan source `admin_grant`, admin wajib menentukan `ends_at` secara manual. Tidak ada pengisian durasi otomatis.
 
 ### 13.8 Content Validation
@@ -1916,16 +1947,16 @@ Hanya berlaku untuk akun lama yang dimigrasikan dan belum memiliki `email_verifi
 
 ### 14.7 Flow Manual Payment dan Admin Approval
 
-1. User memilih plan Pro atau Max di halaman checkout.
+1. User membuka halaman checkout exam type tertentu dan memilih plan Pro atau Max.
 2. User memilih metode pembayaran manual (transfer bank).
-3. Sistem membuat payment record dengan `status = pending`, `gateway = manual`, `transaction_source = user_checkout`, dan `subscription_id = null`. Jika user mengunggah bukti transfer, file/URL bukti disimpan di `payments.proof_url`.
+3. Sistem membuat payment record dengan `exam_type_id` terisi, `status = pending`, `gateway = manual`, `transaction_source = user_checkout`, dan `subscription_id = null`. Jika user mengunggah bukti transfer, file/URL bukti disimpan di `payments.proof_url`.
 4. Sistem menampilkan instruksi pembayaran (nomor rekening, jumlah yang harus ditransfer).
 5. User melakukan transfer dan mengunggah bukti atau mengonfirmasi melalui UI.
 6. Admin membuka daftar payment pending di panel admin.
 7. Admin memverifikasi bukti transfer dan memilih **Approve**.
-8. Sistem membuat subscription baru dengan `status = active`, `source = manual`, `starts_at = waktu sekarang`, `ends_at = starts_at + durasi plan`, `activated_by_admin_id` diisi ID admin.
-9. Sistem mengupdate `payments.subscription_id` dengan ID subscription baru, `payments.status = paid`, `payments.paid_at` diisi. Field `transaction_source` **tidak diubah** — tetap `user_checkout` karena payment diinisiasi oleh user, bukan admin. Admin tidak menginisiasi payment ini, hanya memverifikasi dan mengapprovenya.
-10. User mendapatkan akses Pro atau Max sesuai plan yang dibeli.
+8. Sistem membuat atau memperpanjang subscription sesuai aturan renewal (Section 13.7) dengan `source = manual`, `activated_by_admin_id` diisi ID admin.
+9. Sistem mengupdate `payments.subscription_id`, `payments.status = paid`, `payments.paid_at` diisi.
+10. User mendapatkan akses Pro atau Max untuk exam type yang dibeli.
 
 ---
 
@@ -1979,13 +2010,15 @@ Hanya berlaku untuk akun lama yang dimigrasikan dan belum memiliki `email_verifi
 
 ### Phase 5 — Monetisasi
 
-- Plan config.
-- Midtrans payment.
-- Subscription (field `cancelled_at`).
+- Seeding `exam_type_plans` (tiga record Free/Pro/Max per exam type dengan nilai default).
+- Fitur Manage Plans di admin panel (edit nilai plan per exam type).
+- Midtrans payment dengan `exam_type_id` di payment record.
+- Subscription per exam type (field `exam_type_id`), aturan renewal otomatis perpanjang waktu.
+- `monthly_usage` per `user_id + exam_type_id + period`.
 - Manual payment dan admin approval flow.
-- Manual subscription/admin grant.
-- Cancel subscription dan force downgrade.
-- Monthly usage limit.
+- Manual subscription/admin grant per exam type.
+- Cancel subscription dan force downgrade per exam type.
+- Monthly usage limit (kuota diambil dari `exam_type_plans`).
 - Webhook race condition handling (cancelled payment + incoming success webhook).
 
 ### Phase 6 — Progress dan Blog
