@@ -86,7 +86,7 @@ function HeroSection() {
                 <span className="text-primary">Seleksi PTN</span>
               </>
             }
-            subtitle="Latihan soal, quiz bertimer, tryout rutin, pembahasan, ranking, dan progress belajar dalam satu platform untuk UTBK, UTUL UGM, SIMAK UI, dan seleksi PTN jalur mandiri lainnya."
+            subtitle="Persiapkan masuk PTN lebih terarah dengan latihan soal, quiz bertimer, tryout rutin, pembahasan lengkap, ranking, dan tracking progres dalam satu platform."
             titleClassName="mx-auto max-w-4xl text-balance text-[3.25rem] font-extrabold leading-[1.05] tracking-tight sm:text-[3.95rem] lg:text-[4.45rem]"
             subtitleClassName="mx-auto mt-6 max-w-xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg"
           />
