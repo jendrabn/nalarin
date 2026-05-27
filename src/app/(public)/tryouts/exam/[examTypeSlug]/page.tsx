@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import type { PlanCode } from "@/config/plans"
+import { absoluteUrl } from "@/features/blog/utils"
 import { getCurrentUser } from "@/features/auth/services/session"
 import { getCurrentActiveSubscription } from "@/features/premium/queries"
 import { TryoutsPage } from "@/features/tryouts/components/tryouts-page"
@@ -23,13 +24,17 @@ export async function generateMetadata({
   if (!examType) {
     return {
       title: "Jenis tryout tidak ditemukan",
+      robots: {
+        index: false,
+        follow: false,
+      },
     }
   }
 
   const title = `Tryout ${examType.name}`
   const description =
     examType.description ??
-    `Lihat jadwal tryout ${examType.name}, status pengerjaan, durasi, dan akses di Nalarin.`
+    `Lihat jadwal tryout ${examType.name}, status pengerjaan, durasi, dan akses di Nalarin.id.`
 
   return {
     title,
@@ -37,11 +42,24 @@ export async function generateMetadata({
     alternates: {
       canonical: `/tryouts/exam/${examType.slug}`,
     },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
     openGraph: {
       title,
       description,
       url: `/tryouts/exam/${examType.slug}`,
+      siteName: "Nalarin.id",
       type: "website",
+      locale: "id_ID",
     },
     twitter: {
       card: "summary_large_image",
@@ -75,10 +93,10 @@ export default async function Page({ params }: TryoutExamPageProps) {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: `Tryout ${examType.name}`,
-    url: `https://nalarin.id/tryouts/exam/${examType.slug}`,
+    url: absoluteUrl(`/tryouts/exam/${examType.slug}`),
     description:
       examType.description ??
-      `Daftar tryout ${examType.name} yang tersedia di Nalarin.`,
+      `Daftar tryout ${examType.name} yang tersedia di Nalarin.id.`,
     numberOfItems: data.tryouts.filter(
       (tryout) => tryout.examTypeId === examType.id,
     ).length,

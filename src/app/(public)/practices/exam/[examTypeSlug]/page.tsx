@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import type { PlanCode } from "@/config/plans"
+import { absoluteUrl } from "@/features/blog/utils"
 import { getCurrentUser } from "@/features/auth/services/session"
 import { getCurrentActiveSubscription } from "@/features/premium/queries"
 import { PracticesPage } from "@/features/practices/components/practices-page"
@@ -23,13 +24,17 @@ export async function generateMetadata({
   if (!examType) {
     return {
       title: "Jenis latihan tidak ditemukan",
+      robots: {
+        index: false,
+        follow: false,
+      },
     }
   }
 
   const title = `Latihan Soal ${examType.name}`
   const description =
     examType.description ??
-    `Latihan soal ${examType.name} berdasarkan mata pelajaran, topik, dan mode belajar di Nalarin.`
+    `Latihan soal ${examType.name} berdasarkan mata pelajaran, topik, dan Mode Latihan atau Mode Quiz di Nalarin.id.`
 
   return {
     title,
@@ -37,11 +42,24 @@ export async function generateMetadata({
     alternates: {
       canonical: `/practices/exam/${examType.slug}`,
     },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
     openGraph: {
       title,
       description,
       url: `/practices/exam/${examType.slug}`,
+      siteName: "Nalarin.id",
       type: "website",
+      locale: "id_ID",
     },
     twitter: {
       card: "summary_large_image",
@@ -75,10 +93,10 @@ export default async function Page({ params }: PracticeExamPageProps) {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: `Latihan Soal ${examType.name}`,
-    url: `https://nalarin.id/practices/exam/${examType.slug}`,
+    url: absoluteUrl(`/practices/exam/${examType.slug}`),
     description:
       examType.description ??
-      `Daftar latihan soal ${examType.name} yang tersedia di Nalarin.`,
+      `Daftar latihan soal ${examType.name} yang tersedia di Nalarin.id.`,
     numberOfItems: data.practices.filter(
       (practice) => practice.examTypeId === examType.id,
     ).length,

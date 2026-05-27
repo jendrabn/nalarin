@@ -14,15 +14,16 @@ import {
 } from "@/features/blog/utils";
 
 const BLOG_DESCRIPTION =
-  "Artikel Nalarin tentang strategi belajar, UTBK, UTUL UGM, SIMAK UI, CPNS, tryout, pembahasan, dan progress belajar.";
+  "Artikel Nalarin tentang strategi belajar, pembahasan soal, dan panduan tryout untuk UTBK, UTUL UGM, SIMAK UI, dan CPNS.";
 const BLOG_KEYWORDS = [
-  "blog UTBK",
-  "strategi belajar UTBK",
+  "blog belajar UTBK",
+  "strategi belajar",
+  "pembahasan soal",
   "tryout UTBK",
   "SIMAK UI",
   "UTUL UGM",
   "CPNS",
-  "Nalarin",
+  "Nalarin.id",
 ];
 
 type BlogPageProps = {
@@ -54,15 +55,15 @@ export async function generateMetadata({
     : categoryName
       ? `Kategori ${categoryName}`
       : isPaginated
-        ? `Blog Akademik - Halaman ${page}`
-        : "Blog Akademik";
+        ? `Blog Belajar - Halaman ${page}`
+        : "Blog Belajar";
 
   const description = query
     ? `Menampilkan artikel blog yang cocok dengan pencarian "${query}".`
     : categoryName
       ? `Kumpulan artikel blog pada kategori ${categoryName}.`
       : isPaginated
-        ? `Halaman ${page} daftar artikel akademik Nalarin tentang strategi belajar, UTBK, UTUL UGM, SIMAK UI, CPNS, dan tryout.`
+        ? `Halaman ${page} daftar artikel Nalarin tentang strategi belajar, UTBK, UTUL UGM, SIMAK UI, CPNS, dan tryout.`
         : BLOG_DESCRIPTION;
 
   const canonical = isFiltered
@@ -154,12 +155,12 @@ function buildBlogListingJsonLd({
   const basePath = page > 1 ? `/blog?page=${page}` : "/blog";
   const itemOffset = (page - 1) * listing.pageSize;
 
-  return {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "Blog Akademik",
-    description: BLOG_DESCRIPTION,
-    url: absoluteUrl(basePath),
+    return {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: "Blog Belajar Nalarin",
+      description: BLOG_DESCRIPTION,
+      url: absoluteUrl(basePath),
     mainEntity: {
       "@type": "ItemList",
       numberOfItems: listing.posts.length,

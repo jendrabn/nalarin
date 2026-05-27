@@ -72,8 +72,8 @@ export async function PremiumPage({ user }: PremiumPageProps) {
           <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
             <PageHeader
               className="mb-0"
-              title="Paket Premium"
-              subtitle="Pilih paket belajar yang sesuai dengan targetmu untuk membuka latihan, tryout, pembahasan, dan fitur premium lainnya."
+              title="Paket Premium Belajar"
+              subtitle="Bandingkan Free, Pro, dan Max untuk membuka latihan lebih luas, tryout, pembahasan, ranking, dan progress tracking."
             />
           </div>
 

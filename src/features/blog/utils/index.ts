@@ -1,5 +1,7 @@
+import { env } from "@/config/env";
+
 export const BLOG_PAGE_SIZE = 10;
-export const SITE_URL = "https://nalarin.id";
+export const SITE_URL = env.APP_URL;
 
 export function absoluteUrl(path: string) {
   if (path.startsWith("http://") || path.startsWith("https://")) {

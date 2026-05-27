@@ -3,37 +3,25 @@ import type { Metadata } from "next"
 import { getCurrentUser } from "@/features/auth/services/session"
 import { PracticeExamTypesPage } from "@/features/practices/components/practice-exam-types-page"
 import { getPracticeDiscoveryData } from "@/features/practices/queries"
+import { buildSeoMetadata } from "@/lib/seo"
+import { absoluteUrl } from "@/features/blog/utils"
 
-export const metadata: Metadata = {
-  title: "Latihan Soal",
+export const metadata: Metadata = buildSeoMetadata({
+  title: "Latihan Soal UTBK, UTUL UGM, SIMAK UI, dan CPNS",
   description:
-    "Temukan latihan soal berdasarkan tipe ujian, mata pelajaran, dan topik untuk persiapan SNBT, UTUL UGM, SIMAK UI, CPNS, dan ujian lainnya.",
-  alternates: {
-    canonical: "/practices",
-  },
+    "Pilih tipe ujian, mata pelajaran, dan topik untuk latihan yang lebih fokus dengan Mode Latihan dan Mode Quiz di Nalarin.id.",
+  path: "/practices",
   keywords: [
-    "latihan soal",
+    "latihan soal UTBK",
     "bank soal",
-    "SNBT",
     "UTUL UGM",
     "SIMAK UI",
     "CPNS",
-    "Nalarin",
+    "Mode Latihan",
+    "Mode Quiz",
+    "Nalarin.id",
   ],
-  openGraph: {
-    title: "Latihan Soal",
-    description:
-      "Discovery latihan soal publik berdasarkan tipe ujian dan mata pelajaran di Nalarin.",
-    url: "/practices",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Latihan Soal",
-    description:
-      "Pilih latihan soal sesuai tipe ujian dan mata pelajaran yang sedang kamu siapkan.",
-  },
-}
+});
 
 export default async function Page() {
   const [user, data] = await Promise.all([
@@ -44,7 +32,7 @@ export default async function Page() {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: "Latihan Soal Nalarin",
-    url: "https://nalarin.id/practices",
+    url: absoluteUrl("/practices"),
     description: metadata.description,
     numberOfItems: data.examTypes.length,
   }

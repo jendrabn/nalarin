@@ -3,36 +3,24 @@ import type { Metadata } from "next"
 import { getCurrentUser } from "@/features/auth/services/session"
 import { TryoutExamTypesPage } from "@/features/tryouts/components/tryout-exam-types-page"
 import { getPublicTryoutDiscoveryData } from "@/features/tryouts/queries"
+import { buildSeoMetadata } from "@/lib/seo"
+import { absoluteUrl } from "@/features/blog/utils"
 
-export const metadata: Metadata = {
-  title: "Tryout",
+export const metadata: Metadata = buildSeoMetadata({
+  title: "Tryout UTBK, UTUL UGM, SIMAK UI, dan CPNS",
   description:
-    "Ikuti tryout rutin multi-section untuk persiapan SNBT, UTUL UGM, SIMAK UI, CPNS, dan ujian masuk lainnya di Nalarin.",
-  alternates: {
-    canonical: "/tryouts",
-  },
+    "Ikuti tryout rutin multi-section untuk melatih ritme, durasi, ranking, hasil, dan pembahasan sebelum ujian di Nalarin.id.",
+  path: "/tryouts",
   keywords: [
-    "tryout",
-    "tryout SNBT",
+    "tryout UTBK",
     "tryout UTUL UGM",
     "tryout SIMAK UI",
     "tryout CPNS",
-    "Nalarin",
+    "ranking tryout",
+    "pembahasan tryout",
+    "Nalarin.id",
   ],
-  openGraph: {
-    title: "Tryout Nalarin",
-    description:
-      "Daftar tryout rutin dengan section, timer, ranking, hasil, dan pembahasan sesuai akses plan.",
-    url: "/tryouts",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Tryout Nalarin",
-    description:
-      "Pilih jadwal tryout SNBT, UTUL UGM, SIMAK UI, dan CPNS yang sedang tersedia.",
-  },
-}
+});
 
 export default async function Page() {
   const user = await getCurrentUser()
@@ -41,7 +29,7 @@ export default async function Page() {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: "Tryout Nalarin",
-    url: "https://nalarin.id/tryouts",
+    url: absoluteUrl("/tryouts"),
     description: metadata.description,
     numberOfItems: data.examTypes.length,
   }

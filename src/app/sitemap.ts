@@ -1,39 +1,84 @@
 import type { MetadataRoute } from "next";
 
+import { getPracticeDiscoveryData } from "@/features/practices/queries";
+import { getPublicTryoutDiscoveryData } from "@/features/tryouts/queries";
 import { getPublishedBlogSitemapEntries } from "@/features/blog/queries";
 import { absoluteUrl } from "@/features/blog/utils";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const blogPosts = await getPublishedBlogSitemapEntries();
+  const [blogPosts, practiceData, tryoutData] = await Promise.all([
+    getPublishedBlogSitemapEntries(),
+    getPracticeDiscoveryData(),
+    getPublicTryoutDiscoveryData(),
+  ]);
+  const now = new Date();
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: absoluteUrl("/"),
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: "weekly",
       priority: 1,
     },
     {
+      url: absoluteUrl("/practices"),
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: absoluteUrl("/tryouts"),
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
       url: absoluteUrl("/blog"),
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: "weekly",
       priority: 0.8,
     },
     {
       url: absoluteUrl("/pricing"),
-      lastModified: new Date(),
+      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.7,
     },
     {
-      url: absoluteUrl("/tryouts"),
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
+      url: absoluteUrl("/privacy"),
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: absoluteUrl("/terms"),
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.3,
     },
   ];
 
   return [
     ...staticRoutes,
+    ...practiceData.examTypes.map((examType) => ({
+      url: absoluteUrl(`/practices/exam/${examType.slug}`),
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    })),
+    ...tryoutData.examTypes.map((examType) => ({
+      url: absoluteUrl(`/tryouts/exam/${examType.slug}`),
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    })),
+    ...tryoutData.tryouts.map((tryout) => ({
+      url: absoluteUrl(`/tryouts/${tryout.slug}`),
+      lastModified: tryout.publishedAt
+        ? new Date(tryout.publishedAt)
+        : now,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    })),
     ...blogPosts.map((post) => ({
       url: absoluteUrl(`/blog/${post.slug}`),
       lastModified: post.updatedAt,

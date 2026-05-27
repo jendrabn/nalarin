@@ -53,8 +53,8 @@ export function PracticeExamTypesPage({
         <section className="mx-auto w-full max-w-7xl px-4 pt-6 pb-1 sm:px-6 lg:px-8">
           <PageHeader
             className="mb-0"
-            title="Latihan Soal"
-            subtitle="Pilih ujian untuk membuka kumpulan latihan yang tersedia."
+            title="Latihan Soal UTBK, UTUL UGM, SIMAK UI, dan CPNS"
+            subtitle="Pilih ujian, mata pelajaran, dan topik untuk latihan yang lebih fokus dengan Mode Latihan dan Mode Quiz."
           />
         </section>
 

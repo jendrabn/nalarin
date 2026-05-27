@@ -4,15 +4,21 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteNavbar } from "@/components/site-navbar";
 import { getCurrentUser } from "@/features/auth/services/session";
 import { LegalPage } from "@/features/legal/components/legal-page";
+import { buildSeoMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Kebijakan Privasi",
+export const metadata: Metadata = buildSeoMetadata({
+  title: "Kebijakan Privasi Nalarin.id",
   description:
-    "Kebijakan privasi Nalarin.id tentang data akun, sesi belajar, pembayaran, AI, cookie session, dan keamanan layanan.",
-  alternates: {
-    canonical: "/privacy",
-  },
-};
+    "Pelajari bagaimana Nalarin.id mengelola data akun, sesi belajar, pembayaran, AI, cookie, dan keamanan layanan.",
+  path: "/privacy",
+  keywords: [
+    "kebijakan privasi",
+    "data akun",
+    "cookie session",
+    "keamanan layanan",
+    "Nalarin.id",
+  ],
+});
 
 const privacySections = [
   {

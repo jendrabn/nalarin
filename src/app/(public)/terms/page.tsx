@@ -4,15 +4,21 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteNavbar } from "@/components/site-navbar";
 import { getCurrentUser } from "@/features/auth/services/session";
 import { LegalPage } from "@/features/legal/components/legal-page";
+import { buildSeoMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Ketentuan Layanan",
+export const metadata: Metadata = buildSeoMetadata({
+  title: "Ketentuan Layanan Nalarin.id",
   description:
-    "Ketentuan penggunaan Nalarin.id untuk akun, latihan, quiz, tryout, subscription, pembayaran, konten, dan fitur AI.",
-  alternates: {
-    canonical: "/terms",
-  },
-};
+    "Baca aturan penggunaan Nalarin.id untuk akun, latihan, quiz, tryout, subscription, pembayaran, konten, dan fitur AI.",
+  path: "/terms",
+  keywords: [
+    "ketentuan layanan",
+    "syarat penggunaan",
+    "subscription",
+    "fitur AI",
+    "Nalarin.id",
+  ],
+});
 
 const termsSections = [
   {

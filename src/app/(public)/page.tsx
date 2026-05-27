@@ -3,39 +3,28 @@ import type { Metadata } from "next";
 import { LandingPage } from "@/features/landing/components/landing-page";
 import { faqs } from "@/features/landing/data";
 import { getCurrentUser } from "@/features/auth/services/session";
+import { buildSeoMetadata } from "@/lib/seo";
+import { absoluteUrl } from "@/features/blog/utils";
 
-export const metadata: Metadata = {
-  title: "Persiapan UTBK, SIMAK UI, dan UTUL UGM",
+export const metadata: Metadata = buildSeoMetadata({
+  title: "Latihan UTBK, UTUL UGM, SIMAK UI, dan CPNS",
   description:
-    "Nalarin.id membantu persiapan PTN dan CPNS lewat bank soal, mode latihan, quiz bertimer, tryout rutin, ranking, pembahasan, dan progress belajar.",
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    title: "Nalarin.id - Persiapan Tes PTN",
-    description:
-      "Latihan soal, quiz, tryout, ranking, pembahasan, dan progress belajar untuk UTBK, UTUL UGM, SIMAK UI, dan CPNS.",
-    url: "/",
-    siteName: "Nalarin.id",
-    type: "website",
-    locale: "id_ID",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Nalarin.id - Persiapan Tes PTN",
-    description:
-      "Platform persiapan UTBK, UTUL UGM, SIMAK UI, dan CPNS dengan latihan soal dan tryout.",
-  },
+    "Latihan soal, Mode Latihan, Mode Quiz, tryout rutin, pembahasan, ranking, dan progress tracking untuk persiapan seleksi PTN dan CPNS di Nalarin.id.",
+  path: "/",
+  openGraphTitle: "Nalarin.id - Latihan UTBK, UTUL UGM, SIMAK UI, dan CPNS",
   keywords: [
-    "Nalarin",
-    "persiapan UTBK",
+    "Nalarin.id",
+    "latihan UTBK",
     "tryout UTBK",
+    "UTUL UGM",
     "SIMAK UI",
     "CPNS",
-    "UTUL UGM",
-    "bank soal PTN",
+    "bank soal",
+    "Mode Latihan",
+    "Mode Quiz",
+    "progress tracking",
   ],
-};
+});
 
 export default async function Page() {
   const userPromise = getCurrentUser();
@@ -44,11 +33,18 @@ export default async function Page() {
       "@context": "https://schema.org",
       "@type": "Organization",
       name: "Nalarin.id",
-      url: "https://nalarin.id",
+      url: absoluteUrl("/"),
       brand: {
         "@type": "Brand",
-        name: "Nalarin",
+        name: "Nalarin.id",
       },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Nalarin.id",
+      url: absoluteUrl("/"),
+      inLanguage: "id-ID",
     },
     {
       "@context": "https://schema.org",

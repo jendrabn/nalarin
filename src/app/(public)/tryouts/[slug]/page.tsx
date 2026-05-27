@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import type { PlanCode } from "@/config/plans"
+import { absoluteUrl } from "@/features/blog/utils"
 import { getCurrentUser } from "@/features/auth/services/session"
 import { getCurrentActiveSubscription } from "@/features/premium/queries"
 import { TryoutDetailPage } from "@/features/tryouts/components/tryout-detail-page"
@@ -23,12 +24,16 @@ export async function generateMetadata({
   if (!tryout) {
     return {
       title: "Tryout tidak ditemukan",
+      robots: {
+        index: false,
+        follow: false,
+      },
     }
   }
 
   const description =
     tryout.description ??
-    `Detail tryout ${tryout.examTypeName} dengan ${tryout.sectionCount} subtes dan ${tryout.questionCount} soal.`
+    `Detail tryout ${tryout.examTypeName} dengan ${tryout.sectionCount} section, ${tryout.questionCount} soal, ranking, hasil, dan pembahasan di Nalarin.id.`
 
   return {
     title: tryout.title,
@@ -36,11 +41,24 @@ export async function generateMetadata({
     alternates: {
       canonical: `/tryouts/${tryout.slug}`,
     },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
     openGraph: {
       title: tryout.title,
       description,
       url: `/tryouts/${tryout.slug}`,
+      siteName: "Nalarin.id",
       type: "website",
+      locale: "id_ID",
     },
     twitter: {
       card: "summary_large_image",
@@ -79,7 +97,7 @@ export default async function Page({ params }: TryoutPageProps) {
     provider: {
       "@type": "Organization",
       name: "Nalarin.id",
-      sameAs: "https://nalarin.id",
+      sameAs: absoluteUrl("/"),
     },
   }
 
