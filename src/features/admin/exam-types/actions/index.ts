@@ -33,6 +33,18 @@ function parseExamTypeValues(values: ExamTypeFormValues) {
       name: validated.data.name.trim(),
       description: normalizeNullableText(validated.data.description),
       logoUrl: normalizeNullableText(validated.data.logoUrl),
+      coverUrl: normalizeNullableText(validated.data.coverUrl),
+      packageIsActive: validated.data.packageIsActive,
+      packagePrice: validated.data.packagePrice,
+      packageDiscountPercent: validated.data.packageDiscountPercent,
+      packageDurationMonths: validated.data.packageDurationMonths,
+      practiceQuotaPerMonth: validated.data.practiceQuotaPerMonth,
+      quizQuotaPerMonth: validated.data.quizQuotaPerMonth,
+      tryoutQuotaPerMonth: validated.data.tryoutQuotaPerMonth,
+      aiExplanationQuotaPerMonth: validated.data.aiExplanationQuotaPerMonth,
+      premiumPracticesEnabled: validated.data.premiumPracticesEnabled,
+      premiumTryoutsEnabled: validated.data.premiumTryoutsEnabled,
+      rankingEnabled: validated.data.rankingEnabled,
       countdownTitle: normalizeNullableText(validated.data.countdownTitle),
       countdownTargetAt: parseNullableDateTime(validated.data.countdownTargetAt),
       registrationStartAt: parseNullableDateTime(validated.data.registrationStartAt),
@@ -111,6 +123,7 @@ export async function updateExamTypeAction(
         slug,
         description: parsed.data.description,
         logoUrl: parsed.data.logoUrl,
+        coverUrl: parsed.data.coverUrl,
         countdownTitle: parsed.data.countdownTitle,
         countdownTargetAt: parsed.data.countdownTargetAt,
         registrationStartAt: parsed.data.registrationStartAt,
@@ -121,6 +134,8 @@ export async function updateExamTypeAction(
         informationContent: parsed.data.informationContent,
       })
       .where(eq(schema.examTypes.id, examTypeId))
+
+    await upsertExamTypePackage(examTypeId, parsed.data)
 
     revalidateExamTypeRoutes()
     revalidatePath(`/admin/exam-types/${examTypeId}/edit`)
@@ -138,4 +153,88 @@ export async function updateExamTypeAction(
           : "Failed to update the exam type.",
     }
   }
+}
+
+async function upsertExamTypePackage(
+  examTypeId: number,
+  values: {
+    packageIsActive: boolean
+    packagePrice: number
+    packageDiscountPercent: number
+    packageDurationMonths: number
+    practiceQuotaPerMonth: number
+    quizQuotaPerMonth: number
+    tryoutQuotaPerMonth: number
+    aiExplanationQuotaPerMonth: number
+    premiumPracticesEnabled: boolean
+    premiumTryoutsEnabled: boolean
+    rankingEnabled: boolean
+  },
+) {
+  const [existingPackage] = await db
+    .select({ id: schema.examTypePackages.id })
+    .from(schema.examTypePackages)
+    .where(eq(schema.examTypePackages.examTypeId, examTypeId))
+    .limit(1)
+
+  const now = new Date()
+  const packagePayload = {
+    isActive: values.packageIsActive,
+    practiceQuotaPerMonth: values.practiceQuotaPerMonth,
+    quizQuotaPerMonth: values.quizQuotaPerMonth,
+    tryoutQuotaPerMonth: values.tryoutQuotaPerMonth,
+    aiExplanationQuotaPerMonth: values.aiExplanationQuotaPerMonth,
+    premiumPracticesEnabled: values.premiumPracticesEnabled,
+    premiumTryoutsEnabled: values.premiumTryoutsEnabled,
+    rankingEnabled: values.rankingEnabled,
+    updatedAt: now,
+  }
+
+  const packageId =
+    existingPackage?.id ??
+    (
+      await db
+        .insert(schema.examTypePackages)
+        .values({
+          examTypeId,
+          ...packagePayload,
+          createdAt: now,
+        })
+        .$returningId()
+    )[0].id
+
+  if (existingPackage) {
+    await db
+      .update(schema.examTypePackages)
+      .set(packagePayload)
+      .where(eq(schema.examTypePackages.id, packageId))
+  }
+
+  const [existingPrice] = await db
+    .select({ id: schema.examTypePackagePrices.id })
+    .from(schema.examTypePackagePrices)
+    .where(eq(schema.examTypePackagePrices.packageId, packageId))
+    .limit(1)
+
+  const pricePayload = {
+    durationMonths: values.packageDurationMonths,
+    price: values.packagePrice,
+    discountPercent: values.packageDiscountPercent,
+    isActive: values.packageIsActive,
+    updatedAt: now,
+  }
+
+  if (existingPrice) {
+    await db
+      .update(schema.examTypePackagePrices)
+      .set(pricePayload)
+      .where(eq(schema.examTypePackagePrices.id, existingPrice.id))
+    return
+  }
+
+  await db.insert(schema.examTypePackagePrices).values({
+    packageId,
+    ...pricePayload,
+    createdAt: now,
+  })
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { CopyIcon, MessageCircleIcon, TicketPercentIcon } from "lucide-react"
+import { CopyIcon, TicketPercentIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -72,9 +72,9 @@ export function ManualPaymentDialog({
     <Dialog open={Boolean(plan)} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[min(88vh,760px)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Pembayaran Manual {plan?.name}</DialogTitle>
+          <DialogTitle>Pembayaran {plan?.name}</DialogTitle>
           <DialogDescription>
-            Transfer melalui salah satu e-wallet, lalu konfirmasi ke admin melalui
+            Pilih salah satu metode pembayaran, lalu konfirmasi ke admin melalui
             WhatsApp.
           </DialogDescription>
         </DialogHeader>
@@ -84,45 +84,43 @@ export function ManualPaymentDialog({
             <div className="flex flex-col gap-5 pb-1">
               {!pendingPayment ? (
                 <div className="rounded-lg border bg-card p-4">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <div className="relative flex-1">
-                        <TicketPercentIcon
-                          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                          aria-hidden="true"
-                        />
-                        <Input
-                          id="manual-payment-voucher-code"
-                          value={voucherCode}
-                          onChange={(event) => onVoucherCodeChange(event.target.value)}
-                          placeholder="Masukkan Kode Voucher"
-                          aria-label="Kode Voucher"
-                          disabled={processing || voucherProcessing || Boolean(appliedVoucher)}
-                          className="h-10 pl-10 uppercase"
-                        />
-                      </div>
-                      {appliedVoucher ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={processing}
-                          className="h-10 shrink-0"
-                          onClick={onRemoveVoucher}
-                        >
-                          Hapus
-                        </Button>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="outline-primary"
-                          disabled={processing || voucherProcessing || !voucherCode.trim()}
-                          className="h-10 shrink-0"
-                          onClick={onApplyVoucher}
-                        >
-                          {voucherProcessing ? "Mengecek..." : "Gunakan"}
-                        </Button>
-                      )}
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <div className="relative flex-1">
+                      <TicketPercentIcon
+                        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                      <Input
+                        id="manual-payment-voucher-code"
+                        value={voucherCode}
+                        onChange={(event) => onVoucherCodeChange(event.target.value)}
+                        placeholder="Masukkan Kode Voucher"
+                        aria-label="Kode Voucher"
+                        disabled={processing || voucherProcessing || Boolean(appliedVoucher)}
+                        className="h-10 pl-10 uppercase"
+                      />
                     </div>
+                    {appliedVoucher ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={processing}
+                        className="h-10 shrink-0"
+                        onClick={onRemoveVoucher}
+                      >
+                        Hapus
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline-primary"
+                        disabled={processing || voucherProcessing || !voucherCode.trim()}
+                        className="h-10 shrink-0"
+                        onClick={onApplyVoucher}
+                      >
+                        {voucherProcessing ? "Mengecek..." : "Gunakan"}
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : null}
@@ -165,9 +163,7 @@ export function ManualPaymentDialog({
                 <Separator className="my-4" />
 
                 <div className="flex items-end justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-muted-foreground">Total Bayar</p>
-                  </div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Bayar</p>
                   <span className="text-2xl font-semibold tracking-tight">
                     {formatCurrencyIDR(amount)}
                   </span>
@@ -217,18 +213,6 @@ export function ManualPaymentDialog({
                   </div>
                 ))}
               </div>
-
-              <div className="rounded-lg border bg-card p-4 text-sm leading-6">
-                <p className="font-medium">Ketentuan Konfirmasi</p>
-                <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-muted-foreground">
-                  <li>Transfer sesuai nominal total bayar.</li>
-                  <li>
-                    Klik konfirmasi pembayaran, lalu lampirkan screenshot bukti transfer
-                    di WhatsApp.
-                  </li>
-                  <li>Akses paket aktif setelah admin memverifikasi pembayaran.</li>
-                </ul>
-              </div>
             </div>
           </ScrollArea>
         ) : null}
@@ -248,7 +232,6 @@ export function ManualPaymentDialog({
             disabled={processing}
             onClick={onConfirm}
           >
-            <MessageCircleIcon data-icon="inline-start" />
             {processing ? "Menyiapkan..." : "Konfirmasi Pembayaran"}
           </Button>
         </DialogFooter>

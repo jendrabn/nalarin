@@ -74,7 +74,7 @@ export function UserDetailPage({
 
   const roleBadge = getModelEnumBadgeMeta("userRole", user.role)
   const statusBadge = getModelEnumBadgeMeta("userStatus", user.status)
-  const planBadge = getModelEnumBadgeMeta("planCode", user.activePlanCode)
+  const activePackageLabel = user.activePackageName ?? "No active package"
   const genderBadge = user.gender ? getModelEnumBadgeMeta("gender", user.gender) : null
   const paymentBadge = user.latestPayment
     ? getModelEnumBadgeMeta("paymentStatus", user.latestPayment.status)
@@ -160,11 +160,13 @@ export function UserDetailPage({
                   }
                 />
                 <DetailItem
-                  label="Plan"
+                  label="Package"
                   value={
-                    <Badge variant="soft" className={planBadge.className}>
-                      {planBadge.label}
-                    </Badge>
+                    user.activePackageName ? (
+                      <Badge variant="soft">{activePackageLabel}</Badge>
+                    ) : (
+                      activePackageLabel
+                    )
                   }
                 />
                 <DetailItem label="Phone" value={user.phoneNumber ?? "-"} />
@@ -264,21 +266,19 @@ export function UserDetailPage({
             <CardHeader>
               <CardTitle>Subscription</CardTitle>
               <CardDescription>
-                The current plan is resolved from active subscriptions, not from the
+                The current package is resolved from active subscriptions, not from the
                 users table.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="soft" className={planBadge.className}>
-                  {planBadge.label}
-                </Badge>
+                <Badge variant="soft">{activePackageLabel}</Badge>
                 {subscriptionStatusBadge ? (
                   <Badge variant="soft" className={subscriptionStatusBadge.className}>
                     {subscriptionStatusBadge.label}
                   </Badge>
                 ) : (
-                  <Badge variant="soft">Free</Badge>
+                  <Badge variant="soft">No active subscription</Badge>
                 )}
                 {subscriptionSourceBadge ? (
                   <Badge variant="soft" className={subscriptionSourceBadge.className}>
@@ -311,7 +311,7 @@ export function UserDetailPage({
                         {subscriptionSourceBadge?.label}
                       </Badge>
                     ) : (
-                      "Free"
+                      "No active subscription"
                     )
                   }
                 />
@@ -326,11 +326,11 @@ export function UserDetailPage({
                     </p>
                     <dl className="grid gap-4 sm:grid-cols-2">
                       <DetailItem
-                        label="Plan"
+                        label="Package"
                         value={
-                          <Badge variant="soft" className={getModelEnumBadgeMeta("planCode", user.latestSubscription.planCode).className}>
-                            {getModelEnumBadgeMeta("planCode", user.latestSubscription.planCode).label}
-                          </Badge>
+                          user.latestSubscription.examTypeName ??
+                          user.latestSubscription.packageName ??
+                          "Package"
                         }
                       />
                       <DetailItem
@@ -416,14 +416,11 @@ export function UserDetailPage({
                       value={formatCurrencyIDR(user.latestPayment.amount)}
                     />
                     <DetailItem
-                      label="Plan"
+                      label="Package"
                       value={
-                        <Badge
-                          variant="soft"
-                          className={getModelEnumBadgeMeta("planCode", user.latestPayment.planCode).className}
-                        >
-                          {getModelEnumBadgeMeta("planCode", user.latestPayment.planCode).label}
-                        </Badge>
+                        user.latestPayment.examTypeName ??
+                        user.latestPayment.packageName ??
+                        "Package"
                       }
                     />
                     <DetailItem

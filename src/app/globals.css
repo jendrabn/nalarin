@@ -141,4 +141,41 @@
     margin-left: 0.125rem;
     color: var(--destructive);
   }
+
+  .pricing-card--pending {
+    border-color: color-mix(in oklch, var(--destructive) 72%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--destructive) 30%, transparent),
+      0 18px 42px -28px color-mix(in oklch, var(--destructive) 80%, transparent);
+    animation: pricing-card-pending-glow 5.2s ease-in-out infinite;
+  }
+
+  .pricing-card--pending:hover {
+    border-color: color-mix(in oklch, var(--destructive) 88%, transparent);
+  }
+}
+
+@keyframes pricing-card-pending-glow {
+  0%,
+  60%,
+  100% {
+    border-color: color-mix(in oklch, var(--destructive) 58%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--destructive) 26%, transparent),
+      0 18px 42px -28px color-mix(in oklch, var(--destructive) 70%, transparent);
+  }
+  12%,
+  26% {
+    border-color: color-mix(in oklch, var(--destructive) 88%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--destructive) 60%, transparent),
+      0 0 28px -8px color-mix(in oklch, var(--destructive) 66%, transparent),
+      0 22px 48px -28px color-mix(in oklch, var(--destructive) 90%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-card--pending {
+    animation: none;
+  }
 }

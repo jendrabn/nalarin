@@ -57,12 +57,43 @@ CREATE TABLE `email_verification_tokens` (
 	CONSTRAINT `email_verification_tokens_hash_uq` UNIQUE(`token_hash`)
 );
 --> statement-breakpoint
+CREATE TABLE `exam_type_package_prices` (
+	`id` int unsigned AUTO_INCREMENT NOT NULL,
+	`package_id` int unsigned NOT NULL,
+	`duration_months` int unsigned NOT NULL DEFAULT 1,
+	`price` bigint unsigned NOT NULL,
+	`discount_percent` int unsigned NOT NULL DEFAULT 0,
+	`is_active` boolean NOT NULL DEFAULT true,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `exam_type_package_prices_id` PRIMARY KEY(`id`),
+	CONSTRAINT `exam_type_package_prices_package_duration_uq` UNIQUE(`package_id`,`duration_months`)
+);
+--> statement-breakpoint
+CREATE TABLE `exam_type_packages` (
+	`id` int unsigned AUTO_INCREMENT NOT NULL,
+	`exam_type_id` int unsigned NOT NULL,
+	`is_active` boolean NOT NULL DEFAULT true,
+	`practice_quota_per_month` int NOT NULL DEFAULT -1,
+	`quiz_quota_per_month` int NOT NULL DEFAULT -1,
+	`tryout_quota_per_month` int NOT NULL DEFAULT -1,
+	`ai_explanation_quota_per_month` int NOT NULL DEFAULT -1,
+	`premium_practices_enabled` boolean NOT NULL DEFAULT true,
+	`premium_tryouts_enabled` boolean NOT NULL DEFAULT true,
+	`ranking_enabled` boolean NOT NULL DEFAULT true,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `exam_type_packages_id` PRIMARY KEY(`id`),
+	CONSTRAINT `exam_type_packages_exam_type_uq` UNIQUE(`exam_type_id`)
+);
+--> statement-breakpoint
 CREATE TABLE `exam_types` (
 	`id` int unsigned AUTO_INCREMENT NOT NULL,
 	`name` varchar(100) NOT NULL,
 	`slug` varchar(191) NOT NULL,
 	`description` text,
 	`logo_url` varchar(2048),
+	`cover_url` varchar(2048),
 	`countdown_title` varchar(255),
 	`countdown_target_at` timestamp,
 	`registration_start_at` timestamp,
@@ -80,6 +111,7 @@ CREATE TABLE `exam_types` (
 CREATE TABLE `monthly_usage` (
 	`id` int unsigned AUTO_INCREMENT NOT NULL,
 	`user_id` int unsigned NOT NULL,
+	`exam_type_id` int unsigned,
 	`period` date NOT NULL,
 	`practice_sessions_count` int unsigned NOT NULL DEFAULT 0,
 	`quiz_sessions_count` int unsigned NOT NULL DEFAULT 0,
@@ -88,7 +120,7 @@ CREATE TABLE `monthly_usage` (
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `monthly_usage_id` PRIMARY KEY(`id`),
-	CONSTRAINT `monthly_usage_user_period_uq` UNIQUE(`user_id`,`period`)
+	CONSTRAINT `monthly_usage_user_exam_period_uq` UNIQUE(`user_id`,`exam_type_id`,`period`)
 );
 --> statement-breakpoint
 CREATE TABLE `password_reset_tokens` (
@@ -107,7 +139,9 @@ CREATE TABLE `payments` (
 	`id` int unsigned AUTO_INCREMENT NOT NULL,
 	`user_id` int unsigned NOT NULL,
 	`subscription_id` int unsigned,
-	`plan_code` enum('free','pro','max') NOT NULL,
+	`exam_type_id` int unsigned,
+	`package_id` int unsigned,
+	`package_price_id` int unsigned,
 	`voucher_id` int unsigned,
 	`voucher_code_snapshot` varchar(64),
 	`voucher_name_snapshot` varchar(255),
@@ -126,11 +160,12 @@ CREATE TABLE `payments` (
 	`expired_at` timestamp,
 	`proof_url` varchar(2048),
 	`notes` text,
+	`package_snapshot` json,
+	`pricing_snapshot` json,
 	`raw_payload` json,
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `payments_id` PRIMARY KEY(`id`),
-	CONSTRAINT `payments_subscription_id_uq` UNIQUE(`subscription_id`),
 	CONSTRAINT `payments_gateway_order_id_uq` UNIQUE(`gateway_order_id`),
 	CONSTRAINT `payments_gateway_transaction_id_uq` UNIQUE(`gateway_transaction_id`)
 );
@@ -285,11 +320,15 @@ CREATE TABLE `subjects` (
 CREATE TABLE `subscriptions` (
 	`id` int unsigned AUTO_INCREMENT NOT NULL,
 	`user_id` int unsigned NOT NULL,
-	`plan_code` enum('free','pro','max') NOT NULL,
+	`exam_type_id` int unsigned,
+	`package_id` int unsigned,
+	`package_price_id` int unsigned,
 	`status` enum('active','expired','cancelled') NOT NULL,
 	`source` enum('midtrans','manual','admin_grant') NOT NULL,
 	`starts_at` timestamp NOT NULL,
 	`ends_at` timestamp NOT NULL,
+	`benefit_snapshot` json,
+	`pricing_snapshot` json,
 	`activated_by_admin_id` int unsigned,
 	`cancelled_by_admin_id` int unsigned,
 	`cancelled_at` timestamp,
@@ -555,10 +594,16 @@ ALTER TABLE `blog_posts` ADD CONSTRAINT `blog_posts_category_id_blog_categories_
 ALTER TABLE `blog_posts` ADD CONSTRAINT `blog_posts_author_id_users_id_fk` FOREIGN KEY (`author_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `email_change_tokens` ADD CONSTRAINT `email_change_tokens_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `email_verification_tokens` ADD CONSTRAINT `email_verification_tokens_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `exam_type_package_prices` ADD CONSTRAINT `exam_type_package_prices_package_id_exam_type_packages_id_fk` FOREIGN KEY (`package_id`) REFERENCES `exam_type_packages`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `exam_type_packages` ADD CONSTRAINT `exam_type_packages_exam_type_id_exam_types_id_fk` FOREIGN KEY (`exam_type_id`) REFERENCES `exam_types`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `monthly_usage` ADD CONSTRAINT `monthly_usage_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `monthly_usage` ADD CONSTRAINT `monthly_usage_exam_type_id_exam_types_id_fk` FOREIGN KEY (`exam_type_id`) REFERENCES `exam_types`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `password_reset_tokens` ADD CONSTRAINT `password_reset_tokens_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `payments` ADD CONSTRAINT `payments_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `payments` ADD CONSTRAINT `payments_subscription_id_subscriptions_id_fk` FOREIGN KEY (`subscription_id`) REFERENCES `subscriptions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `payments` ADD CONSTRAINT `payments_exam_type_id_exam_types_id_fk` FOREIGN KEY (`exam_type_id`) REFERENCES `exam_types`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `payments` ADD CONSTRAINT `payments_package_id_exam_type_packages_id_fk` FOREIGN KEY (`package_id`) REFERENCES `exam_type_packages`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `payments` ADD CONSTRAINT `payments_package_price_id_exam_type_package_prices_id_fk` FOREIGN KEY (`package_price_id`) REFERENCES `exam_type_package_prices`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `payments` ADD CONSTRAINT `payments_voucher_id_vouchers_id_fk` FOREIGN KEY (`voucher_id`) REFERENCES `vouchers`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `practice_answers` ADD CONSTRAINT `practice_answers_practice_session_id_practice_sessions_id_fk` FOREIGN KEY (`practice_session_id`) REFERENCES `practice_sessions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `practice_answers` ADD CONSTRAINT `practice_answers_practice_session_question_id_practice_session_questions_id_fk` FOREIGN KEY (`practice_session_question_id`) REFERENCES `practice_session_questions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -579,6 +624,9 @@ ALTER TABLE `questions` ADD CONSTRAINT `questions_topic_id_topics_id_fk` FOREIGN
 ALTER TABLE `questions` ADD CONSTRAINT `questions_created_by_users_id_fk` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `subjects` ADD CONSTRAINT `subjects_exam_type_id_exam_types_id_fk` FOREIGN KEY (`exam_type_id`) REFERENCES `exam_types`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `subscriptions` ADD CONSTRAINT `subscriptions_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `subscriptions` ADD CONSTRAINT `subscriptions_exam_type_id_exam_types_id_fk` FOREIGN KEY (`exam_type_id`) REFERENCES `exam_types`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `subscriptions` ADD CONSTRAINT `subscriptions_package_id_exam_type_packages_id_fk` FOREIGN KEY (`package_id`) REFERENCES `exam_type_packages`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `subscriptions` ADD CONSTRAINT `subscriptions_package_price_id_exam_type_package_prices_id_fk` FOREIGN KEY (`package_price_id`) REFERENCES `exam_type_package_prices`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `subscriptions` ADD CONSTRAINT `subscriptions_activated_by_admin_id_users_id_fk` FOREIGN KEY (`activated_by_admin_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `subscriptions` ADD CONSTRAINT `subscriptions_cancelled_by_admin_id_users_id_fk` FOREIGN KEY (`cancelled_by_admin_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `topics` ADD CONSTRAINT `topics_subject_id_subjects_id_fk` FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -610,11 +658,16 @@ CREATE INDEX `blog_posts_category_listing_idx` ON `blog_posts` (`category_id`,`s
 CREATE INDEX `blog_posts_author_listing_idx` ON `blog_posts` (`author_id`,`status`,`created_at`);--> statement-breakpoint
 CREATE INDEX `email_change_tokens_user_validity_idx` ON `email_change_tokens` (`user_id`,`invalidated_at`,`used_at`,`expires_at`);--> statement-breakpoint
 CREATE INDEX `email_verification_tokens_user_validity_idx` ON `email_verification_tokens` (`user_id`,`invalidated_at`,`used_at`,`expires_at`);--> statement-breakpoint
+CREATE INDEX `exam_type_package_prices_active_idx` ON `exam_type_package_prices` (`is_active`);--> statement-breakpoint
+CREATE INDEX `exam_type_packages_active_idx` ON `exam_type_packages` (`is_active`);--> statement-breakpoint
 CREATE INDEX `monthly_usage_period_idx` ON `monthly_usage` (`period`);--> statement-breakpoint
+CREATE INDEX `monthly_usage_exam_type_period_idx` ON `monthly_usage` (`exam_type_id`,`period`);--> statement-breakpoint
 CREATE INDEX `password_reset_tokens_user_validity_idx` ON `password_reset_tokens` (`user_id`,`invalidated_at`,`used_at`,`expires_at`);--> statement-breakpoint
+CREATE INDEX `payments_subscription_id_idx` ON `payments` (`subscription_id`);--> statement-breakpoint
 CREATE INDEX `payments_user_status_idx` ON `payments` (`user_id`,`status`,`created_at`);--> statement-breakpoint
 CREATE INDEX `payments_voucher_status_idx` ON `payments` (`voucher_id`,`status`,`created_at`);--> statement-breakpoint
 CREATE INDEX `payments_status_gateway_idx` ON `payments` (`status`,`gateway`,`created_at`);--> statement-breakpoint
+CREATE INDEX `payments_exam_type_status_idx` ON `payments` (`exam_type_id`,`status`,`created_at`);--> statement-breakpoint
 CREATE INDEX `practice_answers_session_grading_idx` ON `practice_answers` (`practice_session_id`,`grading_status`,`graded_at`);--> statement-breakpoint
 CREATE INDEX `practice_answers_grading_queue_idx` ON `practice_answers` (`grading_status`,`question_type`,`updated_at`);--> statement-breakpoint
 CREATE INDEX `practice_questions_question_idx` ON `practice_questions` (`question_id`);--> statement-breakpoint
@@ -635,8 +688,9 @@ CREATE INDEX `questions_status_difficulty_idx` ON `questions` (`status`,`difficu
 CREATE INDEX `questions_created_by_idx` ON `questions` (`created_by`);--> statement-breakpoint
 CREATE INDEX `subjects_exam_type_name_idx` ON `subjects` (`exam_type_id`,`name`);--> statement-breakpoint
 CREATE INDEX `subscriptions_user_status_ends_at_idx` ON `subscriptions` (`user_id`,`status`,`ends_at`);--> statement-breakpoint
+CREATE INDEX `subscriptions_user_exam_status_ends_at_idx` ON `subscriptions` (`user_id`,`exam_type_id`,`status`,`ends_at`);--> statement-breakpoint
 CREATE INDEX `subscriptions_status_ends_at_idx` ON `subscriptions` (`status`,`ends_at`);--> statement-breakpoint
-CREATE INDEX `subscriptions_plan_status_idx` ON `subscriptions` (`plan_code`,`status`);--> statement-breakpoint
+CREATE INDEX `subscriptions_exam_type_status_idx` ON `subscriptions` (`exam_type_id`,`status`);--> statement-breakpoint
 CREATE INDEX `topics_subject_name_idx` ON `topics` (`subject_id`,`name`);--> statement-breakpoint
 CREATE INDEX `tryout_answers_section_grading_idx` ON `tryout_answers` (`tryout_section_session_id`,`grading_status`,`graded_at`);--> statement-breakpoint
 CREATE INDEX `tryout_answers_session_grading_idx` ON `tryout_answers` (`tryout_session_id`,`grading_status`,`updated_at`);--> statement-breakpoint

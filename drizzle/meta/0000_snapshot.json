@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "bf4d128f-2ed0-4187-b429-30a67ba3182b",
+  "id": "c1861c3c-4c80-458d-be9d-91fb1a7ef338",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "blog_categories": {
@@ -487,6 +487,256 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
+    "exam_type_package_prices": {
+      "name": "exam_type_package_prices",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "package_id": {
+          "name": "package_id",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "duration_months": {
+          "name": "duration_months",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "price": {
+          "name": "price",
+          "type": "bigint unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "discount_percent": {
+          "name": "discount_percent",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "exam_type_package_prices_package_duration_uq": {
+          "name": "exam_type_package_prices_package_duration_uq",
+          "columns": [
+            "package_id",
+            "duration_months"
+          ],
+          "isUnique": true
+        },
+        "exam_type_package_prices_active_idx": {
+          "name": "exam_type_package_prices_active_idx",
+          "columns": [
+            "is_active"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "exam_type_package_prices_package_id_exam_type_packages_id_fk": {
+          "name": "exam_type_package_prices_package_id_exam_type_packages_id_fk",
+          "tableFrom": "exam_type_package_prices",
+          "tableTo": "exam_type_packages",
+          "columnsFrom": [
+            "package_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "exam_type_package_prices_id": {
+          "name": "exam_type_package_prices_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "exam_type_packages": {
+      "name": "exam_type_packages",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "exam_type_id": {
+          "name": "exam_type_id",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "practice_quota_per_month": {
+          "name": "practice_quota_per_month",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": -1
+        },
+        "quiz_quota_per_month": {
+          "name": "quiz_quota_per_month",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": -1
+        },
+        "tryout_quota_per_month": {
+          "name": "tryout_quota_per_month",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": -1
+        },
+        "ai_explanation_quota_per_month": {
+          "name": "ai_explanation_quota_per_month",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": -1
+        },
+        "premium_practices_enabled": {
+          "name": "premium_practices_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "premium_tryouts_enabled": {
+          "name": "premium_tryouts_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "ranking_enabled": {
+          "name": "ranking_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "exam_type_packages_exam_type_uq": {
+          "name": "exam_type_packages_exam_type_uq",
+          "columns": [
+            "exam_type_id"
+          ],
+          "isUnique": true
+        },
+        "exam_type_packages_active_idx": {
+          "name": "exam_type_packages_active_idx",
+          "columns": [
+            "is_active"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "exam_type_packages_exam_type_id_exam_types_id_fk": {
+          "name": "exam_type_packages_exam_type_id_exam_types_id_fk",
+          "tableFrom": "exam_type_packages",
+          "tableTo": "exam_types",
+          "columnsFrom": [
+            "exam_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "exam_type_packages_id": {
+          "name": "exam_type_packages_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
     "exam_types": {
       "name": "exam_types",
       "columns": {
@@ -520,6 +770,13 @@
         },
         "logo_url": {
           "name": "logo_url",
+          "type": "varchar(2048)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "cover_url": {
+          "name": "cover_url",
           "type": "varchar(2048)",
           "primaryKey": false,
           "notNull": false,
@@ -637,6 +894,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "exam_type_id": {
+          "name": "exam_type_id",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "period": {
           "name": "period",
           "type": "date",
@@ -695,10 +959,11 @@
         }
       },
       "indexes": {
-        "monthly_usage_user_period_uq": {
-          "name": "monthly_usage_user_period_uq",
+        "monthly_usage_user_exam_period_uq": {
+          "name": "monthly_usage_user_exam_period_uq",
           "columns": [
             "user_id",
+            "exam_type_id",
             "period"
           ],
           "isUnique": true
@@ -706,6 +971,14 @@
         "monthly_usage_period_idx": {
           "name": "monthly_usage_period_idx",
           "columns": [
+            "period"
+          ],
+          "isUnique": false
+        },
+        "monthly_usage_exam_type_period_idx": {
+          "name": "monthly_usage_exam_type_period_idx",
+          "columns": [
+            "exam_type_id",
             "period"
           ],
           "isUnique": false
@@ -718,6 +991,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "monthly_usage_exam_type_id_exam_types_id_fk": {
+          "name": "monthly_usage_exam_type_id_exam_types_id_fk",
+          "tableFrom": "monthly_usage",
+          "tableTo": "exam_types",
+          "columnsFrom": [
+            "exam_type_id"
           ],
           "columnsTo": [
             "id"
@@ -860,11 +1146,25 @@
           "notNull": false,
           "autoincrement": false
         },
-        "plan_code": {
-          "name": "plan_code",
-          "type": "enum('free','pro','max')",
+        "exam_type_id": {
+          "name": "exam_type_id",
+          "type": "int unsigned",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "package_id": {
+          "name": "package_id",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "package_price_id": {
+          "name": "package_price_id",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "voucher_id": {
@@ -994,6 +1294,20 @@
           "notNull": false,
           "autoincrement": false
         },
+        "package_snapshot": {
+          "name": "package_snapshot",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "pricing_snapshot": {
+          "name": "pricing_snapshot",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "raw_payload": {
           "name": "raw_payload",
           "type": "json",
@@ -1020,12 +1334,12 @@
         }
       },
       "indexes": {
-        "payments_subscription_id_uq": {
-          "name": "payments_subscription_id_uq",
+        "payments_subscription_id_idx": {
+          "name": "payments_subscription_id_idx",
           "columns": [
             "subscription_id"
           ],
-          "isUnique": true
+          "isUnique": false
         },
         "payments_gateway_order_id_uq": {
           "name": "payments_gateway_order_id_uq",
@@ -1067,6 +1381,15 @@
             "created_at"
           ],
           "isUnique": false
+        },
+        "payments_exam_type_status_idx": {
+          "name": "payments_exam_type_status_idx",
+          "columns": [
+            "exam_type_id",
+            "status",
+            "created_at"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -1089,6 +1412,45 @@
           "tableTo": "subscriptions",
           "columnsFrom": [
             "subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "payments_exam_type_id_exam_types_id_fk": {
+          "name": "payments_exam_type_id_exam_types_id_fk",
+          "tableFrom": "payments",
+          "tableTo": "exam_types",
+          "columnsFrom": [
+            "exam_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "payments_package_id_exam_type_packages_id_fk": {
+          "name": "payments_package_id_exam_type_packages_id_fk",
+          "tableFrom": "payments",
+          "tableTo": "exam_type_packages",
+          "columnsFrom": [
+            "package_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "payments_package_price_id_exam_type_package_prices_id_fk": {
+          "name": "payments_package_price_id_exam_type_package_prices_id_fk",
+          "tableFrom": "payments",
+          "tableTo": "exam_type_package_prices",
+          "columnsFrom": [
+            "package_price_id"
           ],
           "columnsTo": [
             "id"
@@ -2520,11 +2882,25 @@
           "notNull": true,
           "autoincrement": false
         },
-        "plan_code": {
-          "name": "plan_code",
-          "type": "enum('free','pro','max')",
+        "exam_type_id": {
+          "name": "exam_type_id",
+          "type": "int unsigned",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "package_id": {
+          "name": "package_id",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "package_price_id": {
+          "name": "package_price_id",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "status": {
@@ -2553,6 +2929,20 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "benefit_snapshot": {
+          "name": "benefit_snapshot",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "pricing_snapshot": {
+          "name": "pricing_snapshot",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "activated_by_admin_id": {
@@ -2611,6 +3001,16 @@
           ],
           "isUnique": false
         },
+        "subscriptions_user_exam_status_ends_at_idx": {
+          "name": "subscriptions_user_exam_status_ends_at_idx",
+          "columns": [
+            "user_id",
+            "exam_type_id",
+            "status",
+            "ends_at"
+          ],
+          "isUnique": false
+        },
         "subscriptions_status_ends_at_idx": {
           "name": "subscriptions_status_ends_at_idx",
           "columns": [
@@ -2619,10 +3019,10 @@
           ],
           "isUnique": false
         },
-        "subscriptions_plan_status_idx": {
-          "name": "subscriptions_plan_status_idx",
+        "subscriptions_exam_type_status_idx": {
+          "name": "subscriptions_exam_type_status_idx",
           "columns": [
-            "plan_code",
+            "exam_type_id",
             "status"
           ],
           "isUnique": false
@@ -2635,6 +3035,45 @@
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "subscriptions_exam_type_id_exam_types_id_fk": {
+          "name": "subscriptions_exam_type_id_exam_types_id_fk",
+          "tableFrom": "subscriptions",
+          "tableTo": "exam_types",
+          "columnsFrom": [
+            "exam_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "subscriptions_package_id_exam_type_packages_id_fk": {
+          "name": "subscriptions_package_id_exam_type_packages_id_fk",
+          "tableFrom": "subscriptions",
+          "tableTo": "exam_type_packages",
+          "columnsFrom": [
+            "package_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "subscriptions_package_price_id_exam_type_package_prices_id_fk": {
+          "name": "subscriptions_package_price_id_exam_type_package_prices_id_fk",
+          "tableFrom": "subscriptions",
+          "tableTo": "exam_type_package_prices",
+          "columnsFrom": [
+            "package_price_id"
           ],
           "columnsTo": [
             "id"

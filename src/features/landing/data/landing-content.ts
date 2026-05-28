@@ -18,7 +18,7 @@ export const navLinks = [
   { label: "Latihan", href: "/practices" },
   { label: "Tryout", href: "/tryouts" },
   { label: "Progres", href: "/progress" },
-  { label: "Premium", href: "/pricing" },
+  { label: "Paket Belajar", href: "/pricing" },
   { label: "Blog", href: "/blog" },
 ];
 

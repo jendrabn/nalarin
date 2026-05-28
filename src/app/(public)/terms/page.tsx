@@ -68,10 +68,10 @@ const termsSections = [
     id: "pembayaran",
     title: "Pembayaran dan Pembatalan",
     items: [
-      "Pembayaran dapat diproses melalui Midtrans atau metode manual yang diverifikasi oleh admin, tergantung konfigurasi layanan.",
+      "Pembayaran dapat diproses melalui metode pembayaran yang tersedia dan dapat diverifikasi oleh admin, tergantung konfigurasi layanan.",
       "Sistem dapat mencegah lebih dari satu payment pending aktif pada waktu yang sama agar transaksi tidak ganda.",
-      "Payment pending dapat dibatalkan sebelum berhasil dibayar. Jika payment yang sudah dibatalkan kemudian menerima notifikasi sukses dari payment gateway, Nalarin.id dapat mengabaikan notifikasi tersebut untuk mencegah subscription ganda.",
-      "Subscription aktif dibuat setelah pembayaran sukses diterima dari payment gateway atau setelah pembayaran manual disetujui admin.",
+      "Payment pending dapat dibatalkan sebelum berhasil dibayar. Jika payment yang sudah dibatalkan kemudian menerima notifikasi sukses dari penyedia pembayaran, Nalarin.id dapat mengabaikan notifikasi tersebut untuk mencegah subscription ganda.",
+      "Subscription aktif dibuat setelah pembayaran sukses diterima atau setelah pembayaran disetujui admin.",
       "Kebijakan pengembalian dana, jika tersedia, ditentukan berdasarkan kondisi transaksi, status akses, dan hasil verifikasi internal Nalarin.id.",
     ],
   },
@@ -98,7 +98,7 @@ const termsSections = [
     id: "batasan",
     title: "Batasan Tanggung Jawab",
     items: [
-      "Nalarin.id berupaya menjaga layanan tetap tersedia dan akurat, tetapi gangguan teknis, maintenance, perubahan provider, kendala payment gateway, atau kendala jaringan dapat terjadi.",
+      "Nalarin.id berupaya menjaga layanan tetap tersedia dan akurat, tetapi gangguan teknis, maintenance, perubahan provider, kendala pembayaran, atau kendala jaringan dapat terjadi.",
       "Nalarin.id tidak bertanggung jawab atas kerugian tidak langsung yang timbul dari penggunaan layanan, termasuk keputusan belajar, hasil seleksi, gangguan perangkat, atau kesalahan penggunaan oleh pengguna.",
       "Ketentuan ini dapat diperbarui dari waktu ke waktu. Perubahan penting akan diinformasikan melalui kanal yang wajar, dan penggunaan layanan setelah perubahan berarti pengguna menyetujui versi terbaru.",
     ],

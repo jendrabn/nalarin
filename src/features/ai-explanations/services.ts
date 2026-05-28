@@ -3,9 +3,10 @@ import "server-only"
 import { and, eq, gt, sql } from "drizzle-orm"
 
 import { env } from "@/config/env"
-import { PLAN_CONFIG, type PlanCode } from "@/config/plans"
 import { db, schema } from "@/db"
+import { getActiveExamTypeEntitlement } from "@/features/premium/access"
 import { isFeatureReleased } from "@/features/tryouts/utils/status"
+import { isUnlimitedQuota } from "@/lib/billing"
 
 import type {
   AiExplanationContext,
@@ -61,35 +62,43 @@ const BASE_REQUIRED_SECTION_TITLES = [
 ]
 
 export async function userCanAccessAiExplanation(userId: number) {
-  const planCode = await getActivePlanCode(userId)
+  const now = new Date()
+  const [subscription] = await db
+    .select({ examTypeId: schema.subscriptions.examTypeId })
+    .from(schema.subscriptions)
+    .where(
+      and(
+        eq(schema.subscriptions.userId, userId),
+        eq(schema.subscriptions.status, "active"),
+        gt(schema.subscriptions.endsAt, now),
+      ),
+    )
+    .limit(1)
 
-  return canAccessAiExplanationForPlan(userId, planCode)
+  return Boolean(subscription?.examTypeId)
 }
 
-export async function canAccessAiExplanationForPlan(userId: number, planCode: PlanCode) {
-  const limit = getAiExplanationMonthlyLimit(planCode)
+export async function canAccessAiExplanationForExamType(
+  userId: number,
+  examTypeId: number,
+) {
+  const entitlement = await getActiveExamTypeEntitlement(userId, examTypeId)
+  const limit = entitlement?.aiExplanationQuotaPerMonth ?? 0
 
-  if (limit === null) {
+  if (!entitlement) {
+    return false
+  }
+
+  if (isUnlimitedQuota(limit)) {
     return true
   }
 
-  const used = await getAiExplanationUsageCount(userId)
+  const used = await getAiExplanationUsageCount(userId, examTypeId)
 
   return used < limit
 }
 
 export async function generateAiExplanation(input: AiExplanationRequest) {
-  const planCode = await getActivePlanCode(input.userId)
-  const access = await getAiExplanationUsageState(input.userId, planCode)
-
-  if (!access.enabled) {
-    return {
-      success: false,
-      status: 403,
-      message: buildAiExplanationLimitMessage(planCode, access.used, access.limit),
-    } as const
-  }
-
   const context =
     input.sessionType === "practice"
       ? await getPracticeAiExplanationContext(input)
@@ -103,7 +112,31 @@ export async function generateAiExplanation(input: AiExplanationRequest) {
     } as const
   }
 
-  const reservation = await reserveAiExplanationUsage(input.userId, planCode)
+  const entitlement = await getActiveExamTypeEntitlement(input.userId, context.examTypeId)
+  const access = await getAiExplanationUsageState(
+    input.userId,
+    context.examTypeId,
+    entitlement?.aiExplanationQuotaPerMonth ?? 0,
+  )
+
+  if (!entitlement || !access.enabled) {
+    return {
+      success: false,
+      status: 403,
+      message: buildAiExplanationLimitMessage(
+        context.examTypeName,
+        access.used,
+        access.limit,
+      ),
+    } as const
+  }
+
+  const reservation = await reserveAiExplanationUsage(
+    input.userId,
+    context.examTypeId,
+    access.limit,
+    context.examTypeName,
+  )
 
   if (!reservation.success) {
     return {
@@ -122,30 +155,9 @@ export async function generateAiExplanation(input: AiExplanationRequest) {
       html,
     } as const
   } catch (error) {
-    await releaseAiExplanationUsage(input.userId, reservation.period)
+    await releaseAiExplanationUsage(input.userId, context.examTypeId, reservation.period)
     throw error
   }
-}
-
-async function getActivePlanCode(userId: number): Promise<PlanCode> {
-  const now = new Date()
-  const [subscription] = await db
-    .select({ planCode: schema.subscriptions.planCode })
-    .from(schema.subscriptions)
-    .where(
-      and(
-        eq(schema.subscriptions.userId, userId),
-        eq(schema.subscriptions.status, "active"),
-        gt(schema.subscriptions.endsAt, now),
-      ),
-    )
-    .limit(1)
-
-  return subscription?.planCode ?? "free"
-}
-
-function getAiExplanationMonthlyLimit(planCode: PlanCode) {
-  return PLAN_CONFIG[planCode].limits.aiExplanationsPerMonth
 }
 
 function getMonthlyUsagePeriod(date = new Date()) {
@@ -155,34 +167,46 @@ function getMonthlyUsagePeriod(date = new Date()) {
   return `${year}-${month}-01`
 }
 
-async function getAiExplanationUsageState(userId: number, planCode: PlanCode) {
-  const limit = getAiExplanationMonthlyLimit(planCode)
-  const used = await getAiExplanationUsageCount(userId)
+async function getAiExplanationUsageState(
+  userId: number,
+  examTypeId: number,
+  limit: number,
+) {
+  const used = await getAiExplanationUsageCount(userId, examTypeId)
 
   return {
-    enabled: limit === null || used < limit,
+    enabled: isUnlimitedQuota(limit) || used < limit,
     limit,
     used,
   }
 }
 
-async function getAiExplanationUsageCount(userId: number) {
+async function getAiExplanationUsageCount(userId: number, examTypeId: number) {
   const period = getMonthlyUsagePeriod(new Date())
   const [usage] = await db
     .select({
       aiExplanationSessionsCount: schema.monthlyUsage.aiExplanationSessionsCount,
     })
     .from(schema.monthlyUsage)
-    .where(and(eq(schema.monthlyUsage.userId, userId), eq(schema.monthlyUsage.period, period)))
+    .where(
+      and(
+        eq(schema.monthlyUsage.userId, userId),
+        eq(schema.monthlyUsage.examTypeId, examTypeId),
+        eq(schema.monthlyUsage.period, period),
+      ),
+    )
     .limit(1)
 
   return usage?.aiExplanationSessionsCount ?? 0
 }
 
-async function reserveAiExplanationUsage(userId: number, planCode: PlanCode) {
-  const limit = getAiExplanationMonthlyLimit(planCode)
-
-  if (limit === null) {
+async function reserveAiExplanationUsage(
+  userId: number,
+  examTypeId: number,
+  limit: number,
+  examTypeName: string,
+) {
+  if (isUnlimitedQuota(limit)) {
     return { success: true as const, period: null as string | null }
   }
 
@@ -193,6 +217,7 @@ async function reserveAiExplanationUsage(userId: number, planCode: PlanCode) {
       .insert(schema.monthlyUsage)
       .values({
         userId,
+        examTypeId,
         period,
         practiceSessionsCount: 0,
         quizSessionsCount: 0,
@@ -210,7 +235,13 @@ async function reserveAiExplanationUsage(userId: number, planCode: PlanCode) {
         aiExplanationSessionsCount: schema.monthlyUsage.aiExplanationSessionsCount,
       })
       .from(schema.monthlyUsage)
-      .where(and(eq(schema.monthlyUsage.userId, userId), eq(schema.monthlyUsage.period, period)))
+      .where(
+        and(
+          eq(schema.monthlyUsage.userId, userId),
+          eq(schema.monthlyUsage.examTypeId, examTypeId),
+          eq(schema.monthlyUsage.period, period),
+        ),
+      )
       .limit(1)
       .for("update")
 
@@ -224,7 +255,13 @@ async function reserveAiExplanationUsage(userId: number, planCode: PlanCode) {
         aiExplanationSessionsCount: sql`${schema.monthlyUsage.aiExplanationSessionsCount} + 1`,
         updatedAt: now,
       })
-      .where(and(eq(schema.monthlyUsage.userId, userId), eq(schema.monthlyUsage.period, period)))
+      .where(
+        and(
+          eq(schema.monthlyUsage.userId, userId),
+          eq(schema.monthlyUsage.examTypeId, examTypeId),
+          eq(schema.monthlyUsage.period, period),
+        ),
+      )
 
     return { success: true as const, period }
   })
@@ -232,14 +269,18 @@ async function reserveAiExplanationUsage(userId: number, planCode: PlanCode) {
   if (!result) {
     return {
       success: false as const,
-      message: buildAiExplanationLimitMessage(planCode, limit, limit),
+      message: buildAiExplanationLimitMessage(examTypeName, limit, limit),
     }
   }
 
   return result
 }
 
-async function releaseAiExplanationUsage(userId: number, period: string | null) {
+async function releaseAiExplanationUsage(
+  userId: number,
+  examTypeId: number,
+  period: string | null,
+) {
   if (!period) {
     return
   }
@@ -249,22 +290,27 @@ async function releaseAiExplanationUsage(userId: number, period: string | null) 
     .set({
       aiExplanationSessionsCount: sql`GREATEST(${schema.monthlyUsage.aiExplanationSessionsCount} - 1, 0)`,
     })
-    .where(and(eq(schema.monthlyUsage.userId, userId), eq(schema.monthlyUsage.period, period)))
+    .where(
+      and(
+        eq(schema.monthlyUsage.userId, userId),
+        eq(schema.monthlyUsage.examTypeId, examTypeId),
+        eq(schema.monthlyUsage.period, period),
+      ),
+    )
 }
 
 function buildAiExplanationLimitMessage(
-  planCode: PlanCode,
+  examTypeName: string,
   used: number,
-  limit: number | null,
+  limit: number,
 ) {
-  if (limit === null) {
+  if (isUnlimitedQuota(limit)) {
     return "Pembahasan AI tersedia tanpa batas untuk paket ini."
   }
 
-  const planName = PLAN_CONFIG[planCode].name
   const quotaText = `${used}/${limit}`
 
-  return `Limit Pembahasan AI bulan ini sudah habis (${quotaText}). Paket ${planName} tetap menyediakan pembahasan biasa, atau kamu bisa upgrade paket untuk limit yang lebih besar.`
+  return `Limit Pembahasan AI ${examTypeName} bulan ini sudah habis (${quotaText}). Pembahasan biasa tetap tersedia, atau kamu bisa memperpanjang paket untuk limit baru.`
 }
 
 async function getPracticeAiExplanationContext({
@@ -275,6 +321,7 @@ async function getPracticeAiExplanationContext({
   const [row] = await db
     .select({
       mode: schema.practiceSessions.mode,
+      examTypeId: schema.examTypes.id,
       sessionStatus: schema.practiceSessions.status,
       examTypeName: schema.examTypes.name,
       subjectName: schema.subjects.name,
@@ -330,6 +377,7 @@ async function getPracticeAiExplanationContext({
 
   return {
     examTypeName: row.examTypeName,
+    examTypeId: row.examTypeId,
     subjectName: row.subjectName,
     topicName: row.topicName ?? null,
     question: normalizeQuestionSnapshot(row.questionSnapshot),
@@ -357,6 +405,7 @@ async function getTryoutAiExplanationContext({
   const [row] = await db
     .select({
       sessionStatus: schema.tryoutSessions.status,
+      examTypeId: schema.examTypes.id,
       showResultAfterSubmit: schema.tryouts.showResultAfterSubmit,
       resultReleaseAt: schema.tryouts.resultReleaseAt,
       examTypeName: schema.examTypes.name,
@@ -427,6 +476,7 @@ async function getTryoutAiExplanationContext({
 
   return {
     examTypeName: row.examTypeName,
+    examTypeId: row.examTypeId,
     subjectName: row.subjectName,
     topicName: row.topicName ?? null,
     question: normalizeQuestionSnapshot(row.questionSnapshot),

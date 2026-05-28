@@ -8,13 +8,11 @@ import { db, schema } from "@/db"
 import {
   contentStatusValues,
   paymentGatewayValues,
-  planCodeValues,
   sessionStatusValues,
 } from "@/db/schema"
 
 import { formatMonthKey, getMonthBuckets } from "../utils/date"
 
-type PlanCode = (typeof planCodeValues)[number]
 type PaymentGateway = (typeof paymentGatewayValues)[number]
 type SessionStatus = (typeof sessionStatusValues)[number]
 type ContentStatus = (typeof contentStatusValues)[number]
@@ -29,10 +27,10 @@ export type AdminDashboardData = {
       suspended: number
     }
     subscriptions: {
-      free: number
-      pro: number
-      max: number
-      activePaid: number
+      freeUsers: number
+      subscribedUsers: number
+      activeSubscriptions: number
+      activeExamTypes: number
     }
     payments: {
       pending: number
@@ -106,7 +104,7 @@ export type AdminDashboardData = {
       manual: number
     }>
     subscriptionMix: Array<{
-      planCode: PlanCode
+      key: string
       label: string
       value: number
     }>
@@ -204,6 +202,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   const [
     userSummaryRows,
     subscriptionRows,
+    activeSubscriberRows,
     paymentSummaryRows,
     revenueRows,
     usageRows,
@@ -226,12 +225,20 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       .from(schema.users),
     db
       .select({
-        planCode: schema.subscriptions.planCode,
+        examTypeId: schema.subscriptions.examTypeId,
+        examTypeName: schema.examTypes.name,
         count: sql<number>`count(${schema.subscriptions.id})`,
       })
       .from(schema.subscriptions)
+      .leftJoin(schema.examTypes, eq(schema.subscriptions.examTypeId, schema.examTypes.id))
       .where(and(eq(schema.subscriptions.status, "active"), gte(schema.subscriptions.endsAt, new Date())))
-      .groupBy(schema.subscriptions.planCode),
+      .groupBy(schema.subscriptions.examTypeId, schema.examTypes.name),
+    db
+      .select({
+        count: sql<number>`count(distinct ${schema.subscriptions.userId})`,
+      })
+      .from(schema.subscriptions)
+      .where(and(eq(schema.subscriptions.status, "active"), gte(schema.subscriptions.endsAt, new Date()))),
     db
       .select({
         pending: sql<number>`coalesce(sum(case when ${schema.payments.status} = 'pending' then 1 else 0 end), 0)`,
@@ -346,19 +353,23 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   ])
 
   const userSummary = userSummaryRows[0]
-  const subscriptionCounts = new Map(
-    subscriptionRows.map((row) => [row.planCode, toNumber(row.count)] as const),
-  )
-  const totalActiveSubscriptions = Array.from(subscriptionCounts.values()).reduce(
-    (sum, value) => sum + value,
+  const subscriptionMix = subscriptionRows
+    .filter((row) => row.examTypeId !== null)
+    .map((row) => ({
+      key: `exam-${row.examTypeId}`,
+      label: row.examTypeName ?? "Unknown exam type",
+      value: toNumber(row.count),
+    }))
+    .sort((a, b) => b.value - a.value)
+
+  const totalActiveSubscriptions = subscriptionMix.reduce(
+    (sum, item) => sum + item.value,
     0,
   )
 
   const usersTotal = toNumber(userSummary?.total)
-  const free = Math.max(usersTotal - totalActiveSubscriptions, 0)
-  const pro = toNumber(subscriptionCounts.get("pro"))
-  const max = toNumber(subscriptionCounts.get("max"))
-  const activePaid = pro + max
+  const subscribedUsers = toNumber(activeSubscriberRows[0]?.count)
+  const freeUsers = Math.max(usersTotal - subscribedUsers, 0)
 
   const paymentSummary = paymentSummaryRows[0]
   const revenueCounts = new Map<string, ReturnType<typeof createRevenueMap>>()
@@ -507,10 +518,10 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         suspended: getRowCount(userSummary, "suspended"),
       },
       subscriptions: {
-        free,
-        pro,
-        max,
-        activePaid,
+        freeUsers,
+        subscribedUsers,
+        activeSubscriptions: totalActiveSubscriptions,
+        activeExamTypes: subscriptionMix.length,
       },
       payments: {
         pending: getRowCount(paymentSummary, "pending"),
@@ -575,11 +586,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         cancelled: row.cancelled,
       })),
       revenue,
-      subscriptionMix: [
-        { planCode: "free", label: "Free", value: free },
-        { planCode: "pro", label: "Pro", value: pro },
-        { planCode: "max", label: "Max", value: max },
-      ],
+      subscriptionMix,
       questionGrowth,
       completionRate,
     },

@@ -22,6 +22,7 @@ export type AiExplanationAnswerContext = {
 }
 
 export type AiExplanationContext = {
+  examTypeId: number
   examTypeName: string
   subjectName: string
   topicName: string | null

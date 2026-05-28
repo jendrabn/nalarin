@@ -1,12 +1,10 @@
 import { z } from "zod"
 
-export const examTypeFormSchema = z.object({
-  name: z.string().trim().min(2, "Exam type name is required.").max(100, "Exam type name is too long."),
-  description: z.string().trim().max(1000, "Description is too long."),
-  logoUrl: z
+const uploadableUrlSchema = (label: string) =>
+  z
     .string()
     .trim()
-    .max(2048, "Logo URL is too long.")
+    .max(2048, `${label} URL is too long.`)
     .refine(
       (value) =>
         value === "" ||
@@ -14,8 +12,33 @@ export const examTypeFormSchema = z.object({
         value.startsWith("/uploads/") ||
         value.startsWith("https://") ||
         value.startsWith("http://"),
-      "Logo must be an uploaded file or a valid URL.",
-    ),
+      `${label} must be an uploaded file or a valid URL.`,
+    )
+
+export const examTypeFormSchema = z.object({
+  name: z.string().trim().min(2, "Exam type name is required.").max(100, "Exam type name is too long."),
+  description: z.string().trim().max(1000, "Description is too long."),
+  logoUrl: uploadableUrlSchema("Logo"),
+  coverUrl: uploadableUrlSchema("Cover"),
+  packageIsActive: z.boolean(),
+  packagePrice: z.number().int().min(0, "Price must be zero or more."),
+  packageDiscountPercent: z
+    .number()
+    .int()
+    .min(0, "Discount cannot be below 0%.")
+    .max(100, "Discount cannot exceed 100%."),
+  packageDurationMonths: z
+    .number()
+    .int()
+    .min(1, "Duration must be at least 1 month.")
+    .max(120, "Duration is too long."),
+  practiceQuotaPerMonth: z.number().int().min(-1, "Use -1 for unlimited or zero and above."),
+  quizQuotaPerMonth: z.number().int().min(-1, "Use -1 for unlimited or zero and above."),
+  tryoutQuotaPerMonth: z.number().int().min(-1, "Use -1 for unlimited or zero and above."),
+  aiExplanationQuotaPerMonth: z.number().int().min(-1, "Use -1 for unlimited or zero and above."),
+  premiumPracticesEnabled: z.boolean(),
+  premiumTryoutsEnabled: z.boolean(),
+  rankingEnabled: z.boolean(),
   countdownTitle: z.string().trim().max(255, "Countdown title is too long."),
   countdownTargetAt: z.string().trim().max(32, "Countdown target is invalid."),
   registrationStartAt: z.string().trim().max(32, "Registration start is invalid."),

@@ -1,55 +1,54 @@
-import { PLAN_CONFIG, type PlanCode } from "@/config/plans"
 import { paymentStatusValues } from "@/db/schema"
 
 export type PaymentStatus = (typeof paymentStatusValues)[number]
 
-const PLAN_RANK: Record<PlanCode, number> = {
-  free: 0,
-  pro: 1,
-  max: 2,
+export type PackageBenefitSnapshot = {
+  examTypeId: number
+  examTypeName: string
+  examTypeSlug: string
+  packageId: number
+  packagePriceId: number
+  durationMonths: number
+  practiceQuotaPerMonth: number
+  quizQuotaPerMonth: number
+  tryoutQuotaPerMonth: number
+  aiExplanationQuotaPerMonth: number
+  premiumPracticesEnabled: boolean
+  premiumTryoutsEnabled: boolean
+  rankingEnabled: boolean
 }
 
-export function getPlanRank(planCode: PlanCode) {
-  return PLAN_RANK[planCode]
+export type PackagePricingSnapshot = {
+  price: number
+  discountPercent: number
+  packageDiscountAmount: number
+  packageFinalPrice: number
 }
 
-export function getPlanDurationDays(planCode: PlanCode) {
-  return PLAN_CONFIG[planCode].durationDays ?? 0
-}
-
-export function isPaidPlanCode(planCode: PlanCode) {
-  return planCode !== "free"
-}
-
-export function getPlanBasePrice(planCode: PlanCode) {
-  return PLAN_CONFIG[planCode].price
-}
-
-export function getPlanDiscountAmount(planCode: PlanCode) {
-  const plan = PLAN_CONFIG[planCode]
-
-  if (plan.discountPercent <= 0) {
+export function getPackageDiscountAmount(price: number, discountPercent: number) {
+  if (discountPercent <= 0) {
     return 0
   }
 
-  return Math.round((plan.price * plan.discountPercent) / 100)
+  return Math.min(Math.round((price * discountPercent) / 100), price)
 }
 
-export function getPlanFinalPrice(planCode: PlanCode) {
-  return Math.max(getPlanBasePrice(planCode) - getPlanDiscountAmount(planCode), 0)
+export function getPackageFinalPrice(price: number, discountPercent: number) {
+  return Math.max(price - getPackageDiscountAmount(price, discountPercent), 0)
 }
 
-export function getPlanEndDate(startAt: Date, planCode: PlanCode) {
+export function getPackageEndDate(startAt: Date, durationMonths: number) {
   const endsAt = new Date(startAt)
-  endsAt.setDate(endsAt.getDate() + getPlanDurationDays(planCode))
+  endsAt.setMonth(endsAt.getMonth() + Math.max(durationMonths, 1))
   return endsAt
 }
 
-export function getPlanStartAndEndDate(planCode: PlanCode, startAt = new Date()) {
-  return {
-    startsAt: new Date(startAt),
-    endsAt: getPlanEndDate(startAt, planCode),
-  }
+export function getRenewalStartDate(activeEndsAt: Date | null, now = new Date()) {
+  return activeEndsAt && activeEndsAt > now ? activeEndsAt : now
+}
+
+export function isUnlimitedQuota(value: number | null | undefined) {
+  return value === null || value === undefined || value < 0
 }
 
 export function mapMidtransStatusToPaymentStatus(

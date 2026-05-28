@@ -32,7 +32,7 @@ import {
 const softCardClass =
   "rounded-lg bg-card shadow-lg shadow-primary/5 ring-1 ring-foreground/5 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/10";
 
-export function LandingPage({ user }: { user: SiteUser }) {
+export async function LandingPage({ user }: { user: SiteUser }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SiteNavbar user={user} />
@@ -173,14 +173,14 @@ function HowItWorksSection() {
   );
 }
 
-function PricingSection() {
-  const plans = getPricingPlanViews().map((plan) => ({
+async function PricingSection() {
+  const plans = (await getPricingPlanViews()).slice(0, 3).map((plan) => ({
     plan,
-    featured: plan.code === "pro",
+    featured: plan.discountPercent > 0,
     action: {
-      label: plan.code === "free" ? "Mulai Gratis" : `Pilih ${plan.name}`,
-      href: plan.code === "free" ? "/register" : "/pricing",
-      variant: plan.code === "pro" ? "cta" as const : "outline" as const,
+      label: `Pilih ${plan.name}`,
+      href: "/pricing",
+      variant: plan.discountPercent > 0 ? "cta" as const : "outline" as const,
     },
   }));
 

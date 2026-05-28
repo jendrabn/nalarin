@@ -1,10 +1,8 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import type { PlanCode } from "@/config/plans"
-import { canAccessAiExplanationForPlan } from "@/features/ai-explanations/services"
+import { canAccessAiExplanationForExamType } from "@/features/ai-explanations/services"
 import { requireUser } from "@/features/auth/services/session"
-import { getCurrentActiveSubscription } from "@/features/premium/queries"
 import { PracticeRoomPage } from "@/features/practices/components/practice-room-page"
 import { getPracticeSessionRoom } from "@/features/practices/queries/session"
 
@@ -28,17 +26,16 @@ export default async function Page({
     notFound()
   }
 
-  const [session, subscription] = await Promise.all([
-    getPracticeSessionRoom(id, user.id),
-    getCurrentActiveSubscription(user.id),
-  ])
+  const session = await getPracticeSessionRoom(id, user.id)
 
   if (!session) {
     notFound()
   }
 
-  const planCode: PlanCode = subscription?.planCode ?? "free"
-  const aiExplanationEnabled = await canAccessAiExplanationForPlan(user.id, planCode)
+  const aiExplanationEnabled = await canAccessAiExplanationForExamType(
+    user.id,
+    session.examTypeId,
+  )
 
   return (
     <PracticeRoomPage

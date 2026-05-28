@@ -11,7 +11,6 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import type { PlanCode } from "@/config/plans"
 import { PageHeader } from "@/components/page-header"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar"
@@ -47,7 +46,7 @@ type TryoutDetailPageProps = {
     role: "user" | "admin"
     isEmailVerified: boolean
   } | null
-  currentPlanCode: PlanCode
+  hasPremiumAccess: boolean
   tryout: PublicTryoutDetail
   userSession: PublicTryoutSessionSummary | null
   serverNow: string
@@ -55,7 +54,7 @@ type TryoutDetailPageProps = {
 
 export function TryoutDetailPage({
   user,
-  currentPlanCode,
+  hasPremiumAccess,
   tryout,
   userSession,
   serverNow,
@@ -68,7 +67,7 @@ export function TryoutDetailPage({
         role: user.role,
       } satisfies NonNullable<SiteUser>)
     : null
-  const accessAllowed = canAccessTryout({ isFree: tryout.isFree, planCode: currentPlanCode })
+  const accessAllowed = canAccessTryout({ isFree: tryout.isFree, hasPremiumAccess })
   const resultAvailable =
     userSession?.status === "graded" &&
     isResultReleased(
@@ -457,9 +456,9 @@ function getCtaState({
 
   if (!accessAllowed) {
     return {
-      description: "Tryout premium tersedia untuk pengguna paket Pro atau Max.",
+      description: `Tryout premium tersedia untuk paket ${tryout.examTypeName}.`,
       disabled: true,
-      disabledMessage: "Tryout premium tersedia untuk pengguna paket Pro atau Max.",
+      disabledMessage: `Tryout premium tersedia untuk paket ${tryout.examTypeName}.`,
       locked: true,
     }
   }

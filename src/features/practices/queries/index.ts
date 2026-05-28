@@ -16,6 +16,7 @@ export type PracticeDiscoveryExamType = {
   slug: string
   description: string | null
   logoUrl: string | null
+  coverUrl: string | null
 }
 
 export type PracticeDiscoverySubject = {
@@ -78,6 +79,7 @@ export async function getPracticeDiscoveryData(): Promise<PracticeDiscoveryData>
         slug: schema.examTypes.slug,
         description: schema.examTypes.description,
         logoUrl: schema.examTypes.logoUrl,
+        coverUrl: schema.examTypes.coverUrl,
       })
       .from(schema.examTypes)
       .orderBy(asc(schema.examTypes.id)),
@@ -174,6 +176,7 @@ export async function getPracticeDiscoveryData(): Promise<PracticeDiscoveryData>
       ...examType,
       description: examType.description ?? null,
       logoUrl: examType.logoUrl ?? null,
+      coverUrl: examType.coverUrl ?? null,
     })),
     subjects: subjects.map((subject) => ({
       ...subject,

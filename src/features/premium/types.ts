@@ -1,5 +1,3 @@
-import type { PlanCode } from "@/config/plans"
-
 export type PremiumUser = {
   id: number
   name: string
@@ -9,16 +7,30 @@ export type PremiumUser = {
 
 export type PremiumSubscriptionSummary = {
   id: number
-  planCode: PlanCode
-  planName: string
+  examTypeId: number
+  examTypeSlug: string
+  examTypeName: string
+  packageId: number
+  packagePriceId: number
+  packageName: string
   startsAt: string
   endsAt: string
-} | null
+}
+
+export type PremiumSubscriptionState = {
+  currentSubscriptions: PremiumSubscriptionSummary[]
+  pendingPayment: PremiumPendingPayment
+  pendingPayments: Array<NonNullable<PremiumPendingPayment>>
+}
 
 export type PremiumPendingPayment = {
   id: number
-  planCode: PlanCode
-  planName: string
+  examTypeId: number
+  examTypeSlug: string
+  examTypeName: string
+  packageId: number
+  packagePriceId: number
+  packageName: string
   amount: number
   originalAmount: number
   discountAmount: number
@@ -81,14 +93,12 @@ export type PremiumActionResult<T = undefined> =
       code?:
         | "unauthenticated"
         | "email_unverified"
-        | "invalid_plan"
-        | "active_plan"
-        | "downgrade_not_allowed"
+        | "invalid_package"
+        | "active_package"
         | "pending_exists"
         | "not_found"
         | "expired"
         | "gateway_error"
-        | "manual_payment_unavailable"
         | "voucher_invalid"
       message: string
       data?: T

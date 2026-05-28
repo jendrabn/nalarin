@@ -1,53 +1,123 @@
-import { PLAN_CONFIG, type PlanCode } from "@/config/plans"
-import { getPlanFinalPrice } from "@/lib/billing"
+import "server-only"
+
+import { and, asc, eq } from "drizzle-orm"
+
+import { db, schema } from "@/db"
+import { getPackageFinalPrice, isUnlimitedQuota } from "@/lib/billing"
 
 export type PricingPlanView = {
-  code: PlanCode
+  priceId: number
+  packageId: number
+  examTypeId: number
+  examTypeSlug: string
+  examTypeName: string
   name: string
   description: string
+  logoUrl: string | null
+  coverUrl: string | null
   price: number
   finalPrice: number
   discountPercent: number
-  durationDays: number | null
+  durationMonths: number
+  practiceQuotaPerMonth: number
+  quizQuotaPerMonth: number
+  tryoutQuotaPerMonth: number
+  aiExplanationQuotaPerMonth: number
+  rankingEnabled: boolean
+  premiumPracticesEnabled: boolean
+  premiumTryoutsEnabled: boolean
   bullets: string[]
 }
 
-type Plan = (typeof PLAN_CONFIG)[keyof typeof PLAN_CONFIG]
+export async function getPricingPlanViews(): Promise<PricingPlanView[]> {
+  const rows = await db
+    .select({
+      priceId: schema.examTypePackagePrices.id,
+      packageId: schema.examTypePackages.id,
+      examTypeId: schema.examTypes.id,
+      examTypeSlug: schema.examTypes.slug,
+      examTypeName: schema.examTypes.name,
+      description: schema.examTypes.description,
+      logoUrl: schema.examTypes.logoUrl,
+      coverUrl: schema.examTypes.coverUrl,
+      price: schema.examTypePackagePrices.price,
+      discountPercent: schema.examTypePackagePrices.discountPercent,
+      durationMonths: schema.examTypePackagePrices.durationMonths,
+      practiceQuotaPerMonth: schema.examTypePackages.practiceQuotaPerMonth,
+      quizQuotaPerMonth: schema.examTypePackages.quizQuotaPerMonth,
+      tryoutQuotaPerMonth: schema.examTypePackages.tryoutQuotaPerMonth,
+      aiExplanationQuotaPerMonth: schema.examTypePackages.aiExplanationQuotaPerMonth,
+      rankingEnabled: schema.examTypePackages.rankingEnabled,
+      premiumPracticesEnabled: schema.examTypePackages.premiumPracticesEnabled,
+      premiumTryoutsEnabled: schema.examTypePackages.premiumTryoutsEnabled,
+    })
+    .from(schema.examTypePackagePrices)
+    .innerJoin(
+      schema.examTypePackages,
+      eq(schema.examTypePackagePrices.packageId, schema.examTypePackages.id),
+    )
+    .innerJoin(schema.examTypes, eq(schema.examTypePackages.examTypeId, schema.examTypes.id))
+    .where(
+      and(
+        eq(schema.examTypePackages.isActive, true),
+        eq(schema.examTypePackagePrices.isActive, true),
+      ),
+    )
+    .orderBy(asc(schema.examTypes.id), asc(schema.examTypePackagePrices.durationMonths))
 
-export function getPricingPlanViews(): PricingPlanView[] {
-  return Object.values(PLAN_CONFIG).map((plan) => ({
-    code: plan.code,
-    name: plan.name,
-    description: plan.description,
-    price: plan.price,
-    finalPrice: getPlanFinalPrice(plan.code),
-    discountPercent: plan.discountPercent,
-    durationDays: plan.durationDays,
-    bullets: getPlanBullets(plan),
-  }))
+  return rows.map((row) => {
+    const finalPrice = getPackageFinalPrice(row.price, row.discountPercent)
+    const plan: PricingPlanView = {
+      priceId: row.priceId,
+      packageId: row.packageId,
+      examTypeId: row.examTypeId,
+      examTypeSlug: row.examTypeSlug,
+      examTypeName: row.examTypeName,
+      name: row.examTypeName,
+      description:
+        row.description ??
+        `Akses premium ${row.examTypeName} untuk latihan, tryout, ranking, dan pembahasan AI.`,
+      logoUrl: row.logoUrl ?? null,
+      coverUrl: row.coverUrl ?? null,
+      price: row.price,
+      finalPrice,
+      discountPercent: row.discountPercent,
+      durationMonths: row.durationMonths,
+      practiceQuotaPerMonth: row.practiceQuotaPerMonth,
+      quizQuotaPerMonth: row.quizQuotaPerMonth,
+      tryoutQuotaPerMonth: row.tryoutQuotaPerMonth,
+      aiExplanationQuotaPerMonth: row.aiExplanationQuotaPerMonth,
+      rankingEnabled: row.rankingEnabled,
+      premiumPracticesEnabled: row.premiumPracticesEnabled,
+      premiumTryoutsEnabled: row.premiumTryoutsEnabled,
+      bullets: [],
+    }
+
+    return {
+      ...plan,
+      bullets: getPackageBullets(plan),
+    }
+  })
 }
 
-function getPlanBullets(plan: Plan) {
+function getPackageBullets(plan: PricingPlanView) {
   const bullets = [
-    "Pembahasan biasa gratis untuk semua plan",
-    formatPlanLimit(plan.limits.aiExplanationsPerMonth, "pembahasan AI"),
-    formatPlanLimit(plan.limits.practiceSessionsPerMonth, "latihan"),
-    formatPlanLimit(plan.limits.quizSessionsPerMonth, "quiz"),
-    formatPlanLimit(
-      plan.limits.tryoutSessionsPerMonth,
-      plan.code === "free" ? "tryout gratis" : "tryout",
-    ),
+    "Konten non-premium tetap gratis",
+    formatQuota(plan.practiceQuotaPerMonth, "sesi latihan premium"),
+    formatQuota(plan.quizQuotaPerMonth, "mode quiz"),
+    formatQuota(plan.tryoutQuotaPerMonth, "tryout premium"),
+    formatQuota(plan.aiExplanationQuotaPerMonth, "pembahasan AI"),
   ]
 
-  if (plan.access.ranking) {
+  if (plan.rankingEnabled) {
     bullets.push("Ranking tryout")
   }
 
   return bullets
 }
 
-function formatPlanLimit(limit: number | null, label: string) {
-  if (limit === null) {
+function formatQuota(limit: number, label: string) {
+  if (isUnlimitedQuota(limit)) {
     return `${capitalize(label)} tanpa batas`
   }
 

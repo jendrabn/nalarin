@@ -44,9 +44,9 @@ const ACTIONS: QuickAction[] = [
     tone: "amber",
   },
   {
-    title: "Add Manual Subscription",
-    description: "Grant a Pro or Max plan directly from the billing workflow.",
-    href: "/admin/payments",
+    title: "Manage Exam Packages",
+    description: "Update package price, discount, quota, and premium access per exam type.",
+    href: "/admin/exam-types",
     tone: "emerald",
   },
   {

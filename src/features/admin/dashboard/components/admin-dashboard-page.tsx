@@ -47,14 +47,14 @@ export function AdminDashboardPage({ data }: AdminDashboardPageProps) {
         />
         <DashboardMetricCard
           title="Active Subscriptions"
-          description="Live plans currently in use across the platform."
-          value={formatInteger(summary.subscriptions.activePaid)}
+          description="Live exam-type packages currently in use."
+          value={formatInteger(summary.subscriptions.activeSubscriptions)}
           icon={CheckCircle2Icon}
           accent="cyan"
           detailItems={[
-            { label: "Free", value: formatInteger(summary.subscriptions.free) },
-            { label: "Pro", value: formatInteger(summary.subscriptions.pro) },
-            { label: "Max", value: formatInteger(summary.subscriptions.max) },
+            { label: "Subscribed users", value: formatInteger(summary.subscriptions.subscribedUsers) },
+            { label: "Users without package", value: formatInteger(summary.subscriptions.freeUsers) },
+            { label: "Exam types", value: formatInteger(summary.subscriptions.activeExamTypes) },
           ]}
         />
         <DashboardMetricCard

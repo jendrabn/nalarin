@@ -10,7 +10,6 @@ import {
   paymentGatewayValues,
   paymentMethodValues,
   paymentStatusValues,
-  planCodeValues,
   subscriptionSourceValues,
   subscriptionStatusValues,
   transactionSourceValues,
@@ -20,7 +19,6 @@ import {
 
 type UserRole = (typeof userRoleValues)[number]
 type UserStatus = (typeof userStatusValues)[number]
-type PlanCode = (typeof planCodeValues)[number]
 type PaymentGateway = (typeof paymentGatewayValues)[number]
 type PaymentMethod = (typeof paymentMethodValues)[number]
 type PaymentStatus = (typeof paymentStatusValues)[number]
@@ -36,7 +34,8 @@ export type AdminSubscriptionRow = {
   userRole: UserRole
   userStatus: UserStatus
   avatarUrl: string | null
-  planCode: PlanCode
+  examTypeId: number | null
+  examTypeName: string | null
   status: SubscriptionStatus
   source: SubscriptionSource
   startsAt: Date
@@ -101,7 +100,8 @@ function selectSubscriptionColumns() {
     userRole: schema.users.role,
     userStatus: schema.users.status,
     avatarUrl: schema.users.avatarUrl,
-    planCode: schema.subscriptions.planCode,
+    examTypeId: schema.subscriptions.examTypeId,
+    examTypeName: schema.examTypes.name,
     status: schema.subscriptions.status,
     source: schema.subscriptions.source,
     startsAt: schema.subscriptions.startsAt,
@@ -129,7 +129,8 @@ function mapSubscriptionRow(row: {
   userRole: UserRole
   userStatus: UserStatus
   avatarUrl: string | null
-  planCode: PlanCode
+  examTypeId: number | null
+  examTypeName: string | null
   status: SubscriptionStatus
   source: SubscriptionSource
   startsAt: Date
@@ -166,6 +167,7 @@ export async function getAdminSubscriptions() {
     .select(selectSubscriptionColumns())
     .from(schema.subscriptions)
     .innerJoin(schema.users, eq(schema.subscriptions.userId, schema.users.id))
+    .leftJoin(schema.examTypes, eq(schema.subscriptions.examTypeId, schema.examTypes.id))
     .leftJoin(schema.payments, eq(schema.payments.subscriptionId, schema.subscriptions.id))
     .orderBy(desc(schema.subscriptions.createdAt))
 
@@ -187,6 +189,7 @@ export async function getAdminSubscriptionById(id: number) {
     })
     .from(schema.subscriptions)
     .innerJoin(schema.users, eq(schema.subscriptions.userId, schema.users.id))
+    .leftJoin(schema.examTypes, eq(schema.subscriptions.examTypeId, schema.examTypes.id))
     .leftJoin(schema.payments, eq(schema.payments.subscriptionId, schema.subscriptions.id))
     .where(eq(schema.subscriptions.id, id))
     .limit(1)
@@ -228,7 +231,7 @@ export async function findActiveSubscriptionByUserId(userId: number) {
   const rows = await db
     .select({
       id: schema.subscriptions.id,
-      planCode: schema.subscriptions.planCode,
+      examTypeId: schema.subscriptions.examTypeId,
       status: schema.subscriptions.status,
       endsAt: schema.subscriptions.endsAt,
     })
@@ -248,7 +251,7 @@ export async function getSubscriptionByUserId(userId: number) {
     .select({
       id: schema.subscriptions.id,
       userId: schema.subscriptions.userId,
-      planCode: schema.subscriptions.planCode,
+      examTypeId: schema.subscriptions.examTypeId,
       status: schema.subscriptions.status,
       source: schema.subscriptions.source,
       startsAt: schema.subscriptions.startsAt,

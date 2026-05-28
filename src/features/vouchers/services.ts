@@ -2,9 +2,7 @@ import "server-only"
 
 import { and, count, eq, gt, isNull, lte } from "drizzle-orm"
 
-import { type PlanCode } from "@/config/plans"
 import { db, schema } from "@/db"
-import { getPlanFinalPrice, isPaidPlanCode } from "@/lib/billing"
 
 export type VoucherValidationResult =
   | {
@@ -57,11 +55,11 @@ export function normalizeVoucherCode(code: string) {
 
 export async function validateVoucherForCheckout({
   code,
-  planCode,
+  originalAmount,
   now = new Date(),
 }: {
   code: string
-  planCode: PlanCode
+  originalAmount: number
   userId: number
   now?: Date
 }): Promise<VoucherValidationResult> {
@@ -75,11 +73,11 @@ export async function validateVoucherForCheckout({
     }
   }
 
-  if (!isPaidPlanCode(planCode)) {
+  if (originalAmount <= 0) {
     return {
       success: false,
       code: "invalid_plan",
-      message: "Vouchers are only available for paid plans.",
+      message: "Vouchers are only available for paid packages.",
     }
   }
 
@@ -95,12 +93,12 @@ export async function validateVoucherForCheckout({
 
   return validateVoucherRowForCheckout({
     voucher,
-    planCode,
+    originalAmount,
     now,
   })
 }
 
-export async function getPublicVoucherPromos(planCode?: PlanCode) {
+export async function getPublicVoucherPromos() {
   const now = new Date()
   const vouchers = await db
     .select({
@@ -129,7 +127,6 @@ export async function getPublicVoucherPromos(planCode?: PlanCode) {
 
   const promos = await Promise.all(
     vouchers
-      .filter(() => !planCode || isPaidPlanCode(planCode))
       .map(async (voucher) => {
         const usageCount = await getVoucherGlobalUsageCount(voucher.id)
 
@@ -154,11 +151,11 @@ export async function getPublicVoucherPromos(planCode?: PlanCode) {
 
 async function validateVoucherRowForCheckout({
   voucher,
-  planCode,
+  originalAmount,
   now,
 }: {
   voucher: VoucherRow
-  planCode: PlanCode
+  originalAmount: number
   now: Date
 }): Promise<VoucherValidationResult> {
   if (voucher.deletedAt) {
@@ -203,7 +200,6 @@ async function validateVoucherRowForCheckout({
     }
   }
 
-  const originalAmount = getPlanFinalPrice(planCode)
   const discountAmount = Math.min(
     Math.round((originalAmount * voucher.discountPercent) / 100),
     originalAmount,

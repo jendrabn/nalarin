@@ -75,19 +75,23 @@ const revenueConfig = {
 } as const
 
 const subscriptionMixConfig = {
-  free: {
-    label: "Free",
+  subscriptions: {
+    label: "Subscriptions",
     color: "var(--chart-1)",
   },
-  pro: {
-    label: "Pro",
-    color: "var(--chart-2)",
-  },
-  max: {
-    label: "Max",
-    color: "var(--chart-3)",
-  },
 } as const
+
+const subscriptionMixColors = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+] as const
+
+function getSubscriptionMixColor(index: number) {
+  return subscriptionMixColors[index % subscriptionMixColors.length]
+}
 
 const questionGrowthConfig = {
   draft: {
@@ -286,8 +290,8 @@ export function DashboardChartsSection({ charts }: DashboardChartsSectionProps) 
         </ChartPanel>
 
         <ChartPanel
-          title="Plan mix"
-          description="Active subscriptions across Free, Pro, and Max plans."
+          title="Package mix"
+          description="Active subscriptions grouped by exam type."
           hasData={charts.subscriptionMix.some((item) => item.value > 0)}
         >
           <ChartContainer config={subscriptionMixConfig} className="mx-auto aspect-auto h-[220px] w-full max-w-[320px]">
@@ -302,8 +306,8 @@ export function DashboardChartsSection({ charts }: DashboardChartsSectionProps) 
                 paddingAngle={3}
                 strokeWidth={3}
               >
-                {charts.subscriptionMix.map((item) => (
-                  <Cell key={item.planCode} fill={`var(--color-${item.planCode})`} />
+                {charts.subscriptionMix.map((item, index) => (
+                  <Cell key={item.key} fill={getSubscriptionMixColor(index)} />
                 ))}
                 <Label
                   content={({ viewBox }) => {
@@ -330,7 +334,7 @@ export function DashboardChartsSection({ charts }: DashboardChartsSectionProps) 
                           y={cy + 16}
                           className="fill-muted-foreground text-[10px] uppercase tracking-[0.16em]"
                         >
-                          active plans
+                          active packages
                         </tspan>
                       </text>
                     )
@@ -340,11 +344,10 @@ export function DashboardChartsSection({ charts }: DashboardChartsSectionProps) 
             </PieChart>
           </ChartContainer>
           <ChartLegend
-            items={[
-              { label: "Free", color: "var(--chart-1)" },
-              { label: "Pro", color: "var(--chart-2)" },
-              { label: "Max", color: "var(--chart-3)" },
-            ]}
+            items={charts.subscriptionMix.map((item, index) => ({
+              label: item.label,
+              color: getSubscriptionMixColor(index),
+            }))}
           />
         </ChartPanel>
 

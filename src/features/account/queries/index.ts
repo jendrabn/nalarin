@@ -1,10 +1,9 @@
 import "server-only"
 
-import { and, eq } from "drizzle-orm"
+import { and, eq, sql } from "drizzle-orm"
 
-import { PLAN_CONFIG, type PlanCode } from "@/config/plans"
 import { db, schema } from "@/db"
-import { getCurrentActiveSubscription } from "@/features/premium/queries"
+import { getCurrentActiveSubscriptions } from "@/features/premium/queries"
 
 function getMonthlyUsagePeriod(date = new Date()) {
   const year = date.getFullYear()
@@ -15,7 +14,7 @@ function getMonthlyUsagePeriod(date = new Date()) {
 
 export async function getAccountProfile(userId: number) {
   const period = getMonthlyUsagePeriod()
-  const [user, subscription, usage] = await Promise.all([
+  const [user, subscriptions, usageRows] = await Promise.all([
     db.query.users.findFirst({
       where: eq(schema.users.id, userId),
       columns: {
@@ -31,27 +30,33 @@ export async function getAccountProfile(userId: number) {
         createdAt: true,
       },
     }),
-    getCurrentActiveSubscription(userId),
-    db.query.monthlyUsage.findFirst({
-      where: and(
-        eq(schema.monthlyUsage.userId, userId),
-        eq(schema.monthlyUsage.period, period),
+    getCurrentActiveSubscriptions(userId),
+    db
+      .select({
+        practiceSessionsCount: sql<number>`coalesce(sum(${schema.monthlyUsage.practiceSessionsCount}), 0)`,
+        quizSessionsCount: sql<number>`coalesce(sum(${schema.monthlyUsage.quizSessionsCount}), 0)`,
+        tryoutSessionsCount: sql<number>`coalesce(sum(${schema.monthlyUsage.tryoutSessionsCount}), 0)`,
+        aiExplanationSessionsCount: sql<number>`coalesce(sum(${schema.monthlyUsage.aiExplanationSessionsCount}), 0)`,
+      })
+      .from(schema.monthlyUsage)
+      .where(
+        and(
+          eq(schema.monthlyUsage.userId, userId),
+          eq(schema.monthlyUsage.period, period),
+        ),
       ),
-      columns: {
-        practiceSessionsCount: true,
-        quizSessionsCount: true,
-        tryoutSessionsCount: true,
-        aiExplanationSessionsCount: true,
-      },
-    }),
   ])
 
   if (!user) {
     return null
   }
 
-  const planCode = subscription?.planCode ?? ("free" satisfies PlanCode)
-  const plan = PLAN_CONFIG[planCode]
+  const usage = usageRows[0]
+  const activeNames = subscriptions.map((subscription) => subscription.examTypeName)
+  const activeDescription =
+    activeNames.length > 0
+      ? `Paket aktif: ${activeNames.join(", ")}.`
+      : "Belum ada paket exam type aktif. Konten non-premium tetap gratis."
 
   return {
     user: {
@@ -69,22 +74,27 @@ export async function getAccountProfile(userId: number) {
       createdAt: user.createdAt.toISOString(),
     },
     plan: {
-      code: planCode,
-      name: plan.name,
-      description: plan.description,
-      subscription: subscription
+      code: activeNames.length > 0 ? "exam-type" : "none",
+      name: activeNames.length > 0 ? "Paket Exam Type" : "Belum Berlangganan",
+      description: activeDescription,
+      subscription: subscriptions[0]
         ? {
-            startsAt: subscription.startsAt,
-            endsAt: subscription.endsAt,
+            startsAt: subscriptions[0].startsAt,
+            endsAt: subscriptions[0].endsAt,
           }
         : null,
-      limits: plan.limits,
+      limits: {
+        practiceSessionsPerMonth: null,
+        quizSessionsPerMonth: null,
+        tryoutSessionsPerMonth: null,
+        aiExplanationsPerMonth: null,
+      },
       usage: {
         period,
-        practiceSessionsCount: usage?.practiceSessionsCount ?? 0,
-        quizSessionsCount: usage?.quizSessionsCount ?? 0,
-        tryoutSessionsCount: usage?.tryoutSessionsCount ?? 0,
-        aiExplanationSessionsCount: usage?.aiExplanationSessionsCount ?? 0,
+        practiceSessionsCount: Number(usage?.practiceSessionsCount ?? 0),
+        quizSessionsCount: Number(usage?.quizSessionsCount ?? 0),
+        tryoutSessionsCount: Number(usage?.tryoutSessionsCount ?? 0),
+        aiExplanationSessionsCount: Number(usage?.aiExplanationSessionsCount ?? 0),
       },
     },
   }

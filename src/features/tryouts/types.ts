@@ -121,6 +121,7 @@ export type TryoutPlanReleaseState = TryoutReleaseState & {
 export type TryoutResultSession = {
   id: number
   tryoutId: number
+  examTypeId: number
   userId: number
   title: string
   slug: string

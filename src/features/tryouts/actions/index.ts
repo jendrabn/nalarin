@@ -3,10 +3,10 @@
 import { and, asc, eq, sql } from "drizzle-orm"
 import { redirect } from "next/navigation"
 
-import { PLAN_CONFIG, type PlanCode } from "@/config/plans"
 import { db, schema } from "@/db"
 import { getCurrentUser, requireUser } from "@/features/auth/services/session"
-import { getCurrentActiveSubscription } from "@/features/premium/queries"
+import { getActiveExamTypeEntitlement } from "@/features/premium/access"
+import { isUnlimitedQuota } from "@/lib/billing"
 import type {
   PracticeCorrectAnswerSnapshot,
   PracticeOptionSnapshot,
@@ -83,6 +83,7 @@ export async function startTryoutSessionAction(
   const [tryout] = await db
     .select({
       id: schema.tryouts.id,
+      examTypeId: schema.tryouts.examTypeId,
       title: schema.tryouts.title,
       slug: schema.tryouts.slug,
       isFree: schema.tryouts.isFree,
@@ -166,20 +167,18 @@ export async function startTryoutSessionAction(
     }
   }
 
-  const subscription = await getCurrentActiveSubscription(user.id)
-  const planCode: PlanCode = subscription?.planCode ?? "free"
+  const entitlement = await getActiveExamTypeEntitlement(user.id, tryout.examTypeId)
 
-  if (!canAccessTryout({ isFree: tryout.isFree, planCode })) {
+  if (
+    !canAccessTryout({
+      isFree: tryout.isFree,
+      hasPremiumAccess: Boolean(entitlement?.premiumTryoutsEnabled),
+    })
+  ) {
     return {
       success: false,
-      message: "Tryout premium tersedia untuk pengguna paket Pro atau Max.",
+      message: "Tryout premium tersedia untuk paket exam type ini.",
     }
-  }
-
-  const usageCheck = await checkMonthlyTryoutUsageLimit(user.id, planCode)
-
-  if (!usageCheck.success) {
-    return usageCheck
   }
 
   const [sections, questionRows] = await Promise.all([
@@ -204,8 +203,24 @@ export async function startTryoutSessionAction(
   )
   const now = new Date()
   const period = getMonthlyUsagePeriod(now)
+  const shouldReserveUsage = !tryout.isFree
 
   const created = await db.transaction(async (tx) => {
+    if (shouldReserveUsage) {
+      const usageReservation = await reserveMonthlyTryoutUsage({
+        tx,
+        userId: user.id,
+        examTypeId: tryout.examTypeId,
+        entitlement,
+        period,
+        now,
+      })
+
+      if (!usageReservation.success) {
+        return usageReservation
+      }
+    }
+
     const [insertedSession] = await tx
       .insert(schema.tryoutSessions)
       .values({
@@ -275,26 +290,17 @@ export async function startTryoutSessionAction(
       })),
     )
 
-    await tx
-      .insert(schema.monthlyUsage)
-      .values({
-        userId: user.id,
-        period,
-        practiceSessionsCount: 0,
-        quizSessionsCount: 0,
-        tryoutSessionsCount: 1,
-      })
-      .onDuplicateKeyUpdate({
-        set: {
-          tryoutSessionsCount: sql`${schema.monthlyUsage.tryoutSessionsCount} + 1`,
-          updatedAt: now,
-        },
-      })
-
-    return insertedSession
+    return {
+      success: true,
+      data: insertedSession,
+    } as const
   })
 
-  redirect(`/tryout-sessions/${created.id}`)
+  if (!created.success) {
+    return created
+  }
+
+  redirect(`/tryout-sessions/${created.data.id}`)
 }
 
 export async function startTryoutSectionAction(
@@ -928,30 +934,79 @@ async function recomputeTryoutSessionAggregate(sessionId: number, autoSubmitted:
     .where(eq(schema.tryoutSessions.id, sessionId))
 }
 
-async function checkMonthlyTryoutUsageLimit(
-  userId: number,
-  planCode: PlanCode,
-): Promise<TryoutActionResult> {
-  const period = getMonthlyUsagePeriod(new Date())
-  const [usage] = await db
+type MonthlyUsageTransaction = Pick<typeof db, "insert" | "select" | "update">
+
+async function reserveMonthlyTryoutUsage({
+  tx,
+  userId,
+  examTypeId,
+  entitlement,
+  period,
+  now,
+}: {
+  tx: MonthlyUsageTransaction
+  userId: number
+  examTypeId: number
+  entitlement: Awaited<ReturnType<typeof getActiveExamTypeEntitlement>>
+  period: string
+  now: Date
+}): Promise<TryoutActionResult> {
+  const limit = entitlement?.tryoutQuotaPerMonth ?? 0
+
+  await tx
+    .insert(schema.monthlyUsage)
+    .values({
+      userId,
+      examTypeId,
+      period,
+      practiceSessionsCount: 0,
+      quizSessionsCount: 0,
+      tryoutSessionsCount: 0,
+      aiExplanationSessionsCount: 0,
+    })
+    .onDuplicateKeyUpdate({
+      set: {
+        updatedAt: now,
+      },
+    })
+
+  const [usage] = await tx
     .select({
+      id: schema.monthlyUsage.id,
       tryoutSessionsCount: schema.monthlyUsage.tryoutSessionsCount,
     })
     .from(schema.monthlyUsage)
-    .where(and(eq(schema.monthlyUsage.userId, userId), eq(schema.monthlyUsage.period, period)))
+    .where(
+      and(
+        eq(schema.monthlyUsage.userId, userId),
+        eq(schema.monthlyUsage.examTypeId, examTypeId),
+        eq(schema.monthlyUsage.period, period),
+      ),
+    )
     .limit(1)
-  const limit = PLAN_CONFIG[planCode].limits.tryoutSessionsPerMonth
+    .for("update")
 
-  if (limit === null) {
-    return { success: true, data: undefined }
+  if (!usage) {
+    return {
+      success: false,
+      message: "Gagal menyiapkan limit penggunaan. Coba lagi.",
+    }
   }
 
-  if ((usage?.tryoutSessionsCount ?? 0) >= limit) {
+  if (!isUnlimitedQuota(limit) && (usage?.tryoutSessionsCount ?? 0) >= limit) {
     return {
       success: false,
       message: "Limit tryout bulan ini sudah habis.",
     }
   }
+
+  await tx
+    .update(schema.monthlyUsage)
+    .set({
+      tryoutSessionsCount: sql`${schema.monthlyUsage.tryoutSessionsCount} + 1`,
+      updatedAt: now,
+    })
+    .where(eq(schema.monthlyUsage.id, usage.id))
 
   return { success: true, data: undefined }
 }

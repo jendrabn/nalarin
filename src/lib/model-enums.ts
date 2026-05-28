@@ -7,7 +7,6 @@ import {
   paymentGatewayValues,
   paymentMethodValues,
   paymentStatusValues,
-  planCodeValues,
   practiceModeValues,
   questionDifficultyValues,
   questionTypeValues,
@@ -97,19 +96,6 @@ export const modelEnums = {
     {
       male: "chart1",
       female: "chart5",
-    },
-  ),
-  planCode: createEnumDefinition(
-    planCodeValues,
-    {
-      free: "Free",
-      pro: "Pro",
-      max: "Max",
-    },
-    {
-      free: "muted",
-      pro: "chart2",
-      max: "chart4",
     },
   ),
   questionType: createEnumDefinition(

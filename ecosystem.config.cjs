@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 require("dotenv").config({ path: `${__dirname}/.env` });
 
 const appPort = process.env.APP_PORT || "3001";

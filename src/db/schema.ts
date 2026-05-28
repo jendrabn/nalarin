@@ -18,7 +18,6 @@ import {
 export const userRoleValues = ['user', 'admin'] as const;
 export const userStatusValues = ['active', 'inactive', 'suspended'] as const;
 export const genderValues = ['male', 'female'] as const;
-export const planCodeValues = ['free', 'pro', 'max'] as const;
 export const questionTypeValues = [
   'multiple_choice',
   'multiple_answer',
@@ -74,7 +73,6 @@ export const subscriptionSourceValues = ['midtrans', 'manual', 'admin_grant'] as
 export const userRoleEnum = mysqlEnum('role', userRoleValues);
 export const userStatusEnum = mysqlEnum('status', userStatusValues);
 export const genderEnum = mysqlEnum('gender', genderValues);
-export const planCodeEnum = mysqlEnum('plan_code', planCodeValues);
 export const questionTypeEnum = mysqlEnum('type', questionTypeValues);
 export const questionDifficultyEnum = mysqlEnum(
   'difficulty',
@@ -281,6 +279,7 @@ export const examTypes = mysqlTable(
     slug: varchar('slug', { length: 191 }).notNull(),
     description: text('description'),
     logoUrl: varchar('logo_url', { length: 2048 }),
+    coverUrl: varchar('cover_url', { length: 2048 }),
     countdownTitle: varchar('countdown_title', { length: 255 }),
     countdownTargetAt: timestamp('countdown_target_at', { mode: 'date' }),
     registrationStartAt: timestamp('registration_start_at', { mode: 'date' }),
@@ -292,6 +291,65 @@ export const examTypes = mysqlTable(
     ...auditColumns(),
   },
   (table) => [uniqueIndex('exam_types_slug_uq').on(table.slug)],
+);
+
+export const examTypePackages = mysqlTable(
+  'exam_type_packages',
+  {
+    id: int('id', { unsigned: true }).autoincrement().primaryKey(),
+    examTypeId: int('exam_type_id', { unsigned: true })
+      .notNull()
+      .references(() => examTypes.id),
+    isActive: boolean('is_active').default(true).notNull(),
+    practiceQuotaPerMonth: int('practice_quota_per_month')
+      .default(-1)
+      .notNull(),
+    quizQuotaPerMonth: int('quiz_quota_per_month').default(-1).notNull(),
+    tryoutQuotaPerMonth: int('tryout_quota_per_month')
+      .default(-1)
+      .notNull(),
+    aiExplanationQuotaPerMonth: int('ai_explanation_quota_per_month')
+      .default(-1)
+      .notNull(),
+    premiumPracticesEnabled: boolean('premium_practices_enabled')
+      .default(true)
+      .notNull(),
+    premiumTryoutsEnabled: boolean('premium_tryouts_enabled')
+      .default(true)
+      .notNull(),
+    rankingEnabled: boolean('ranking_enabled').default(true).notNull(),
+    ...auditColumns(),
+  },
+  (table) => [
+    uniqueIndex('exam_type_packages_exam_type_uq').on(table.examTypeId),
+    index('exam_type_packages_active_idx').on(table.isActive),
+  ],
+);
+
+export const examTypePackagePrices = mysqlTable(
+  'exam_type_package_prices',
+  {
+    id: int('id', { unsigned: true }).autoincrement().primaryKey(),
+    packageId: int('package_id', { unsigned: true })
+      .notNull()
+      .references(() => examTypePackages.id),
+    durationMonths: int('duration_months', { unsigned: true })
+      .default(1)
+      .notNull(),
+    price: bigint('price', { mode: 'number', unsigned: true }).notNull(),
+    discountPercent: int('discount_percent', { unsigned: true })
+      .default(0)
+      .notNull(),
+    isActive: boolean('is_active').default(true).notNull(),
+    ...auditColumns(),
+  },
+  (table) => [
+    uniqueIndex('exam_type_package_prices_package_duration_uq').on(
+      table.packageId,
+      table.durationMonths,
+    ),
+    index('exam_type_package_prices_active_idx').on(table.isActive),
+  ],
 );
 
 export const subjects = mysqlTable(
@@ -892,11 +950,21 @@ export const subscriptions = mysqlTable(
     userId: int('user_id', { unsigned: true })
       .notNull()
       .references(() => users.id),
-    planCode: planCodeEnum.notNull(),
+    examTypeId: int('exam_type_id', { unsigned: true }).references(
+      () => examTypes.id,
+    ),
+    packageId: int('package_id', { unsigned: true }).references(
+      () => examTypePackages.id,
+    ),
+    packagePriceId: int('package_price_id', { unsigned: true }).references(
+      () => examTypePackagePrices.id,
+    ),
     status: subscriptionStatusEnum.notNull(),
     source: subscriptionSourceEnum.notNull(),
     startsAt: timestamp('starts_at', { mode: 'date' }).notNull(),
     endsAt: timestamp('ends_at', { mode: 'date' }).notNull(),
+    benefitSnapshot: json('benefit_snapshot').$type<JsonObject>(),
+    pricingSnapshot: json('pricing_snapshot').$type<JsonObject>(),
     activatedByAdminId: int('activated_by_admin_id', { unsigned: true }).references(
       () => users.id,
     ),
@@ -913,8 +981,14 @@ export const subscriptions = mysqlTable(
       table.status,
       table.endsAt,
     ),
+    index('subscriptions_user_exam_status_ends_at_idx').on(
+      table.userId,
+      table.examTypeId,
+      table.status,
+      table.endsAt,
+    ),
     index('subscriptions_status_ends_at_idx').on(table.status, table.endsAt),
-    index('subscriptions_plan_status_idx').on(table.planCode, table.status),
+    index('subscriptions_exam_type_status_idx').on(table.examTypeId, table.status),
   ],
 );
 
@@ -964,7 +1038,15 @@ export const payments = mysqlTable(
     subscriptionId: int('subscription_id', { unsigned: true }).references(
       () => subscriptions.id,
     ),
-    planCode: planCodeEnum.notNull(),
+    examTypeId: int('exam_type_id', { unsigned: true }).references(
+      () => examTypes.id,
+    ),
+    packageId: int('package_id', { unsigned: true }).references(
+      () => examTypePackages.id,
+    ),
+    packagePriceId: int('package_price_id', { unsigned: true }).references(
+      () => examTypePackagePrices.id,
+    ),
     voucherId: int('voucher_id', { unsigned: true }).references(() => vouchers.id),
     voucherCodeSnapshot: varchar('voucher_code_snapshot', { length: 64 }),
     voucherNameSnapshot: varchar('voucher_name_snapshot', { length: 255 }),
@@ -985,11 +1067,13 @@ export const payments = mysqlTable(
     expiredAt: timestamp('expired_at', { mode: 'date' }),
     proofUrl: varchar('proof_url', { length: 2048 }),
     notes: text('notes'),
+    packageSnapshot: json('package_snapshot').$type<JsonObject>(),
+    pricingSnapshot: json('pricing_snapshot').$type<JsonObject>(),
     rawPayload: json('raw_payload').$type<JsonObject>(),
     ...auditColumns(),
   },
   (table) => [
-    uniqueIndex('payments_subscription_id_uq').on(table.subscriptionId),
+    index('payments_subscription_id_idx').on(table.subscriptionId),
     uniqueIndex('payments_gateway_order_id_uq').on(table.gatewayOrderId),
     uniqueIndex('payments_gateway_transaction_id_uq').on(
       table.gatewayTransactionId,
@@ -1007,6 +1091,11 @@ export const payments = mysqlTable(
     index('payments_status_gateway_idx').on(
       table.status,
       table.gateway,
+      table.createdAt,
+    ),
+    index('payments_exam_type_status_idx').on(
+      table.examTypeId,
+      table.status,
       table.createdAt,
     ),
   ],
@@ -1053,6 +1142,9 @@ export const monthlyUsage = mysqlTable(
     userId: int('user_id', { unsigned: true })
       .notNull()
       .references(() => users.id),
+    examTypeId: int('exam_type_id', { unsigned: true }).references(
+      () => examTypes.id,
+    ),
     period: date('period', { mode: 'string' }).notNull(),
     practiceSessionsCount: int('practice_sessions_count', {
       unsigned: true,
@@ -1073,8 +1165,13 @@ export const monthlyUsage = mysqlTable(
     ...auditColumns(),
   },
   (table) => [
-    uniqueIndex('monthly_usage_user_period_uq').on(table.userId, table.period),
+    uniqueIndex('monthly_usage_user_exam_period_uq').on(
+      table.userId,
+      table.examTypeId,
+      table.period,
+    ),
     index('monthly_usage_period_idx').on(table.period),
+    index('monthly_usage_exam_type_period_idx').on(table.examTypeId, table.period),
   ],
 );
 

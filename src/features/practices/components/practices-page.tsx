@@ -1,4 +1,3 @@
-import type { PlanCode } from "@/config/plans"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar"
 import type { CurrentUser } from "@/features/auth/services/session"
@@ -8,14 +7,14 @@ import { PracticesExplorer } from "./practices-explorer"
 
 type PracticesPageProps = {
   user: CurrentUser | null
-  currentPlanCode: PlanCode
+  premiumExamTypeIds: number[]
   data: PracticeDiscoveryData
   selectedExamTypeSlug?: string
 }
 
 export function PracticesPage({
   user,
-  currentPlanCode,
+  premiumExamTypeIds,
   data,
   selectedExamTypeSlug,
 }: PracticesPageProps) {
@@ -43,7 +42,7 @@ export function PracticesPage({
               }
             : null
         }
-        currentPlanCode={currentPlanCode}
+        premiumExamTypeIds={premiumExamTypeIds}
         selectedExamTypeSlug={selectedExamTypeSlug}
       />
       <SiteFooter />

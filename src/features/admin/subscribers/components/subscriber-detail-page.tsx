@@ -60,7 +60,6 @@ export function SubscriberDetailPage({
   const [downgradeOpen, setDowngradeOpen] = useState(false)
   const [isPending, setIsPending] = useState(false)
 
-  const planBadge = getModelEnumBadgeMeta("planCode", subscription.planCode)
   const statusBadge = getModelEnumBadgeMeta("subscriptionStatus", subscription.status)
   const sourceBadge = getModelEnumBadgeMeta("subscriptionSource", subscription.source)
   const userRoleBadge = getModelEnumBadgeMeta("userRole", subscription.userRole)
@@ -105,7 +104,7 @@ export function SubscriberDetailPage({
         return
       }
 
-      toast.success("User downgraded to Free.")
+      toast.success("Subscription access revoked.")
       router.refresh()
       setDowngradeOpen(false)
     } finally {
@@ -166,9 +165,7 @@ export function SubscriberDetailPage({
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="soft" className={planBadge.className}>
-                  {planBadge.label}
-                </Badge>
+                <Badge variant="soft">{subscription.examTypeName ?? "Package"}</Badge>
                 <Badge variant="soft" className={statusBadge.className}>
                   {statusBadge.label}
                 </Badge>
@@ -226,7 +223,7 @@ export function SubscriberDetailPage({
                           <AlertDialogTitle>Cancel this subscription?</AlertDialogTitle>
                           <AlertDialogDescription>
                             This will immediately revoke the user&apos;s paid access and
-                            return the account to Free.
+                            remove access for this package.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -250,10 +247,10 @@ export function SubscriberDetailPage({
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Force downgrade to Free?</AlertDialogTitle>
+                          <AlertDialogTitle>Revoke subscription access?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This cancels the current active subscription and restores Free
-                            access for the user.
+                            This cancels the current active subscription and removes paid
+                            package access for the user.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -265,7 +262,7 @@ export function SubscriberDetailPage({
                               void handleForceDowngrade()
                             }}
                           >
-                            {isPending ? "Updating..." : "Force Downgrade"}
+                            {isPending ? "Updating..." : "Revoke Access"}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

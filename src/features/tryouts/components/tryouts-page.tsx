@@ -16,7 +16,6 @@ import {
   TrophyIcon,
 } from "lucide-react"
 
-import type { PlanCode } from "@/config/plans"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar"
 import { PageHeader } from "@/components/page-header"
@@ -54,7 +53,7 @@ type TryoutsPageProps = {
     role: "user" | "admin"
     isEmailVerified: boolean
   } | null
-  currentPlanCode: PlanCode
+  premiumExamTypeIds: number[]
   data: PublicTryoutDiscoveryData
   selectedExamTypeSlug?: string
 }
@@ -74,7 +73,7 @@ const statusFilters: Array<{
 
 export function TryoutsPage({
   user,
-  currentPlanCode,
+  premiumExamTypeIds,
   data,
   selectedExamTypeSlug,
 }: TryoutsPageProps) {
@@ -180,7 +179,7 @@ export function TryoutsPage({
                       key={tryout.id}
                       tryout={tryout}
                       session={sessionsByTryoutId.get(tryout.id) ?? null}
-                      currentPlanCode={currentPlanCode}
+                      premiumExamTypeIds={premiumExamTypeIds}
                       serverNow={data.serverNow}
                     />
                   ))}
@@ -265,15 +264,18 @@ function StatusFilterBar({
 function TryoutCard({
   tryout,
   session,
-  currentPlanCode,
+  premiumExamTypeIds,
   serverNow,
 }: {
   tryout: PublicTryoutSummary
   session: PublicTryoutSessionSummary | null
-  currentPlanCode: PlanCode
+  premiumExamTypeIds: number[]
   serverNow: string
 }) {
-  const accessAllowed = canAccessTryout({ isFree: tryout.isFree, planCode: currentPlanCode })
+  const accessAllowed = canAccessTryout({
+    isFree: tryout.isFree,
+    hasPremiumAccess: premiumExamTypeIds.includes(tryout.examTypeId),
+  })
   const resultAvailable =
     session?.status === "graded" &&
     isResultReleased(

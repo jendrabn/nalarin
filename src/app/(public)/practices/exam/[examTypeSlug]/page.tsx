@@ -1,10 +1,9 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import type { PlanCode } from "@/config/plans"
 import { absoluteUrl } from "@/features/blog/utils"
 import { getCurrentUser } from "@/features/auth/services/session"
-import { getCurrentActiveSubscription } from "@/features/premium/queries"
+import { getCurrentActiveSubscriptions } from "@/features/premium/queries"
 import { PracticesPage } from "@/features/practices/components/practices-page"
 import { getPracticeDiscoveryData } from "@/features/practices/queries"
 
@@ -74,9 +73,9 @@ export default async function Page({ params }: PracticeExamPageProps) {
   const user = await getCurrentUser()
   const dataPromise = getPracticeDiscoveryData()
   const subscriptionPromise = user
-    ? getCurrentActiveSubscription(user.id)
-    : Promise.resolve(null)
-  const [data, currentSubscription] = await Promise.all([
+    ? getCurrentActiveSubscriptions(user.id)
+    : Promise.resolve([])
+  const [data, currentSubscriptions] = await Promise.all([
     dataPromise,
     subscriptionPromise,
   ])
@@ -88,7 +87,9 @@ export default async function Page({ params }: PracticeExamPageProps) {
     notFound()
   }
 
-  const currentPlanCode: PlanCode = currentSubscription?.planCode ?? "free"
+  const premiumExamTypeIds = currentSubscriptions.map(
+    (subscription) => subscription.examTypeId,
+  )
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -112,7 +113,7 @@ export default async function Page({ params }: PracticeExamPageProps) {
       />
       <PracticesPage
         user={user}
-        currentPlanCode={currentPlanCode}
+        premiumExamTypeIds={premiumExamTypeIds}
         data={data}
         selectedExamTypeSlug={examType.slug}
       />

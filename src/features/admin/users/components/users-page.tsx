@@ -116,17 +116,15 @@ function createColumns({
       },
     },
     {
-      accessorKey: "activePlanCode",
+      accessorKey: "activePackageName",
       meta: { label: userColumnLabels.plan },
-      header: ({ column }) => <SortableHeader column={column}>Plan</SortableHeader>,
+      header: ({ column }) => <SortableHeader column={column}>Package</SortableHeader>,
       cell: ({ row }) => {
-        const badge = getModelEnumBadgeMeta("planCode", row.original.activePlanCode)
+        if (row.original.activePackageName) {
+          return <Badge variant="soft">{row.original.activePackageName}</Badge>
+        }
 
-        return (
-          <Badge variant="soft" className={badge.className}>
-            {badge.label}
-          </Badge>
-        )
+        return <span className="text-sm text-muted-foreground">-</span>
       },
     },
     {

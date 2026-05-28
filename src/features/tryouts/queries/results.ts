@@ -2,9 +2,9 @@ import "server-only"
 
 import { and, asc, desc, eq, sql } from "drizzle-orm"
 
-import { PLAN_CONFIG, type PlanCode } from "@/config/plans"
 import { db, schema } from "@/db"
-import { canAccessAiExplanationForPlan } from "@/features/ai-explanations/services"
+import { canAccessAiExplanationForExamType } from "@/features/ai-explanations/services"
+import { getActiveExamTypeEntitlement } from "@/features/premium/access"
 
 import type {
   TryoutCorrectAnswerSnapshot,
@@ -29,7 +29,6 @@ type ReleaseInput = {
 export async function getTryoutResultData(
   sessionId: number,
   userId: number,
-  planCode: PlanCode,
 ): Promise<TryoutResultData | null> {
   const context = await getTryoutSessionResultContext(sessionId, userId)
 
@@ -60,6 +59,7 @@ export async function getTryoutResultData(
     now,
   )
   const sections = await getTryoutSectionResults(sessionId)
+  const entitlement = await getActiveExamTypeEntitlement(userId, context.examTypeId)
   const scorePercentage =
     context.totalMaxScore > 0
       ? Math.round((context.totalScore / context.totalMaxScore) * 100)
@@ -72,7 +72,7 @@ export async function getTryoutResultData(
     resultRelease,
     rankingRelease: {
       ...rankingRelease,
-      allowedByPlan: PLAN_CONFIG[planCode].access.ranking,
+      allowedByPlan: Boolean(entitlement?.rankingEnabled),
     },
     explanationRelease: {
       ...explanationRelease,
@@ -85,7 +85,6 @@ export async function getTryoutResultData(
 export async function getTryoutRankingData(
   sessionId: number,
   userId: number,
-  planCode: PlanCode,
 ): Promise<TryoutRankingData | null> {
   const context = await getTryoutSessionResultContext(sessionId, userId)
 
@@ -101,7 +100,8 @@ export async function getTryoutRankingData(
     },
     now,
   )
-  const allowedByPlan = PLAN_CONFIG[planCode].access.ranking
+  const entitlement = await getActiveExamTypeEntitlement(userId, context.examTypeId)
+  const allowedByPlan = Boolean(entitlement?.rankingEnabled)
 
   if (!release.available) {
     return {
@@ -181,7 +181,6 @@ export async function getTryoutRankingData(
 export async function getTryoutReviewData(
   sessionId: number,
   userId: number,
-  planCode: PlanCode,
 ): Promise<TryoutReviewData | null> {
   const context = await getTryoutSessionResultContext(sessionId, userId)
 
@@ -205,7 +204,10 @@ export async function getTryoutReviewData(
     now,
   )
   const explanationsAllowedByPlan = true
-  const aiExplanationsAllowedByPlan = await canAccessAiExplanationForPlan(userId, planCode)
+  const aiExplanationsAllowedByPlan = await canAccessAiExplanationForExamType(
+    userId,
+    context.examTypeId,
+  )
 
   if (!resultRelease.available) {
     return {
@@ -347,6 +349,7 @@ async function getTryoutSessionResultContext(sessionId: number, userId: number) 
     .select({
       id: schema.tryoutSessions.id,
       tryoutId: schema.tryoutSessions.tryoutId,
+      examTypeId: schema.tryouts.examTypeId,
       userId: schema.tryoutSessions.userId,
       status: schema.tryoutSessions.status,
       startedAt: schema.tryoutSessions.startedAt,
@@ -386,6 +389,7 @@ async function getTryoutSessionResultContext(sessionId: number, userId: number) 
   return {
     id: session.id,
     tryoutId: session.tryoutId,
+    examTypeId: session.examTypeId,
     userId: session.userId,
     title: session.tryoutTitle,
     slug: session.tryoutSlug,

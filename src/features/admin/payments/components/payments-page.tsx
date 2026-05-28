@@ -30,19 +30,12 @@ import { formatAdminDateTime, formatCurrencyIDR } from "@/lib/format"
 
 import { approveManualPaymentAction, deletePaymentsAction } from "../actions"
 import type { AdminPaymentRow } from "../queries"
-import { ManualSubscriptionDialog } from "./manual-subscription-dialog"
 
 type PaymentsPageProps = {
   payments: AdminPaymentRow[]
-  users: Array<{
-    id: number
-    name: string
-    email: string
-    activePlanCode: "free" | "pro" | "max"
-  }>
 }
 
-export function PaymentsPage({ payments, users }: PaymentsPageProps) {
+export function PaymentsPage({ payments }: PaymentsPageProps) {
   const router = useRouter()
   const [approveTarget, setApproveTarget] = useState<AdminPaymentRow | null>(null)
   const [isApproving, setIsApproving] = useState(false)
@@ -75,7 +68,7 @@ export function PaymentsPage({ payments, users }: PaymentsPageProps) {
       <PageHeader
         title="Payments"
         subtitle="Track Midtrans and manual payments, then approve manual transfers when needed."
-        actions={<ManualSubscriptionDialog users={users} />}
+        actions={null}
       />
 
       <AdminDataTable
@@ -122,18 +115,14 @@ export function PaymentsPage({ payments, users }: PaymentsPageProps) {
             ),
           },
           {
-            accessorKey: "planCode",
-            meta: { label: "Plan" },
-            header: ({ column }) => <SortableHeader column={column}>Plan</SortableHeader>,
-            cell: ({ row }) => {
-              const badge = getModelEnumBadgeMeta("planCode", row.original.planCode)
-
-              return (
-                <Badge variant="soft" className={badge.className}>
-                  {badge.label}
-                </Badge>
-              )
-            },
+            accessorKey: "examTypeName",
+            meta: { label: "Package" },
+            header: ({ column }) => <SortableHeader column={column}>Package</SortableHeader>,
+            cell: ({ row }) => (
+              <Badge variant="soft">
+                {row.original.examTypeName ?? "-"}
+              </Badge>
+            ),
           },
           {
             accessorKey: "amount",

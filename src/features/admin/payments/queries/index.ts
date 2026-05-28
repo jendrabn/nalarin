@@ -10,7 +10,6 @@ import {
   paymentGatewayValues,
   paymentMethodValues,
   paymentStatusValues,
-  planCodeValues,
   subscriptionSourceValues,
   subscriptionStatusValues,
   transactionSourceValues,
@@ -20,7 +19,6 @@ import {
 
 type UserRole = (typeof userRoleValues)[number]
 type UserStatus = (typeof userStatusValues)[number]
-type PlanCode = (typeof planCodeValues)[number]
 type PaymentGateway = (typeof paymentGatewayValues)[number]
 type PaymentMethod = (typeof paymentMethodValues)[number]
 type PaymentStatus = (typeof paymentStatusValues)[number]
@@ -37,7 +35,11 @@ export type AdminPaymentRow = {
   userRole: UserRole
   userStatus: UserStatus
   avatarUrl: string | null
-  planCode: PlanCode
+  examTypeId: number | null
+  examTypeName: string | null
+  examTypeSlug: string | null
+  packageId: number | null
+  packagePriceId: number | null
   amount: number
   voucherId: number | null
   voucherCodeSnapshot: string | null
@@ -64,7 +66,7 @@ export type AdminPaymentDetails = AdminPaymentRow & {
   rawPayload: Record<string, unknown> | null
   linkedSubscription: {
     id: number
-    planCode: PlanCode
+    examTypeId: number | null
     status: SubscriptionStatus
     source: SubscriptionSource
     startsAt: Date
@@ -93,7 +95,11 @@ function selectPaymentColumns() {
     userRole: schema.users.role,
     userStatus: schema.users.status,
     avatarUrl: schema.users.avatarUrl,
-    planCode: schema.payments.planCode,
+    examTypeId: schema.payments.examTypeId,
+    examTypeName: schema.examTypes.name,
+    examTypeSlug: schema.examTypes.slug,
+    packageId: schema.payments.packageId,
+    packagePriceId: schema.payments.packagePriceId,
     amount: schema.payments.amount,
     voucherId: schema.payments.voucherId,
     voucherCodeSnapshot: schema.payments.voucherCodeSnapshot,
@@ -126,7 +132,11 @@ function mapPaymentRow(row: {
   userRole: UserRole
   userStatus: UserStatus
   avatarUrl: string | null
-  planCode: PlanCode
+  examTypeId: number | null
+  examTypeName: string | null
+  examTypeSlug: string | null
+  packageId: number | null
+  packagePriceId: number | null
   amount: number
   voucherId: number | null
   voucherCodeSnapshot: string | null
@@ -166,6 +176,7 @@ export async function getAdminPayments() {
     .select(selectPaymentColumns())
     .from(schema.payments)
     .innerJoin(schema.users, eq(schema.payments.userId, schema.users.id))
+    .leftJoin(schema.examTypes, eq(schema.payments.examTypeId, schema.examTypes.id))
     .orderBy(desc(schema.payments.createdAt))
 
   return rows.map(mapPaymentRow)
@@ -177,7 +188,7 @@ export async function getAdminPaymentById(id: number) {
       ...selectPaymentColumns(),
       rawPayload: schema.payments.rawPayload,
       linkedSubscriptionId: schema.subscriptions.id,
-      linkedSubscriptionPlanCode: schema.subscriptions.planCode,
+      linkedSubscriptionExamTypeId: schema.subscriptions.examTypeId,
       linkedSubscriptionStatus: schema.subscriptions.status,
       linkedSubscriptionSource: schema.subscriptions.source,
       linkedSubscriptionStartsAt: schema.subscriptions.startsAt,
@@ -188,6 +199,7 @@ export async function getAdminPaymentById(id: number) {
     })
     .from(schema.payments)
     .innerJoin(schema.users, eq(schema.payments.userId, schema.users.id))
+    .leftJoin(schema.examTypes, eq(schema.payments.examTypeId, schema.examTypes.id))
     .leftJoin(schema.subscriptions, eq(schema.payments.subscriptionId, schema.subscriptions.id))
     .where(eq(schema.payments.id, id))
     .limit(1)
@@ -204,7 +216,7 @@ export async function getAdminPaymentById(id: number) {
     linkedSubscription: row.linkedSubscriptionId
       ? {
           id: row.linkedSubscriptionId,
-          planCode: row.linkedSubscriptionPlanCode as PlanCode,
+          examTypeId: row.linkedSubscriptionExamTypeId,
           status: row.linkedSubscriptionStatus as SubscriptionStatus,
           source: row.linkedSubscriptionSource as SubscriptionSource,
           startsAt: row.linkedSubscriptionStartsAt as Date,
@@ -223,7 +235,7 @@ export async function getPaymentByGatewayOrderId(orderId: string) {
       ...selectPaymentColumns(),
       rawPayload: schema.payments.rawPayload,
       linkedSubscriptionId: schema.subscriptions.id,
-      linkedSubscriptionPlanCode: schema.subscriptions.planCode,
+      linkedSubscriptionExamTypeId: schema.subscriptions.examTypeId,
       linkedSubscriptionStatus: schema.subscriptions.status,
       linkedSubscriptionSource: schema.subscriptions.source,
       linkedSubscriptionStartsAt: schema.subscriptions.startsAt,
@@ -234,6 +246,7 @@ export async function getPaymentByGatewayOrderId(orderId: string) {
     })
     .from(schema.payments)
     .innerJoin(schema.users, eq(schema.payments.userId, schema.users.id))
+    .leftJoin(schema.examTypes, eq(schema.payments.examTypeId, schema.examTypes.id))
     .leftJoin(schema.subscriptions, eq(schema.payments.subscriptionId, schema.subscriptions.id))
     .where(eq(schema.payments.gatewayOrderId, orderId))
     .limit(1)
@@ -250,7 +263,7 @@ export async function getPaymentByGatewayOrderId(orderId: string) {
     linkedSubscription: row.linkedSubscriptionId
       ? {
           id: row.linkedSubscriptionId,
-          planCode: row.linkedSubscriptionPlanCode as PlanCode,
+          examTypeId: row.linkedSubscriptionExamTypeId,
           status: row.linkedSubscriptionStatus as SubscriptionStatus,
           source: row.linkedSubscriptionSource as SubscriptionSource,
           startsAt: row.linkedSubscriptionStartsAt as Date,

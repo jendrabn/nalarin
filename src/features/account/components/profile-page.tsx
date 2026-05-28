@@ -278,7 +278,7 @@ export function ProfilePage({ profile }: ProfilePageProps) {
                     ? `${formatProfileDate(profile.plan.subscription.startsAt)} - ${formatProfileDate(
                         profile.plan.subscription.endsAt,
                       )}`
-                    : "Plan Free Aktif"}
+                    : "Belum ada paket aktif"}
                 </div>
               </div>
             </div>

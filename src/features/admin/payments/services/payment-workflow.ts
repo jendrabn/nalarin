@@ -1,9 +1,9 @@
 import "server-only"
 
-import { and, eq, gt } from "drizzle-orm"
+import { and, desc, eq, gt } from "drizzle-orm"
 
 import { db, schema } from "@/db"
-import { getPlanEndDate, getPlanRank } from "@/lib/billing"
+import { getPackageEndDate, getRenewalStartDate } from "@/lib/billing"
 import { mapMidtransPaymentMethod, type MidtransNotificationPayload } from "@/lib/midtrans"
 
 import type { AdminPaymentDetails } from "../queries"
@@ -32,7 +32,9 @@ type ActivationTarget = Pick<
   | "id"
   | "subscriptionId"
   | "userId"
-  | "planCode"
+  | "examTypeId"
+  | "packageId"
+  | "packagePriceId"
   | "voucherId"
   | "originalAmount"
   | "discountAmount"
@@ -40,14 +42,8 @@ type ActivationTarget = Pick<
   | "status"
   | "gateway"
   | "paymentMethod"
-  | "transactionSource"
   | "gatewayOrderId"
   | "gatewayTransactionId"
-  | "paymentUrl"
-  | "paidAt"
-  | "expiredAt"
-  | "proofUrl"
-  | "notes"
   | "rawPayload"
 >
 
@@ -72,39 +68,45 @@ export async function activatePaymentSubscription(
   }
 
   return db.transaction(async (tx) => {
-    const currentPaymentRows = await tx
+    const [currentPayment] = await tx
       .select({
         id: schema.payments.id,
         subscriptionId: schema.payments.subscriptionId,
         userId: schema.payments.userId,
-        planCode: schema.payments.planCode,
+        examTypeId: schema.payments.examTypeId,
+        packageId: schema.payments.packageId,
+        packagePriceId: schema.payments.packagePriceId,
         voucherId: schema.payments.voucherId,
         originalAmount: schema.payments.originalAmount,
         discountAmount: schema.payments.discountAmount,
         amount: schema.payments.amount,
         status: schema.payments.status,
-        gateway: schema.payments.gateway,
-        paymentMethod: schema.payments.paymentMethod,
-        transactionSource: schema.payments.transactionSource,
-        gatewayOrderId: schema.payments.gatewayOrderId,
         gatewayTransactionId: schema.payments.gatewayTransactionId,
-        paymentUrl: schema.payments.paymentUrl,
-        paidAt: schema.payments.paidAt,
-        expiredAt: schema.payments.expiredAt,
-        proofUrl: schema.payments.proofUrl,
-        notes: schema.payments.notes,
+        gatewayOrderId: schema.payments.gatewayOrderId,
+        paymentMethod: schema.payments.paymentMethod,
+        packageSnapshot: schema.payments.packageSnapshot,
+        pricingSnapshot: schema.payments.pricingSnapshot,
         rawPayload: schema.payments.rawPayload,
       })
       .from(schema.payments)
       .where(eq(schema.payments.id, payment.id))
       .limit(1)
 
-    const currentPayment = currentPaymentRows[0]
-
     if (!currentPayment) {
       return {
         success: false as const,
         message: "Payment not found.",
+      }
+    }
+
+    if (
+      !currentPayment.examTypeId ||
+      !currentPayment.packageId ||
+      !currentPayment.packagePriceId
+    ) {
+      return {
+        success: false as const,
+        message: "Payment is missing exam type package data.",
       }
     }
 
@@ -116,27 +118,23 @@ export async function activatePaymentSubscription(
         return { success: true }
       }
 
-      const existingRedemptionRows = await tx
-        .select({
-          id: schema.voucherRedemptions.id,
-        })
+      const [existingRedemption] = await tx
+        .select({ id: schema.voucherRedemptions.id })
         .from(schema.voucherRedemptions)
         .where(eq(schema.voucherRedemptions.paymentId, currentPayment.id))
         .limit(1)
 
-      if (existingRedemptionRows[0]) {
+      if (existingRedemption) {
         return { success: true }
       }
 
-      const existingVoucherRedemptionRows = await tx
-        .select({
-          id: schema.voucherRedemptions.id,
-        })
+      const [existingVoucherRedemption] = await tx
+        .select({ id: schema.voucherRedemptions.id })
         .from(schema.voucherRedemptions)
         .where(eq(schema.voucherRedemptions.voucherId, currentPayment.voucherId))
         .limit(1)
 
-      if (existingVoucherRedemptionRows[0]) {
+      if (existingVoucherRedemption) {
         return {
           success: false,
           message: "Voucher has already been redeemed.",
@@ -156,25 +154,16 @@ export async function activatePaymentSubscription(
       return { success: true }
     }
 
+    const redemptionResult = await createRedemptionIfNeeded()
+
+    if (!redemptionResult.success) {
+      return redemptionResult
+    }
+
     if (currentPayment.subscriptionId) {
-      const redemptionResult = await createRedemptionIfNeeded()
-
-      if (!redemptionResult.success) {
-        return redemptionResult
-      }
-
       await tx
         .update(schema.payments)
-        .set({
-          status: "paid",
-          paidAt: now,
-          gatewayTransactionId:
-            options.gatewayTransactionId ?? currentPayment.gatewayTransactionId,
-          gatewayOrderId: options.gatewayOrderId ?? currentPayment.gatewayOrderId,
-          paymentMethod: options.paymentMethod ?? currentPayment.paymentMethod,
-          rawPayload: options.rawPayload ?? currentPayment.rawPayload,
-          updatedAt: now,
-        })
+        .set(getPaidPaymentUpdate(currentPayment, options, now))
         .where(eq(schema.payments.id, currentPayment.id))
 
       return {
@@ -187,53 +176,54 @@ export async function activatePaymentSubscription(
       }
     }
 
-    const activeSubscriptionRows = await tx
+    const [activeSubscription] = await tx
       .select({
         id: schema.subscriptions.id,
-        planCode: schema.subscriptions.planCode,
         endsAt: schema.subscriptions.endsAt,
       })
       .from(schema.subscriptions)
       .where(
         and(
           eq(schema.subscriptions.userId, currentPayment.userId),
+          eq(schema.subscriptions.examTypeId, currentPayment.examTypeId),
           eq(schema.subscriptions.status, "active"),
           gt(schema.subscriptions.endsAt, now),
         ),
       )
+      .orderBy(desc(schema.subscriptions.endsAt))
       .limit(1)
 
-    const activeSubscription = activeSubscriptionRows[0] ?? null
+    const durationMonths = getDurationMonths(currentPayment.packageSnapshot)
+    const startsAt = getRenewalStartDate(activeSubscription?.endsAt ?? null, now)
+    const endsAt = getPackageEndDate(startsAt, durationMonths)
 
-    if (activeSubscription && !options.allowAttachToExistingActiveSubscription) {
-      return {
-        success: false as const,
-        message: "User already has an active subscription.",
+    if (activeSubscription) {
+      if (!options.allowAttachToExistingActiveSubscription && options.mode !== "manual") {
+        return {
+          success: false as const,
+          message: "User already has an active subscription for this exam type.",
+        }
       }
-    }
 
-    const shouldReplaceSubscription =
-      activeSubscription &&
-      getPlanRank(currentPayment.planCode) > getPlanRank(activeSubscription.planCode)
-
-    if (activeSubscription && !shouldReplaceSubscription) {
-      const redemptionResult = await createRedemptionIfNeeded()
-
-      if (!redemptionResult.success) {
-        return redemptionResult
-      }
+      await tx
+        .update(schema.subscriptions)
+        .set({
+          packageId: currentPayment.packageId,
+          packagePriceId: currentPayment.packagePriceId,
+          startsAt: now,
+          endsAt,
+          benefitSnapshot: currentPayment.packageSnapshot,
+          pricingSnapshot: currentPayment.pricingSnapshot,
+          activatedByAdminId: options.adminId ?? null,
+          updatedAt: now,
+        })
+        .where(eq(schema.subscriptions.id, activeSubscription.id))
 
       await tx
         .update(schema.payments)
         .set({
-          status: "paid",
-          paidAt: now,
-          gatewayTransactionId:
-            options.gatewayTransactionId ?? currentPayment.gatewayTransactionId,
-          gatewayOrderId: options.gatewayOrderId ?? currentPayment.gatewayOrderId,
-          paymentMethod: options.paymentMethod ?? currentPayment.paymentMethod,
-          rawPayload: options.rawPayload ?? currentPayment.rawPayload,
-          updatedAt: now,
+          ...getPaidPaymentUpdate(currentPayment, options, now),
+          subscriptionId: activeSubscription.id,
         })
         .where(eq(schema.payments.id, currentPayment.id))
 
@@ -242,67 +232,75 @@ export async function activatePaymentSubscription(
         data: {
           subscriptionId: activeSubscription.id,
           createdSubscription: false,
-          attachedExistingSubscription: false,
+          attachedExistingSubscription: true,
         },
       }
-    }
-
-    const redemptionResult = await createRedemptionIfNeeded()
-
-    if (!redemptionResult.success) {
-      return redemptionResult
-    }
-
-    if (activeSubscription && shouldReplaceSubscription) {
-      await tx
-        .update(schema.subscriptions)
-        .set({
-          status: "expired",
-          endsAt: now,
-          updatedAt: now,
-        })
-        .where(eq(schema.subscriptions.id, activeSubscription.id))
     }
 
     const [createdSubscription] = await tx
       .insert(schema.subscriptions)
       .values({
         userId: currentPayment.userId,
-        planCode: currentPayment.planCode,
+        examTypeId: currentPayment.examTypeId,
+        packageId: currentPayment.packageId,
+        packagePriceId: currentPayment.packagePriceId,
         status: "active",
         source: options.mode === "manual" ? "manual" : "midtrans",
         startsAt: now,
-        endsAt: getPlanEndDate(now, currentPayment.planCode),
+        endsAt,
+        benefitSnapshot: currentPayment.packageSnapshot,
+        pricingSnapshot: currentPayment.pricingSnapshot,
         activatedByAdminId: options.adminId ?? null,
       })
       .$returningId()
 
-    const targetSubscriptionId = createdSubscription.id
-
     await tx
       .update(schema.payments)
       .set({
-        status: "paid",
-        paidAt: now,
-        subscriptionId: targetSubscriptionId,
-        gatewayTransactionId:
-          options.gatewayTransactionId ?? currentPayment.gatewayTransactionId,
-        gatewayOrderId: options.gatewayOrderId ?? currentPayment.gatewayOrderId,
-        paymentMethod: options.paymentMethod ?? currentPayment.paymentMethod,
-        rawPayload: options.rawPayload ?? currentPayment.rawPayload,
-        updatedAt: now,
+        ...getPaidPaymentUpdate(currentPayment, options, now),
+        subscriptionId: createdSubscription.id,
       })
       .where(eq(schema.payments.id, currentPayment.id))
 
     return {
       success: true as const,
       data: {
-        subscriptionId: targetSubscriptionId,
+        subscriptionId: createdSubscription.id,
         createdSubscription: true,
         attachedExistingSubscription: false,
       },
     }
   })
+}
+
+function getPaidPaymentUpdate(
+  currentPayment: {
+    gatewayTransactionId: string | null
+    gatewayOrderId: string | null
+    paymentMethod: PaymentActivationOptions["paymentMethod"]
+    rawPayload: Record<string, unknown> | null
+  },
+  options: PaymentActivationOptions,
+  now: Date,
+) {
+  return {
+    status: "paid" as const,
+    paidAt: now,
+    gatewayTransactionId:
+      options.gatewayTransactionId ?? currentPayment.gatewayTransactionId,
+    gatewayOrderId: options.gatewayOrderId ?? currentPayment.gatewayOrderId,
+    paymentMethod: options.paymentMethod ?? currentPayment.paymentMethod,
+    rawPayload: options.rawPayload ?? currentPayment.rawPayload,
+    updatedAt: now,
+  }
+}
+
+function getDurationMonths(snapshot: Record<string, unknown> | null) {
+  const value = snapshot?.durationMonths
+
+  return typeof value === "number" && Number.isInteger(value) && value > 0
+    ? value
+    : 1
 }
 
 export function resolveMidtransPaymentMethod(payload: MidtransNotificationPayload) {

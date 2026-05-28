@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { db, pool, schema } from '@/db';
@@ -27,6 +27,7 @@ const optionalDateTimeSeedSchema = z
 
 const examTypeSeedItemSchema = taxonomySeedItemSchema.extend({
   logoUrl: z.string().trim().max(2048).nullable().optional(),
+  coverUrl: z.string().trim().max(2048).nullable().optional(),
   countdownTitle: z.string().trim().max(255).nullable().optional(),
   countdownTargetAt: optionalDateTimeSeedSchema,
   registrationStartAt: optionalDateTimeSeedSchema,
@@ -71,6 +72,7 @@ async function seedExamTypes(seedData: SeedData) {
         slug: examType.slug,
         description: examType.description ?? null,
         logoUrl: examType.logoUrl ?? null,
+        coverUrl: examType.coverUrl ?? examType.logoUrl ?? null,
         countdownTitle: examType.countdownTitle ?? null,
         countdownTargetAt: examType.countdownTargetAt,
         registrationStartAt: examType.registrationStartAt,
@@ -86,6 +88,7 @@ async function seedExamTypes(seedData: SeedData) {
         name: sql`values(${schema.examTypes.name})`,
         description: sql`values(${schema.examTypes.description})`,
         logoUrl: sql`values(${schema.examTypes.logoUrl})`,
+        coverUrl: sql`values(${schema.examTypes.coverUrl})`,
         countdownTitle: sql`values(${schema.examTypes.countdownTitle})`,
         countdownTargetAt: sql`values(${schema.examTypes.countdownTargetAt})`,
         registrationStartAt: sql`values(${schema.examTypes.registrationStartAt})`,
@@ -137,6 +140,64 @@ async function getSubjectIdBySlug() {
   }
 
   return subjectIds;
+}
+
+async function seedExamTypePackages() {
+  const examTypes = await db
+    .select({
+      id: schema.examTypes.id,
+    })
+    .from(schema.examTypes);
+
+  for (const examType of examTypes) {
+    const [pkg] = await db
+      .insert(schema.examTypePackages)
+      .values({
+        examTypeId: examType.id,
+        isActive: true,
+        practiceQuotaPerMonth: -1,
+        quizQuotaPerMonth: -1,
+        tryoutQuotaPerMonth: -1,
+        aiExplanationQuotaPerMonth: -1,
+        premiumPracticesEnabled: true,
+        premiumTryoutsEnabled: true,
+        rankingEnabled: true,
+      })
+      .onDuplicateKeyUpdate({
+        set: {
+          updatedAt: new Date(),
+        },
+      })
+      .$returningId();
+
+    const packageId =
+      pkg?.id ??
+      (
+        await db.query.examTypePackages.findFirst({
+          where: eq(schema.examTypePackages.examTypeId, examType.id),
+          columns: { id: true },
+        })
+      )?.id;
+
+    if (!packageId) {
+      continue;
+    }
+
+    await db
+      .insert(schema.examTypePackagePrices)
+      .values({
+        packageId,
+        durationMonths: 1,
+        price: 100000,
+        discountPercent: 0,
+        isActive: true,
+      })
+      .onDuplicateKeyUpdate({
+        set: {
+          updatedAt: new Date(),
+        },
+      });
+  }
 }
 
 async function seedSubjects(seedData: SeedData) {
@@ -262,6 +323,7 @@ async function main() {
   const seedData = await loadSeedData();
 
   await seedExamTypes(seedData);
+  await seedExamTypePackages();
   await seedSubjects(seedData);
   await seedTopics(seedData);
   await seedBlogCategories(seedData);

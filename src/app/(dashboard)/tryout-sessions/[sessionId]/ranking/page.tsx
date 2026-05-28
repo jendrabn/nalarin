@@ -2,16 +2,14 @@ import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import { cache } from "react"
 
-import type { PlanCode } from "@/config/plans"
 import { requireUser } from "@/features/auth/services/session"
-import { getCurrentActiveSubscription } from "@/features/premium/queries"
 import { TryoutSessionPageShell } from "@/features/tryouts/components/tryout-session-page-shell"
 import { TryoutRankingPage } from "@/features/tryouts/components/tryout-ranking-page"
 import { getTryoutRankingData } from "@/features/tryouts/queries/results"
 import type { SiteUser } from "@/components/site-navbar"
 
-const getRankingPageData = cache(async (sessionId: number, userId: number, planCode: PlanCode) => {
-  return getTryoutRankingData(sessionId, userId, planCode)
+const getRankingPageData = cache(async (sessionId: number, userId: number) => {
+  return getTryoutRankingData(sessionId, userId)
 })
 
 export async function generateMetadata({
@@ -33,9 +31,7 @@ export async function generateMetadata({
     }
   }
 
-  const subscription = await getCurrentActiveSubscription(user.id)
-  const planCode: PlanCode = subscription?.planCode ?? "free"
-  const data = await getRankingPageData(id, user.id, planCode)
+  const data = await getRankingPageData(id, user.id)
 
   if (!data) {
     return {
@@ -72,9 +68,7 @@ export default async function Page({
     notFound()
   }
 
-  const subscription = await getCurrentActiveSubscription(user.id)
-  const planCode: PlanCode = subscription?.planCode ?? "free"
-  const data = await getRankingPageData(id, user.id, planCode)
+  const data = await getRankingPageData(id, user.id)
 
   if (!data) {
     notFound()

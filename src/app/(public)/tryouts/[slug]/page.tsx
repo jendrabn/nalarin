@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import type { PlanCode } from "@/config/plans"
 import { absoluteUrl } from "@/features/blog/utils"
 import { getCurrentUser } from "@/features/auth/services/session"
 import { getCurrentActiveSubscription } from "@/features/premium/queries"
@@ -78,7 +77,7 @@ export default async function Page({ params }: TryoutPageProps) {
 
   const user = await getCurrentUser()
   const subscriptionPromise = user
-    ? getCurrentActiveSubscription(user.id)
+    ? getCurrentActiveSubscription(user.id, tryout.examTypeId)
     : Promise.resolve(null)
   const userSessionPromise = user
     ? getUserTryoutSessionForTryout(user.id, tryout.id)
@@ -87,7 +86,7 @@ export default async function Page({ params }: TryoutPageProps) {
     subscriptionPromise,
     userSessionPromise,
   ])
-  const currentPlanCode: PlanCode = currentSubscription?.planCode ?? "free"
+  const hasPremiumAccess = Boolean(currentSubscription)
   const serverNow = new Date().toISOString()
   const jsonLd = {
     "@context": "https://schema.org",
@@ -122,7 +121,7 @@ export default async function Page({ params }: TryoutPageProps) {
               }
             : null
         }
-        currentPlanCode={currentPlanCode}
+        hasPremiumAccess={hasPremiumAccess}
         tryout={tryout}
         userSession={userSession}
         serverNow={serverNow}

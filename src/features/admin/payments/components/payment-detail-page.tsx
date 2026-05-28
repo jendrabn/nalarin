@@ -59,7 +59,6 @@ export function PaymentDetailPage({ payment, backHref }: PaymentDetailPageProps)
     ? getModelEnumBadgeMeta("paymentMethod", payment.paymentMethod)
     : null
   const sourceBadge = getModelEnumBadgeMeta("transactionSource", payment.transactionSource)
-  const planBadge = getModelEnumBadgeMeta("planCode", payment.planCode)
   const userRoleBadge = getModelEnumBadgeMeta("userRole", payment.userRole)
   const userStatusBadge = getModelEnumBadgeMeta("userStatus", payment.userStatus)
 
@@ -151,9 +150,7 @@ export function PaymentDetailPage({ payment, backHref }: PaymentDetailPageProps)
               <Badge variant="soft" className={gatewayBadge.className}>
                 {gatewayBadge.label}
               </Badge>
-              <Badge variant="soft" className={planBadge.className}>
-                {planBadge.label}
-              </Badge>
+              <Badge variant="soft">{payment.examTypeName ?? "Package"}</Badge>
               {paymentMethodBadge ? (
                 <Badge variant="soft" className={paymentMethodBadge.className}>
                   {paymentMethodBadge.label}
@@ -269,18 +266,7 @@ export function PaymentDetailPage({ payment, backHref }: PaymentDetailPageProps)
                     Linked Subscription
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    <Badge
-                      variant="soft"
-                      className={getModelEnumBadgeMeta(
-                        "planCode",
-                        payment.linkedSubscription.planCode,
-                      ).className}
-                    >
-                      {getModelEnumBadgeMeta(
-                        "planCode",
-                        payment.linkedSubscription.planCode,
-                      ).label}
-                    </Badge>
+                    <Badge variant="soft">{payment.examTypeName ?? "Package"}</Badge>
                     <Badge
                       variant="soft"
                       className={getModelEnumBadgeMeta(

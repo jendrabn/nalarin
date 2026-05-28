@@ -4,15 +4,15 @@ import "server-only"
 
 import crypto from "node:crypto"
 import { revalidatePath } from "next/cache"
-import { and, desc, eq, gt } from "drizzle-orm"
+import { and, desc, eq } from "drizzle-orm"
 
 import { env } from "@/config/env"
-import { PLAN_CONFIG, type PlanCode } from "@/config/plans"
 import { db, schema } from "@/db"
 import {
-  getPlanFinalPrice,
-  getPlanRank,
-  isPaidPlanCode,
+  getPackageDiscountAmount,
+  getPackageFinalPrice,
+  type PackageBenefitSnapshot,
+  type PackagePricingSnapshot,
 } from "@/lib/billing"
 import {
   cancelMidtransTransaction,
@@ -36,9 +36,31 @@ const PREMIUM_PATH = "/pricing"
 const PAYMENT_EXPIRY_MS = 24 * 60 * 60 * 1000
 const PAYMENT_EXPIRY_HOURS = 24
 
+type CheckoutPackage = {
+  priceId: number
+  packageId: number
+  examTypeId: number
+  examTypeName: string
+  examTypeSlug: string
+  price: number
+  discountPercent: number
+  durationMonths: number
+  practiceQuotaPerMonth: number
+  quizQuotaPerMonth: number
+  tryoutQuotaPerMonth: number
+  aiExplanationQuotaPerMonth: number
+  premiumPracticesEnabled: boolean
+  premiumTryoutsEnabled: boolean
+  rankingEnabled: boolean
+}
+
 type PendingPaymentRow = {
   id: number
-  planCode: PlanCode
+  examTypeId: number | null
+  examTypeSlug: string | null
+  examTypeName: string | null
+  packageId: number | null
+  packagePriceId: number | null
   amount: number
   voucherId: number | null
   voucherCodeSnapshot: string | null
@@ -57,7 +79,11 @@ type PendingPaymentRow = {
 
 const pendingPaymentColumns = {
   id: schema.payments.id,
-  planCode: schema.payments.planCode,
+  examTypeId: schema.payments.examTypeId,
+  examTypeSlug: schema.examTypes.slug,
+  examTypeName: schema.examTypes.name,
+  packageId: schema.payments.packageId,
+  packagePriceId: schema.payments.packagePriceId,
   amount: schema.payments.amount,
   voucherId: schema.payments.voucherId,
   voucherCodeSnapshot: schema.payments.voucherCodeSnapshot,
@@ -75,7 +101,7 @@ const pendingPaymentColumns = {
 } as const
 
 export async function previewPremiumVoucherAction(
-  planCode: PlanCode,
+  packagePriceId: number,
   voucherCode: string,
 ): Promise<PremiumActionResult<PremiumVoucherPreview>> {
   const user = await getCurrentUser()
@@ -88,19 +114,21 @@ export async function previewPremiumVoucherAction(
     }
   }
 
-  if (!isPaidPlanCode(planCode)) {
+  const checkoutPackage = await getCheckoutPackage(packagePriceId)
+
+  if (!checkoutPackage) {
     return {
       success: false,
-      code: "invalid_plan",
-      message: "Voucher hanya berlaku untuk paket Pro atau Max.",
+      code: "invalid_package",
+      message: "Paket tidak tersedia.",
     }
   }
 
   const now = new Date()
-  const [pendingPayment, activeSubscription] = await Promise.all([
-    getLatestPendingPayment(user.id),
-    getActiveSubscriptionForCheckout(user.id, now),
-  ])
+  const pendingPayment = await getLatestPendingPayment(
+    user.id,
+    checkoutPackage.examTypeId,
+  )
 
   if (pendingPayment && !isExpired(pendingPayment.expiredAt, now)) {
     return {
@@ -111,17 +139,13 @@ export async function previewPremiumVoucherAction(
     }
   }
 
-  if (activeSubscription) {
-    return {
-      success: false,
-      code: "active_plan",
-      message: "Voucher tidak dapat digunakan saat subscription Pro/Max masih aktif.",
-    }
-  }
-
+  const originalAmount = getPackageFinalPrice(
+    checkoutPackage.price,
+    checkoutPackage.discountPercent,
+  )
   const result = await validateVoucherForCheckout({
     code: voucherCode,
-    planCode,
+    originalAmount,
     userId: user.id,
     now,
   })
@@ -141,17 +165,44 @@ export async function previewPremiumVoucherAction(
 }
 
 export async function startPremiumCheckoutAction(
-  planCode: PlanCode,
+  packagePriceId: number,
   voucherCode?: string,
 ): Promise<PremiumActionResult<PremiumPaymentPayload>> {
   if (!env.PAYMENT_GATEWAY_ENABLED) {
     return {
       success: false,
       code: "gateway_error",
-      message: "Payment gateway sedang dinonaktifkan. Gunakan pembayaran manual.",
+      message: "Pembayaran online sedang dinonaktifkan. Gunakan metode pembayaran yang tersedia.",
     }
   }
 
+  return createPendingPayment({
+    packagePriceId,
+    voucherCode,
+    gateway: "midtrans",
+  })
+}
+
+export async function startManualPaymentAction(
+  packagePriceId: number,
+  voucherCode?: string,
+): Promise<PremiumActionResult<PremiumPaymentPayload>> {
+  return createPendingPayment({
+    packagePriceId,
+    voucherCode,
+    gateway: "manual",
+  })
+}
+
+async function createPendingPayment({
+  packagePriceId,
+  voucherCode,
+  gateway,
+}: {
+  packagePriceId: number
+  voucherCode?: string
+  gateway: "midtrans" | "manual"
+}): Promise<PremiumActionResult<PremiumPaymentPayload>> {
   const user = await getCurrentUser()
 
   if (!user) {
@@ -170,76 +221,19 @@ export async function startPremiumCheckoutAction(
     }
   }
 
-  if (!isPaidPlanCode(planCode)) {
+  const checkoutPackage = await getCheckoutPackage(packagePriceId)
+
+  if (!checkoutPackage) {
     return {
       success: false,
-      code: "invalid_plan",
-      message: "Pilih paket Pro atau Max untuk berlangganan.",
-    }
-  }
-
-  const now = new Date()
-  const pendingPayment = await getLatestPendingPayment(user.id)
-
-  if (pendingPayment) {
-    if (isExpired(pendingPayment.expiredAt, now)) {
-      await markPaymentExpired(pendingPayment.id)
-    } else {
-      const payload = toPremiumPaymentPayload(pendingPayment)
-
-      if (!payload.snapToken && !payload.paymentUrl) {
-        return {
-          success: false,
-          code: "pending_exists",
-          message:
-            "Masih ada pembayaran pending. Batalkan pembayaran tersebut sebelum membuat transaksi baru.",
-        }
-      }
-
-      return {
-        success: false,
-        code: "pending_exists",
-        message: "Masih ada pembayaran pending. Lanjutkan atau batalkan pembayaran tersebut.",
-        data: {
-          payment: payload,
-          snapToken: payload.snapToken,
-          paymentUrl: payload.paymentUrl,
-        },
-      }
-    }
-  }
-
-  const activeSubscription = await getActiveSubscriptionForCheckout(user.id, now)
-
-  if (activeSubscription) {
-    if (activeSubscription.planCode === planCode) {
-      return {
-        success: false,
-        code: "active_plan",
-        message: `Paket ${PLAN_CONFIG[planCode].name} sudah aktif.`,
-      }
-    }
-
-    if (getPlanRank(activeSubscription.planCode) > getPlanRank(planCode)) {
-      return {
-        success: false,
-        code: "downgrade_not_allowed",
-        message: "Downgrade dari Max ke Pro tidak tersedia.",
-      }
-    }
-
-    if (voucherCode?.trim()) {
-      return {
-        success: false,
-        code: "voucher_invalid",
-        message: "Voucher tidak dapat digunakan saat subscription Pro/Max masih aktif.",
-      }
+      code: "invalid_package",
+      message: "Paket tidak tersedia.",
     }
   }
 
   const voucher = await resolveCheckoutVoucher({
     voucherCode,
-    planCode,
+    checkoutPackage,
     userId: user.id,
   })
 
@@ -247,13 +241,22 @@ export async function startPremiumCheckoutAction(
     return voucher
   }
 
-  const pricing = getCheckoutPricing(planCode, voucher.data)
+  const pricing = getCheckoutPricing(checkoutPackage, voucher.data)
+  const benefitSnapshot = buildBenefitSnapshot(checkoutPackage)
+  const pricingSnapshot = buildPricingSnapshot(checkoutPackage)
   const amount = pricing.finalAmount
-  const orderId = createOrderId(user.id, planCode)
+  const now = new Date()
+  const orderId =
+    gateway === "midtrans"
+      ? createOrderId(user.id, checkoutPackage)
+      : createManualOrderId(user.id, checkoutPackage)
   const expiredAt = new Date(now.getTime() + PAYMENT_EXPIRY_MS)
   const rawPayload = {
-    provider: "midtrans_snap",
-    planCode,
+    provider: gateway === "midtrans" ? "midtrans_snap" : "manual_ewallet",
+    examTypeId: checkoutPackage.examTypeId,
+    examTypeSlug: checkoutPackage.examTypeSlug,
+    packageId: checkoutPackage.packageId,
+    packagePriceId: checkoutPackage.priceId,
     originalAmount: pricing.originalAmount,
     discountAmount: pricing.discountAmount,
     voucher: voucher.data
@@ -265,30 +268,110 @@ export async function startPremiumCheckoutAction(
         }
       : null,
     amount,
-    createdFrom: "premium_pricing",
+    createdFrom: "exam_type_pricing",
   }
 
-  const [created] = await db
-    .insert(schema.payments)
-    .values({
-      userId: user.id,
-      planCode,
-      voucherId: voucher.data?.voucherId ?? null,
-      voucherCodeSnapshot: voucher.data?.code ?? null,
-      voucherNameSnapshot: voucher.data?.name ?? null,
-      voucherDiscountPercent: voucher.data?.discountPercent ?? null,
-      originalAmount: pricing.originalAmount,
-      discountAmount: pricing.discountAmount,
-      amount,
-      status: "pending",
-      gateway: "midtrans",
-      transactionSource: "user_checkout",
-      gatewayOrderId: orderId,
-      expiredAt,
-      notes: `Checkout paket ${PLAN_CONFIG[planCode].name} dari halaman Premium.`,
-      rawPayload,
-    })
-    .$returningId()
+  const createResult = await db.transaction(async (tx) => {
+    const pendingPayment = await getLatestPendingPaymentForUpdate(
+      tx,
+      user.id,
+      checkoutPackage.examTypeId,
+    )
+
+    if (pendingPayment) {
+      if (isExpired(pendingPayment.expiredAt, now)) {
+        await tx
+          .update(schema.payments)
+          .set({
+            status: "expired",
+            updatedAt: now,
+          })
+          .where(eq(schema.payments.id, pendingPayment.id))
+      } else {
+        const payload = toPremiumPaymentPayload(pendingPayment)
+
+        return {
+          success: false,
+          code: "pending_exists",
+          message:
+            gateway === "manual" && pendingPayment.gateway === "manual"
+              ? "Masih ada pembayaran pending. Lanjutkan konfirmasi pembayaran tersebut."
+              : "Masih ada pembayaran pending. Lanjutkan atau batalkan pembayaran tersebut.",
+          data: {
+            payment: payload,
+            snapToken: payload.snapToken,
+            paymentUrl: payload.paymentUrl,
+          },
+        } satisfies PremiumActionResult<PremiumPaymentPayload>
+      }
+    }
+
+    const [created] = await tx
+      .insert(schema.payments)
+      .values({
+        userId: user.id,
+        examTypeId: checkoutPackage.examTypeId,
+        packageId: checkoutPackage.packageId,
+        packagePriceId: checkoutPackage.priceId,
+        voucherId: voucher.data?.voucherId ?? null,
+        voucherCodeSnapshot: voucher.data?.code ?? null,
+        voucherNameSnapshot: voucher.data?.name ?? null,
+        voucherDiscountPercent: voucher.data?.discountPercent ?? null,
+        originalAmount: pricing.originalAmount,
+        discountAmount: pricing.discountAmount,
+        amount,
+        status: "pending",
+        gateway,
+        paymentMethod: gateway === "manual" ? "e_wallet" : null,
+        transactionSource: "user_checkout",
+        gatewayOrderId: orderId,
+        expiredAt,
+        notes:
+          gateway === "midtrans"
+            ? `Checkout paket ${checkoutPackage.examTypeName} dari halaman pricing.`
+            : "Pembayaran dari halaman pricing. Menunggu konfirmasi bukti transfer via WhatsApp.",
+        packageSnapshot: benefitSnapshot,
+        pricingSnapshot,
+        rawPayload,
+      })
+      .$returningId()
+
+    return {
+      success: true,
+      data: created,
+    } as const
+  })
+
+  if (!createResult.success) {
+    return createResult
+  }
+
+  const created = createResult.data
+
+  if (gateway === "manual") {
+    revalidatePremiumPage()
+
+    return {
+      success: true,
+      data: {
+        payment: buildPendingPaymentPayload({
+          id: created.id,
+          checkoutPackage,
+          amount,
+          pricing,
+          voucher: voucher.data,
+          gateway,
+          orderId,
+          expiredAt,
+          createdAt: now,
+          paymentUrl: null,
+          snapToken: null,
+        }),
+        snapToken: null,
+        paymentUrl: null,
+      },
+    }
+  }
 
   try {
     const snap = await createMidtransSnapTransaction({
@@ -298,10 +381,10 @@ export async function startPremiumCheckoutAction(
       },
       item_details: [
         {
-          id: `plan-${planCode}`,
+          id: `exam-${checkoutPackage.examTypeSlug}-${checkoutPackage.durationMonths}m`,
           price: amount,
           quantity: 1,
-          name: `Nalarin ${PLAN_CONFIG[planCode].name} 1 Bulan`,
+          name: `Nalarin ${checkoutPackage.examTypeName} ${checkoutPackage.durationMonths} Bulan`,
         },
       ],
       customer_details: {
@@ -317,51 +400,37 @@ export async function startPremiumCheckoutAction(
       },
     })
 
-    const snapRawPayload = {
-      ...rawPayload,
-      snapToken: snap.token,
-      snapRedirectUrl: snap.redirect_url,
-    }
-
     await db
       .update(schema.payments)
       .set({
         paymentUrl: snap.redirect_url,
-        rawPayload: snapRawPayload,
+        rawPayload: {
+          ...rawPayload,
+          snapToken: snap.token,
+          snapRedirectUrl: snap.redirect_url,
+        },
         updatedAt: new Date(),
       })
       .where(eq(schema.payments.id, created.id))
 
     revalidatePremiumPage()
 
-    const payment: NonNullable<PremiumPendingPayment> = {
-      id: created.id,
-      planCode,
-      planName: PLAN_CONFIG[planCode].name,
-      amount,
-      originalAmount: pricing.originalAmount,
-      discountAmount: pricing.discountAmount,
-      voucher: voucher.data
-        ? {
-            id: voucher.data.voucherId,
-            code: voucher.data.code,
-            name: voucher.data.name,
-            discountPercent: voucher.data.discountPercent,
-          }
-        : null,
-      status: "pending",
-      gateway: "midtrans",
-      gatewayOrderId: orderId,
-      paymentUrl: snap.redirect_url,
-      snapToken: snap.token,
-      expiredAt: expiredAt.toISOString(),
-      createdAt: now.toISOString(),
-    }
-
     return {
       success: true,
       data: {
-        payment,
+        payment: buildPendingPaymentPayload({
+          id: created.id,
+          checkoutPackage,
+          amount,
+          pricing,
+          voucher: voucher.data,
+          gateway,
+          orderId,
+          expiredAt,
+          createdAt: now,
+          paymentUrl: snap.redirect_url,
+          snapToken: snap.token,
+        }),
         snapToken: snap.token,
         paymentUrl: snap.redirect_url,
       },
@@ -384,191 +453,8 @@ export async function startPremiumCheckoutAction(
     return {
       success: false,
       code: "gateway_error",
-      message: "Gagal membuat transaksi Midtrans. Coba lagi beberapa saat.",
+      message: "Gagal membuat transaksi pembayaran. Coba lagi beberapa saat.",
     }
-  }
-}
-
-export async function startManualPaymentAction(
-  planCode: PlanCode,
-  voucherCode?: string,
-): Promise<PremiumActionResult<PremiumPaymentPayload>> {
-  if (env.PAYMENT_GATEWAY_ENABLED) {
-    return {
-      success: false,
-      code: "manual_payment_unavailable",
-      message: "Pembayaran manual sedang tidak tersedia.",
-    }
-  }
-
-  const user = await getCurrentUser()
-
-  if (!user) {
-    return {
-      success: false,
-      code: "unauthenticated",
-      message: "Silakan login terlebih dahulu untuk memilih paket.",
-    }
-  }
-
-  if (!user.emailVerifiedAt) {
-    return {
-      success: false,
-      code: "email_unverified",
-      message: "Verifikasi email terlebih dahulu sebelum melakukan pembayaran.",
-    }
-  }
-
-  if (!isPaidPlanCode(planCode)) {
-    return {
-      success: false,
-      code: "invalid_plan",
-      message: "Pilih paket Pro atau Max untuk berlangganan.",
-    }
-  }
-
-  const now = new Date()
-  const pendingPayment = await getLatestPendingPayment(user.id)
-
-  if (pendingPayment) {
-    if (isExpired(pendingPayment.expiredAt, now)) {
-      await markPaymentExpired(pendingPayment.id)
-    } else {
-      const payload = toPremiumPaymentPayload(pendingPayment)
-
-      return {
-        success: false,
-        code: "pending_exists",
-        message:
-          pendingPayment.gateway === "manual"
-            ? "Masih ada pembayaran manual pending. Lanjutkan konfirmasi pembayaran tersebut."
-            : "Masih ada pembayaran pending. Lanjutkan atau batalkan pembayaran tersebut.",
-        data: {
-          payment: payload,
-          snapToken: payload.snapToken,
-          paymentUrl: payload.paymentUrl,
-        },
-      }
-    }
-  }
-
-  const activeSubscription = await getActiveSubscriptionForCheckout(user.id, now)
-
-  if (activeSubscription) {
-    if (activeSubscription.planCode === planCode) {
-      return {
-        success: false,
-        code: "active_plan",
-        message: `Paket ${PLAN_CONFIG[planCode].name} sudah aktif.`,
-      }
-    }
-
-    if (getPlanRank(activeSubscription.planCode) > getPlanRank(planCode)) {
-      return {
-        success: false,
-        code: "downgrade_not_allowed",
-        message: "Downgrade dari Max ke Pro tidak tersedia.",
-      }
-    }
-
-    if (voucherCode?.trim()) {
-      return {
-        success: false,
-        code: "voucher_invalid",
-        message: "Voucher tidak dapat digunakan saat subscription Pro/Max masih aktif.",
-      }
-    }
-  }
-
-  const voucher = await resolveCheckoutVoucher({
-    voucherCode,
-    planCode,
-    userId: user.id,
-  })
-
-  if (!voucher.success) {
-    return voucher
-  }
-
-  const pricing = getCheckoutPricing(planCode, voucher.data)
-  const amount = pricing.finalAmount
-  const orderId = createManualOrderId(user.id, planCode)
-  const expiredAt = new Date(now.getTime() + PAYMENT_EXPIRY_MS)
-  const rawPayload = {
-    provider: "manual_ewallet",
-    planCode,
-    originalAmount: pricing.originalAmount,
-    discountAmount: pricing.discountAmount,
-    voucher: voucher.data
-      ? {
-          id: voucher.data.voucherId,
-          code: voucher.data.code,
-          name: voucher.data.name,
-          discountPercent: voucher.data.discountPercent,
-        }
-      : null,
-    amount,
-    createdFrom: "premium_pricing",
-    confirmationTarget: "whatsapp",
-  }
-
-  const [created] = await db
-    .insert(schema.payments)
-    .values({
-      userId: user.id,
-      planCode,
-      voucherId: voucher.data?.voucherId ?? null,
-      voucherCodeSnapshot: voucher.data?.code ?? null,
-      voucherNameSnapshot: voucher.data?.name ?? null,
-      voucherDiscountPercent: voucher.data?.discountPercent ?? null,
-      originalAmount: pricing.originalAmount,
-      discountAmount: pricing.discountAmount,
-      amount,
-      status: "pending",
-      gateway: "manual",
-      paymentMethod: "e_wallet",
-      transactionSource: "user_checkout",
-      gatewayOrderId: orderId,
-      expiredAt,
-      notes:
-        "Pembayaran manual e-wallet dari halaman Premium. Menunggu konfirmasi bukti transfer via WhatsApp.",
-      rawPayload,
-    })
-    .$returningId()
-
-  revalidatePremiumPage()
-
-  const payment: NonNullable<PremiumPendingPayment> = {
-    id: created.id,
-    planCode,
-    planName: PLAN_CONFIG[planCode].name,
-    amount,
-    originalAmount: pricing.originalAmount,
-    discountAmount: pricing.discountAmount,
-    voucher: voucher.data
-      ? {
-          id: voucher.data.voucherId,
-          code: voucher.data.code,
-          name: voucher.data.name,
-          discountPercent: voucher.data.discountPercent,
-        }
-      : null,
-    status: "pending",
-    gateway: "manual",
-    gatewayOrderId: orderId,
-    paymentUrl: null,
-    snapToken: null,
-    expiredAt: expiredAt.toISOString(),
-    createdAt: now.toISOString(),
-  }
-
-  return {
-    success: true,
-    data: {
-      payment,
-      snapToken: null,
-      paymentUrl: null,
-    },
   }
 }
 
@@ -608,42 +494,12 @@ export async function continuePremiumPaymentAction(
 
   const payload = toPremiumPaymentPayload(payment)
 
-  if (payment.gateway === "manual") {
-    return {
-      success: true,
-      data: {
-        payment: payload,
-        snapToken: null,
-        paymentUrl: null,
-      },
-    }
-  }
-
-  if (!payload.snapToken) {
-    if (payload.paymentUrl) {
-      return {
-        success: true,
-        data: {
-          payment: payload,
-          snapToken: null,
-          paymentUrl: payload.paymentUrl,
-        },
-      }
-    }
-
-    return {
-      success: false,
-      code: "not_found",
-      message: "Data pembayaran tidak lengkap. Batalkan lalu buat transaksi baru.",
-    }
-  }
-
   return {
     success: true,
     data: {
       payment: payload,
-      snapToken: payload.snapToken,
-      paymentUrl: payload.paymentUrl,
+      snapToken: payment.gateway === "manual" ? null : payload.snapToken,
+      paymentUrl: payment.gateway === "manual" ? null : payload.paymentUrl,
     },
   }
 }
@@ -697,13 +553,56 @@ export async function cancelPremiumPaymentAction(
   }
 }
 
-async function getLatestPendingPayment(userId: number) {
+async function getCheckoutPackage(packagePriceId: number) {
+  if (!Number.isInteger(packagePriceId) || packagePriceId <= 0) {
+    return null
+  }
+
+  const [row] = await db
+    .select({
+      priceId: schema.examTypePackagePrices.id,
+      packageId: schema.examTypePackages.id,
+      examTypeId: schema.examTypes.id,
+      examTypeName: schema.examTypes.name,
+      examTypeSlug: schema.examTypes.slug,
+      price: schema.examTypePackagePrices.price,
+      discountPercent: schema.examTypePackagePrices.discountPercent,
+      durationMonths: schema.examTypePackagePrices.durationMonths,
+      practiceQuotaPerMonth: schema.examTypePackages.practiceQuotaPerMonth,
+      quizQuotaPerMonth: schema.examTypePackages.quizQuotaPerMonth,
+      tryoutQuotaPerMonth: schema.examTypePackages.tryoutQuotaPerMonth,
+      aiExplanationQuotaPerMonth: schema.examTypePackages.aiExplanationQuotaPerMonth,
+      premiumPracticesEnabled: schema.examTypePackages.premiumPracticesEnabled,
+      premiumTryoutsEnabled: schema.examTypePackages.premiumTryoutsEnabled,
+      rankingEnabled: schema.examTypePackages.rankingEnabled,
+    })
+    .from(schema.examTypePackagePrices)
+    .innerJoin(
+      schema.examTypePackages,
+      eq(schema.examTypePackagePrices.packageId, schema.examTypePackages.id),
+    )
+    .innerJoin(schema.examTypes, eq(schema.examTypePackages.examTypeId, schema.examTypes.id))
+    .where(
+      and(
+        eq(schema.examTypePackagePrices.id, packagePriceId),
+        eq(schema.examTypePackagePrices.isActive, true),
+        eq(schema.examTypePackages.isActive, true),
+      ),
+    )
+    .limit(1)
+
+  return row ?? null
+}
+
+async function getLatestPendingPayment(userId: number, examTypeId: number) {
   const [payment] = await db
     .select(pendingPaymentColumns)
     .from(schema.payments)
+    .leftJoin(schema.examTypes, eq(schema.payments.examTypeId, schema.examTypes.id))
     .where(
       and(
         eq(schema.payments.userId, userId),
+        eq(schema.payments.examTypeId, examTypeId),
         eq(schema.payments.status, "pending"),
       ),
     )
@@ -713,10 +612,36 @@ async function getLatestPendingPayment(userId: number) {
   return payment && payment.status === "pending" ? (payment as PendingPaymentRow) : null
 }
 
+type PaymentTransaction = Pick<typeof db, "select">
+
+async function getLatestPendingPaymentForUpdate(
+  tx: PaymentTransaction,
+  userId: number,
+  examTypeId: number,
+) {
+  const [payment] = await tx
+    .select(pendingPaymentColumns)
+    .from(schema.payments)
+    .leftJoin(schema.examTypes, eq(schema.payments.examTypeId, schema.examTypes.id))
+    .where(
+      and(
+        eq(schema.payments.userId, userId),
+        eq(schema.payments.examTypeId, examTypeId),
+        eq(schema.payments.status, "pending"),
+      ),
+    )
+    .orderBy(desc(schema.payments.createdAt))
+    .limit(1)
+    .for("update")
+
+  return payment && payment.status === "pending" ? (payment as PendingPaymentRow) : null
+}
+
 async function getPendingPaymentById(userId: number, paymentId: number) {
   const [payment] = await db
     .select(pendingPaymentColumns)
     .from(schema.payments)
+    .leftJoin(schema.examTypes, eq(schema.payments.examTypeId, schema.examTypes.id))
     .where(
       and(
         eq(schema.payments.userId, userId),
@@ -727,26 +652,6 @@ async function getPendingPaymentById(userId: number, paymentId: number) {
     .limit(1)
 
   return payment && payment.status === "pending" ? (payment as PendingPaymentRow) : null
-}
-
-async function getActiveSubscriptionForCheckout(userId: number, now: Date) {
-  const [subscription] = await db
-    .select({
-      id: schema.subscriptions.id,
-      planCode: schema.subscriptions.planCode,
-    })
-    .from(schema.subscriptions)
-    .where(
-      and(
-        eq(schema.subscriptions.userId, userId),
-        eq(schema.subscriptions.status, "active"),
-        gt(schema.subscriptions.endsAt, now),
-      ),
-    )
-    .orderBy(desc(schema.subscriptions.startsAt))
-    .limit(1)
-
-  return subscription ?? null
 }
 
 async function markPaymentExpired(paymentId: number) {
@@ -767,23 +672,23 @@ function isExpired(expiredAt: Date | null, now: Date) {
   return Boolean(expiredAt && expiredAt <= now)
 }
 
-function createOrderId(userId: number, planCode: PlanCode) {
+function createOrderId(userId: number, checkoutPackage: CheckoutPackage) {
   const suffix = crypto.randomBytes(4).toString("hex")
-  return `NAL-${userId}-${planCode}-${Date.now()}-${suffix}`
+  return `NAL-${userId}-${checkoutPackage.examTypeSlug}-${Date.now()}-${suffix}`
 }
 
-function createManualOrderId(userId: number, planCode: PlanCode) {
+function createManualOrderId(userId: number, checkoutPackage: CheckoutPackage) {
   const suffix = crypto.randomBytes(4).toString("hex")
-  return `MANUAL-${userId}-${planCode}-${Date.now()}-${suffix}`
+  return `MANUAL-${userId}-${checkoutPackage.examTypeSlug}-${Date.now()}-${suffix}`
 }
 
 async function resolveCheckoutVoucher({
   voucherCode,
-  planCode,
+  checkoutPackage,
   userId,
 }: {
   voucherCode?: string
-  planCode: PlanCode
+  checkoutPackage: CheckoutPackage
   userId: number
 }): Promise<
   | { success: true; data: VoucherApplication | null }
@@ -802,7 +707,10 @@ async function resolveCheckoutVoucher({
 
   const result = await validateVoucherForCheckout({
     code: voucherCode,
-    planCode,
+    originalAmount: getPackageFinalPrice(
+      checkoutPackage.price,
+      checkoutPackage.discountPercent,
+    ),
     userId,
   })
 
@@ -820,7 +728,10 @@ async function resolveCheckoutVoucher({
   }
 }
 
-function getCheckoutPricing(planCode: PlanCode, voucher: VoucherApplication | null) {
+function getCheckoutPricing(
+  checkoutPackage: CheckoutPackage,
+  voucher: VoucherApplication | null,
+) {
   if (voucher) {
     return {
       originalAmount: voucher.originalAmount,
@@ -829,12 +740,105 @@ function getCheckoutPricing(planCode: PlanCode, voucher: VoucherApplication | nu
     }
   }
 
-  const amount = getPlanFinalPrice(planCode)
+  const amount = getPackageFinalPrice(
+    checkoutPackage.price,
+    checkoutPackage.discountPercent,
+  )
 
   return {
     originalAmount: amount,
     discountAmount: 0,
     finalAmount: amount,
+  }
+}
+
+function buildBenefitSnapshot(
+  checkoutPackage: CheckoutPackage,
+): PackageBenefitSnapshot {
+  return {
+    examTypeId: checkoutPackage.examTypeId,
+    examTypeName: checkoutPackage.examTypeName,
+    examTypeSlug: checkoutPackage.examTypeSlug,
+    packageId: checkoutPackage.packageId,
+    packagePriceId: checkoutPackage.priceId,
+    durationMonths: checkoutPackage.durationMonths,
+    practiceQuotaPerMonth: checkoutPackage.practiceQuotaPerMonth,
+    quizQuotaPerMonth: checkoutPackage.quizQuotaPerMonth,
+    tryoutQuotaPerMonth: checkoutPackage.tryoutQuotaPerMonth,
+    aiExplanationQuotaPerMonth: checkoutPackage.aiExplanationQuotaPerMonth,
+    premiumPracticesEnabled: checkoutPackage.premiumPracticesEnabled,
+    premiumTryoutsEnabled: checkoutPackage.premiumTryoutsEnabled,
+    rankingEnabled: checkoutPackage.rankingEnabled,
+  }
+}
+
+function buildPricingSnapshot(
+  checkoutPackage: CheckoutPackage,
+): PackagePricingSnapshot {
+  const packageDiscountAmount = getPackageDiscountAmount(
+    checkoutPackage.price,
+    checkoutPackage.discountPercent,
+  )
+
+  return {
+    price: checkoutPackage.price,
+    discountPercent: checkoutPackage.discountPercent,
+    packageDiscountAmount,
+    packageFinalPrice: Math.max(checkoutPackage.price - packageDiscountAmount, 0),
+  }
+}
+
+function buildPendingPaymentPayload({
+  id,
+  checkoutPackage,
+  amount,
+  pricing,
+  voucher,
+  gateway,
+  orderId,
+  expiredAt,
+  createdAt,
+  paymentUrl,
+  snapToken,
+}: {
+  id: number
+  checkoutPackage: CheckoutPackage
+  amount: number
+  pricing: ReturnType<typeof getCheckoutPricing>
+  voucher: VoucherApplication | null
+  gateway: "midtrans" | "manual"
+  orderId: string
+  expiredAt: Date
+  createdAt: Date
+  paymentUrl: string | null
+  snapToken: string | null
+}): NonNullable<PremiumPendingPayment> {
+  return {
+    id,
+    examTypeId: checkoutPackage.examTypeId,
+    examTypeSlug: checkoutPackage.examTypeSlug,
+    examTypeName: checkoutPackage.examTypeName,
+    packageId: checkoutPackage.packageId,
+    packagePriceId: checkoutPackage.priceId,
+    packageName: checkoutPackage.examTypeName,
+    amount,
+    originalAmount: pricing.originalAmount,
+    discountAmount: pricing.discountAmount,
+    voucher: voucher
+      ? {
+          id: voucher.voucherId,
+          code: voucher.code,
+          name: voucher.name,
+          discountPercent: voucher.discountPercent,
+        }
+      : null,
+    status: "pending",
+    gateway,
+    gatewayOrderId: orderId,
+    paymentUrl,
+    snapToken,
+    expiredAt: expiredAt.toISOString(),
+    createdAt: createdAt.toISOString(),
   }
 }
 

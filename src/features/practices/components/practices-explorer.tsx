@@ -19,7 +19,6 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import type { PlanCode } from "@/config/plans"
 import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -79,7 +78,7 @@ type PracticesExplorerProps = {
     email: string
     isEmailVerified: boolean
   } | null
-  currentPlanCode: PlanCode
+  premiumExamTypeIds: number[]
   selectedExamTypeSlug?: string
 }
 
@@ -103,7 +102,7 @@ const modeLabels: Record<PracticeMode, string> = {
 export function PracticesExplorer({
   data,
   user,
-  currentPlanCode,
+  premiumExamTypeIds,
   selectedExamTypeSlug,
 }: PracticesExplorerProps) {
   const router = useRouter()
@@ -178,8 +177,13 @@ export function PracticesExplorer({
       return
     }
 
-    if (!canAccessPractice({ isFree: practice.isFree, planCode: currentPlanCode })) {
-      toast.error("Latihan premium tersedia untuk pengguna paket Pro atau Max.")
+    if (
+      !canAccessPractice({
+        isFree: practice.isFree,
+        hasPremiumAccess: premiumExamTypeIds.includes(practice.examTypeId),
+      })
+    ) {
+      toast.error(`Latihan premium tersedia untuk paket ${practice.examTypeSlug.toUpperCase()}.`)
       return
     }
 
@@ -313,7 +317,7 @@ export function PracticesExplorer({
             ) : (
               <PracticeList
                 practices={visiblePractices}
-                currentPlanCode={currentPlanCode}
+                premiumExamTypeIds={premiumExamTypeIds}
                 onPracticeStart={handlePracticeStart}
               />
             )}
@@ -512,11 +516,11 @@ function SubjectTabs({
 
 function PracticeList({
   practices,
-  currentPlanCode,
+  premiumExamTypeIds,
   onPracticeStart,
 }: {
   practices: PracticeDiscoveryPractice[]
-  currentPlanCode: PlanCode
+  premiumExamTypeIds: number[]
   onPracticeStart: (practice: PracticeDiscoveryPractice) => void
 }) {
   return (
@@ -539,7 +543,7 @@ function PracticeList({
             <PracticeCard
               key={practice.id}
               practice={practice}
-              currentPlanCode={currentPlanCode}
+              premiumExamTypeIds={premiumExamTypeIds}
               onStart={() => onPracticeStart(practice)}
             />
           ))}
@@ -551,11 +555,11 @@ function PracticeList({
 
 function PracticeCard({
   practice,
-  currentPlanCode,
+  premiumExamTypeIds,
   onStart,
 }: {
   practice: PracticeDiscoveryPractice
-  currentPlanCode: PlanCode
+  premiumExamTypeIds: number[]
   onStart: () => void
 }) {
   const titleId = `practice-title-${practice.id}`
@@ -565,7 +569,7 @@ function PracticeCard({
       : "Tanpa Timer"
   const accessAllowed = canAccessPractice({
     isFree: practice.isFree,
-    planCode: currentPlanCode,
+    hasPremiumAccess: premiumExamTypeIds.includes(practice.examTypeId),
   })
   const actionLabel = accessAllowed ? "Mulai Latihan" : "Upgrade Untuk Akses"
 

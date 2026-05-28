@@ -11,7 +11,6 @@ import {
   paymentGatewayValues,
   paymentMethodValues,
   paymentStatusValues,
-  planCodeValues,
   subscriptionSourceValues,
   subscriptionStatusValues,
   transactionSourceValues,
@@ -22,7 +21,6 @@ import {
 type UserRole = (typeof userRoleValues)[number]
 type UserStatus = (typeof userStatusValues)[number]
 type UserGender = (typeof genderValues)[number]
-type PlanCode = (typeof planCodeValues)[number]
 type PaymentGateway = (typeof paymentGatewayValues)[number]
 type PaymentMethod = (typeof paymentMethodValues)[number]
 type PaymentStatus = (typeof paymentStatusValues)[number]
@@ -32,7 +30,9 @@ type TransactionSource = (typeof transactionSourceValues)[number]
 
 export type AdminUserSubscriptionSummary = {
   id: number
-  planCode: PlanCode
+  examTypeId: number | null
+  examTypeName: string | null
+  packageName: string | null
   status: SubscriptionStatus
   source: SubscriptionSource
   startsAt: Date
@@ -48,7 +48,9 @@ export type AdminUserSubscriptionSummary = {
 export type AdminUserPaymentSummary = {
   id: number
   subscriptionId: number | null
-  planCode: PlanCode
+  examTypeId: number | null
+  examTypeName: string | null
+  packageName: string | null
   amount: number
   status: PaymentStatus
   gateway: PaymentGateway
@@ -75,7 +77,8 @@ export type AdminUserRow = {
   gender: UserGender | null
   phoneNumber: string | null
   emailVerifiedAt: Date | null
-  activePlanCode: PlanCode
+  activePackageName: string | null
+  activeExamTypeName: string | null
   activeSubscriptionEndsAt: Date | null
   createdAt: Date
   updatedAt: Date
@@ -113,7 +116,9 @@ function normalizeNullableString(value: string | null) {
 function buildSubscriptionSummary(
   subscription: {
     id: number
-    planCode: PlanCode
+    examTypeId: number | null
+    examTypeName: string | null
+    packageName: string | null
     status: SubscriptionStatus
     source: SubscriptionSource
     startsAt: Date
@@ -141,7 +146,9 @@ function buildPaymentSummary(
   payment: {
     id: number
     subscriptionId: number | null
-    planCode: PlanCode
+    examTypeId: number | null
+    examTypeName: string | null
+    packageName: string | null
     amount: number
     status: PaymentStatus
     gateway: PaymentGateway
@@ -172,8 +179,12 @@ function buildPaymentSummary(
   }
 }
 
-function mapActivePlanCode(subscription: AdminUserSubscriptionSummary | null): PlanCode {
-  return subscription?.status === "active" ? subscription.planCode : "free"
+function getSubscriptionPackageLabel(subscription: AdminUserSubscriptionSummary | null) {
+  if (!subscription) {
+    return null
+  }
+
+  return subscription.examTypeName ?? subscription.packageName ?? null
 }
 
 export async function getAdminUsers() {
@@ -198,7 +209,9 @@ export async function getAdminUsers() {
       .select({
         userId: schema.subscriptions.userId,
         id: schema.subscriptions.id,
-        planCode: schema.subscriptions.planCode,
+        examTypeId: schema.subscriptions.examTypeId,
+        examTypeName: schema.examTypes.name,
+        packageName: sql<string | null>`null`,
         status: schema.subscriptions.status,
         source: schema.subscriptions.source,
         startsAt: schema.subscriptions.startsAt,
@@ -211,6 +224,11 @@ export async function getAdminUsers() {
         updatedAt: schema.subscriptions.updatedAt,
       })
       .from(schema.subscriptions)
+      .leftJoin(schema.examTypes, eq(schema.subscriptions.examTypeId, schema.examTypes.id))
+      .leftJoin(
+        schema.examTypePackages,
+        eq(schema.subscriptions.packageId, schema.examTypePackages.id),
+      )
       .where(eq(schema.subscriptions.status, "active"))
       .orderBy(desc(schema.subscriptions.endsAt)),
   ])
@@ -236,7 +254,8 @@ export async function getAdminUsers() {
       gender: user.gender ?? null,
       phoneNumber: user.phoneNumber ?? null,
       emailVerifiedAt: user.emailVerifiedAt ?? null,
-      activePlanCode: mapActivePlanCode(activeSubscription),
+      activePackageName: getSubscriptionPackageLabel(activeSubscription),
+      activeExamTypeName: activeSubscription?.examTypeName ?? null,
       activeSubscriptionEndsAt: activeSubscription?.endsAt ?? null,
     }
   })
@@ -289,7 +308,9 @@ export async function getAdminUserById(id: number) {
     db
       .select({
         id: schema.subscriptions.id,
-        planCode: schema.subscriptions.planCode,
+        examTypeId: schema.subscriptions.examTypeId,
+        examTypeName: schema.examTypes.name,
+        packageName: sql<string | null>`null`,
         status: schema.subscriptions.status,
         source: schema.subscriptions.source,
         startsAt: schema.subscriptions.startsAt,
@@ -302,13 +323,20 @@ export async function getAdminUserById(id: number) {
         updatedAt: schema.subscriptions.updatedAt,
       })
       .from(schema.subscriptions)
+      .leftJoin(schema.examTypes, eq(schema.subscriptions.examTypeId, schema.examTypes.id))
+      .leftJoin(
+        schema.examTypePackages,
+        eq(schema.subscriptions.packageId, schema.examTypePackages.id),
+      )
       .where(eq(schema.subscriptions.userId, id))
       .orderBy(desc(schema.subscriptions.createdAt)),
     db
       .select({
         id: schema.payments.id,
         subscriptionId: schema.payments.subscriptionId,
-        planCode: schema.payments.planCode,
+        examTypeId: schema.payments.examTypeId,
+        examTypeName: schema.examTypes.name,
+        packageName: sql<string | null>`null`,
         amount: schema.payments.amount,
         status: schema.payments.status,
         gateway: schema.payments.gateway,
@@ -325,6 +353,11 @@ export async function getAdminUserById(id: number) {
         updatedAt: schema.payments.updatedAt,
       })
       .from(schema.payments)
+      .leftJoin(schema.examTypes, eq(schema.payments.examTypeId, schema.examTypes.id))
+      .leftJoin(
+        schema.examTypePackages,
+        eq(schema.payments.packageId, schema.examTypePackages.id),
+      )
       .where(eq(schema.payments.userId, id))
       .orderBy(desc(schema.payments.createdAt))
       .limit(1),
@@ -418,7 +451,8 @@ export async function getAdminUserById(id: number) {
     emailVerifiedAt: user.emailVerifiedAt ?? null,
     googleId: user.googleId ?? null,
     passwordHashSet: Boolean(user.passwordHash),
-    activePlanCode: mapActivePlanCode(buildSubscriptionSummary(activeSubscription)),
+    activePackageName: getSubscriptionPackageLabel(buildSubscriptionSummary(activeSubscription)),
+    activeExamTypeName: activeSubscription?.examTypeName ?? null,
     activeSubscriptionEndsAt: activeSubscription?.endsAt ?? null,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,

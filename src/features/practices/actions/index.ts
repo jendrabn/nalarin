@@ -2,11 +2,10 @@
 
 import { and, eq, sql } from "drizzle-orm"
 
-import { PLAN_CONFIG } from "@/config/plans"
-import type { PlanCode } from "@/config/plans"
 import { db, schema } from "@/db"
 import { requireUser } from "@/features/auth/services/session"
-import { getCurrentActiveSubscription } from "@/features/premium/queries"
+import { getActiveExamTypeEntitlement } from "@/features/premium/access"
+import { isUnlimitedQuota } from "@/lib/billing"
 
 import { canAccessPractice } from "../utils/access"
 import type {
@@ -87,6 +86,7 @@ export async function startPracticeSessionAction(
   const [practice] = await db
     .select({
       id: schema.practices.id,
+      examTypeId: schema.practices.examTypeId,
       isFree: schema.practices.isFree,
       quizDurationMinutes: schema.practices.quizDurationMinutes,
       status: schema.practices.status,
@@ -103,13 +103,17 @@ export async function startPracticeSessionAction(
     }
   }
 
-  const subscription = await getCurrentActiveSubscription(user.id)
-  const planCode: PlanCode = subscription?.planCode ?? "free"
+  const entitlement = await getActiveExamTypeEntitlement(user.id, practice.examTypeId)
 
-  if (!canAccessPractice({ isFree: practice.isFree, planCode })) {
+  if (
+    !canAccessPractice({
+      isFree: practice.isFree,
+      hasPremiumAccess: Boolean(entitlement?.premiumPracticesEnabled),
+    })
+  ) {
     return {
       success: false,
-      message: "Latihan premium tersedia untuk pengguna paket Pro atau Max.",
+      message: "Latihan premium tersedia untuk paket exam type ini.",
     }
   }
 
@@ -130,12 +134,6 @@ export async function startPracticeSessionAction(
     }
   }
 
-  const usageCheck = await checkMonthlyUsageLimit(user.id, planCode, input.mode)
-
-  if (!usageCheck.success) {
-    return usageCheck
-  }
-
   const questionRows = await getPracticeQuestionSnapshotRows(practice.id)
 
   if (questionRows.length === 0) {
@@ -152,8 +150,25 @@ export async function startPracticeSessionAction(
   const now = new Date()
   const totalMaxScore = sessionQuestions.reduce((total, question) => total + question.points, 0)
   const period = getMonthlyUsagePeriod(now)
+  const shouldReserveUsage = !practice.isFree
 
   const created = await db.transaction(async (tx) => {
+    if (shouldReserveUsage) {
+      const usageReservation = await reserveMonthlyPracticeUsage({
+        tx,
+        userId: user.id,
+        examTypeId: practice.examTypeId,
+        mode: input.mode,
+        entitlement,
+        period,
+        now,
+      })
+
+      if (!usageReservation.success) {
+        return usageReservation
+      }
+    }
+
     if (existingSession && input.restartExisting) {
       await tx
         .update(schema.practiceSessions)
@@ -198,36 +213,20 @@ export async function startPracticeSessionAction(
       })),
     )
 
-    await tx
-      .insert(schema.monthlyUsage)
-      .values({
-        userId: user.id,
-        period,
-        practiceSessionsCount: input.mode === "practice" ? 1 : 0,
-        quizSessionsCount: input.mode === "quiz" ? 1 : 0,
-        tryoutSessionsCount: 0,
-      })
-      .onDuplicateKeyUpdate({
-        set: {
-          practiceSessionsCount:
-            input.mode === "practice"
-              ? sql`${schema.monthlyUsage.practiceSessionsCount} + 1`
-              : sql`${schema.monthlyUsage.practiceSessionsCount}`,
-          quizSessionsCount:
-            input.mode === "quiz"
-              ? sql`${schema.monthlyUsage.quizSessionsCount} + 1`
-              : sql`${schema.monthlyUsage.quizSessionsCount}`,
-          updatedAt: now,
-        },
-      })
-
-    return insertedSession
+    return {
+      success: true,
+      data: insertedSession,
+    } as const
   })
+
+  if (!created.success) {
+    return created
+  }
 
   return {
     success: true,
     data: {
-      sessionId: created.id,
+      sessionId: created.data.id,
       resumed: false,
     },
   }
@@ -779,36 +778,77 @@ async function getExistingInProgressSession(
   return session ?? null
 }
 
-async function checkMonthlyUsageLimit(
-  userId: number,
-  planCode: PlanCode,
-  mode: PracticeMode,
-): Promise<PracticeActionResult> {
-  const period = getMonthlyUsagePeriod(new Date())
-  const [usage] = await db
+type MonthlyUsageTransaction = Pick<typeof db, "insert" | "select" | "update">
+
+async function reserveMonthlyPracticeUsage({
+  tx,
+  userId,
+  examTypeId,
+  mode,
+  entitlement,
+  period,
+  now,
+}: {
+  tx: MonthlyUsageTransaction
+  userId: number
+  examTypeId: number
+  mode: PracticeMode
+  entitlement: Awaited<ReturnType<typeof getActiveExamTypeEntitlement>>
+  period: string
+  now: Date
+}): Promise<PracticeActionResult> {
+  const limit =
+    mode === "practice"
+      ? entitlement?.practiceQuotaPerMonth ?? 0
+      : entitlement?.quizQuotaPerMonth ?? 0
+
+  await tx
+    .insert(schema.monthlyUsage)
+    .values({
+      userId,
+      examTypeId,
+      period,
+      practiceSessionsCount: 0,
+      quizSessionsCount: 0,
+      tryoutSessionsCount: 0,
+      aiExplanationSessionsCount: 0,
+    })
+    .onDuplicateKeyUpdate({
+      set: {
+        updatedAt: now,
+      },
+    })
+
+  const [usage] = await tx
     .select({
+      id: schema.monthlyUsage.id,
       practiceSessionsCount: schema.monthlyUsage.practiceSessionsCount,
       quizSessionsCount: schema.monthlyUsage.quizSessionsCount,
     })
     .from(schema.monthlyUsage)
-    .where(and(eq(schema.monthlyUsage.userId, userId), eq(schema.monthlyUsage.period, period)))
+    .where(
+      and(
+        eq(schema.monthlyUsage.userId, userId),
+        eq(schema.monthlyUsage.examTypeId, examTypeId),
+        eq(schema.monthlyUsage.period, period),
+      ),
+    )
     .limit(1)
-
-  const limit =
-    mode === "practice"
-      ? PLAN_CONFIG[planCode].limits.practiceSessionsPerMonth
-      : PLAN_CONFIG[planCode].limits.quizSessionsPerMonth
-
-  if (limit === null) {
-    return { success: true, data: undefined }
-  }
+    .for("update")
 
   const used =
     mode === "practice"
       ? usage?.practiceSessionsCount ?? 0
       : usage?.quizSessionsCount ?? 0
 
-  if (used >= limit) {
+  if (!usage) {
+    return {
+      success: false,
+      message: "Gagal menyiapkan limit penggunaan. Coba lagi.",
+    }
+  }
+
+  if (!isUnlimitedQuota(limit) && used >= limit) {
     return {
       success: false,
       message:
@@ -817,6 +857,21 @@ async function checkMonthlyUsageLimit(
           : "Limit Mode Quiz bulan ini sudah habis.",
     }
   }
+
+  await tx
+    .update(schema.monthlyUsage)
+    .set({
+      practiceSessionsCount:
+        mode === "practice"
+          ? sql`${schema.monthlyUsage.practiceSessionsCount} + 1`
+          : sql`${schema.monthlyUsage.practiceSessionsCount}`,
+      quizSessionsCount:
+        mode === "quiz"
+          ? sql`${schema.monthlyUsage.quizSessionsCount} + 1`
+          : sql`${schema.monthlyUsage.quizSessionsCount}`,
+      updatedAt: now,
+    })
+    .where(eq(schema.monthlyUsage.id, usage.id))
 
   return { success: true, data: undefined }
 }

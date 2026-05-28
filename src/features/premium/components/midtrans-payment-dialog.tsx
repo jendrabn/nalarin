@@ -1,5 +1,7 @@
 "use client"
 
+import { TicketPercentIcon } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,7 +15,6 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { formatCurrencyIDR } from "@/lib/format"
-import { TicketPercentIcon } from "lucide-react"
 import type { PricingPlanView } from "@/lib/pricing-plans"
 
 import type { PremiumVoucherPreview } from "../types"
@@ -47,7 +48,7 @@ export function MidtransPaymentDialog({
     <Dialog open={Boolean(plan)} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[min(88vh,760px)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Pembayaran Midtrans {plan?.name}</DialogTitle>
+          <DialogTitle>Pembayaran {plan?.name}</DialogTitle>
           <DialogDescription>
             Periksa detail paket dan kode voucher sebelum melanjutkan ke pembayaran.
           </DialogDescription>
@@ -142,9 +143,7 @@ function CheckoutSummary({
       <Separator className="my-4" />
 
       <div className="flex items-end justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-muted-foreground">Total Bayar</p>
-        </div>
+        <p className="text-sm font-medium text-muted-foreground">Total Bayar</p>
         <span className="text-2xl font-semibold tracking-tight">
           {formatCurrencyIDR(total)}
         </span>
@@ -172,45 +171,43 @@ function VoucherCard({
 }) {
   return (
     <div className="rounded-lg border bg-card p-4">
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <div className="relative flex-1">
-            <TicketPercentIcon
-              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              id="midtrans-voucher-code"
-              value={voucherCode}
-              onChange={(event) => onVoucherCodeChange(event.target.value)}
-              placeholder="Kode Voucher"
-              aria-label="Kode Voucher"
-              disabled={processing || voucherProcessing || Boolean(appliedVoucher)}
-              className="h-10 pl-10 uppercase"
-            />
-          </div>
-          {appliedVoucher ? (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={processing}
-              className="h-10 shrink-0 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={onRemoveVoucher}
-            >
-              Hapus
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="outline-primary"
-              disabled={processing || voucherProcessing || !voucherCode.trim()}
-              className="h-10 w-fit shrink-0 px-4"
-              onClick={onApplyVoucher}
-            >
-              {voucherProcessing ? "Mengecek..." : "Gunakan"}
-            </Button>
-          )}
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="relative flex-1">
+          <TicketPercentIcon
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <Input
+            id="midtrans-voucher-code"
+            value={voucherCode}
+            onChange={(event) => onVoucherCodeChange(event.target.value)}
+            placeholder="Kode Voucher"
+            aria-label="Kode Voucher"
+            disabled={processing || voucherProcessing || Boolean(appliedVoucher)}
+            className="h-10 pl-10 uppercase"
+          />
         </div>
+        {appliedVoucher ? (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={processing}
+            className="h-10 shrink-0"
+            onClick={onRemoveVoucher}
+          >
+            Hapus
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="outline-primary"
+            disabled={processing || voucherProcessing || !voucherCode.trim()}
+            className="h-10 shrink-0"
+            onClick={onApplyVoucher}
+          >
+            {voucherProcessing ? "Mengecek..." : "Gunakan"}
+          </Button>
+        )}
       </div>
     </div>
   )
@@ -219,26 +216,16 @@ function VoucherCard({
 function SummaryRow({
   label,
   value,
-  strong = false,
   accent = false,
   struck = false,
 }: {
   label: string
   value: string
-  strong?: boolean
   accent?: boolean
   struck?: boolean
 }) {
   return (
-    <div
-      className={[
-        "flex items-center justify-between gap-3",
-        strong ? "text-base font-semibold" : "",
-        accent ? "text-primary" : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
+    <div className={["flex items-center justify-between gap-3", accent ? "text-primary" : ""].filter(Boolean).join(" ")}>
       <span className="text-muted-foreground">{label}</span>
       <span className={struck ? "text-muted-foreground line-through" : ""}>
         {value}

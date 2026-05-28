@@ -21,6 +21,8 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { LogoUploadField } from "@/features/admin/components/logo-upload-field"
 
@@ -47,6 +49,18 @@ function buildDefaultValues(initialValues?: ExamTypeFormValues): ExamTypeFormVal
     name: initialValues?.name ?? "",
     description: initialValues?.description ?? "",
     logoUrl: initialValues?.logoUrl ?? "",
+    coverUrl: initialValues?.coverUrl ?? "",
+    packageIsActive: initialValues?.packageIsActive ?? true,
+    packagePrice: initialValues?.packagePrice ?? 100000,
+    packageDiscountPercent: initialValues?.packageDiscountPercent ?? 0,
+    packageDurationMonths: initialValues?.packageDurationMonths ?? 1,
+    practiceQuotaPerMonth: initialValues?.practiceQuotaPerMonth ?? -1,
+    quizQuotaPerMonth: initialValues?.quizQuotaPerMonth ?? -1,
+    tryoutQuotaPerMonth: initialValues?.tryoutQuotaPerMonth ?? -1,
+    aiExplanationQuotaPerMonth: initialValues?.aiExplanationQuotaPerMonth ?? -1,
+    premiumPracticesEnabled: initialValues?.premiumPracticesEnabled ?? true,
+    premiumTryoutsEnabled: initialValues?.premiumTryoutsEnabled ?? true,
+    rankingEnabled: initialValues?.rankingEnabled ?? true,
     countdownTitle: initialValues?.countdownTitle ?? "",
     countdownTargetAt: initialValues?.countdownTargetAt ?? "",
     registrationStartAt: initialValues?.registrationStartAt ?? "",
@@ -86,6 +100,17 @@ export function ExamTypeFormDialog({
   const rootError = form.formState.errors.root?.message
   const isSubmitting = form.formState.isSubmitting
   const logoUrl = useWatch({ control: form.control, name: "logoUrl" })
+  const coverUrl = useWatch({ control: form.control, name: "coverUrl" })
+  const packageIsActive = useWatch({ control: form.control, name: "packageIsActive" })
+  const premiumPracticesEnabled = useWatch({
+    control: form.control,
+    name: "premiumPracticesEnabled",
+  })
+  const premiumTryoutsEnabled = useWatch({
+    control: form.control,
+    name: "premiumTryoutsEnabled",
+  })
+  const rankingEnabled = useWatch({ control: form.control, name: "rankingEnabled" })
 
   const handleSubmit = form.handleSubmit(async (values) => {
     const result = await onSubmit(values)
@@ -131,6 +156,7 @@ export function ExamTypeFormDialog({
           <div className="-mx-4 max-h-[50vh] overflow-y-auto px-4 no-scrollbar">
             <FieldGroup>
             <input type="hidden" {...form.register("logoUrl")} />
+            <input type="hidden" {...form.register("coverUrl")} />
             {rootError ? (
               <p className="text-sm text-destructive" aria-live="polite">
                 {rootError}
@@ -263,6 +289,127 @@ export function ExamTypeFormDialog({
                 })
               }
             />
+
+            <LogoUploadField
+              label="Cover"
+              value={coverUrl}
+              error={form.formState.errors.coverUrl?.message}
+              onChange={(value) =>
+                form.setValue("coverUrl", value, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+            />
+
+            <Separator />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <NumberField
+                formId={formId}
+                name="packagePrice"
+                label="Package Price"
+                min={0}
+                error={form.formState.errors.packagePrice?.message}
+                register={form.register}
+              />
+              <NumberField
+                formId={formId}
+                name="packageDiscountPercent"
+                label="Package Discount %"
+                min={0}
+                max={100}
+                error={form.formState.errors.packageDiscountPercent?.message}
+                register={form.register}
+              />
+              <NumberField
+                formId={formId}
+                name="packageDurationMonths"
+                label="Duration Months"
+                min={1}
+                error={form.formState.errors.packageDurationMonths?.message}
+                register={form.register}
+              />
+              <NumberField
+                formId={formId}
+                name="practiceQuotaPerMonth"
+                label="Practice Quota / Month"
+                min={-1}
+                error={form.formState.errors.practiceQuotaPerMonth?.message}
+                register={form.register}
+              />
+              <NumberField
+                formId={formId}
+                name="quizQuotaPerMonth"
+                label="Quiz Quota / Month"
+                min={-1}
+                error={form.formState.errors.quizQuotaPerMonth?.message}
+                register={form.register}
+              />
+              <NumberField
+                formId={formId}
+                name="tryoutQuotaPerMonth"
+                label="Tryout Quota / Month"
+                min={-1}
+                error={form.formState.errors.tryoutQuotaPerMonth?.message}
+                register={form.register}
+              />
+              <NumberField
+                formId={formId}
+                name="aiExplanationQuotaPerMonth"
+                label="AI Explanation Quota / Month"
+                min={-1}
+                error={form.formState.errors.aiExplanationQuotaPerMonth?.message}
+                register={form.register}
+              />
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <SwitchField
+                id={`${formId}-package-active`}
+                label="Package Active"
+                checked={packageIsActive}
+                onCheckedChange={(checked) =>
+                  form.setValue("packageIsActive", checked, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+              />
+              <SwitchField
+                id={`${formId}-premium-practices`}
+                label="Premium Practices"
+                checked={premiumPracticesEnabled}
+                onCheckedChange={(checked) =>
+                  form.setValue("premiumPracticesEnabled", checked, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+              />
+              <SwitchField
+                id={`${formId}-premium-tryouts`}
+                label="Premium Tryouts"
+                checked={premiumTryoutsEnabled}
+                onCheckedChange={(checked) =>
+                  form.setValue("premiumTryoutsEnabled", checked, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+              />
+              <SwitchField
+                id={`${formId}-ranking`}
+                label="Ranking"
+                checked={rankingEnabled}
+                onCheckedChange={(checked) =>
+                  form.setValue("rankingEnabled", checked, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+              />
+            </div>
             </FieldGroup>
           </div>
 
@@ -277,6 +424,75 @@ export function ExamTypeFormDialog({
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function NumberField({
+  formId,
+  name,
+  label,
+  min,
+  max,
+  error,
+  register,
+}: {
+  formId: string
+  name:
+    | "packagePrice"
+    | "packageDiscountPercent"
+    | "packageDurationMonths"
+    | "practiceQuotaPerMonth"
+    | "quizQuotaPerMonth"
+    | "tryoutQuotaPerMonth"
+    | "aiExplanationQuotaPerMonth"
+  label: string
+  min: number
+  max?: number
+  error?: string
+  register: UseFormRegister<ExamTypeFormValues>
+}) {
+  return (
+    <Field data-invalid={Boolean(error)}>
+      <FieldContent>
+        <FieldLabel htmlFor={`${formId}-${name}`}>{label}</FieldLabel>
+      </FieldContent>
+      <div className="flex flex-col gap-1.5">
+        <Input
+          id={`${formId}-${name}`}
+          type="number"
+          min={min}
+          max={max}
+          aria-invalid={Boolean(error)}
+          {...register(name, { valueAsNumber: true })}
+        />
+        <FieldError>{error}</FieldError>
+      </div>
+    </Field>
+  )
+}
+
+function SwitchField({
+  id,
+  label,
+  checked,
+  onCheckedChange,
+}: {
+  id: string
+  label: string
+  checked: boolean
+  onCheckedChange: (checked: boolean) => void
+}) {
+  return (
+    <Field className="rounded-lg border bg-secondary/30 p-3">
+      <div className="flex items-center justify-between gap-4">
+        <FieldLabel htmlFor={id}>{label}</FieldLabel>
+        <Switch
+          id={id}
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+        />
+      </div>
+    </Field>
   )
 }
 

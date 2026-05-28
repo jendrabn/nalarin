@@ -10,6 +10,20 @@ export type ExamTypeRow = {
   slug: string
   description: string | null
   logoUrl: string | null
+  coverUrl: string | null
+  packageId: number | null
+  packagePriceId: number | null
+  packageIsActive: boolean
+  packagePrice: number
+  packageDiscountPercent: number
+  packageDurationMonths: number
+  practiceQuotaPerMonth: number
+  quizQuotaPerMonth: number
+  tryoutQuotaPerMonth: number
+  aiExplanationQuotaPerMonth: number
+  premiumPracticesEnabled: boolean
+  premiumTryoutsEnabled: boolean
+  rankingEnabled: boolean
   countdownTitle: string | null
   countdownTargetAt: Date | null
   registrationStartAt: Date | null
@@ -38,6 +52,7 @@ function selectExamTypeColumns() {
     slug: schema.examTypes.slug,
     description: schema.examTypes.description,
     logoUrl: schema.examTypes.logoUrl,
+    coverUrl: schema.examTypes.coverUrl,
     countdownTitle: schema.examTypes.countdownTitle,
     countdownTargetAt: schema.examTypes.countdownTargetAt,
     registrationStartAt: schema.examTypes.registrationStartAt,
@@ -90,8 +105,25 @@ async function buildExamTypeCountMaps() {
 export async function getExamTypes() {
   const [rows, counts] = await Promise.all([
     db
-      .select(selectExamTypeColumns())
+      .select({
+        ...selectExamTypeColumns(),
+        packageId: schema.examTypePackages.id,
+        packageIsActive: schema.examTypePackages.isActive,
+        practiceQuotaPerMonth: schema.examTypePackages.practiceQuotaPerMonth,
+        quizQuotaPerMonth: schema.examTypePackages.quizQuotaPerMonth,
+        tryoutQuotaPerMonth: schema.examTypePackages.tryoutQuotaPerMonth,
+        aiExplanationQuotaPerMonth: schema.examTypePackages.aiExplanationQuotaPerMonth,
+        premiumPracticesEnabled: schema.examTypePackages.premiumPracticesEnabled,
+        premiumTryoutsEnabled: schema.examTypePackages.premiumTryoutsEnabled,
+        rankingEnabled: schema.examTypePackages.rankingEnabled,
+        packagePriceId: schema.examTypePackagePrices.id,
+        packagePrice: schema.examTypePackagePrices.price,
+        packageDiscountPercent: schema.examTypePackagePrices.discountPercent,
+        packageDurationMonths: schema.examTypePackagePrices.durationMonths,
+      })
       .from(schema.examTypes)
+      .leftJoin(schema.examTypePackages, eq(schema.examTypePackages.examTypeId, schema.examTypes.id))
+      .leftJoin(schema.examTypePackagePrices, eq(schema.examTypePackagePrices.packageId, schema.examTypePackages.id))
       .orderBy(desc(schema.examTypes.createdAt)),
     buildExamTypeCountMaps(),
   ])
@@ -100,6 +132,20 @@ export async function getExamTypes() {
     ...row,
     description: row.description ?? null,
     logoUrl: row.logoUrl ?? null,
+    coverUrl: row.coverUrl ?? null,
+    packageId: row.packageId ?? null,
+    packagePriceId: row.packagePriceId ?? null,
+    packageIsActive: row.packageIsActive ?? true,
+    packagePrice: row.packagePrice ?? 100000,
+    packageDiscountPercent: row.packageDiscountPercent ?? 0,
+    packageDurationMonths: row.packageDurationMonths ?? 1,
+    practiceQuotaPerMonth: row.practiceQuotaPerMonth ?? -1,
+    quizQuotaPerMonth: row.quizQuotaPerMonth ?? -1,
+    tryoutQuotaPerMonth: row.tryoutQuotaPerMonth ?? -1,
+    aiExplanationQuotaPerMonth: row.aiExplanationQuotaPerMonth ?? -1,
+    premiumPracticesEnabled: row.premiumPracticesEnabled ?? true,
+    premiumTryoutsEnabled: row.premiumTryoutsEnabled ?? true,
+    rankingEnabled: row.rankingEnabled ?? true,
     countdownTitle: row.countdownTitle ?? null,
     countdownTargetAt: row.countdownTargetAt ?? null,
     registrationStartAt: row.registrationStartAt ?? null,

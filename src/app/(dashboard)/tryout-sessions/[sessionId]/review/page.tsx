@@ -1,9 +1,7 @@
 import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 
-import type { PlanCode } from "@/config/plans"
 import { requireUser } from "@/features/auth/services/session"
-import { getCurrentActiveSubscription } from "@/features/premium/queries"
 import { TryoutSessionPageShell } from "@/features/tryouts/components/tryout-session-page-shell"
 import { TryoutReviewPage } from "@/features/tryouts/components/tryout-review-page"
 import { getTryoutReviewData } from "@/features/tryouts/queries/results"
@@ -30,9 +28,7 @@ export default async function Page({
     notFound()
   }
 
-  const subscription = await getCurrentActiveSubscription(user.id)
-  const planCode: PlanCode = subscription?.planCode ?? "free"
-  const data = await getTryoutReviewData(id, user.id, planCode)
+  const data = await getTryoutReviewData(id, user.id)
 
   if (!data) {
     notFound()

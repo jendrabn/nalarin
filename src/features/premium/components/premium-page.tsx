@@ -17,11 +17,15 @@ type PremiumPageProps = {
 }
 
 export async function PremiumPage({ user }: PremiumPageProps) {
-  const plans = getPricingPlanViews()
-  const [state, publicVouchers] = await Promise.all([
+  const [plans, state, publicVouchers] = await Promise.all([
+    getPricingPlanViews(),
     user
       ? getPremiumSubscriptionState(user.id)
-      : Promise.resolve({ currentSubscription: null, pendingPayment: null }),
+      : Promise.resolve({
+          currentSubscriptions: [],
+          pendingPayment: null,
+          pendingPayments: [],
+        }),
     getPublicVoucherPromos(),
   ])
   const siteUser: SiteUser = user
@@ -72,8 +76,8 @@ export async function PremiumPage({ user }: PremiumPageProps) {
           <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
             <PageHeader
               className="mb-0"
-              title="Paket Premium Belajar"
-              subtitle="Bandingkan Free, Pro, dan Max untuk membuka latihan lebih luas, tryout, pembahasan, ranking, dan progress tracking."
+              title="Paket Belajar Per Tipe Ujian"
+              subtitle="Pilih paket sesuai exam type yang sedang kamu kejar. Konten non-premium tetap gratis, paket premium membuka latihan, tryout, ranking, dan pembahasan AI untuk exam type tersebut."
             />
           </div>
 
@@ -82,8 +86,8 @@ export async function PremiumPage({ user }: PremiumPageProps) {
           <PremiumCheckout
             user={premiumUser}
             plans={plans}
-            currentSubscription={state.currentSubscription}
-            pendingPayment={state.pendingPayment}
+            currentSubscriptions={state.currentSubscriptions}
+            pendingPayments={state.pendingPayments}
             paymentGatewayEnabled={env.PAYMENT_GATEWAY_ENABLED}
             manualPayment={manualPayment}
             midtransClientKey={env.MIDTRANS_CLIENT_KEY ?? null}

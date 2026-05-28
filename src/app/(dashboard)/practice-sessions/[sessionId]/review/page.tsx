@@ -2,12 +2,10 @@ import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 
 import type { SiteUser } from "@/components/site-navbar"
-import type { PlanCode } from "@/config/plans"
-import { canAccessAiExplanationForPlan } from "@/features/ai-explanations/services"
+import { canAccessAiExplanationForExamType } from "@/features/ai-explanations/services"
 import { PracticeSessionPageShell } from "@/features/practices/components/practice-session-page-shell"
 import { PracticeReviewPage } from "@/features/practices/components/practice-review-page"
 import { requireUser } from "@/features/auth/services/session"
-import { getCurrentActiveSubscription } from "@/features/premium/queries"
 import { getPracticeSessionSummary } from "@/features/practices/queries/session"
 
 export const metadata: Metadata = {
@@ -30,10 +28,7 @@ export default async function Page({
     notFound()
   }
 
-  const [summary, subscription] = await Promise.all([
-    getPracticeSessionSummary(id, user.id),
-    getCurrentActiveSubscription(user.id),
-  ])
+  const summary = await getPracticeSessionSummary(id, user.id)
 
   if (!summary) {
     notFound()
@@ -49,8 +44,10 @@ export default async function Page({
     avatarUrl: user.avatarUrl,
     role: user.role,
   }
-  const planCode: PlanCode = subscription?.planCode ?? "free"
-  const aiExplanationEnabled = await canAccessAiExplanationForPlan(user.id, planCode)
+  const aiExplanationEnabled = await canAccessAiExplanationForExamType(
+    user.id,
+    summary.examTypeId,
+  )
 
   return (
     <PracticeSessionPageShell user={siteUser}>

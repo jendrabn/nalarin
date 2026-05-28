@@ -57,6 +57,7 @@ export type PracticeRoomAnswer = {
 export type PracticeRoomData = {
   id: number
   practiceId: number
+  examTypeId: number
   title: string
   examTypeName: string
   subjectName: string
@@ -78,6 +79,7 @@ export type PracticeSessionReviewQuestion = PracticeRoomQuestion & {
 export type PracticeSessionSummary = {
   id: number
   practiceId: number
+  examTypeId: number
   title: string
   examTypeName: string
   subjectName: string

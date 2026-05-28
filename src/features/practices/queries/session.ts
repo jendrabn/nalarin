@@ -29,6 +29,7 @@ export async function getPracticeSessionRoom(
       durationMinutes: schema.practiceSessions.durationMinutes,
       currentQuestionOrder: schema.practiceSessions.currentQuestionOrder,
       totalQuestions: schema.practiceSessions.totalQuestions,
+      examTypeId: schema.practices.examTypeId,
       practiceTitle: schema.practices.title,
       examTypeName: schema.examTypes.name,
       subjectName: schema.subjects.name,
@@ -81,6 +82,7 @@ export async function getPracticeSessionRoom(
   return {
     id: session.id,
     practiceId: session.practiceId,
+    examTypeId: session.examTypeId,
     title: session.practiceTitle,
     examTypeName: session.examTypeName,
     subjectName: session.subjectName,
@@ -197,6 +199,7 @@ export async function getPracticeSessionSummary(
   return {
     id: room.id,
     practiceId: room.practiceId,
+    examTypeId: room.examTypeId,
     title: room.title,
     examTypeName: room.examTypeName,
     subjectName: room.subjectName,

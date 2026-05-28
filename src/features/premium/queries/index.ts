@@ -2,14 +2,21 @@ import "server-only"
 
 import { and, desc, eq, gt, isNull, or } from "drizzle-orm"
 
-import { PLAN_CONFIG, type PlanCode } from "@/config/plans"
 import { db, schema } from "@/db"
 
-import type { PremiumPendingPayment, PremiumSubscriptionSummary } from "../types"
+import type {
+  PremiumPendingPayment,
+  PremiumSubscriptionState,
+  PremiumSubscriptionSummary,
+} from "../types"
 
 type PaymentRow = {
   id: number
-  planCode: PlanCode
+  examTypeId: number | null
+  examTypeSlug: string | null
+  examTypeName: string | null
+  packageId: number | null
+  packagePriceId: number | null
   amount: number
   voucherId: number | null
   voucherCodeSnapshot: string | null
@@ -26,30 +33,38 @@ type PaymentRow = {
   createdAt: Date
 }
 
-export async function getPremiumSubscriptionState(userId: number) {
-  const [currentSubscription, pendingPayment] = await Promise.all([
-    getCurrentActiveSubscription(userId),
-    getVisiblePendingPayment(userId),
+export async function getPremiumSubscriptionState(
+  userId: number,
+): Promise<PremiumSubscriptionState> {
+  const [currentSubscriptions, pendingPayments] = await Promise.all([
+    getCurrentActiveSubscriptions(userId),
+    getVisiblePendingPayments(userId),
   ])
 
   return {
-    currentSubscription,
-    pendingPayment,
+    currentSubscriptions,
+    pendingPayment: pendingPayments[0] ?? null,
+    pendingPayments,
   }
 }
 
-export async function getCurrentActiveSubscription(
+export async function getCurrentActiveSubscriptions(
   userId: number,
-): Promise<PremiumSubscriptionSummary> {
+): Promise<PremiumSubscriptionSummary[]> {
   const now = new Date()
-  const [subscription] = await db
+  const rows = await db
     .select({
       id: schema.subscriptions.id,
-      planCode: schema.subscriptions.planCode,
+      examTypeId: schema.subscriptions.examTypeId,
+      examTypeSlug: schema.examTypes.slug,
+      examTypeName: schema.examTypes.name,
+      packageId: schema.subscriptions.packageId,
+      packagePriceId: schema.subscriptions.packagePriceId,
       startsAt: schema.subscriptions.startsAt,
       endsAt: schema.subscriptions.endsAt,
     })
     .from(schema.subscriptions)
+    .innerJoin(schema.examTypes, eq(schema.subscriptions.examTypeId, schema.examTypes.id))
     .where(
       and(
         eq(schema.subscriptions.userId, userId),
@@ -57,30 +72,68 @@ export async function getCurrentActiveSubscription(
         gt(schema.subscriptions.endsAt, now),
       ),
     )
-    .orderBy(desc(schema.subscriptions.startsAt))
-    .limit(1)
+    .orderBy(desc(schema.subscriptions.endsAt))
 
-  if (!subscription) {
-    return null
+  return rows.flatMap((subscription) => {
+    if (
+      subscription.examTypeId === null ||
+      subscription.packageId === null ||
+      subscription.packagePriceId === null
+    ) {
+      return []
+    }
+
+    return [{
+      id: subscription.id,
+      examTypeId: subscription.examTypeId,
+      examTypeSlug: subscription.examTypeSlug,
+      examTypeName: subscription.examTypeName,
+      packageId: subscription.packageId,
+      packagePriceId: subscription.packagePriceId,
+      packageName: subscription.examTypeName,
+      startsAt: subscription.startsAt.toISOString(),
+      endsAt: subscription.endsAt.toISOString(),
+    }]
+  })
+}
+
+export async function getCurrentActiveSubscription(
+  userId: number,
+  examTypeId?: number,
+): Promise<PremiumSubscriptionSummary | null> {
+  const subscriptions = await getCurrentActiveSubscriptions(userId)
+
+  if (examTypeId) {
+    return subscriptions.find((subscription) => subscription.examTypeId === examTypeId) ?? null
   }
 
-  return {
-    id: subscription.id,
-    planCode: subscription.planCode,
-    planName: PLAN_CONFIG[subscription.planCode].name,
-    startsAt: subscription.startsAt.toISOString(),
-    endsAt: subscription.endsAt.toISOString(),
-  }
+  return subscriptions[0] ?? null
+}
+
+export async function getUserPremiumExamTypeIds(userId: number) {
+  const subscriptions = await getCurrentActiveSubscriptions(userId)
+  return new Set(subscriptions.map((subscription) => subscription.examTypeId))
 }
 
 export async function getVisiblePendingPayment(
   userId: number,
 ): Promise<PremiumPendingPayment> {
+  const payments = await getVisiblePendingPayments(userId)
+  return payments[0] ?? null
+}
+
+export async function getVisiblePendingPayments(
+  userId: number,
+): Promise<Array<NonNullable<PremiumPendingPayment>>> {
   const now = new Date()
-  const [payment] = await db
+  const payments = await db
     .select({
       id: schema.payments.id,
-      planCode: schema.payments.planCode,
+      examTypeId: schema.payments.examTypeId,
+      examTypeSlug: schema.examTypes.slug,
+      examTypeName: schema.examTypes.name,
+      packageId: schema.payments.packageId,
+      packagePriceId: schema.payments.packagePriceId,
       amount: schema.payments.amount,
       voucherId: schema.payments.voucherId,
       voucherCodeSnapshot: schema.payments.voucherCodeSnapshot,
@@ -97,6 +150,7 @@ export async function getVisiblePendingPayment(
       createdAt: schema.payments.createdAt,
     })
     .from(schema.payments)
+    .leftJoin(schema.examTypes, eq(schema.payments.examTypeId, schema.examTypes.id))
     .where(
       and(
         eq(schema.payments.userId, userId),
@@ -105,20 +159,23 @@ export async function getVisiblePendingPayment(
       ),
     )
     .orderBy(desc(schema.payments.createdAt))
-    .limit(1)
 
-  if (!payment || payment.status !== "pending") {
-    return null
-  }
-
-  return mapPendingPayment(payment as PaymentRow)
+  return payments
+    .filter((payment): payment is PaymentRow => payment.status === "pending")
+    .map(mapPendingPayment)
 }
 
 export function mapPendingPayment(payment: PaymentRow): NonNullable<PremiumPendingPayment> {
+  const examTypeName = payment.examTypeName ?? "Paket Premium"
+
   return {
     id: payment.id,
-    planCode: payment.planCode,
-    planName: PLAN_CONFIG[payment.planCode].name,
+    examTypeId: payment.examTypeId ?? 0,
+    examTypeSlug: payment.examTypeSlug ?? "",
+    examTypeName,
+    packageId: payment.packageId ?? 0,
+    packagePriceId: payment.packagePriceId ?? 0,
+    packageName: examTypeName,
     amount: payment.amount,
     originalAmount: payment.originalAmount ?? payment.amount,
     discountAmount: payment.discountAmount,
