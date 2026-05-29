@@ -237,7 +237,7 @@ export function BlogPostsPage({ posts }: BlogPostsPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Blog Posts"
-        subtitle="Manage blog posts from the admin panel."
+        subtitle="Manage blog posts to keep the content pipeline organized."
         actions={
           <Button asChild>
             <Link href="/admin/blog/create">

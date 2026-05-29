@@ -109,7 +109,7 @@ export function TryoutDetailPage({ tryout }: TryoutDetailPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title={tryout.title}
-        subtitle={`${tryout.examTypeName} / ${tryout.slug}`}
+        subtitle="Review this tryout to inspect its configuration and section layout."
         actions={
           <div className="flex flex-wrap gap-2">
             {tryout.status === "draft" ? (

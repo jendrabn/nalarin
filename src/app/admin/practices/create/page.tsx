@@ -15,7 +15,7 @@ export default async function Page() {
     <PracticeFormPage
       mode="create"
       title="Create Practice"
-      description="Build a practice or quiz package using published questions from the selected subject."
+      description="Create a practice to define access, scoring, and question scope."
       backHref="/admin/practices"
       lookups={lookups}
     />

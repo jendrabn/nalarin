@@ -15,7 +15,7 @@ export default async function Page() {
     <TryoutFormPage
       mode="create"
       title="Create Tryout"
-      description="Build a multi-section tryout with schedule, scoring, questions, and release settings."
+      description="Create a tryout to define its schedule, access, and sections."
       backHref="/admin/tryouts"
       lookups={lookups}
     />

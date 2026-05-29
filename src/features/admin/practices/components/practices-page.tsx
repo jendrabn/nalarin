@@ -314,7 +314,7 @@ export function PracticesPage({ practices }: PracticesPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Practices"
-        subtitle="Manage practice and quiz packages for the question bank."
+        subtitle="Manage practices to control publication, access, and scoring."
         actions={
           <Button asChild>
             <Link href="/admin/practices/create">

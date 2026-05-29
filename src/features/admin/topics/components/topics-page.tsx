@@ -108,7 +108,7 @@ export function TopicsPage({
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Topics"
-        subtitle="Manage the topic layer under subjects. Slugs are automatic and unique within each subject."
+        subtitle="Manage topics to keep the subject hierarchy structured and unique."
         actions={
           <Button
             type="button"

@@ -340,7 +340,7 @@ export function TryoutsPage({ tryouts }: TryoutsPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Tryouts"
-        subtitle="Manage multi-section tryouts, schedules, access, scoring, and publication state."
+        subtitle="Manage tryouts to control schedules, access, scoring, and publication."
         actions={
           <Button asChild>
             <Link href="/admin/tryouts/create">

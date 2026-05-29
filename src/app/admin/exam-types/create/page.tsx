@@ -12,7 +12,7 @@ export default function Page() {
     <ExamTypeFormPage
       mode="create"
       title="Create Exam Type"
-      subtitle="Create a new exam type and configure its package settings."
+      subtitle="Create a new exam type to configure its package settings and public information."
       submitLabel="Create exam type"
       backHref="/admin/exam-types"
       backLabel="Back to Exam Types"

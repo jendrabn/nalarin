@@ -53,7 +53,7 @@ export default async function Page({ params }: EditPageProps) {
       mode="edit"
       postId={id}
       title={`Edit ${post.title}`}
-      description="Update post content, publication status, thumbnail, and SEO metadata."
+      description="Update this blog post to refine content, publication state, and SEO metadata."
       submitLabel="Save changes"
       backHref="/admin/blog"
       categories={categories}

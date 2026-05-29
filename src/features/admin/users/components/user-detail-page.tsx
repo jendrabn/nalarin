@@ -103,7 +103,7 @@ export function UserDetailPage({
     <div className="flex flex-col gap-6">
       <PageHeader
         title={user.name}
-        subtitle={user.email}
+        subtitle="Review this user account to manage profile data and access."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline">

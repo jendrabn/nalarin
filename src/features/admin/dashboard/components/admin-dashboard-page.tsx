@@ -29,7 +29,7 @@ export function AdminDashboardPage({ data }: AdminDashboardPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Dashboard"
-        subtitle="Keep an eye on learning activity, payments, subscriptions, and content operations across Nalarin.id."
+        subtitle="Monitor platform activity to keep learning, billing, and content operations under control."
       />
 
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

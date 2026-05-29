@@ -31,7 +31,7 @@ export function VouchersPage({ vouchers }: VouchersPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Vouchers"
-        subtitle="Manage single-use discount codes for paid plan checkout."
+        subtitle="Manage vouchers to control checkout discounts and redemption rules."
         actions={
           <Button asChild>
             <Link href="/admin/vouchers/create">

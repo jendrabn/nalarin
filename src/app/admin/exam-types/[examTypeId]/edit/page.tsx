@@ -50,7 +50,7 @@ export default async function Page({ params }: EditPageProps) {
       mode="edit"
       examTypeId={id}
       title={`Edit ${examType.name}`}
-      subtitle="Update exam type branding, package settings, schedules, and content."
+      subtitle="Update this exam type to refine branding, schedules, and package settings."
       submitLabel="Save changes"
       backHref={`/admin/exam-types/${id}`}
       backLabel="Back to Exam Type"

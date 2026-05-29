@@ -92,7 +92,7 @@ export function VoucherFormPage() {
   return (
     <AdminFormPage
       title="Create Voucher"
-      subtitle="Create a single-use discount code for all paid plans."
+      subtitle="Create a voucher to define its code, discount, and validity window."
       backHref="/admin/vouchers"
       backLabel="Back to Vouchers"
       footer={

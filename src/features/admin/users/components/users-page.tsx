@@ -262,7 +262,7 @@ export function UsersPage({ users, currentUserId }: UsersPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Users"
-        subtitle="View user accounts, update roles and statuses, and manage access from the admin panel."
+        subtitle="Manage user accounts to update roles, statuses, and access."
       />
 
       <AdminDataTable

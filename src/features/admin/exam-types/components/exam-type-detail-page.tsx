@@ -88,7 +88,10 @@ export function ExamTypeDetailPage({ examType, backHref }: ExamTypeDetailPagePro
     <div className="flex flex-col gap-6">
       <PageHeader
         title={examType.name}
-        subtitle={examType.description ?? "Exam type details and package configuration."}
+        subtitle={
+          examType.description ??
+          "Review exam type details to audit package settings and public information."
+        }
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline">

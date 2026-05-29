@@ -15,7 +15,7 @@ export default async function Page() {
     <BlogPostFormPage
       mode="create"
       title="Create Blog Post"
-      description="Create a blog post with rich text content, a thumbnail, and SEO metadata."
+      description="Create a blog post to prepare content, imagery, and SEO metadata."
       submitLabel="Create post"
       backHref="/admin/blog"
       categories={categories}

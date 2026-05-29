@@ -222,7 +222,7 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title={`Results & Analytics - ${insight.tryout.title}`}
-        subtitle="Review participant scores, session status, leaderboard ranking, and subtest performance in one place."
+        subtitle="Review tryout results to analyze rankings, session status, and subtest performance."
         actions={
           <Button asChild variant="outline">
             <Link href={`/admin/tryouts/${insight.tryout.id}`}>

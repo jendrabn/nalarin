@@ -67,7 +67,7 @@ export function PaymentsPage({ payments }: PaymentsPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Payments"
-        subtitle="Track Midtrans and manual payments, then approve pending payments when needed."
+        subtitle="Review payments to approve pending transactions and track billing status."
         actions={null}
       />
 

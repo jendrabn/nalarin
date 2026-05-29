@@ -315,7 +315,7 @@ export function QuestionImportWorkspace({ mode, lookups }: QuestionImportWorkspa
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Import Questions"
-        subtitle="Upload an Excel workbook, review validation issues, and import rows that mirror the create/edit form fields."
+        subtitle="Import questions to validate workbook rows before saving them."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" variant="outline" onClick={() => downloadQuestionImportTemplate()}>

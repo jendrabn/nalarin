@@ -15,7 +15,7 @@ export default async function Page() {
     <QuestionFormPage
       mode="create"
       title="Create Question"
-      description="Create a question bank entry with content, options, and explanation content."
+      description="Create a question to add accurate content, options, and explanations."
       submitLabel="Create question"
       backHref="/admin/questions"
       lookups={lookups}

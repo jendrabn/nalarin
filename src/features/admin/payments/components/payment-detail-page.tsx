@@ -85,7 +85,7 @@ export function PaymentDetailPage({ payment, backHref }: PaymentDetailPageProps)
     <div className="flex flex-col gap-6">
       <PageHeader
         title={`Payment #${payment.id}`}
-        subtitle={`${payment.userName} - ${payment.userEmail}`}
+        subtitle="Review this payment to verify transaction data and subscription history."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline">

@@ -26,7 +26,7 @@ export function VoucherDetailPage({ voucher }: VoucherDetailPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title={voucher.name}
-        subtitle={`Code ${voucher.code}`}
+        subtitle="Review this voucher to verify discount rules and redemption history."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" asChild>

@@ -56,7 +56,7 @@ export default async function Page({ params }: EditPracticePageProps) {
       mode="edit"
       practiceId={id}
       title={`Edit ${practice.title}`}
-      description="Update the draft practice wizard data. Published and archived practices are locked."
+      description="Update this practice to adjust its draft configuration."
       backHref="/admin/practices"
       lookups={lookups}
       initialValues={practice}

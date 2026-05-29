@@ -227,7 +227,7 @@ export function BlogCategoriesPage({
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Blog Categories"
-        subtitle="Manage blog categories from the admin panel."
+        subtitle="Manage blog categories to keep the blog taxonomy structured."
         actions={
           <Button
             type="button"

@@ -140,7 +140,7 @@ export function SubjectsPage({
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Subjects"
-        subtitle="Manage subjects grouped by exam type."
+        subtitle="Manage subjects to keep each exam type taxonomy organized."
         actions={
           <Button
             type="button"

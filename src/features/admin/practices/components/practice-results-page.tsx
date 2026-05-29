@@ -262,7 +262,7 @@ export function PracticeResultsPage({ insight }: PracticeResultsPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title={`Results & Analytics - ${insight.practice.title}`}
-        subtitle="Review participant performance, session trends, and repeated attempts for this practice."
+        subtitle="Review practice results to analyze participant performance and session trends."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline">

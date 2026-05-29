@@ -88,7 +88,7 @@ export function SubscribersPage({ subscriptions }: SubscribersPageProps) {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Subscribers"
-          subtitle="Manage active subscriptions, expired records, and manual grants."
+          subtitle="Manage subscriptions to review active access, expirations, and manual grants."
         />
 
         <AdminDataTable

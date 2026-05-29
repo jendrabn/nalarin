@@ -284,7 +284,7 @@ export function QuestionsPage({ questions }: QuestionsPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Questions"
-        subtitle="Manage the question bank from the admin panel."
+        subtitle="Manage questions to keep the question bank organized and current."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline">

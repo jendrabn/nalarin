@@ -129,7 +129,7 @@ export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title={practice.title}
-        subtitle={`${practice.examTypeName} / ${practice.subjectName}`}
+        subtitle="Review this practice to inspect its configuration and content."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline">

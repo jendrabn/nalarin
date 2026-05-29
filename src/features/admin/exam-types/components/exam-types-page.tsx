@@ -233,7 +233,7 @@ export function ExamTypesPage({ examTypes }: ExamTypesPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Exam Types"
-        subtitle="Manage exam types, package settings, and public information."
+        subtitle="Manage exam types to keep package settings and public information organized."
         actions={
           <Button asChild>
             <Link href="/admin/exam-types/create">

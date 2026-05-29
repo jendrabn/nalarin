@@ -56,7 +56,7 @@ export default async function Page({ params }: EditPageProps) {
       mode="edit"
       questionId={id}
       title={`Edit ${question.title || `Question ${question.id}`}`}
-      description="Update question content, options, and explanation content."
+      description="Update this question to refine content, options, and explanations."
       submitLabel="Save changes"
       backHref="/admin/questions"
       lookups={lookups}

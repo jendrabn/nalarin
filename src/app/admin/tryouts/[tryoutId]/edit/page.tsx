@@ -53,7 +53,7 @@ export default async function Page({ params }: EditTryoutPageProps) {
       mode="edit"
       tryoutId={id}
       title={`Edit ${tryout.title}`}
-      description="Update the draft tryout wizard data. Published and archived tryouts are locked."
+      description="Update this tryout to refine the draft schedule and section setup."
       backHref="/admin/tryouts"
       lookups={lookups}
       initialValues={tryout}
