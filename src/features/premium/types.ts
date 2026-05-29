@@ -1,3 +1,5 @@
+import type { PackageBenefitSnapshot, PackagePricingSnapshot } from "@/lib/billing"
+
 export type PremiumUser = {
   id: number
   name: string
@@ -34,6 +36,8 @@ export type PremiumPendingPayment = {
   amount: number
   originalAmount: number
   discountAmount: number
+  packageSnapshot: PackageBenefitSnapshot | null
+  pricingSnapshot: PackagePricingSnapshot | null
   voucher: {
     id: number
     code: string

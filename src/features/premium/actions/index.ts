@@ -824,6 +824,8 @@ function buildPendingPaymentPayload({
     amount,
     originalAmount: pricing.originalAmount,
     discountAmount: pricing.discountAmount,
+    packageSnapshot: benefitSnapshot,
+    pricingSnapshot,
     voucher: voucher
       ? {
           id: voucher.voucherId,

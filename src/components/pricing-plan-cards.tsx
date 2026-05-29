@@ -99,7 +99,7 @@ export function PricingPlanCards({
             <div className="flex flex-col gap-2">
               <div className="flex items-start justify-between gap-3">
                 <h3 className="text-2xl font-bold tracking-normal">{plan.name}</h3>
-                {featured ? (
+                {featured && plan.discountPercent <= 0 ? (
                   <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                     <SparklesIcon className="size-4" />
                   </span>
@@ -111,19 +111,19 @@ export function PricingPlanCards({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <p className="text-sm font-medium text-muted-foreground">
+              <p className="text-sm font-normal text-muted-foreground">
                 {plan.durationMonths} bulan
               </p>
-              <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
+              <div className="flex flex-col gap-1">
                 <p className="text-3xl font-bold tracking-normal">
                   {formatCurrencyIDR(plan.finalPrice)}
                 </p>
                 {plan.discountPercent > 0 ? (
-                  <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                  <div className="flex items-baseline gap-2 text-sm">
                     <span className="font-semibold text-amber-700 dark:text-amber-300">
                       Diskon {plan.discountPercent}%
                     </span>
-                    <span className="text-muted-foreground line-through">
+                    <span className="whitespace-nowrap text-muted-foreground line-through">
                       {formatCurrencyIDR(plan.price)}
                     </span>
                   </div>

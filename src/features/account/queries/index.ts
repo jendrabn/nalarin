@@ -75,7 +75,7 @@ export async function getAccountProfile(userId: number) {
     },
     plan: {
       code: activeNames.length > 0 ? "exam-type" : "none",
-      name: activeNames.length > 0 ? "Paket Exam Type" : "Belum Berlangganan",
+      name: activeNames.length > 0 ? "Premium" : "Belum Berlangganan",
       description: activeDescription,
       subscription: subscriptions[0]
         ? {

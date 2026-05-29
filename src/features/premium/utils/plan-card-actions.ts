@@ -97,7 +97,7 @@ function getPremiumPlanActions({
           variant: "cta",
         },
         {
-          label: "Batalkan Pembayaran",
+          label: "Batalkan",
           value: "cancel",
           hideIcon: true,
           variant: "outline",

@@ -25,6 +25,7 @@ import type {
 } from "../types"
 import { ManualPaymentDialog } from "./manual-payment-dialog"
 import { MidtransPaymentDialog } from "./midtrans-payment-dialog"
+import { PendingPaymentSummaryDialog } from "./pending-payment-summary-dialog"
 import { useSnapPayment } from "../hooks/use-snap-payment"
 import { buildPremiumPlanCards } from "../utils/plan-card-actions"
 
@@ -53,6 +54,8 @@ export function PremiumCheckout({
   const { openSnapPayment } = useSnapPayment()
   const [selectedPlan, setSelectedPlan] = useState<PricingPlanView | null>(null)
   const [selectedManualPlan, setSelectedManualPlan] = useState<PricingPlanView | null>(null)
+  const [selectedPendingPayment, setSelectedPendingPayment] =
+    useState<NonNullable<PremiumPendingPayment> | null>(null)
   const [processing, setProcessing] = useState<"start" | "continue" | "cancel" | null>(null)
   const [voucherProcessing, setVoucherProcessing] = useState(false)
   const [voucherCode, setVoucherCode] = useState("")
@@ -117,7 +120,12 @@ export function PremiumCheckout({
     }
 
     if (actionValue === "continue" && pendingPayment) {
-      void handleContinuePayment(pendingPayment)
+      setSelectedPendingPayment(pendingPayment)
+      return
+    }
+
+    if (actionValue === "manual" && pendingPayment) {
+      setSelectedPendingPayment(pendingPayment)
       return
     }
 
@@ -241,7 +249,7 @@ export function PremiumCheckout({
     }
   }
 
-  const handleContinuePayment = async (
+  const handleProceedPendingPayment = async (
     pendingPayment: NonNullable<PremiumPendingPayment>,
   ) => {
     if (!pendingPayment) {
@@ -260,6 +268,7 @@ export function PremiumCheckout({
         })
       }
 
+      setSelectedPendingPayment(null)
       return
     }
 
@@ -286,6 +295,7 @@ export function PremiumCheckout({
       router.refresh()
     } finally {
       setProcessing(null)
+      setSelectedPendingPayment(null)
     }
   }
 
@@ -426,6 +436,21 @@ export function PremiumCheckout({
         onVoucherCodeChange={setVoucherCode}
         onApplyVoucher={handleApplyVoucher}
         onRemoveVoucher={handleRemoveVoucher}
+      />
+
+      <PendingPaymentSummaryDialog
+        payment={selectedPendingPayment}
+        processing={processing === "continue"}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedPendingPayment(null)
+          }
+        }}
+        onProceed={() => {
+          if (selectedPendingPayment) {
+            void handleProceedPendingPayment(selectedPendingPayment)
+          }
+        }}
       />
     </>
   )

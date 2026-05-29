@@ -3,6 +3,7 @@ import "server-only"
 import { and, desc, eq, gt, isNull, or } from "drizzle-orm"
 
 import { db, schema } from "@/db"
+import type { PackageBenefitSnapshot, PackagePricingSnapshot } from "@/lib/billing"
 
 import type {
   PremiumPendingPayment,
@@ -24,6 +25,8 @@ type PaymentRow = {
   voucherDiscountPercent: number | null
   originalAmount: number | null
   discountAmount: number
+  packageSnapshot: PackageBenefitSnapshot | null
+  pricingSnapshot: PackagePricingSnapshot | null
   status: "pending"
   gateway: "midtrans" | "manual"
   gatewayOrderId: string | null
@@ -141,6 +144,8 @@ export async function getVisiblePendingPayments(
       voucherDiscountPercent: schema.payments.voucherDiscountPercent,
       originalAmount: schema.payments.originalAmount,
       discountAmount: schema.payments.discountAmount,
+      packageSnapshot: schema.payments.packageSnapshot,
+      pricingSnapshot: schema.payments.pricingSnapshot,
       status: schema.payments.status,
       gateway: schema.payments.gateway,
       gatewayOrderId: schema.payments.gatewayOrderId,
@@ -179,6 +184,8 @@ export function mapPendingPayment(payment: PaymentRow): NonNullable<PremiumPendi
     amount: payment.amount,
     originalAmount: payment.originalAmount ?? payment.amount,
     discountAmount: payment.discountAmount,
+    packageSnapshot: (payment.packageSnapshot as PackageBenefitSnapshot | null) ?? null,
+    pricingSnapshot: (payment.pricingSnapshot as PackagePricingSnapshot | null) ?? null,
     voucher:
       payment.voucherId &&
       payment.voucherCodeSnapshot &&

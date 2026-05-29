@@ -262,26 +262,26 @@ export function ProfilePage({ profile }: ProfilePageProps) {
             </Badge>
           </CardHeader>
           <CardContent className="space-y-5">
-            <div className="rounded-xl border border-primary/10 bg-primary/[0.03] p-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
+            {profile.plan.subscription ? (
+              <div className="rounded-xl border border-primary/10 bg-primary/[0.03] p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
                     <p className="text-sm font-medium text-foreground">
                       {profile.plan.description}
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                    Periode penggunaan: {formatProfileDate(profile.plan.usage.period)}
+                      Periode penggunaan: {formatProfileDate(profile.plan.usage.period)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <CalendarDaysIcon className="size-4" />
-                    {profile.plan.subscription
-                    ? `${formatProfileDate(profile.plan.subscription.startsAt)} - ${formatProfileDate(
-                        profile.plan.subscription.endsAt,
-                      )}`
-                    : "Belum ada paket aktif"}
+                    {`${formatProfileDate(profile.plan.subscription.startsAt)} - ${formatProfileDate(
+                      profile.plan.subscription.endsAt,
+                    )}`}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : null}
 
             <div className="grid gap-3 md:grid-cols-3">
               {usageItems.map((item) => (
@@ -483,7 +483,7 @@ export function ProfilePage({ profile }: ProfilePageProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl font-semibold text-destructive">
               <AlertTriangleIcon className="size-5" />
-              Danger Zone
+              Zona Berbahaya
             </CardTitle>
             <CardDescription className="leading-6">
               Hapus akun bersifat permanen dan tidak dapat dibatalkan.
