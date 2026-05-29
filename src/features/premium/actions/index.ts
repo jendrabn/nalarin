@@ -68,6 +68,8 @@ type PendingPaymentRow = {
   voucherDiscountPercent: number | null
   originalAmount: number | null
   discountAmount: number
+  packageSnapshot: PackageBenefitSnapshot | null
+  pricingSnapshot: PackagePricingSnapshot | null
   status: "pending"
   gateway: "midtrans" | "manual"
   gatewayOrderId: string | null
@@ -91,6 +93,8 @@ const pendingPaymentColumns = {
   voucherDiscountPercent: schema.payments.voucherDiscountPercent,
   originalAmount: schema.payments.originalAmount,
   discountAmount: schema.payments.discountAmount,
+  packageSnapshot: schema.payments.packageSnapshot,
+  pricingSnapshot: schema.payments.pricingSnapshot,
   status: schema.payments.status,
   gateway: schema.payments.gateway,
   gatewayOrderId: schema.payments.gatewayOrderId,

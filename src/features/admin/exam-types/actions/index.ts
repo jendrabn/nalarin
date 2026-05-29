@@ -225,7 +225,7 @@ export async function updateExamTypeAction(
 }
 
 async function upsertExamTypePackage(
-  database: typeof db,
+  database: Pick<typeof db, "select" | "insert" | "update">,
   examTypeId: number,
   values: {
     packageIsActive: boolean
