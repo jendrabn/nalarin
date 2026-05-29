@@ -454,7 +454,9 @@ function NumberField({
   return (
     <Field data-invalid={Boolean(error)}>
       <FieldContent>
-        <FieldLabel htmlFor={`${formId}-${name}`}>{label}</FieldLabel>
+        <FieldLabel htmlFor={`${formId}-${name}`} className="required">
+          {label}
+        </FieldLabel>
       </FieldContent>
       <div className="flex flex-col gap-1.5">
         <Input
