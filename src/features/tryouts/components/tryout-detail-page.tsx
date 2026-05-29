@@ -111,7 +111,7 @@ export function TryoutDetailPage({
           title={tryout.title}
           subtitle={
             tryout.description ??
-            "Cek jadwal, komposisi subtes, dan aturan sebelum memulai tryout."
+            "Lihat jadwal, komposisi subtes, dan aturan sebelum memulai tryout."
           }
           className="mb-0"
           actions={

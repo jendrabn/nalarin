@@ -30,7 +30,7 @@ export function PracticeReviewPage({
         <PageHeader
           className="mb-0"
           title={`Review Jawaban ${summary.title}`}
-          subtitle="Tinjau ulang jawaban, koreksi benar-salah, dan pembahasan tiap soal."
+          subtitle="Tinjau jawaban untuk melihat status benar-salah dan pembahasan tiap soal."
           actions={
             <Button asChild variant="outline">
               <Link href={`/practice-sessions/${summary.id}/result`}>

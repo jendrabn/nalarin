@@ -240,7 +240,7 @@ export function ProfilePage({ profile }: ProfilePageProps) {
       <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
         <PageHeader
           title="Profil"
-          subtitle="Kelola identitas akun, foto profil, dan akses belajar Nalarin."
+          subtitle="Kelola profil untuk memperbarui identitas akun, foto profil, dan akses belajar."
         />
 
         <Card className="border-primary/10 shadow-sm shadow-primary/5">

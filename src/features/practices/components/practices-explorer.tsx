@@ -154,8 +154,8 @@ export function PracticesExplorer({
   )
   const pageTitle = activeExamType ? `Latihan Soal ${activeExamType.name}` : "Latihan Soal"
   const pageSubtitle = activeExamType
-    ? `Pilih mata pelajaran ${activeExamType.name}, lalu mulai latihan sesuai kebutuhan belajarmu.`
-    : "Pilih tipe ujian dan mata pelajaran untuk membuka kumpulan latihan yang tersedia."
+    ? `Pilih mata pelajaran ${activeExamType.name} untuk memulai latihan yang lebih terarah.`
+    : "Pilih jenis ujian dan mata pelajaran untuk membuka kumpulan latihan yang tersedia."
 
   function handleExamTypeChange(value: string) {
     const examTypeId = Number(value)

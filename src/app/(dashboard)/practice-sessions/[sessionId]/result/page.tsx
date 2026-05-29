@@ -57,7 +57,7 @@ export default async function Page({
           <PageHeader
             className="mb-0"
             title={`Hasil Latihan ${summary.title}`}
-            subtitle="Ringkasan skor, akurasi, dan durasi pada sesi latihan ini."
+            subtitle="Lihat ringkasan skor, akurasi, dan durasi pada sesi latihan ini."
           />
 
           <Card className="overflow-hidden shadow-sm">

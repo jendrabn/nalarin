@@ -39,7 +39,7 @@ export function BlogDetailPage({ user, post, relatedPosts }: BlogDetailPageProps
               <PageHeader
                 className="mb-0"
                 title={post.title}
-                subtitle={post.excerpt ?? undefined}
+                subtitle={post.excerpt ?? "Baca ringkasan dan pembahasan utama pada artikel ini."}
                 actions={<BlogShareButton title={post.title} text={post.excerpt} />}
               />
               <div className="flex items-center justify-between gap-3 border-t border-border/70 pt-3">

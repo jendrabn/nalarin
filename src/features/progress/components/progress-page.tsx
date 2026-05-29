@@ -38,7 +38,7 @@ export function ProgressPage({ data }: { data: ProgressPageData }) {
         <PageHeader
           className="mb-0"
           title="Progress Belajar"
-          subtitle={`Pantau performa latihan dan tryout all-time${data.activeExamType ? ` untuk ${activeExamTypeLabel}` : ""}.`}
+          subtitle={`Pantau performa latihan dan tryout${data.activeExamType ? ` untuk ${activeExamTypeLabel}` : ""} untuk melihat topik kuat, topik prioritas, dan riwayat aktivitas.`}
         />
 
         <FilterPanel

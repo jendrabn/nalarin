@@ -28,7 +28,7 @@ export function TryoutReviewPage({ data }: { data: TryoutReviewData }) {
         <PageHeader
           className="mb-0"
           title={`Review Jawaban ${data.session.title}`}
-          subtitle="Telaah jawaban, status benar-salah, dan pembahasan tiap soal."
+          subtitle="Tinjau jawaban untuk melihat status benar-salah dan pembahasan tiap soal."
           actions={
             <Button asChild variant="outline">
               <Link href={`/tryout-sessions/${data.session.id}/result`}>

@@ -74,7 +74,7 @@ export function TryoutSessionOverviewPage({
             title={session.title}
             subtitle={
               session.description ??
-              "Tinjau progress, lanjutkan subtes, dan buka detail sebelum mulai."
+              "Tinjau progress sesi, lanjutkan subtes, dan buka detail sebelum mulai."
             }
             actions={
               <Button asChild variant="outline">

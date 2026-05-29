@@ -32,7 +32,7 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
         <PageHeader
           className="mb-0"
           title={`Hasil Tryout ${data.title}`}
-          subtitle="Ringkasan skor, status penilaian, dan pembahasan untuk sesi tryout ini."
+          subtitle="Lihat ringkasan skor, status penilaian, dan pembahasan sesi tryout ini."
           actions={
             <Button asChild variant="outline">
               <Link href={`/tryout-sessions/${data.id}`}>

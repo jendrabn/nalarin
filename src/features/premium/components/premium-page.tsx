@@ -77,7 +77,7 @@ export async function PremiumPage({ user }: PremiumPageProps) {
             <PageHeader
               className="mb-0"
               title="Paket Belajar Per Tipe Ujian"
-              subtitle="Pilih paket sesuai exam type yang sedang kamu kejar. Konten non-premium tetap gratis, paket premium membuka latihan, tryout, ranking, dan pembahasan AI untuk exam type tersebut."
+              subtitle="Pilih paket belajar sesuai jenis ujian untuk membuka latihan premium, tryout, ranking, dan pembahasan AI."
             />
           </div>
 

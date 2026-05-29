@@ -54,7 +54,7 @@ export function PracticeExamTypesPage({
           <PageHeader
             className="mb-0"
             title="Latihan Soal"
-            subtitle="Pilih ujian, mata pelajaran, dan topik untuk latihan yang lebih fokus dengan Mode Latihan dan Mode Quiz."
+            subtitle="Pilih jenis ujian, mata pelajaran, dan topik untuk memulai latihan yang lebih terarah."
           />
         </section>
 

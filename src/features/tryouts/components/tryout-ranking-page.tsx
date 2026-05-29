@@ -33,7 +33,7 @@ export function TryoutRankingPage({ data }: { data: TryoutRankingData }) {
         <PageHeader
           className="mb-0"
           title={`Rangking Tryout ${data.session.title}`}
-          subtitle="Daftar peringkat peserta berdasarkan skor akhir pada sesi tryout ini."
+          subtitle="Lihat peringkat peserta berdasarkan skor akhir pada sesi tryout ini."
           actions={
             <Button asChild variant="outline" className="w-fit shrink-0">
               <Link href={`/tryout-sessions/${data.session.id}/result`}>

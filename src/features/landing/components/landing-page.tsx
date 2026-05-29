@@ -77,19 +77,19 @@ function HeroSection() {
         </div>
 
         <div className="mx-auto max-w-4xl">
-          <PageHeader
-            align="center"
-            className="mb-0"
-            title={
-              <>
-                Belajar Pakai Nalar, Siap Hadapi{" "}
-                <span className="text-primary">Seleksi PTN</span>
-              </>
-            }
-            subtitle="Persiapkan masuk PTN lebih terarah dengan latihan soal, quiz bertimer, tryout rutin, pembahasan lengkap, ranking, dan tracking progres dalam satu platform."
-            titleClassName="mx-auto max-w-4xl text-balance text-[3.25rem] font-extrabold leading-[1.05] tracking-tight sm:text-[3.95rem] lg:text-[4.45rem]"
-            subtitleClassName="mx-auto mt-6 max-w-xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg"
-          />
+            <PageHeader
+              align="center"
+              className="mb-0"
+              title={
+                <>
+                  Belajar Pakai Nalar, Siap Hadapi{" "}
+                  <span className="text-primary">Seleksi PTN</span>
+                </>
+              }
+              subtitle="Latih kemampuan, pantau progres, dan jalani persiapan PTN dengan lebih terarah."
+              titleClassName="mx-auto max-w-4xl text-balance text-[3.25rem] font-extrabold leading-[1.05] tracking-tight sm:text-[3.95rem] lg:text-[4.45rem]"
+              subtitleClassName="mx-auto mt-6 max-w-xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg"
+            />
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button
               variant="cta"

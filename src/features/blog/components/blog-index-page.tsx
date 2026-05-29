@@ -51,7 +51,7 @@ export function BlogIndexPage({
               align="center"
               className="mb-0"
               title="Strategi Belajar, Pembahasan, dan Ritme Persiapan Tes"
-              subtitle="Baca artikel tentang UTBK, UTUL UGM, SIMAK UI, CPNS, tryout, dan cara membangun kebiasaan belajar yang lebih terukur."
+              subtitle="Baca artikel untuk menemukan strategi UTBK, tryout, dan kebiasaan belajar yang lebih terukur."
               titleClassName="max-w-4xl text-balance text-4xl font-black leading-tight tracking-normal sm:text-5xl lg:text-6xl"
               subtitleClassName="mt-5 max-w-2xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg"
             />

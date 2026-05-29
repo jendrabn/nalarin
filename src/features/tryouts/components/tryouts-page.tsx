@@ -118,8 +118,8 @@ export function TryoutsPage({
       : tryoutsByExamType.filter((tryout) => tryout.availabilityStatus === activeStatus)
   const pageTitle = activeExamType ? `Tryout ${activeExamType.name}` : "Tryout"
   const pageSubtitle = activeExamType
-    ? `Pilih jadwal tryout ${activeExamType.name}, cek statusnya, lalu buka detail sebelum mulai.`
-    : "Pilih simulasi ujian sesuai jalur belajar dan cek detail sebelum mulai."
+    ? `Pilih jadwal tryout ${activeExamType.name} untuk mengecek status dan membuka detail sebelum mulai.`
+    : "Pilih simulasi ujian yang sesuai jalur belajar dan cek detail sebelum mulai."
 
   return (
     <div className="min-h-screen bg-background text-foreground">

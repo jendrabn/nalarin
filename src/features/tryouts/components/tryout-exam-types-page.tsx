@@ -57,7 +57,7 @@ export function TryoutExamTypesPage({ user, data }: TryoutExamTypesPageProps) {
           <PageHeader
             className="mb-0"
             title="Tryout"
-            subtitle="Simulasi ujian multi-section untuk melatih ritme, durasi, ranking, dan pembahasan sebelum hari H."
+            subtitle="Pilih tipe ujian untuk melihat daftar tryout, jadwal, dan hasil yang tersedia."
           />
         </section>
 
