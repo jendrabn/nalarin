@@ -55,7 +55,7 @@ export function PaymentsPage({ payments }: PaymentsPageProps) {
         return
       }
 
-      toast.success("Manual payment approved.")
+      toast.success("Payment approved.")
       router.refresh()
       setApproveTarget(null)
     } finally {
@@ -67,7 +67,7 @@ export function PaymentsPage({ payments }: PaymentsPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Payments"
-        subtitle="Track Midtrans and manual payments, then approve manual transfers when needed."
+        subtitle="Track Midtrans and manual payments, then approve pending payments when needed."
         actions={null}
       />
 
@@ -265,7 +265,8 @@ export function PaymentsPage({ payments }: PaymentsPageProps) {
                       <EyeIcon />
                       View
                     </DropdownMenuItem>
-                    {row.original.gateway === "manual" && row.original.status === "pending" ? (
+                    {(row.original.gateway === "manual" || row.original.gateway === "midtrans") &&
+                    row.original.status === "pending" ? (
                       <DropdownMenuItem onClick={() => setApproveTarget(row.original)}>
                         <CheckIcon />
                         Approve
@@ -288,23 +289,31 @@ export function PaymentsPage({ payments }: PaymentsPageProps) {
         }}
       >
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Approve this payment?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will create an active subscription for {approveTarget?.userName ?? "the user"}{" "}
-              and mark the pending manual payment as paid.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Approve this payment?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will create an active subscription for {approveTarget?.userName ?? "the user"}{" "}
+              and mark the pending payment as paid.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isApproving}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={isApproving}
-              onClick={(event) => {
-                event.preventDefault()
-                void handleApprovePayment()
-              }}
-            >
-              {isApproving ? "Approving..." : "Approve Payment"}
+            <AlertDialogCancel asChild>
+              <Button type="button" variant="outline" disabled={isApproving}>
+                Cancel
+              </Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                type="button"
+                variant="default"
+                disabled={isApproving}
+                onClick={(event) => {
+                  event.preventDefault()
+                  void handleApprovePayment()
+                }}
+              >
+                {isApproving ? "Approving..." : "Approve"}
+              </Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

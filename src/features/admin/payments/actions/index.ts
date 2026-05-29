@@ -53,17 +53,17 @@ export async function approveManualPaymentAction(
     }
   }
 
-  if (payment.gateway !== "manual") {
+  if (payment.gateway !== "manual" && payment.gateway !== "midtrans") {
     return {
       success: false,
-      message: "Only manual payments can be approved manually.",
+      message: "Only manual or Midtrans payments can be approved.",
     }
   }
 
   if (payment.status !== "pending") {
     return {
       success: false,
-      message: "Only pending manual payments can be approved.",
+      message: "Only pending payments can be approved.",
     }
   }
 

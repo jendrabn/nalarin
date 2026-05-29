@@ -158,10 +158,31 @@ export async function createMidtransSnapTransaction(
   })
 
   if (!response.ok) {
-    throw new Error(`Midtrans Snap request failed with ${response.status}.`)
+    const responseText = await response.text()
+    let responseMessage = responseText.trim()
+
+    try {
+      const parsed = JSON.parse(responseText) as {
+        status_message?: string
+        message?: string
+      }
+
+      responseMessage = parsed.status_message ?? parsed.message ?? responseMessage
+    } catch {
+      // Keep the raw text as fallback.
+    }
+
+    const detail = responseMessage ? `: ${responseMessage}` : ""
+    throw new Error(`Midtrans Snap request failed with ${response.status}${detail}.`)
   }
 
-  return (await response.json()) as MidtransSnapTransactionResponse
+  const data = (await response.json()) as MidtransSnapTransactionResponse
+
+  if (!data.token || !data.redirect_url) {
+    throw new Error("Midtrans Snap response missing token or redirect_url.")
+  }
+
+  return data
 }
 
 export async function fetchMidtransTransactionStatus(orderId: string) {

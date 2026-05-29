@@ -44,15 +44,13 @@ export function buildPremiumPlanCards({
 
   return plans.map((plan) => {
     const currentSubscription = subscriptionByExamType.get(plan.examTypeId) ?? null
-    const hasPendingPayment = pendingPayments.some(
-      (payment) => payment.packagePriceId === plan.priceId,
-    )
+    const pendingPayment =
+      pendingPayments.find((payment) => payment.examTypeId === plan.examTypeId) ?? null
     const actions = getPremiumPlanActions({
       plan,
       user,
       currentSubscription,
-      pendingPayment:
-        pendingPayments.find((payment) => payment.examTypeId === plan.examTypeId) ?? null,
+      pendingPayment,
       paymentGatewayEnabled,
       manualPaymentEnabled,
     })
@@ -60,7 +58,7 @@ export function buildPremiumPlanCards({
     return {
       plan,
       featured: plan.discountPercent > 0,
-      tone: hasPendingPayment ? "pending" : undefined,
+      tone: pendingPayment ? "pending" : undefined,
       action: actions[0],
       actions,
     }
@@ -127,19 +125,17 @@ function getPremiumPlanActions({
   }
 
   if (currentSubscription) {
-    return getCheckoutActions({
-      primaryLabel: "Perpanjang Paket",
-      helperText: `Aktif sampai ${formatAdminDate(currentSubscription.endsAt)}`,
-      paymentGatewayEnabled,
-      manualPaymentEnabled,
-      primaryVariant: "outline-primary",
-    })
-  }
+  return getCheckoutActions({
+    primaryLabel: "Perpanjang Paket",
+    helperText: `Aktif sampai ${formatAdminDate(currentSubscription.endsAt)}`,
+    paymentGatewayEnabled,
+    primaryVariant: "outline-primary",
+  })
+}
 
   return getCheckoutActions({
     primaryLabel: "Beli Paket",
     paymentGatewayEnabled,
-    manualPaymentEnabled,
     primaryVariant: "cta",
   })
 }
@@ -148,33 +144,13 @@ function getCheckoutActions({
   primaryLabel,
   helperText,
   paymentGatewayEnabled,
-  manualPaymentEnabled,
   primaryVariant,
 }: {
   primaryLabel: string
   helperText?: string
   paymentGatewayEnabled: boolean
-  manualPaymentEnabled: boolean
   primaryVariant: PricingPlanCardAction["variant"]
 }): PricingPlanCardAction[] {
-  if (paymentGatewayEnabled && manualPaymentEnabled) {
-    return [
-      {
-        label: primaryLabel,
-        value: "midtrans",
-        helperText,
-        hideIcon: true,
-        variant: primaryVariant,
-      },
-      {
-        label: "Konfirmasi Pembayaran",
-        value: "manual",
-        hideIcon: true,
-        variant: "outline",
-      },
-    ]
-  }
-
   return [{
     label: primaryLabel,
     value: paymentGatewayEnabled ? "midtrans" : "manual",

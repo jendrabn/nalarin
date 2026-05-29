@@ -359,6 +359,8 @@ async function createPendingPayment({
           checkoutPackage,
           amount,
           pricing,
+          benefitSnapshot,
+          pricingSnapshot,
           voucher: voucher.data,
           gateway,
           orderId,
@@ -400,18 +402,51 @@ async function createPendingPayment({
       },
     })
 
-    await db
-      .update(schema.payments)
-      .set({
-        paymentUrl: snap.redirect_url,
-        rawPayload: {
-          ...rawPayload,
-          snapToken: snap.token,
-          snapRedirectUrl: snap.redirect_url,
-        },
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.payments.id, created.id))
+    try {
+      await db
+        .update(schema.payments)
+        .set({
+          paymentUrl: snap.redirect_url,
+          rawPayload: {
+            ...rawPayload,
+            snapToken: snap.token,
+            snapRedirectUrl: snap.redirect_url,
+          },
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.payments.id, created.id))
+    } catch (persistError) {
+      console.error("Failed to persist Midtrans transaction", persistError)
+
+      try {
+        await cancelMidtransTransaction(orderId)
+      } catch (cancelError) {
+        console.error("Failed to cancel orphan Midtrans transaction", cancelError)
+      }
+
+      await db
+        .update(schema.payments)
+        .set({
+          status: "failed",
+          rawPayload: {
+            ...rawPayload,
+            error:
+              persistError instanceof Error
+                ? persistError.message
+                : "Failed to persist Midtrans payment.",
+          },
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.payments.id, created.id))
+
+      revalidatePremiumPage()
+
+      return {
+        success: false,
+        code: "gateway_error",
+        message: "Gagal menyimpan transaksi pembayaran. Coba lagi beberapa saat.",
+      }
+    }
 
     revalidatePremiumPage()
 
@@ -423,6 +458,8 @@ async function createPendingPayment({
           checkoutPackage,
           amount,
           pricing,
+          benefitSnapshot,
+          pricingSnapshot,
           voucher: voucher.data,
           gateway,
           orderId,
@@ -436,6 +473,8 @@ async function createPendingPayment({
       },
     }
   } catch (error) {
+    console.error("Failed to create Midtrans payment", error)
+
     await db
       .update(schema.payments)
       .set({
@@ -453,7 +492,10 @@ async function createPendingPayment({
     return {
       success: false,
       code: "gateway_error",
-      message: "Gagal membuat transaksi pembayaran. Coba lagi beberapa saat.",
+      message:
+        error instanceof Error && error.message
+          ? error.message
+          : "Gagal membuat transaksi pembayaran. Coba lagi beberapa saat.",
     }
   }
 }
@@ -793,6 +835,8 @@ function buildPendingPaymentPayload({
   checkoutPackage,
   amount,
   pricing,
+  benefitSnapshot,
+  pricingSnapshot,
   voucher,
   gateway,
   orderId,
@@ -805,6 +849,8 @@ function buildPendingPaymentPayload({
   checkoutPackage: CheckoutPackage
   amount: number
   pricing: ReturnType<typeof getCheckoutPricing>
+  benefitSnapshot: PackageBenefitSnapshot
+  pricingSnapshot: PackagePricingSnapshot
   voucher: VoucherApplication | null
   gateway: "midtrans" | "manual"
   orderId: string

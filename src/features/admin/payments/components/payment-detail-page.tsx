@@ -73,7 +73,7 @@ export function PaymentDetailPage({ payment, backHref }: PaymentDetailPageProps)
         return
       }
 
-      toast.success("Manual payment approved.")
+      toast.success("Payment approved.")
       router.refresh()
       setApproveOpen(false)
     } finally {
@@ -101,7 +101,8 @@ export function PaymentDetailPage({ payment, backHref }: PaymentDetailPageProps)
                 </a>
               </Button>
             ) : null}
-            {payment.gateway === "manual" && payment.status === "pending" ? (
+            {(payment.gateway === "manual" || payment.gateway === "midtrans") &&
+            payment.status === "pending" ? (
               <AlertDialog open={approveOpen} onOpenChange={setApproveOpen}>
                 <AlertDialogTrigger asChild>
                   <Button>
@@ -114,19 +115,27 @@ export function PaymentDetailPage({ payment, backHref }: PaymentDetailPageProps)
                     <AlertDialogTitle>Approve this payment?</AlertDialogTitle>
                     <AlertDialogDescription>
                       This will create an active subscription for the user and mark the
-                      payment as paid.
+                      pending payment as paid.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isPending}>Close</AlertDialogCancel>
-                    <AlertDialogAction
-                      disabled={isPending}
-                      onClick={(event) => {
-                        event.preventDefault()
-                        void handleApprove()
-                      }}
-                    >
-                      {isPending ? "Approving..." : "Approve Payment"}
+                    <AlertDialogCancel asChild>
+                      <Button type="button" variant="outline" disabled={isPending}>
+                        Close
+                      </Button>
+                    </AlertDialogCancel>
+                    <AlertDialogAction asChild>
+                      <Button
+                        type="button"
+                        variant="default"
+                        disabled={isPending}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          void handleApprove()
+                        }}
+                      >
+                        {isPending ? "Approving..." : "Approve"}
+                      </Button>
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
