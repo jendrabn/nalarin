@@ -65,6 +65,26 @@
       "order_index": 4
     }
   ],
+  "exam_type_packages": [
+    {
+      "is_active": true,
+      "practice_quota_per_month": -1,
+      "quiz_quota_per_month": -1,
+      "tryout_quota_per_month": -1,
+      "ai_explanation_quota_per_month": -1,
+      "premium_practices_enabled": true,
+      "premium_tryouts_enabled": true,
+      "ranking_enabled": true
+    }
+  ],
+  "exam_type_package_prices": [
+    {
+      "duration_months": 1,
+      "price": 100000,
+      "discount_percent": 0,
+      "is_active": true
+    }
+  ],
   "subjects": [
     {
       "exam_type_slug": "utbk",

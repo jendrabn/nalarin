@@ -48,6 +48,30 @@ const topicSeedItemSchema = taxonomySeedItemSchema.extend({
 
 const seedDataSchema = z.object({
   exam_types: z.array(examTypeSeedItemSchema).min(1),
+  exam_type_packages: z
+    .array(
+      z.object({
+        is_active: z.boolean().optional(),
+        practice_quota_per_month: z.number().int(),
+        quiz_quota_per_month: z.number().int(),
+        tryout_quota_per_month: z.number().int(),
+        ai_explanation_quota_per_month: z.number().int(),
+        premium_practices_enabled: z.boolean(),
+        premium_tryouts_enabled: z.boolean(),
+        ranking_enabled: z.boolean(),
+      }),
+    )
+    .length(1),
+  exam_type_package_prices: z
+    .array(
+      z.object({
+        duration_months: z.number().int().min(1),
+        price: z.number().int().min(0),
+        discount_percent: z.number().int().min(0).max(100),
+        is_active: z.boolean().optional(),
+      }),
+    )
+    .min(1),
   subjects: z.array(subjectSeedItemSchema).min(1),
   topics: z.array(topicSeedItemSchema).min(1),
   blog_categories: z.array(taxonomySeedItemSchema).min(1),
@@ -142,7 +166,9 @@ async function getSubjectIdBySlug() {
   return subjectIds;
 }
 
-async function seedExamTypePackages() {
+async function seedExamTypePackages(seedData: SeedData) {
+  const [packageTemplate] = seedData.exam_type_packages;
+
   const examTypes = await db
     .select({
       id: schema.examTypes.id,
@@ -154,14 +180,14 @@ async function seedExamTypePackages() {
       .insert(schema.examTypePackages)
       .values({
         examTypeId: examType.id,
-        isActive: true,
-        practiceQuotaPerMonth: -1,
-        quizQuotaPerMonth: -1,
-        tryoutQuotaPerMonth: -1,
-        aiExplanationQuotaPerMonth: -1,
-        premiumPracticesEnabled: true,
-        premiumTryoutsEnabled: true,
-        rankingEnabled: true,
+        isActive: packageTemplate.is_active ?? true,
+        practiceQuotaPerMonth: packageTemplate.practice_quota_per_month,
+        quizQuotaPerMonth: packageTemplate.quiz_quota_per_month,
+        tryoutQuotaPerMonth: packageTemplate.tryout_quota_per_month,
+        aiExplanationQuotaPerMonth: packageTemplate.ai_explanation_quota_per_month,
+        premiumPracticesEnabled: packageTemplate.premium_practices_enabled,
+        premiumTryoutsEnabled: packageTemplate.premium_tryouts_enabled,
+        rankingEnabled: packageTemplate.ranking_enabled,
       })
       .onDuplicateKeyUpdate({
         set: {
@@ -185,13 +211,15 @@ async function seedExamTypePackages() {
 
     await db
       .insert(schema.examTypePackagePrices)
-      .values({
-        packageId,
-        durationMonths: 1,
-        price: 100000,
-        discountPercent: 0,
-        isActive: true,
-      })
+      .values(
+        seedData.exam_type_package_prices.map((price) => ({
+          packageId,
+          durationMonths: price.duration_months,
+          price: price.price,
+          discountPercent: price.discount_percent,
+          isActive: price.is_active ?? true,
+        })),
+      )
       .onDuplicateKeyUpdate({
         set: {
           updatedAt: new Date(),
@@ -323,7 +351,7 @@ async function main() {
   const seedData = await loadSeedData();
 
   await seedExamTypes(seedData);
-  await seedExamTypePackages();
+  await seedExamTypePackages(seedData);
   await seedSubjects(seedData);
   await seedTopics(seedData);
   await seedBlogCategories(seedData);
@@ -332,7 +360,9 @@ async function main() {
 
 main()
   .then(async () => {
-    console.log('Seed completed: exam_types, subjects, topics, blog_categories, and users upserted.');
+    console.log(
+      'Seed completed: exam_types, exam_type_package_prices, subjects, topics, blog_categories, and users upserted.',
+    );
     await pool.end();
   })
   .catch(async (error) => {

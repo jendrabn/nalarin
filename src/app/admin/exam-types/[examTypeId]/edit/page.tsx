@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { ExamTypesPage } from "@/features/admin/exam-types/components/exam-types-page"
-import { getExamTypeById, getExamTypes } from "@/features/admin/exam-types/queries"
+import { ExamTypeFormPage } from "@/features/admin/exam-types/components/exam-type-form-page"
+import { getExamTypeById } from "@/features/admin/exam-types/queries"
 
 type EditPageProps = {
   params: Promise<{
@@ -27,8 +27,7 @@ export async function generateMetadata({
 
   return {
     title: examType ? `Edit ${examType.name}` : "Edit Exam Type",
-    description:
-      examType?.description ?? "Edit a seeded exam type from the admin panel.",
+    description: examType?.description ?? "Edit an exam type from the admin panel.",
   }
 }
 
@@ -40,20 +39,22 @@ export default async function Page({ params }: EditPageProps) {
     notFound()
   }
 
-  const [examTypes, examType] = await Promise.all([
-    getExamTypes(),
-    getExamTypeById(id),
-  ])
+  const examType = await getExamTypeById(id)
 
   if (!examType) {
     notFound()
   }
 
   return (
-    <ExamTypesPage
-      examTypes={examTypes}
-      defaultEditExamType={examType}
-      closeDestination="/admin/exam-types"
+    <ExamTypeFormPage
+      mode="edit"
+      examTypeId={id}
+      title={`Edit ${examType.name}`}
+      subtitle="Update exam type branding, package settings, schedules, and content."
+      submitLabel="Save changes"
+      backHref={`/admin/exam-types/${id}`}
+      backLabel="Back to Exam Type"
+      initialValues={examType}
     />
   )
 }

@@ -6,7 +6,7 @@ export type AdminBreadcrumbItem = {
 const adminRouteLabels: Record<string, string> = {
   admin: "Dashboard",
   users: "Users",
-  create: "Tambah",
+  create: "Create",
   edit: "Edit",
   blog: "Blog",
   "blog-categories": "Blog Categories",

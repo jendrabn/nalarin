@@ -6,7 +6,7 @@ import { getExamTypes } from "@/features/admin/exam-types/queries"
 export const metadata: Metadata = {
   title: "Exam Types",
   description:
-    "Edit seeded exam types that drive subjects, topics, practices, tryouts, and question filters.",
+    "Manage exam types, package settings, and public information from the admin panel.",
 }
 
 export default async function Page() {

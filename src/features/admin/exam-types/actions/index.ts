@@ -1,6 +1,7 @@
 "use server"
 
 import { eq } from "drizzle-orm"
+import { inArray } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 import { db, schema } from "@/db"
@@ -71,6 +72,8 @@ function parseNullableDateTime(value: string) {
 
 function revalidateExamTypeRoutes() {
   revalidatePath("/admin/exam-types")
+  revalidatePath("/admin/exam-types/create")
+  revalidatePath("/pricing")
   revalidatePath("/admin/subjects")
   revalidatePath("/admin/subjects/create")
   revalidatePath("/admin/topics")
@@ -89,6 +92,70 @@ async function examTypeSlugExists(slug: string, excludedId?: number) {
 }
 
 export type ExamTypeActionResult<FormValues, T = unknown> = ActionResult<FormValues, T>
+
+export async function createExamTypeAction(
+  values: ExamTypeFormValues,
+): Promise<ExamTypeActionResult<ExamTypeFormValues, { id: number }>> {
+  await requireAdmin()
+
+  const parsed = parseExamTypeValues(values)
+
+  if (!parsed.success) {
+    return parsed
+  }
+
+  const slug = await buildUniqueSlug(slugify(parsed.data.name), async (candidate) =>
+    examTypeSlugExists(candidate),
+  )
+
+  const now = new Date()
+
+  try {
+    const result = await db.transaction(async (tx) => {
+      const [createdExamType] = await tx
+        .insert(schema.examTypes)
+        .values({
+          name: parsed.data.name,
+          slug,
+          description: parsed.data.description,
+          logoUrl: parsed.data.logoUrl,
+          coverUrl: parsed.data.coverUrl,
+          countdownTitle: parsed.data.countdownTitle,
+          countdownTargetAt: parsed.data.countdownTargetAt,
+          registrationStartAt: parsed.data.registrationStartAt,
+          registrationEndAt: parsed.data.registrationEndAt,
+          examStartAt: parsed.data.examStartAt,
+          examEndAt: parsed.data.examEndAt,
+          announcementAt: parsed.data.announcementAt,
+          informationContent: parsed.data.informationContent,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .$returningId()
+
+      await upsertExamTypePackage(tx, createdExamType.id, parsed.data, now)
+
+      return createdExamType.id
+    })
+
+    revalidateExamTypeRoutes()
+    revalidatePath(`/admin/exam-types/${result}`)
+    revalidatePath(`/admin/exam-types/${result}/edit`)
+
+    return {
+      success: true,
+      data: { id: result },
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        isDuplicateEntryError(error)
+          ? "Another exam type already uses the same slug."
+          : "Failed to create the exam type.",
+    }
+  }
+}
 
 export async function updateExamTypeAction(
   examTypeId: number,
@@ -135,10 +202,12 @@ export async function updateExamTypeAction(
       })
       .where(eq(schema.examTypes.id, examTypeId))
 
-    await upsertExamTypePackage(examTypeId, parsed.data)
+    await upsertExamTypePackage(db, examTypeId, parsed.data)
 
     revalidateExamTypeRoutes()
+    revalidatePath(`/admin/exam-types/${examTypeId}`)
     revalidatePath(`/admin/exam-types/${examTypeId}/edit`)
+    revalidatePath("/pricing")
 
     return {
       success: true,
@@ -156,6 +225,7 @@ export async function updateExamTypeAction(
 }
 
 async function upsertExamTypePackage(
+  database: typeof db,
   examTypeId: number,
   values: {
     packageIsActive: boolean
@@ -170,14 +240,14 @@ async function upsertExamTypePackage(
     premiumTryoutsEnabled: boolean
     rankingEnabled: boolean
   },
+  now = new Date(),
 ) {
-  const [existingPackage] = await db
+  const [existingPackage] = await database
     .select({ id: schema.examTypePackages.id })
     .from(schema.examTypePackages)
     .where(eq(schema.examTypePackages.examTypeId, examTypeId))
     .limit(1)
 
-  const now = new Date()
   const packagePayload = {
     isActive: values.packageIsActive,
     practiceQuotaPerMonth: values.practiceQuotaPerMonth,
@@ -193,7 +263,7 @@ async function upsertExamTypePackage(
   const packageId =
     existingPackage?.id ??
     (
-      await db
+      await database
         .insert(schema.examTypePackages)
         .values({
           examTypeId,
@@ -204,13 +274,13 @@ async function upsertExamTypePackage(
     )[0].id
 
   if (existingPackage) {
-    await db
+    await database
       .update(schema.examTypePackages)
       .set(packagePayload)
       .where(eq(schema.examTypePackages.id, packageId))
   }
 
-  const [existingPrice] = await db
+  const [existingPrice] = await database
     .select({ id: schema.examTypePackagePrices.id })
     .from(schema.examTypePackagePrices)
     .where(eq(schema.examTypePackagePrices.packageId, packageId))
@@ -225,16 +295,69 @@ async function upsertExamTypePackage(
   }
 
   if (existingPrice) {
-    await db
+    await database
       .update(schema.examTypePackagePrices)
       .set(pricePayload)
       .where(eq(schema.examTypePackagePrices.id, existingPrice.id))
     return
   }
 
-  await db.insert(schema.examTypePackagePrices).values({
+  await database.insert(schema.examTypePackagePrices).values({
     packageId,
     ...pricePayload,
     createdAt: now,
   })
+}
+
+export async function deleteExamTypeAction(
+  examTypeId: number,
+): Promise<ExamTypeActionResult<never, { id: number }>> {
+  await requireAdmin()
+
+  const existingExamType = await getExamTypeById(examTypeId)
+
+  if (!existingExamType) {
+    return {
+      success: false,
+      message: "Exam type not found.",
+    }
+  }
+
+  try {
+    await db.transaction(async (tx) => {
+      const packages = await tx
+        .select({ id: schema.examTypePackages.id })
+        .from(schema.examTypePackages)
+        .where(eq(schema.examTypePackages.examTypeId, examTypeId))
+
+      const packageIds = packages.map((item) => item.id)
+
+      if (packageIds.length > 0) {
+        await tx
+          .delete(schema.examTypePackagePrices)
+          .where(inArray(schema.examTypePackagePrices.packageId, packageIds))
+
+        await tx
+          .delete(schema.examTypePackages)
+          .where(inArray(schema.examTypePackages.id, packageIds))
+      }
+
+      await tx.delete(schema.examTypes).where(eq(schema.examTypes.id, examTypeId))
+    })
+
+    revalidateExamTypeRoutes()
+    revalidatePath(`/admin/exam-types/${examTypeId}/edit`)
+    revalidatePath("/pricing")
+
+    return {
+      success: true,
+      data: { id: examTypeId },
+    }
+  } catch {
+    return {
+      success: false,
+      message:
+        "Failed to delete the exam type. Remove related records first if it is still in use.",
+    }
+  }
 }

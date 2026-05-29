@@ -187,6 +187,14 @@ export async function startManualPaymentAction(
   packagePriceId: number,
   voucherCode?: string,
 ): Promise<PremiumActionResult<PremiumPaymentPayload>> {
+  if (env.PAYMENT_GATEWAY_ENABLED) {
+    return {
+      success: false,
+      code: "gateway_error",
+      message: "Pembayaran manual sedang dinonaktifkan. Gunakan metode pembayaran yang tersedia.",
+    }
+  }
+
   return createPendingPayment({
     packagePriceId,
     voucherCode,
