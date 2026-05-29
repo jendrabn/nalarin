@@ -5,7 +5,7 @@ import { getTryouts } from "@/features/admin/tryouts/queries"
 
 export const metadata: Metadata = {
   title: "Tryouts",
-  description: "Manage tryouts from the admin panel.",
+  description: "Manage tryouts to control schedules, access, scoring, and publication.",
 }
 
 export default async function Page() {
@@ -13,3 +13,4 @@ export default async function Page() {
 
   return <TryoutsPage tryouts={tryouts} />
 }
+

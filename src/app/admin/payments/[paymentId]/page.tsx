@@ -19,7 +19,7 @@ export async function generateMetadata({
   if (!Number.isFinite(id)) {
     return {
       title: "Payment Details",
-      description: "View payment details from the admin panel.",
+      description: "Review this payment to verify transaction data and subscription history.",
     }
   }
 
@@ -27,9 +27,7 @@ export async function generateMetadata({
 
   return {
     title: payment ? `Payment #${payment.id}` : "Payment Details",
-    description: payment
-      ? `View payment, user, and subscription details for payment #${payment.id}.`
-      : "View payment details from the admin panel.",
+    description: "Review this payment to verify transaction data and subscription history.",
   }
 }
 
@@ -49,3 +47,4 @@ export default async function Page({ params }: PaymentDetailPageProps) {
 
   return <PaymentDetailPage payment={payment} backHref="/admin/payments" />
 }
+

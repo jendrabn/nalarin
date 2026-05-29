@@ -5,7 +5,7 @@ import { getAdminQuestionLookups } from "@/features/admin/questions/queries"
 
 export const metadata: Metadata = {
   title: "Create Question",
-  description: "Create a question from the admin panel.",
+  description: "Add a question with options, scoring, and explanation fields.",
 }
 
 export default async function Page() {
@@ -22,3 +22,4 @@ export default async function Page() {
     />
   )
 }
+

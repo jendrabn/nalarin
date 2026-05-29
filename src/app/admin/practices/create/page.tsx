@@ -5,7 +5,7 @@ import { getAdminPracticeLookups } from "@/features/admin/practices/queries"
 
 export const metadata: Metadata = {
   title: "Create Practice",
-  description: "Create a practice or quiz package from the admin panel.",
+  description: "Create a practice set with practice and quiz mode controls.",
 }
 
 export default async function Page() {
@@ -21,3 +21,4 @@ export default async function Page() {
     />
   )
 }
+

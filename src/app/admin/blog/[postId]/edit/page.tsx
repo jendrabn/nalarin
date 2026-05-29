@@ -19,7 +19,7 @@ export async function generateMetadata({
   if (!Number.isFinite(id)) {
     return {
       title: "Edit Blog Post",
-      description: "Edit a blog post from the admin panel.",
+      description: "Update this blog post to refine content, publication state, and SEO metadata.",
     }
   }
 
@@ -27,7 +27,7 @@ export async function generateMetadata({
 
   return {
     title: post ? `Edit ${post.title}` : "Edit Blog Post",
-    description: post?.excerpt ?? "Edit a blog post from the admin panel.",
+    description: "Update this blog post to refine content, publication state, and SEO metadata.",
   }
 }
 
@@ -61,3 +61,4 @@ export default async function Page({ params }: EditPageProps) {
     />
   )
 }
+

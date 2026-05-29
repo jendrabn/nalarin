@@ -1,4 +1,10 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
+
+export const metadata: Metadata = {
+  title: "Practice Questions Redirect",
+  description: "Redirect to the practice editor.",
+}
 
 type PracticeQuestionsPageProps = {
   params: Promise<{
@@ -11,3 +17,4 @@ export default async function Page({ params }: PracticeQuestionsPageProps) {
 
   redirect(`/admin/practices/${practiceId}/edit`)
 }
+

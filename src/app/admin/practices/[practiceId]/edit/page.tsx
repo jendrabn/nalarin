@@ -22,7 +22,7 @@ export async function generateMetadata({
   if (!Number.isFinite(id)) {
     return {
       title: "Edit Practice",
-      description: "Edit a practice from the admin panel.",
+      description: "Update this practice to adjust its draft configuration.",
     }
   }
 
@@ -30,7 +30,7 @@ export async function generateMetadata({
 
   return {
     title: practice ? `Edit ${practice.title}` : "Edit Practice",
-    description: practice?.description ?? "Edit a practice from the admin panel.",
+    description: "Update this practice to adjust its draft configuration.",
   }
 }
 
@@ -63,3 +63,4 @@ export default async function Page({ params }: EditPracticePageProps) {
     />
   )
 }
+

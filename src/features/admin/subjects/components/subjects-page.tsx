@@ -27,6 +27,7 @@ import {
 import { AdminDataTable, SortableHeader } from "@/components/admin-data-table"
 import { TaxonomyLogo } from "@/components/taxonomy-logo"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { formatAdminDateTime } from "@/lib/format"
 
 import {
   createSubjectAction,
@@ -227,10 +228,7 @@ export function SubjectsPage({
             header: ({ column }) => <SortableHeader column={column}>Created At</SortableHeader>,
             cell: ({ row }) => (
               <span className="text-sm text-muted-foreground">
-                {new Intl.DateTimeFormat("id-ID", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                }).format(row.original.createdAt)}
+                {formatAdminDateTime(row.original.createdAt)}
               </span>
             ),
           },
@@ -240,10 +238,7 @@ export function SubjectsPage({
             header: ({ column }) => <SortableHeader column={column}>Updated At</SortableHeader>,
             cell: ({ row }) => (
               <span className="text-sm text-muted-foreground">
-                {new Intl.DateTimeFormat("id-ID", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                }).format(row.original.updatedAt)}
+                {formatAdminDateTime(row.original.updatedAt)}
               </span>
             ),
           },

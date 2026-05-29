@@ -5,7 +5,7 @@ import { getQuestions } from "@/features/admin/questions/queries"
 
 export const metadata: Metadata = {
   title: "Questions",
-  description: "Manage the question bank from the admin panel.",
+  description: "Manage questions to keep the question bank organized and current.",
 }
 
 export default async function Page() {
@@ -13,3 +13,4 @@ export default async function Page() {
 
   return <QuestionsPage questions={questions} />
 }
+

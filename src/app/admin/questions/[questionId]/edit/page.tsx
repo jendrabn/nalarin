@@ -19,7 +19,7 @@ export async function generateMetadata({
   if (!Number.isFinite(id)) {
     return {
       title: "Edit Question",
-      description: "Edit a question from the admin panel.",
+      description: "Update this question to refine options, scoring, and explanation fields.",
     }
   }
 
@@ -27,10 +27,7 @@ export async function generateMetadata({
 
   return {
     title: question ? `Edit ${question.title || `Question ${question.id}`}` : "Edit Question",
-    description:
-      question?.content
-        ? "Update question content, options, and explanation fields."
-        : "Edit a question from the admin panel.",
+    description: "Update this question to refine options, scoring, and explanation fields.",
   }
 }
 
@@ -64,3 +61,4 @@ export default async function Page({ params }: EditPageProps) {
     />
   )
 }
+

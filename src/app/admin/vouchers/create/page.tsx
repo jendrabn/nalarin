@@ -4,7 +4,7 @@ import { VoucherFormPage } from "@/features/admin/vouchers/components/voucher-fo
 
 export const metadata: Metadata = {
   title: "Create Voucher",
-  description: "Create a checkout discount voucher.",
+  description: "Create a voucher to define its code, discount, and validity window.",
 }
 
 export default function Page() {

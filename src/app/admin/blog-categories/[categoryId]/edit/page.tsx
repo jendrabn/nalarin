@@ -22,7 +22,7 @@ export async function generateMetadata({
   if (!Number.isFinite(id)) {
     return {
       title: "Edit Blog Category",
-      description: "Edit a blog category from the admin panel.",
+      description: "Update the category name or description. The slug stays automatic and unique from the name.",
     }
   }
 
@@ -31,7 +31,7 @@ export async function generateMetadata({
   return {
     title: category ? `Edit ${category.name}` : "Edit Blog Category",
     description:
-      category?.description ?? "Edit a blog category from the admin panel.",
+      "Update the category name or description. The slug stays automatic and unique from the name.",
   }
 }
 
@@ -60,3 +60,4 @@ export default async function Page({ params }: EditPageProps) {
     />
   )
 }
+

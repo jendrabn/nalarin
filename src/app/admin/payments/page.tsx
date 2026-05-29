@@ -5,7 +5,7 @@ import { getAdminPayments } from "@/features/admin/payments/queries"
 
 export const metadata: Metadata = {
   title: "Payments",
-  description: "Review Midtrans and manual payments.",
+  description: "Review payments to approve pending transactions and track billing status.",
 }
 
 export default async function Page() {

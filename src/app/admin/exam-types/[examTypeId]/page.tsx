@@ -19,7 +19,7 @@ export async function generateMetadata({
   if (!Number.isFinite(id)) {
     return {
       title: "Exam Type Details",
-      description: "View exam type details from the admin panel.",
+      description: "Review exam type details to audit package settings and public information.",
     }
   }
 
@@ -27,7 +27,7 @@ export async function generateMetadata({
 
   return {
     title: examType ? `${examType.name} - Exam Type Details` : "Exam Type Details",
-    description: examType?.description ?? "View exam type details from the admin panel.",
+    description: "Review exam type details to audit package settings and public information.",
   }
 }
 
@@ -47,3 +47,4 @@ export default async function Page({ params }: ExamTypeDetailPageProps) {
 
   return <ExamTypeDetailPage examType={examType} backHref="/admin/exam-types" />
 }
+

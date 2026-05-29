@@ -19,7 +19,7 @@ export async function generateMetadata({
   if (!Number.isFinite(id)) {
     return {
       title: "Edit Tryout",
-      description: "Edit a tryout from the admin panel.",
+      description: "Update this tryout to adjust its draft configuration.",
     }
   }
 
@@ -27,7 +27,7 @@ export async function generateMetadata({
 
   return {
     title: tryout ? `Edit ${tryout.title}` : "Edit Tryout",
-    description: tryout?.description ?? "Edit a tryout from the admin panel.",
+    description: "Update this tryout to adjust its draft configuration.",
   }
 }
 
@@ -60,3 +60,4 @@ export default async function Page({ params }: EditTryoutPageProps) {
     />
   )
 }
+

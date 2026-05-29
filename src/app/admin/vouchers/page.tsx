@@ -5,7 +5,7 @@ import { getAdminVouchers } from "@/features/admin/vouchers/queries"
 
 export const metadata: Metadata = {
   title: "Vouchers",
-  description: "Manage checkout discount vouchers.",
+  description: "Manage vouchers to control checkout discounts and redemption rules.",
 }
 
 export default async function Page() {

@@ -19,7 +19,7 @@ export async function generateMetadata({
   if (!Number.isFinite(id)) {
     return {
       title: "Practice Detail",
-      description: "View a practice from the admin panel.",
+      description: "View a practice.",
     }
   }
 
@@ -27,7 +27,7 @@ export async function generateMetadata({
 
   return {
     title: practice ? practice.title : "Practice Detail",
-    description: practice?.description ?? "View a practice from the admin panel.",
+    description: practice?.description ?? "View a practice.",
   }
 }
 
@@ -47,3 +47,4 @@ export default async function Page({ params }: PracticePageProps) {
 
   return <PracticeDetailPage practice={practice} />
 }
+

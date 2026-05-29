@@ -19,7 +19,7 @@ export async function generateMetadata({
   if (!Number.isFinite(id)) {
     return {
       title: "Edit User",
-      description: "Edit user role and status from the admin panel.",
+      description: "Update user role and status to manage profile access.",
     }
   }
 
@@ -27,9 +27,7 @@ export async function generateMetadata({
 
   return {
     title: user ? `Edit ${user.name}` : "Edit User",
-    description: user
-      ? `Edit role and status for ${user.name} in a modal dialog.`
-      : "Edit user role and status from the admin panel.",
+    description: "Update user role and status to manage profile access.",
   }
 }
 
@@ -56,3 +54,4 @@ export default async function Page({ params }: EditUserPageProps) {
     />
   )
 }
+

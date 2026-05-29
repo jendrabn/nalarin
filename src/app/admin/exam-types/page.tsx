@@ -6,7 +6,7 @@ import { getExamTypes } from "@/features/admin/exam-types/queries"
 export const metadata: Metadata = {
   title: "Exam Types",
   description:
-    "Manage exam types, package settings, and public information from the admin panel.",
+    "Manage exam types to keep package settings and public information organized.",
 }
 
 export default async function Page() {
@@ -14,3 +14,4 @@ export default async function Page() {
 
   return <ExamTypesPage examTypes={examTypes} />
 }
+

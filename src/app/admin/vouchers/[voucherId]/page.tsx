@@ -12,7 +12,7 @@ type PageProps = {
 
 export const metadata: Metadata = {
   title: "Voucher Detail",
-  description: "Review voucher configuration and usage.",
+  description: "Review this voucher to verify discount rules and redemption history.",
 }
 
 export default async function Page({ params }: PageProps) {

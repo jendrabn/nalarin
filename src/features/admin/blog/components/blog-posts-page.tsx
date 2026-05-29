@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
+import { formatAdminDateTime } from "@/lib/format"
 
 import { deleteBlogPostAction, deleteBlogPostsAction } from "../actions"
 import type { BlogPostRow } from "../queries"
@@ -43,13 +44,6 @@ const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
   publishedAt: false,
   createdAt: false,
   updatedAt: false,
-}
-
-function formatDateTime(value: Date) {
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(value)
 }
 
 function createColumns({
@@ -140,7 +134,7 @@ function createColumns({
       header: ({ column }) => <SortableHeader column={column}>Published At</SortableHeader>,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {row.original.publishedAt ? formatDateTime(row.original.publishedAt) : "-"}
+          {row.original.publishedAt ? formatAdminDateTime(row.original.publishedAt) : "-"}
         </span>
       ),
     },
@@ -150,7 +144,7 @@ function createColumns({
       header: ({ column }) => <SortableHeader column={column}>Created At</SortableHeader>,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {formatDateTime(row.original.createdAt)}
+          {formatAdminDateTime(row.original.createdAt)}
         </span>
       ),
     },
@@ -160,7 +154,7 @@ function createColumns({
       header: ({ column }) => <SortableHeader column={column}>Updated At</SortableHeader>,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {formatDateTime(row.original.updatedAt)}
+          {formatAdminDateTime(row.original.updatedAt)}
         </span>
       ),
     },

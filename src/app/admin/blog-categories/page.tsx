@@ -5,7 +5,7 @@ import { getBlogCategories } from "@/features/admin/blog/queries/blog-categories
 
 export const metadata: Metadata = {
   title: "Blog Categories",
-  description: "Manage blog categories from the admin panel.",
+  description: "Manage blog categories.",
 }
 
 export default async function Page() {
@@ -13,3 +13,4 @@ export default async function Page() {
 
   return <BlogCategoriesPage categories={categories} />
 }
+

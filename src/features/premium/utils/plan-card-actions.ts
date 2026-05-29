@@ -3,7 +3,7 @@ import type {
   PricingPlanCardItem,
 } from "@/components/pricing-plan-cards"
 import type { PricingPlanView } from "@/lib/pricing-plans"
-import { formatAdminDate } from "@/lib/format"
+import { formatAdminLongDate } from "@/lib/format"
 
 import type {
   PremiumPendingPayment,
@@ -125,13 +125,13 @@ function getPremiumPlanActions({
   }
 
   if (currentSubscription) {
-  return getCheckoutActions({
-    primaryLabel: "Perpanjang Paket",
-    helperText: `Aktif sampai ${formatAdminDate(currentSubscription.endsAt)}`,
-    paymentGatewayEnabled,
-    primaryVariant: "outline-primary",
-  })
-}
+    return getCheckoutActions({
+      primaryLabel: "Perpanjang Paket",
+      helperText: `Aktif sampai ${formatAdminLongDate(currentSubscription.endsAt)}`,
+      paymentGatewayEnabled,
+      primaryVariant: "outline-primary",
+    })
+  }
 
   return getCheckoutActions({
     primaryLabel: "Beli Paket",

@@ -1,3 +1,5 @@
+import { formatAdminEnglishDateTime } from "@/lib/format"
+
 const integerFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 })
@@ -14,11 +16,6 @@ const currencyFormatter = new Intl.NumberFormat("id-ID", {
   currency: "IDR",
   maximumFractionDigits: 0,
   style: "currency",
-})
-
-const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
 })
 
 export function formatInteger(value: number) {
@@ -38,7 +35,5 @@ export function formatCurrency(value: number) {
 }
 
 export function formatDateTime(value: string | Date) {
-  const date = typeof value === "string" ? new Date(value) : value
-
-  return dateTimeFormatter.format(date)
+  return formatAdminEnglishDateTime(value)
 }

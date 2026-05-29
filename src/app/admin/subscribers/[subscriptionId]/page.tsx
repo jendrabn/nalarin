@@ -19,7 +19,7 @@ export async function generateMetadata({
   if (!Number.isFinite(id)) {
     return {
       title: "Subscriber Details",
-      description: "View subscription details from the admin panel.",
+      description: "Review this subscription to inspect access, billing, and renewal history.",
     }
   }
 
@@ -27,9 +27,7 @@ export async function generateMetadata({
 
   return {
     title: subscription ? `${subscription.userName} - Subscriber Details` : "Subscriber Details",
-    description: subscription
-      ? `View the subscription, payment, and cancellation details for ${subscription.userName}.`
-      : "View subscription details from the admin panel.",
+    description: "Review this subscription to inspect access, billing, and renewal history.",
   }
 }
 
@@ -49,3 +47,4 @@ export default async function Page({ params }: SubscriberDetailPageProps) {
 
   return <SubscriberDetailPage subscription={subscription} backHref="/admin/subscribers" />
 }
+

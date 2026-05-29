@@ -19,7 +19,7 @@ export async function generateMetadata({
   if (!Number.isFinite(id)) {
     return {
       title: "Edit Exam Type",
-      description: "Edit a seeded exam type from the admin panel.",
+      description: "Update this exam type to refine branding, schedules, and package settings.",
     }
   }
 
@@ -27,7 +27,7 @@ export async function generateMetadata({
 
   return {
     title: examType ? `Edit ${examType.name}` : "Edit Exam Type",
-    description: examType?.description ?? "Edit an exam type from the admin panel.",
+    description: "Update this exam type to refine branding, schedules, and package settings.",
   }
 }
 
@@ -58,3 +58,4 @@ export default async function Page({ params }: EditPageProps) {
     />
   )
 }
+

@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx"
+import { formatAdminEnglishDateTime } from "@/lib/format"
 
 import type {
   PracticeInsightData,
@@ -30,10 +31,7 @@ function formatExportDateTime(value: string | null) {
     return value
   }
 
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date)
+  return formatAdminEnglishDateTime(date)
 }
 
 function formatModeLabel(value: PracticeInsightSessionRow["mode"]) {

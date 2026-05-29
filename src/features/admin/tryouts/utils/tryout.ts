@@ -1,3 +1,5 @@
+import { toDateTimeLocalValue as formatToDateTimeLocalValue } from "@/lib/format"
+
 export function normalizeNullableText(value: string) {
   const trimmed = value.trim()
   return trimmed.length > 0 ? trimmed : null
@@ -72,12 +74,7 @@ export function parseOptionalDateTime(value: string) {
 }
 
 export function toDateTimeLocalValue(value: Date | null | undefined) {
-  if (!value) {
-    return ""
-  }
-
-  const offsetMs = value.getTimezoneOffset() * 60_000
-  return new Date(value.getTime() - offsetMs).toISOString().slice(0, 16)
+  return formatToDateTimeLocalValue(value)
 }
 
 export function previewText(value: string | null | undefined, fallback = "Untitled") {

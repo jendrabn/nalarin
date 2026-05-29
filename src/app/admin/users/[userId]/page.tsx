@@ -19,7 +19,7 @@ export async function generateMetadata({
   if (!Number.isFinite(id)) {
     return {
       title: "User Details",
-      description: "View user details from the admin panel.",
+      description: "Review this user account to manage profile data and access.",
     }
   }
 
@@ -27,9 +27,7 @@ export async function generateMetadata({
 
   return {
     title: user ? `${user.name} - User Details` : "User Details",
-    description: user
-      ? `View profile, subscription, payment, and activity details for ${user.name}.`
-      : "View user details from the admin panel.",
+    description: "Review this user account to manage profile data and access.",
   }
 }
 
@@ -55,3 +53,4 @@ export default async function Page({ params }: UserDetailPageProps) {
     />
   )
 }
+

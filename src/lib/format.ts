@@ -1,44 +1,47 @@
-function normalizeDate(value: Date | string | number | null | undefined) {
-  if (value === null || value === undefined) {
-    return null
-  }
-
-  const date = value instanceof Date ? value : new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return null
-  }
-
-  return date
-}
+import {
+  formatEnDate,
+  formatEnDateTime,
+  formatEnMonthLabel,
+  formatIdDate,
+  formatIdDateTime,
+  formatIdLongDate,
+  toDateTimeLocalValue,
+} from "./dayjs"
 
 export function formatAdminDateTime(
   value: Date | string | number | null | undefined,
 ) {
-  const date = normalizeDate(value)
-
-  if (!date) {
-    return "-"
-  }
-
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date)
+  return formatIdDateTime(value)
 }
 
 export function formatAdminDate(
   value: Date | string | number | null | undefined,
 ) {
-  const date = normalizeDate(value)
+  return formatIdDate(value)
+}
 
-  if (!date) {
-    return "-"
-  }
+export function formatAdminLongDate(
+  value: Date | string | number | null | undefined,
+) {
+  return formatIdLongDate(value)
+}
 
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-  }).format(date)
+export function formatAdminEnglishDateTime(
+  value: Date | string | number | null | undefined,
+) {
+  return formatEnDateTime(value)
+}
+
+export function formatAdminEnglishDate(
+  value: Date | string | number | null | undefined,
+) {
+  return formatEnDate(value)
+}
+
+export function formatAdminEnglishMonthLabel(
+  value: Date | string | number | null | undefined,
+) {
+  return formatEnMonthLabel(value)
 }
 
 export function formatCurrencyIDR(value: number) {
@@ -49,20 +52,4 @@ export function formatCurrencyIDR(value: number) {
   }).format(value)
 }
 
-export function toDateTimeLocalValue(
-  value: Date | string | number | null | undefined,
-) {
-  const date = normalizeDate(value)
-
-  if (!date) {
-    return ""
-  }
-
-  const pad = (input: number) => String(input).padStart(2, "0")
-
-  return [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-  ].join("-") + `T${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
+export { toDateTimeLocalValue }

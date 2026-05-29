@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
+import { formatAdminDateTime } from "@/lib/format"
 
 import { archiveTryoutAction, publishTryoutAction } from "../actions"
 import { QuestionPreviewCard } from "../../components/question-preview-card"
@@ -32,17 +33,6 @@ type TryoutDetailPageProps = {
 }
 
 type DialogType = "publish" | "archive" | null
-
-function formatDateTime(value: Date | null) {
-  if (!value) {
-    return "-"
-  }
-
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(value)
-}
 
 function DetailItem({
   label,
@@ -168,20 +158,24 @@ export function TryoutDetailPage({ tryout }: TryoutDetailPageProps) {
               <DetailItem label="Sections" value={tryout.sectionCount} />
               <DetailItem label="Questions" value={tryout.questionCount} />
               <DetailItem label="Sessions" value={tryout.sessionCount} />
-              <DetailItem label="Starts" value={formatDateTime(tryout.startsAt)} />
-              <DetailItem label="Ends" value={formatDateTime(tryout.endsAt)} />
-              <DetailItem label="Published" value={formatDateTime(tryout.publishedAt)} />
+              <DetailItem label="Starts" value={formatAdminDateTime(tryout.startsAt)} />
+              <DetailItem label="Ends" value={formatAdminDateTime(tryout.endsAt)} />
+              <DetailItem label="Published" value={formatAdminDateTime(tryout.publishedAt)} />
               <DetailItem
                 label="Result release"
-                value={tryout.resultReleaseAt ? formatDateTime(tryout.resultReleaseAt) : "-"}
+                value={tryout.resultReleaseAt ? formatAdminDateTime(tryout.resultReleaseAt) : "-"}
               />
               <DetailItem
                 label="Ranking release"
-                value={tryout.rankingReleaseAt ? formatDateTime(tryout.rankingReleaseAt) : "-"}
+                value={tryout.rankingReleaseAt ? formatAdminDateTime(tryout.rankingReleaseAt) : "-"}
               />
               <DetailItem
                 label="Explanation release"
-                value={tryout.explanationReleaseAt ? formatDateTime(tryout.explanationReleaseAt) : "-"}
+                value={
+                  tryout.explanationReleaseAt
+                    ? formatAdminDateTime(tryout.explanationReleaseAt)
+                    : "-"
+                }
               />
               <DetailItem
                 label="Review before submit"
@@ -221,8 +215,8 @@ export function TryoutDetailPage({ tryout }: TryoutDetailPageProps) {
                 }
               />
               <DetailItem label="Slug" value={<span className="break-all font-mono text-xs">{tryout.slug}</span>} />
-              <DetailItem label="Created" value={formatDateTime(tryout.createdAt)} />
-              <DetailItem label="Updated" value={formatDateTime(tryout.updatedAt)} />
+              <DetailItem label="Created" value={formatAdminDateTime(tryout.createdAt)} />
+              <DetailItem label="Updated" value={formatAdminDateTime(tryout.updatedAt)} />
             </div>
           </CardContent>
         </Card>

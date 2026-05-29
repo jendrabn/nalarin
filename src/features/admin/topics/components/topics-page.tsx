@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { AdminDataTable, SortableHeader } from "@/components/admin-data-table"
+import { formatAdminDateTime } from "@/lib/format"
 
 import {
   createTopicAction,
@@ -183,10 +184,7 @@ export function TopicsPage({
             header: ({ column }) => <SortableHeader column={column}>Created At</SortableHeader>,
             cell: ({ row }) => (
               <span className="text-sm text-muted-foreground">
-                {new Intl.DateTimeFormat("id-ID", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                }).format(row.original.createdAt)}
+                {formatAdminDateTime(row.original.createdAt)}
               </span>
             ),
           },
@@ -196,10 +194,7 @@ export function TopicsPage({
             header: ({ column }) => <SortableHeader column={column}>Updated At</SortableHeader>,
             cell: ({ row }) => (
               <span className="text-sm text-muted-foreground">
-                {new Intl.DateTimeFormat("id-ID", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                }).format(row.original.updatedAt)}
+                {formatAdminDateTime(row.original.updatedAt)}
               </span>
             ),
           },

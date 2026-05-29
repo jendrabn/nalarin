@@ -64,6 +64,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
+import { formatAdminDateTime } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 import { createTryoutAction, publishTryoutAction, updateTryoutAction } from "../actions"
@@ -200,10 +201,7 @@ function formatReviewDateTime(value: string | null | undefined) {
     return trimmed
   }
 
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(parsed)
+  return formatAdminDateTime(parsed)
 }
 
 function formatReviewText(value: string | null | undefined, fallback = "-") {

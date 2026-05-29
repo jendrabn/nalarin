@@ -6,7 +6,7 @@ import { requireAdmin } from "@/features/auth/services/session"
 
 export const metadata: Metadata = {
   title: "Users",
-  description: "Manage user accounts, roles, statuses, and access.",
+  description: "Manage user accounts to update roles, statuses, and access.",
 }
 
 export default async function Page() {

@@ -20,7 +20,7 @@ export async function generateMetadata({
   if (!Number.isFinite(id)) {
     return {
       title: "Results & Analytics",
-      description: "Review practice session performance from the admin panel.",
+      description: "Review practice results to analyze participant performance and session trends.",
       robots: {
         index: false,
         follow: false,
@@ -33,7 +33,7 @@ export async function generateMetadata({
   return {
     title: practice ? `Results & Analytics - ${practice.title}` : "Results & Analytics",
     description:
-      "Review participant performance, session trends, and repeated attempts for this practice.",
+      "Review practice results to analyze participant performance and session trends.",
     robots: {
       index: false,
       follow: false,
@@ -57,3 +57,4 @@ export default async function Page({ params }: PracticeResultsPageProps) {
 
   return <PracticeResultsPage insight={insight} />
 }
+

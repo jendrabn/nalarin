@@ -5,7 +5,7 @@ import { getBlogPosts } from "@/features/admin/blog/queries"
 
 export const metadata: Metadata = {
   title: "Blog Posts",
-  description: "Manage blog posts from the admin panel.",
+  description: "Manage blog posts to keep the content pipeline organized.",
 }
 
 export default async function Page() {
@@ -13,3 +13,4 @@ export default async function Page() {
 
   return <BlogPostsPage posts={posts} />
 }
+

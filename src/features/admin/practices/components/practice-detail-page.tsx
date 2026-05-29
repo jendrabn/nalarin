@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
+import { formatAdminDateTime } from "@/lib/format"
 
 import { archivePracticeAction, deletePracticeAction, publishPracticeAction } from "../actions"
 import { QuestionPreviewCard } from "../../components/question-preview-card"
@@ -32,17 +33,6 @@ type PracticeDetailPageProps = {
 }
 
 type DialogType = "publish" | "archive" | "delete" | null
-
-function formatDateTime(value: Date | null) {
-  if (!value) {
-    return "-"
-  }
-
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(value)
-}
 
 function DetailItem({
   label,
@@ -189,10 +179,10 @@ export function PracticeDetailPage({ practice }: PracticeDetailPageProps) {
               <DetailItem label="Topic" value={practice.topicName ?? "-"} />
               <DetailItem label="Questions" value={practice.questionCount} />
               <DetailItem label="Sessions" value={practice.sessionCount} />
-              <DetailItem label="Published" value={formatDateTime(practice.publishedAt)} />
+              <DetailItem label="Published" value={formatAdminDateTime(practice.publishedAt)} />
               <DetailItem label="Slug" value={<span className="break-all font-mono text-xs">{practice.slug}</span>} />
-              <DetailItem label="Created" value={formatDateTime(practice.createdAt)} />
-              <DetailItem label="Updated" value={formatDateTime(practice.updatedAt)} />
+              <DetailItem label="Created" value={formatAdminDateTime(practice.createdAt)} />
+              <DetailItem label="Updated" value={formatAdminDateTime(practice.updatedAt)} />
             </div>
           </CardContent>
         </Card>

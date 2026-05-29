@@ -5,7 +5,7 @@ import { getAdminTryoutLookups } from "@/features/admin/tryouts/queries"
 
 export const metadata: Metadata = {
   title: "Create Tryout",
-  description: "Create a tryout from the admin panel.",
+  description: "Create a multi-section tryout with schedule, ranking, and results rules.",
 }
 
 export default async function Page() {
@@ -21,3 +21,4 @@ export default async function Page() {
     />
   )
 }
+

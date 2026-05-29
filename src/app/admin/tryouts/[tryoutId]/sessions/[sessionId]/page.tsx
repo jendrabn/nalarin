@@ -1,4 +1,11 @@
+import type { Metadata } from "next"
+
 import { RoutePlaceholder } from "@/app/_lib/route-placeholder";
+
+export const metadata: Metadata = {
+  title: "Tryout Session Details",
+  description: "Review tryout session details to inspect timing, answers, and scoring.",
+}
 
 export default function Page() {
   return (
@@ -8,3 +15,4 @@ export default function Page() {
     />
   );
 }
+

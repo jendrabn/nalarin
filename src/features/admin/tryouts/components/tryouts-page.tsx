@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
+import { formatAdminDateTime } from "@/lib/format"
 
 import {
   archiveTryoutAction,
@@ -64,17 +65,6 @@ const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
   publishedAt: false,
   createdAt: false,
   updatedAt: false,
-}
-
-function formatDateTime(value: Date | null) {
-  if (!value) {
-    return "-"
-  }
-
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(value)
 }
 
 function statusBadge(status: TryoutStatus) {
@@ -157,7 +147,7 @@ function createColumns({
       header: ({ column }) => <SortableHeader column={column}>Starts At</SortableHeader>,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {formatDateTime(row.original.startsAt)}
+          {formatAdminDateTime(row.original.startsAt)}
         </span>
       ),
     },
@@ -167,7 +157,7 @@ function createColumns({
       header: ({ column }) => <SortableHeader column={column}>Ends At</SortableHeader>,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {formatDateTime(row.original.endsAt)}
+          {formatAdminDateTime(row.original.endsAt)}
         </span>
       ),
     },
@@ -177,7 +167,7 @@ function createColumns({
       header: ({ column }) => <SortableHeader column={column}>Published At</SortableHeader>,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {formatDateTime(row.original.publishedAt)}
+          {formatAdminDateTime(row.original.publishedAt)}
         </span>
       ),
     },
@@ -187,7 +177,7 @@ function createColumns({
       header: ({ column }) => <SortableHeader column={column}>Created At</SortableHeader>,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {formatDateTime(row.original.createdAt)}
+          {formatAdminDateTime(row.original.createdAt)}
         </span>
       ),
     },
@@ -197,7 +187,7 @@ function createColumns({
       header: ({ column }) => <SortableHeader column={column}>Updated At</SortableHeader>,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {formatDateTime(row.original.updatedAt)}
+          {formatAdminDateTime(row.original.updatedAt)}
         </span>
       ),
     },

@@ -26,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { formatAdminDateTime } from "@/lib/format"
 
 import {
   createBlogCategoryAction,
@@ -46,13 +47,6 @@ type BlogCategoriesPageProps = {
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
   createdAt: false,
   updatedAt: false,
-}
-
-function formatDateTime(value: Date) {
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(value)
 }
 
 function createColumns({
@@ -105,7 +99,7 @@ function createColumns({
       header: ({ column }) => <SortableHeader column={column}>Created At</SortableHeader>,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {formatDateTime(row.original.createdAt)}
+          {formatAdminDateTime(row.original.createdAt)}
         </span>
       ),
     },
@@ -115,7 +109,7 @@ function createColumns({
       header: ({ column }) => <SortableHeader column={column}>Updated At</SortableHeader>,
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {formatDateTime(row.original.updatedAt)}
+          {formatAdminDateTime(row.original.updatedAt)}
         </span>
       ),
     },

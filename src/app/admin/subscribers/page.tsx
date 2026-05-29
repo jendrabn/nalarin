@@ -5,7 +5,7 @@ import { getAdminSubscriptions } from "@/features/admin/subscribers/queries"
 
 export const metadata: Metadata = {
   title: "Subscribers",
-  description: "Manage subscription records, manual grants, and downgrades.",
+  description: "Manage subscriptions to review active access, expirations, and manual grants.",
 }
 
 export default async function Page() {

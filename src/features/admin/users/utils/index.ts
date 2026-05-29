@@ -1,36 +1,40 @@
+import {
+  formatAdminDate as formatAdminDateValue,
+  formatAdminDateTime as formatAdminDateTimeValue,
+} from "@/lib/format"
+
 function normalizeDate(value: Date | string | number | null | undefined) {
   if (value === null || value === undefined) {
-    return "-"
+    return null
   }
 
   const date = value instanceof Date ? value : new Date(value)
 
   if (Number.isNaN(date.getTime())) {
-    return "-"
+    return null
   }
 
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date)
+  return date
 }
 
 export function formatAdminDateTime(value: Date | string | number | null | undefined) {
-  return normalizeDate(value)
+  const date = normalizeDate(value)
+
+  if (!date) {
+    return "-"
+  }
+
+  return formatAdminDateTimeValue(date)
 }
 
 export function formatAdminDate(value: Date | string | number | null | undefined) {
-  const formatted = normalizeDate(value)
+  const date = normalizeDate(value)
 
-  if (formatted === "-") {
-    return formatted
+  if (!date) {
+    return "-"
   }
 
-  const date = value instanceof Date ? value : new Date(value as string | number)
-
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-  }).format(date)
+  return formatAdminDateValue(date)
 }
 
 export function formatCurrencyIDR(value: number) {

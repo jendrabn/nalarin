@@ -21,7 +21,7 @@ export async function generateMetadata({
   if (!Number.isFinite(id)) {
     return {
       title: "Edit Topic",
-      description: "Edit a topic from the admin panel.",
+      description: "Edit a topic.",
     }
   }
 
@@ -30,7 +30,7 @@ export async function generateMetadata({
   return {
     title: topic ? `Edit ${topic.name}` : "Edit Topic",
     description:
-      topic?.description ?? "Edit a topic from the admin panel.",
+      topic?.description ?? "Edit a topic.",
   }
 }
 
@@ -63,3 +63,4 @@ export default async function Page({ params }: EditPageProps) {
     />
   )
 }
+

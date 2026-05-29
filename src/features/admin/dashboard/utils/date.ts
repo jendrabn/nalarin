@@ -1,3 +1,5 @@
+import { formatAdminEnglishMonthLabel } from "@/lib/format"
+
 export type MonthBucket = {
   key: string
   label: string
@@ -33,8 +35,5 @@ export function formatMonthKey(date: Date) {
 }
 
 export function formatMonthLabel(date: Date) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    year: "numeric",
-  }).format(date)
+  return formatAdminEnglishMonthLabel(date)
 }

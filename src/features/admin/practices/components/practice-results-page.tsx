@@ -71,6 +71,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
+import { formatAdminEnglishDateTime } from "@/lib/format"
 
 import type {
   PracticeInsightData,
@@ -804,8 +805,5 @@ function formatDateTime(value: string | null) {
     return "-"
   }
 
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value))
+  return formatAdminEnglishDateTime(value)
 }
