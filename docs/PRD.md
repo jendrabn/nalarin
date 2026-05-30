@@ -42,6 +42,8 @@ Produk mengambil inspirasi dari pola fitur aimasukptn: landing page, bank soal, 
 - Import soal via Excel.
 - Generate soal dengan AI dari halaman create question (modal parameter + autofill form).
 - Generate explanation dengan AI dari field explanation di halaman create/edit question (autofill langsung, tanpa modal, syarat semua field wajib terisi).
+- Materi pelajaran (konten video YouTube private/unlisted dan teks rich text Tiptap, dikategorisasi per exam type dan subject).
+- Game Kosakata (swipe card interaktif, konfigurasi bahasa/kesulitan/tipe, data sesi tidak disimpan di database).
 
 ### 3.2 Out of Scope
 
@@ -107,6 +109,8 @@ Admin dapat:
 - Manage tryouts.
 - Melihat hasil tryout user.
 - Manage blog.
+- Manage materi pelajaran (CRUD materi, termasuk video YouTube dan konten Tiptap).
+- Manage kosakata (CRUD kosakata untuk game kosakata).
 
 ---
 
@@ -156,6 +160,8 @@ Tidak ada config plan yang hardcoded di kode. Semua nilai plan disimpan di tabel
 | access_ranking | false | true | true |
 | access_manual_explanation | false | true | true |
 | access_ai_explanation | false | true | true |
+| access_free_materials | true | true | true |
+| access_paid_materials | false | true | true |
 
 Nilai `null` pada kolom kuota berarti **unlimited** (tidak ada batas). Admin dapat mengubah semua nilai di atas melalui panel admin per exam type. Tier Free, Pro, dan Max tidak dapat dihapus atau ditambah.
 
@@ -431,6 +437,7 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 #### Konten Halaman Review
 
 **Header:**
+
 - Judul tryout atau practice.
 - Status session: `graded` menampilkan "Skor final".
 - Total skor dan skor maksimal.
@@ -438,12 +445,14 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 - Jika tryout memiliki `wrong_answer_penalty ≠ 0`, tampilkan keterangan penalti yang berlaku.
 
 **Filter soal:**
+
 - Semua soal.
 - Hanya yang benar.
 - Hanya yang salah.
 - Hanya yang belum dijawab.
 
 **Per soal:**
+
 - Nomor urut dan konten soal (dari snapshot).
 - Jawaban user.
 - Jawaban benar (kunci jawaban).
@@ -454,6 +463,7 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 - Tombol **"Pembahasan AI"** — ditampilkan di setiap soal jika plan user mengizinkan (`access_ai_explanation = true`). Jika plan tidak mengizinkan, tombol tidak ditampilkan atau ditampilkan dengan state terkunci beserta CTA upgrade.
 
 **Breakdown per section (khusus tryout):**
+
 - Nama section.
 - Skor section, total benar, total salah, total kosong.
 - Durasi pengerjaan section tersebut.
@@ -463,6 +473,7 @@ Tryout adalah event ujian rutin yang disusun admin dan terdiri dari beberapa sec
 Tersedia di halaman review untuk **semua tipe sesi** (Mode Latihan, Mode Quiz, Tryout). Khusus untuk plan **Pro dan Max**.
 
 **Flow:**
+
 1. User mengklik tombol **"Pembahasan AI"** pada soal tertentu di halaman review.
 2. Tombol menampilkan indikator loading. Konten soal tersebut tidak di-block — soal lain tetap dapat dilihat.
 3. Sistem mengirim request ke AI provider melalui Route Handler, menyertakan konteks soal dari snapshot session.
@@ -471,11 +482,13 @@ Tersedia di halaman review untuk **semua tipe sesi** (Mode Latihan, Mode Quiz, T
 6. Jika AI gagal merespons, tampilkan pesan error ringkas dan beri opsi coba lagi.
 
 **Ketersediaan:**
+
 - Mode Latihan: tombol **"Pembahasan AI"** muncul setelah user mengklik "Konfirmasi" pada soal tersebut, bersama dengan pembahasan manual. Tidak perlu menunggu session selesai.
 - Mode Quiz dan Tryout: tombol muncul di halaman review setelah session di-submit/graded.
 
 **Konteks yang dikirim ke AI:**
 Semua data diambil dari snapshot session, bukan langsung dari tabel `questions`, agar konsisten dengan kondisi soal saat user mengerjakannya.
+
 - Konten soal (dari `question_snapshot`)
 - Tipe soal
 - Opsi jawaban (dari `option_snapshot`)
@@ -538,6 +551,7 @@ ATURAN PENULISAN:
 ```
 
 **Keterangan blok parameter:**
+
 - `{options_block}`: diisi daftar opsi (A, B, C, dst.) jika tipe soal `multiple_choice`, `multiple_answer`, atau `true_false`. Dikosongkan untuk `short_answer`.
 - `{manual_explanation_block}`: jika `manual_explanation` ada, diisi dengan `Pembahasan dari admin: {manual_explanation}` agar AI dapat memperluas atau melengkapinya. Jika null, blok ini dikosongkan.
 - `{answer_status}`: diisi `"benar"`, `"salah"`, atau `"tidak dijawab"`.
@@ -551,10 +565,12 @@ ATURAN PENULISAN:
 Halaman ini ditampilkan setelah user selesai mengerjakan tryout (session berstatus `submitted` atau `graded`), dan mengikuti aturan rilis dari setting tryout.
 
 **Ketersediaan:**
+
 - Ditampilkan hanya jika `show_result_after_submit = true`.
 - Jika `result_release_at` diisi dan belum tiba, halaman menampilkan pesan bahwa hasil belum dirilis beserta estimasi waktu rilis.
 
 **Konten halaman hasil:**
+
 - Judul tryout dan tanggal pengerjaan.
 - Skor total dan skor maksimal.
 - Persentase skor: `total_score / total_max_score × 100`.
@@ -567,16 +583,19 @@ Halaman ini ditampilkan setelah user selesai mengerjakan tryout (session berstat
 #### 7.7.2 Ranking Tryout
 
 **Ketersediaan:**
+
 - Ditampilkan hanya jika `show_ranking_after_submit = true`.
 - Jika `ranking_release_at` diisi dan belum tiba, tampilkan pesan bahwa ranking belum dirilis beserta estimasi waktu rilis.
 - Free user yang mengikuti tryout tetap berkontribusi dalam perhitungan ranking, tetapi tidak dapat melihat leaderboard jika plan tidak mengizinkan.
 
 **Konten leaderboard:**
+
 - Posisi ranking user sendiri selalu ditampilkan di bagian atas (pinned), terpisah dari tabel leaderboard utama, agar user langsung tahu posisinya tanpa harus scroll.
 - Tabel leaderboard: nomor urut, nama user (dengan avatar opsional), skor total, total benar, durasi pengerjaan aktif.
 - Total peserta yang sudah graded.
 
 **Urutan ranking:**
+
 - Diurutkan berdasarkan `total_score` tertinggi.
 - Tie-breaker berurutan jika skor sama:
   1. `total_sections_started` terbanyak (section yang pernah dibuka user secara aktif).
@@ -598,6 +617,7 @@ Halaman ini ditampilkan setelah user selesai mengerjakan tryout (session berstat
 #### Konten Halaman Progress
 
 **Filter:**
+
 - Satu filter tunggal: **Jenis Ujian** — pilihan: Semua, UTBK, CPNS, UTUL UGM, SIMAK UI.
 - Tidak ada filter subtes dan tidak ada filter periode. Statistik selalu bersifat all-time.
 
@@ -612,12 +632,14 @@ Data ini bersumber dari `user_progress_snapshots`. Tidak mendukung filter period
 Waktu update terakhir ditampilkan sebagai teks kecil di bawah kartu statistik, bukan sebagai kartu tersendiri.
 
 **Analisis topik (all-time, maksimal 3 topik per kolom):**
+
 - **Topik Terkuat** — 3 topik dengan akurasi tertinggi, disertai nilai akurasi per topik.
 - **Topik Prioritas** — 3 topik dengan akurasi terendah, disertai nilai akurasi per topik.
 - Data bersumber dari field JSON di `user_progress_snapshots` dan di-snapshot saat progress terakhir diperbarui. Jika admin mengganti nama topik setelah update terakhir, nama yang tampil bisa stale sampai progress user diperbarui kembali.
 - Jika user belum memiliki cukup data topik, kolom ini tidak ditampilkan.
 
 **Riwayat Aktivitas:**
+
 - Daftar practice dan tryout yang sudah diselesaikan (status `graded`), diurutkan dari yang terbaru.
 - Tidak ada filter periode — user cukup scroll untuk melihat riwayat lebih lama.
 - Per item: label tipe (Latihan/Quiz/Tryout), label jenis ujian, judul konten, tanggal pengerjaan, jumlah benar, jumlah salah, skor, dan tombol Review (jika tersedia sesuai setting dan plan).
@@ -644,6 +666,133 @@ User dapat:
 - Menghubungkan Google login dari halaman profil.
 - Melihat status subscription aktif.
 - Melihat riwayat transaksi.
+
+### 7.11 Materi Pelajaran
+
+#### Deskripsi
+
+Fitur materi pelajaran menyediakan konten edukasi berupa video (YouTube private/unlisted) dan artikel rich text (Tiptap) untuk membantu user mempersiapkan ujian. Materi dapat berupa penjelasan konsep topik maupun pembahasan soal-soal tertentu. Materi dikategorisasi per exam type dan subject, mirip dengan struktur bank soal/practice.
+
+#### Flow User
+
+1. User memilih exam type.
+2. User memilih subject.
+3. User memfilter daftar materi berdasarkan topic (opsional).
+4. User melihat daftar materi dalam tampilan grid kartu.
+5. User memilih satu materi.
+6. Sistem mengecek akses plan user untuk exam type konten tersebut.
+7. User mengakses halaman detail materi dan membaca/menonton kontennya.
+
+#### Halaman Daftar Materi
+
+- Tampilan grid kartu materi.
+- Setiap kartu menampilkan:
+  - Thumbnail image (jika ada)
+  - Badge exam type dan subject
+  - Judul materi
+  - Deskripsi singkat (excerpt)
+  - Indikator gratis/berbayar
+  - Indikator tipe konten: video, teks, atau video + teks
+- Filter:
+  - Exam type (tab atau dropdown)
+  - Subject/subtest
+  - Topic (chip/dropdown, opsional)
+- Materi berbayar yang diakses user Free ditampilkan dengan UI terkunci dan CTA upgrade plan.
+- Hanya materi berstatus `published` yang ditampilkan.
+
+#### Halaman Detail Materi
+
+- Judul materi.
+- Breadcrumb: Exam Type > Subject > Topic (jika ada).
+- Badge gratis/berbayar.
+- **Konten video** (jika ada `youtube_url`):
+  - Embed YouTube player untuk video private/unlisted.
+  - User yang tidak punya akses tidak dapat memutar video (player terkunci atau disembunyikan).
+- **Konten teks** (jika ada `content`):
+  - Render konten rich text Tiptap (HTML) — mendukung heading, paragraf, gambar inline, tabel, kode, dan format lainnya.
+- Tombol navigasi ke materi sebelumnya/berikutnya dalam subject yang sama (berdasarkan urutan published).
+
+#### Acceptance Criteria
+
+- User Free hanya dapat mengakses materi dengan `is_free = true` untuk exam type yang bersangkutan.
+- User Pro/Max dapat mengakses materi `is_free = false` sesuai plan aktif mereka untuk exam type tersebut.
+- Akses dikontrol melalui `access_free_materials` dan `access_paid_materials` di `exam_type_plans`.
+- Materi yang belum berstatus `published` tidak muncul di daftar.
+- Materi harus memiliki minimal satu konten (YouTube URL atau konten Tiptap) agar dapat dipublish.
+
+---
+
+### 7.12 Game Kosakata
+
+#### Deskripsi
+
+Game interaktif berbasis kartu geser (swipe card) untuk melatih kosakata. User melihat sebuah kata di kartu tengah dan memilih maknanya dari dua pilihan jawaban di kiri dan kanan — dengan cara mengklik tombol atau men-drag kartu. Game ini tidak menyimpan data sesi di database; seluruh progres hilang ketika halaman di-refresh.
+
+#### Konfigurasi Sebelum Mulai
+
+Sebelum memulai, user mengatur parameter berikut:
+
+| Parameter | Pilihan |
+|---|---|
+| Bahasa | Indonesia, Inggris, Campuran |
+| Tingkat Kesulitan | Mudah, Sedang, Sulit |
+| Tipe Soal | Sinonim, Antonim, Definisi, Campuran |
+| Jumlah Soal | 10, 20, 30 (default: 20) |
+
+Setelah konfigurasi diset, sistem mengambil kosakata dari database yang cocok dengan filter dan mengacaknya untuk sesi tersebut. Jika tidak ada kosakata yang sesuai dengan filter, sistem menampilkan pesan yang sesuai dan user diminta mengubah konfigurasi.
+
+#### Mekanisme Game
+
+**Layout halaman game:**
+
+- Bagian tengah: kartu utama besar berisi kata yang harus dijawab (contoh: "Sublim").
+- Bagian atas kiri kartu: pilihan jawaban kiri (contoh: "biasa dan tidak berkesan").
+- Bagian atas kanan kartu: pilihan jawaban kanan (contoh: "sangat indah dan mengagumkan").
+- Bagian bawah: progress bar dan nomor soal (contoh: "3 / 20").
+
+**Cara memilih jawaban:**
+
+- **Klik tombol kiri/kanan** — mengklik tombol pilihan jawaban kiri atau kanan.
+- **Drag/swipe kartu** — user menarik kartu ke kiri atau kanan:
+  - Kartu mengikuti gerakan drag dan miring (rotate) proporsional terhadap arah dan jarak drag.
+  - Indikator warna muncul saat mendekati threshold: hijau untuk arah yang akan dipilih, merah untuk berlawanan.
+  - Jika kartu dilepas **melewati threshold swipe** (±30% lebar kartu): jawaban dikonfirmasi sesuai arah.
+  - Jika kartu dilepas **sebelum threshold**: kartu kembali ke posisi tengah (snap-back) dengan animasi spring.
+  - Mendukung mouse drag (desktop) dan touch swipe (mobile).
+
+**Feedback setelah memilih jawaban:**
+
+- **Jawaban benar:** kartu berubah tema hijau, animasi kartu terbang keluar ke arah pilihan yang dipilih, skor benar bertambah, lanjut ke soal berikutnya.
+- **Jawaban salah:** kartu berubah tema merah, muncul teks jawaban benar di bawah kartu, jeda singkat (~1,5 detik) agar user membaca jawaban benar, kemudian lanjut ke soal berikutnya.
+
+**Akhir game:**
+
+- Setelah semua soal selesai, tampilkan halaman ringkasan sesi:
+  - Total soal.
+  - Total jawaban benar.
+  - Total jawaban salah.
+  - Akurasi (persentase benar).
+- Tombol "Main Lagi" (konfigurasi sama) dan "Ubah Konfigurasi" (kembali ke layar konfigurasi).
+
+#### Mekanisme Pengambilan Soal
+
+- Soal diambil dari tabel `vocabularies` berdasarkan filter konfigurasi (language, difficulty, type).
+- Soal diacak setiap sesi (Fisher-Yates shuffle di sisi server saat fetch).
+- Untuk setiap soal, sistem menentukan dua pilihan jawaban:
+  - **Jawaban benar:** `correct_meaning` dari vocabulary tersebut.
+  - **Jawaban salah (distractor):** dipilih secara acak dari `wrong_options` vocabulary tersebut.
+- Posisi jawaban benar (kiri/kanan) diacak setiap soal.
+- **Data sesi tidak disimpan di database.** Fetch dilakukan sekali di awal sesi; jika halaman di-refresh, sesi dimulai dari awal dengan soal baru.
+
+#### Acceptance Criteria
+
+- Drag dan swipe berfungsi di perangkat touch (mobile) dan mouse (desktop).
+- Efek tilt kartu proporsional terhadap jarak drag.
+- Snap-back dengan animasi smooth jika dilepas sebelum threshold.
+- Feedback visual benar/salah terlihat jelas sebelum berpindah ke soal berikutnya.
+- Data sesi tidak tersimpan di database — refresh menghapus progres.
+- Jika kosakata tersedia kurang dari jumlah soal yang dikonfigurasi, game tetap dapat dimainkan dengan jumlah soal yang tersedia (minimal 5 soal).
+- Game dapat diakses oleh semua user (tidak memerlukan plan berbayar).
 
 ---
 
@@ -697,6 +846,8 @@ Nilai yang dapat diubah per tier per exam type:
 | access_ranking | Boolean — melihat ranking tryout. |
 | access_manual_explanation | Boolean — melihat pembahasan manual. |
 | access_ai_explanation | Boolean — menggunakan Pembahasan AI. |
+| access_free_materials | Boolean — akses materi gratis (`is_free = true`). |
+| access_paid_materials | Boolean — akses materi berbayar (`is_free = false`). |
 
 Admin hanya dapat mengubah nilai yang ada. Tidak dapat menambah field baru atau membuat tier baru. Admin bebas menentukan rentang tanggal aktif (misalnya 7 hari trial, 30 hari kompensasi, atau durasi lain sesuai kebutuhan).
 
@@ -720,6 +871,7 @@ Admin dapat:
 Fitur ini tersedia di halaman **Create Question** melalui tombol **"AI Generate"**.
 
 **Flow:**
+
 1. Admin membuka halaman Create Question.
 2. Admin mengklik tombol **"AI Generate"**.
 3. Muncul modal form berisi parameter yang harus diisi sebagai bahan instruksi ke AI.
@@ -803,6 +955,7 @@ Output rules:
 Fitur ini tersedia di halaman **Create Question** dan **Edit Question** pada field explanation melalui tombol **"AI Generate"** di samping field tersebut.
 
 **Flow:**
+
 1. Admin mengisi semua field wajib di form terlebih dahulu: exam type, subject, tipe soal, konten soal, dan kunci jawaban (untuk MC/MA: minimal satu opsi ditandai benar; untuk `true_false` dan `short_answer`: `correct_answer_text` sudah diisi).
 2. Jika ada field wajib yang belum terisi, tombol "AI Generate" di field explanation dinonaktifkan (disabled) dan menampilkan tooltip yang menjelaskan field mana saja yang masih kosong.
 3. Setelah semua field wajib terisi, tombol menjadi aktif.
@@ -954,6 +1107,73 @@ Admin dapat:
 - Menyimpan draft tanpa kategori.
 - Publish atau archive artikel.
 
+### 8.9 Manage Materi
+
+Admin dapat:
+
+- Melihat daftar materi dengan filter exam type, subject, dan status.
+- Membuat materi baru.
+- Menentukan exam type, subject, dan topic (metadata, nullable).
+- Mengisi judul dan deskripsi singkat (excerpt).
+- Upload atau mengisi URL thumbnail.
+- Mengisi YouTube URL untuk konten video (private/unlisted, nullable).
+- Menulis konten teks menggunakan Tiptap rich text editor (nullable).
+- Menentukan apakah materi gratis (`is_free`) atau berbayar.
+- Mengubah status materi: `draft`, `published`, `archived`.
+- Mengedit materi yang sudah ada.
+- Menghapus materi berstatus `draft` yang belum pernah dipublish.
+
+**Validasi publish materi:**
+
+- Judul tidak boleh kosong.
+- Materi harus memiliki minimal satu konten: `youtube_url` diisi **atau** konten Tiptap tidak kosong. Keduanya boleh ada sekaligus.
+- Subject harus berasal dari exam type yang dipilih. Dijaga di service layer.
+- Topic (jika diisi) harus berasal dari subject yang dipilih. Dijaga di service layer.
+
+**Aturan hapus materi:**
+
+- Materi hanya dapat dihapus jika berstatus `draft` dan belum pernah dipublish (`published_at IS NULL`).
+- Materi yang pernah dipublish tidak dapat dihapus; gunakan status `archived` untuk menonaktifkannya.
+
+### 8.10 Manage Kosakata
+
+Admin dapat:
+
+- Melihat daftar kosakata dengan filter bahasa, kesulitan, tipe, dan status.
+- Membuat kosakata baru.
+- Mengisi kata (`word`).
+- Memilih bahasa kata: Indonesia atau Inggris.
+- Memilih tingkat kesulitan: Mudah, Sedang, Sulit.
+- Memilih tipe kosakata: Sinonim, Antonim, Definisi.
+- Mengisi makna benar (`correct_meaning`) — jawaban yang benar dalam game.
+- Mengisi minimal satu opsi salah (`wrong_options`) — distractor dalam game. Dapat menambah hingga tiga opsi salah.
+- Mengisi contoh kalimat (`example_sentence`), opsional.
+- Mengubah status kosakata: `draft`, `published`, `archived`.
+- Mengedit kosakata yang sudah ada.
+- Menghapus kosakata berstatus `draft`.
+- Import kosakata via Excel.
+
+**Kolom template import kosakata via Excel:**
+
+| Kolom | Keterangan |
+|---|---|
+| `word` | Kata yang akan ditampilkan di kartu (wajib) |
+| `language` | Nilai: `id` (Indonesia) atau `en` (Inggris) (wajib) |
+| `difficulty` | Nilai: `easy`, `medium`, `hard` (wajib) |
+| `type` | Nilai: `synonym`, `antonym`, `definition` (wajib) |
+| `correct_meaning` | Makna/jawaban benar (wajib) |
+| `wrong_option_1` | Opsi salah pertama / distractor (wajib) |
+| `wrong_option_2` | Opsi salah kedua (opsional) |
+| `wrong_option_3` | Opsi salah ketiga (opsional) |
+| `example_sentence` | Contoh penggunaan kata dalam kalimat (opsional) |
+
+**Behavior import:**
+
+- Sistem memvalidasi semua baris terlebih dahulu sebelum mengimport.
+- Baris dengan error ditampilkan per baris; admin dapat memilih membatalkan import atau hanya mengimport baris valid.
+- Kosakata hasil import masuk status `draft` secara default.
+- `word` + `language` + `type` tidak harus unik (boleh ada kosakata dengan kata yang sama tetapi tipe atau bahasa berbeda).
+
 ---
 
 ## 9. Enum Sistem
@@ -978,6 +1198,8 @@ Admin dapat:
 | TransactionSource | midtrans_webhook, user_checkout, admin_manual |
 | SubscriptionStatus | active, expired, cancelled |
 | SubscriptionSource | midtrans, manual, admin_grant |
+| **VocabularyLanguage** | **id, en** |
+| **VocabularyType** | **synonym, antonym, definition** |
 
 ### 9.1 UserStatus Semantics
 
@@ -1008,9 +1230,11 @@ Admin dapat:
 #### Aturan Edit Berdasarkan Kondisi
 
 **Field yang selalu dapat diedit** (tidak mempengaruhi hasil apapun), tanpa memandang status atau keberadaan session:
+
 - Judul (`title`) dan deskripsi (`description`)
 
 **Field yang dapat diedit selama belum ada session apapun** (tabel `tryout_sessions` untuk tryout ini masih kosong):
+
 - Jadwal (`starts_at`, `ends_at`, `enforce_end_time`)
 - Gratis/berbayar (`is_free`)
 - Setting tampilan hasil: `show_result_after_submit`, `result_release_at`
@@ -1019,6 +1243,7 @@ Admin dapat:
 - Review sebelum submit (`allow_review_before_submit`)
 
 **Field yang dilarang diedit setelah ada session apapun** (menyentuh fairness langsung — berlaku meski session masih `in_progress`):
+
 - Tambah, hapus, atau ubah section
 - Tambah, hapus, atau ubah soal dalam section
 - `wrong_answer_penalty` di level tryout maupun per section
@@ -1035,6 +1260,7 @@ Jika admin mencoba mengedit field yang terkunci, sistem menolak operasi dengan p
 - `cancelled`: session dibatalkan, tidak menghasilkan skor.
 
 **Status awal session:**
+
 - `practice_sessions`: status awal **selalu `in_progress`** saat session dibuat — user telah memulai mengerjakan.
 - `tryout_sessions`: status awal **selalu `in_progress`** saat session dibuat — user telah memulai tryout.
 - `tryout_section_sessions`: status awal **selalu `pending`** saat dibuat — semua section di-pre-create secara bersamaan; section belum tentu langsung dibuka user. Status berubah menjadi `in_progress` ketika user pertama kali membuka section tersebut.
@@ -1175,6 +1401,8 @@ Menyimpan konfigurasi nilai plan (Free, Pro, Max) per exam type. Admin dapat men
 | access_ranking | Boolean — melihat leaderboard ranking tryout. |
 | access_manual_explanation | Boolean — melihat pembahasan manual di halaman review. |
 | access_ai_explanation | Boolean — menggunakan fitur Pembahasan AI per soal. |
+| access_free_materials | Boolean — akses materi yang `is_free = true`. |
+| access_paid_materials | Boolean — akses materi yang `is_free = false`. |
 | created_at | Tanggal dibuat |
 | updated_at | Tanggal update |
 
@@ -1649,6 +1877,52 @@ Menyimpan artikel blog, metadata SEO, tag, dan statistik tampilan.
 | created_at | Tanggal dibuat |
 | updated_at | Tanggal update |
 
+### 10.29 materials
+
+Menyimpan materi pelajaran berupa konten video YouTube dan/atau teks rich text yang dibuat admin.
+
+| Field | Keterangan |
+|---|---|
+| id | Primary key |
+| exam_type_id | FK exam_types. **Denormalisasi yang disengaja** untuk efisiensi query filtering daftar materi berdasarkan exam type tanpa join ke `subjects`. Sinkronisasi dengan `subjects.exam_type_id` dijaga di service layer. |
+| subject_id | FK subjects, wajib diisi |
+| topic_id | FK topics, nullable — bersifat metadata untuk filtering di halaman materi |
+| title | Judul materi |
+| slug | Slug unik per exam_type_id (scoped per exam type, lihat Section 11) |
+| description | Deskripsi singkat / excerpt, nullable |
+| thumbnail_url | URL thumbnail, nullable |
+| youtube_url | URL video YouTube (private/unlisted), nullable. Jika diisi, video diembed menggunakan YouTube embed player di halaman detail materi. |
+| content | Konten rich text Tiptap (HTML), nullable. Jika diisi, dirender sebagai artikel di halaman detail materi. |
+| is_free | Boolean — menentukan apakah materi dapat diakses user Free |
+| status | enum ContentStatus |
+| **published_at** | **Waktu pertama kali dipublish, nullable. Diisi saat status pertama berubah ke `published`; tidak berubah jika di-unpublish dan re-publish.** |
+| created_by | FK users, nullable |
+| created_at | Tanggal dibuat |
+| updated_at | Tanggal update |
+
+**Validasi:** Materi wajib memiliki minimal satu konten (`youtube_url` diisi **atau** `content` tidak kosong) sebelum dapat dipublish. Keduanya boleh ada sekaligus.
+
+### 10.30 vocabularies
+
+Menyimpan data kosakata yang digunakan dalam Game Kosakata. Setiap record mewakili satu kata beserta makna benar dan opsi salah (distractor) yang ditampilkan dalam game.
+
+| Field | Keterangan |
+|---|---|
+| id | Primary key |
+| word | Kata/kosakata yang ditampilkan di kartu game |
+| language | enum VocabularyLanguage (`id` = Indonesia, `en` = Inggris) |
+| difficulty | enum QuestionDifficulty (`easy`, `medium`, `hard`) — menggunakan enum yang sama dengan soal |
+| type | enum VocabularyType (`synonym` = sinonim, `antonym` = antonim, `definition` = definisi) |
+| correct_meaning | Makna benar / jawaban yang benar untuk kata ini dalam konteks tipe soal yang ditentukan |
+| wrong_options | JSON array of strings — opsi salah (distractor) yang ditampilkan sebagai pilihan alternatif dalam game. Minimal 1 elemen, maksimal 3. Contoh: `["biasa dan tidak berkesan", "menyedihkan dan membosankan"]` |
+| example_sentence | Contoh penggunaan kata dalam kalimat, TEXT nullable |
+| status | enum ContentStatus |
+| created_by | FK users, nullable |
+| created_at | Tanggal dibuat |
+| updated_at | Tanggal update |
+
+**Catatan game:** Saat user memulai game, sistem mengambil kosakata berstatus `published` sesuai filter (language, difficulty, type), mengacaknya, dan mengirim semua soal ke client dalam satu response. Setiap soal menampilkan `correct_meaning` sebagai satu pilihan dan satu entry acak dari `wrong_options` sebagai pilihan lainnya. Posisi kiri/kanan diacak per soal. Data sesi (urutan soal, jawaban user) tidak disimpan di database — client menyimpan state sesi dalam memori browser saja.
+
 ---
 
 ## 11. Unique Constraints Penting
@@ -1681,6 +1955,8 @@ Menyimpan artikel blog, metadata SEO, tag, dan statistik tampilan.
 | payments | subscription_id — **ketika tidak null, harus unik secara global: satu payment per subscription** (one-to-one). Karena `subscription_id` hanya diisi setelah subscription dibuat, tidak akan ada dua payment yang merujuk ke subscription yang sama. Dijaga di service layer dengan transaction. |
 | blog_categories | slug |
 | blog_posts | slug |
+| materials | **exam_type_id + slug** (scoped per exam type, bukan globally unique — mengikuti pola yang sama dengan `practices`) |
+| vocabularies | tidak ada unique constraint wajib — kata yang sama boleh hadir dengan tipe atau bahasa berbeda |
 
 Catatan: karena MySQL tidak mendukung partial unique index sederhana untuk semua kasus, beberapa aturan seperti satu subscription aktif per kombinasi `user_id + exam_type_id` dan satu payment pending aktif per `user_id + exam_type_id` dijaga di service layer dengan transaction/locking.
 
@@ -1707,6 +1983,8 @@ Catatan: karena MySQL tidak mendukung partial unique index sederhana untuk semua
 - `monthly_usage` mencatat konsumsi session user per bulan.
 - `user_progress_snapshots` menyimpan ringkasan progress user per kombinasi exam type dan subject.
 - `users` memiliki banyak `user_sessions` (satu per perangkat/login aktif).
+- `exam_types` memiliki banyak `materials`. `subjects` memiliki banyak `materials`. `topics` memiliki banyak `materials` (nullable). Relasi ini mengikuti pola denormalisasi yang sama dengan `practices`.
+- `vocabularies` adalah tabel standalone yang tidak berelasi ke `exam_types` atau `subjects`. Kosakata bersifat lintas ujian dan dapat digunakan oleh semua user tanpa konteks exam type.
 
 ---
 
@@ -1782,11 +2060,13 @@ Nilai batas di atas adalah acuan awal dan dapat disesuaikan berdasarkan monitori
 
 **Cleanup tryout session terbengkalai (tanpa `enforce_end_time`):**
 Untuk tryout dengan `enforce_end_time = false` atau `ends_at = null`, jika `tryout_session` masih `in_progress` dan tidak ada aktivitas selama lebih dari **72 jam**, background job melakukan auto-submit. Aktivitas terakhir ditentukan dari nilai **terbaru** di antara:
+
 - `tryout_sessions.last_saved_at` (autosave di level session)
 - `last_saved_at` dari semua `tryout_section_sessions` milik session tersebut (autosave di level section/jawaban)
 - Jika semua nilai di atas null (belum pernah ada autosave sama sekali), gunakan `tryout_sessions.started_at` sebagai waktu referensi.
 
 Background job mengambil max dari semua nilai ini sebagai "waktu aktivitas terakhir". Jika `NOW() - waktu_aktivitas_terakhir > 72 jam`, jalankan auto-submit:
+
 1. Section yang masih `in_progress` di-submit dengan jawaban terakhir yang tersimpan.
 2. Section berstatus `pending` di-submit langsung dengan skor 0.
 3. `tryout_session` diubah menjadi `submitted` dengan `auto_submitted = true`.
@@ -1852,6 +2132,7 @@ Setelah seluruh tryout session di-submit (semua section selesai):
 
 **Validasi pada saat create dan update (early feedback):**
 Service layer memvalidasi konsistensi relasi pada saat operasi create dan update, bukan hanya saat publish. Validasi yang dijalankan pada create/update:
+
 - Subject harus berasal dari exam type yang sama dengan practice/tryout.
 - Topic (jika diisi) harus berasal dari subject yang dipilih.
 - Jika `starts_at` dan `ends_at` keduanya diisi, `ends_at` harus lebih besar dari `starts_at`.
@@ -1860,6 +2141,7 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
 - Jika validasi gagal, operasi ditolak dengan pesan error yang jelas. Admin tidak perlu menunggu proses publish untuk menemukan inkonsistensi relasi.
 
 **Validasi tambahan pada saat publish:**
+
 - Practice tidak boleh dipublish jika tidak punya soal.
 - Practice tidak boleh dipublish jika `quiz_duration_minutes` kosong atau kurang dari/sama dengan 0 (karena Mode Quiz selalu tersedia, durasi wajib ada).
 - Practice tidak boleh dipublish jika ada soal dalam practice yang belum `published`, sudah `archived`, atau subject-nya tidak sesuai dengan subject practice.
@@ -2028,6 +2310,19 @@ Hanya berlaku untuk akun lama yang dimigrasikan dan belum memiliki `email_verifi
 - Blog categories dan posts.
 - Landing page final.
 
+### Phase 7 — Materi Pelajaran dan Game Kosakata
+
+- Tabel `materials` dengan field `exam_type_id`, `subject_id`, `topic_id`, `youtube_url`, `content` (Tiptap), `is_free`, `status`, `published_at`.
+- Halaman daftar materi (grid kartu, filter exam type/subject/topic).
+- Halaman detail materi (embed YouTube player + render konten Tiptap).
+- Kontrol akses materi berbasis `access_free_materials` dan `access_paid_materials` di `exam_type_plans`.
+- Admin panel: CRUD materi, validasi publish (minimal satu konten wajib ada).
+- Tabel `vocabularies` dengan field `word`, `language`, `difficulty`, `type`, `correct_meaning`, `wrong_options` (JSON), `example_sentence`, `status`.
+- Halaman Game Kosakata: layar konfigurasi, swipe card game, feedback jawaban benar/salah, halaman ringkasan sesi.
+- Mekanisme swipe kartu dengan efek tilt, snap-back, dan animasi Framer Motion.
+- Fetch soal game dari server (satu kali per sesi, diacak server-side); state sesi disimpan di memori browser saja — tidak ada write ke database saat bermain.
+- Admin panel: CRUD kosakata, import kosakata via Excel, filter dan manajemen status.
+
 ---
 
 ## 16. Success Metrics
@@ -2043,5 +2338,8 @@ Hanya berlaku untuk akun lama yang dimigrasikan dan belum memiliki `email_verifi
 - Jumlah artikel blog terindeks.
 - Akurasi import soal.
 - Jumlah soal dan pembahasan yang berhasil di-generate AI.
+- Jumlah materi yang dipublish.
+- Jumlah view halaman detail materi.
+- Jumlah kosakata yang dipublish untuk Game Kosakata.
 
 ---
