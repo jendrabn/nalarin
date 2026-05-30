@@ -3,6 +3,7 @@ import {
   BookOpenCheckIcon,
   CreditCardIcon,
   FileQuestionIcon,
+  FileTextIcon,
   FolderTreeIcon,
   GraduationCapIcon,
   HomeIcon,
@@ -100,6 +101,12 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
         href: "/admin/practices",
         icon: BookOpenCheckIcon,
         description: "Practice and quiz modes",
+      },
+      {
+        title: "Materials",
+        href: "/admin/materials",
+        icon: FileTextIcon,
+        description: "Video and text learning content",
       },
       {
         title: "Tryouts",

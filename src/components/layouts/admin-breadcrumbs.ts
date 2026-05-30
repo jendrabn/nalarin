@@ -15,6 +15,7 @@ const adminRouteLabels: Record<string, string> = {
   tryout: "Tryout",
   payments: "Payments",
   practices: "Practices",
+  materials: "Materials",
   questions: "Questions",
   import: "Import",
   preview: "Preview",

@@ -1271,3 +1271,40 @@ export const blogPosts = mysqlTable(
     ),
   ],
 );
+
+export const materials = mysqlTable(
+  'materials',
+  {
+    id: int('id', { unsigned: true }).autoincrement().primaryKey(),
+    examTypeId: int('exam_type_id', { unsigned: true })
+      .notNull()
+      .references(() => examTypes.id),
+    subjectId: int('subject_id', { unsigned: true })
+      .notNull()
+      .references(() => subjects.id),
+    topicId: int('topic_id', { unsigned: true }).references(() => topics.id),
+    title: varchar('title', { length: 255 }).notNull(),
+    slug: varchar('slug', { length: 191 }).notNull(),
+    excerpt: text('excerpt'),
+    youtubeUrl: varchar('youtube_url', { length: 2048 }),
+    content: longtext('content'),
+    thumbnailUrl: varchar('thumbnail_url', { length: 2048 }),
+    isFree: boolean('is_free').default(true).notNull(),
+    status: contentStatusEnum.notNull(),
+    publishedAt: timestamp('published_at', { mode: 'date' }),
+    createdBy: int('created_by', { unsigned: true }).references(() => users.id),
+    ...auditColumns(),
+  },
+  (table) => [
+    uniqueIndex('materials_exam_type_slug_uq').on(table.examTypeId, table.slug),
+    index('materials_bank_filter_idx').on(
+      table.examTypeId,
+      table.subjectId,
+      table.topicId,
+      table.status,
+      table.isFree,
+    ),
+    index('materials_status_publish_idx').on(table.status, table.publishedAt),
+    index('materials_created_by_idx').on(table.createdBy),
+  ],
+);

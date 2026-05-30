@@ -1,14 +1,16 @@
 import type { MetadataRoute } from "next";
 
 import { getPracticeDiscoveryData } from "@/features/practices/queries";
+import { getPublishedMaterialSitemapEntries } from "@/features/materials/queries";
 import { getPublicTryoutDiscoveryData } from "@/features/tryouts/queries";
 import { getPublishedBlogSitemapEntries } from "@/features/blog/queries";
 import { absoluteUrl } from "@/features/blog/utils";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [blogPosts, practiceData, tryoutData] = await Promise.all([
+  const [blogPosts, practiceData, materialEntries, tryoutData] = await Promise.all([
     getPublishedBlogSitemapEntries(),
     getPracticeDiscoveryData(),
+    getPublishedMaterialSitemapEntries(),
     getPublicTryoutDiscoveryData(),
   ]);
   const now = new Date();
@@ -30,6 +32,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.85,
+    },
+    {
+      url: absoluteUrl("/materials"),
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.84,
     },
     {
       url: absoluteUrl("/blog"),
@@ -70,6 +78,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "weekly" as const,
       priority: 0.6,
+    })),
+    ...practiceData.examTypes.map((examType) => ({
+      url: absoluteUrl(`/materials/exam/${examType.slug}`),
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    })),
+    ...materialEntries.map((material) => ({
+      url: absoluteUrl(`/materials/exam/${material.examTypeSlug}/${material.slug}`),
+      lastModified: material.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.65,
+      images: material.thumbnailUrl ? [absoluteUrl(material.thumbnailUrl)] : undefined,
     })),
     ...tryoutData.tryouts.map((tryout) => ({
       url: absoluteUrl(`/tryouts/${tryout.slug}`),

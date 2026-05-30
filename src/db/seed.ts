@@ -166,6 +166,19 @@ async function getSubjectIdBySlug() {
   return subjectIds;
 }
 
+async function getTopicIdBySlug() {
+  const rows = await db
+    .select({
+      id: schema.topics.id,
+      subjectSlug: schema.subjects.slug,
+      slug: schema.topics.slug,
+    })
+    .from(schema.topics)
+    .innerJoin(schema.subjects, eq(schema.topics.subjectId, schema.subjects.id));
+
+  return new Map(rows.map((row) => [`${row.subjectSlug}:${row.slug}`, row.id] as const));
+}
+
 async function seedExamTypePackages(seedData: SeedData) {
   const [packageTemplate] = seedData.exam_type_packages;
 
@@ -283,7 +296,119 @@ async function seedTopics(seedData: SeedData) {
         subjectId: sql`values(${schema.topics.subjectId})`,
         name: sql`values(${schema.topics.name})`,
         description: sql`values(${schema.topics.description})`,
-        updatedAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+}
+
+async function seedMaterials() {
+  const now = new Date();
+  const examTypeIds = await getExamTypeIdBySlug();
+  const subjectIds = await getSubjectIdBySlug();
+  const topicIds = await getTopicIdBySlug();
+
+  const materials = [
+    {
+      exam_type_slug: 'utbk',
+      subject_slug: 'penalaran-umum',
+      topic_slug: 'penalaran-deduktif',
+      title: 'Strategi Cepat Menyusun Premis Deduktif',
+      slug: 'strategi-cepat-premis-deduktif',
+      excerpt:
+        'Video singkat untuk mengenali pola premis, kesimpulan, dan jebakan logika yang sering muncul di Penalaran Umum.',
+      youtubeUrl: 'https://www.youtube.com/watch?v=ysz5S6PUM-U',
+      content:
+        '<p>Pelajari cara menandai premis utama sebelum membaca opsi jawaban. Fokus pada kata penghubung, negasi, dan hubungan sebab akibat.</p><ul><li>Identifikasi fakta yang benar-benar diberikan.</li><li>Bedakan premis dengan asumsi.</li><li>Hindari kesimpulan yang terlalu luas.</li></ul>',
+      isFree: true,
+    },
+    {
+      exam_type_slug: 'utbk',
+      subject_slug: 'pengetahuan-kuantitatif',
+      topic_slug: 'aljabar-dasar',
+      title: 'Aljabar Dasar untuk Soal Konteks',
+      slug: 'aljabar-dasar-soal-konteks',
+      excerpt:
+        'Materi teks yang merangkum pola aljabar dasar untuk soal perbandingan, persamaan, dan interpretasi sederhana.',
+      youtubeUrl: null,
+      content:
+        '<p>Aljabar konteks biasanya menuntut kemampuan menerjemahkan kalimat ke bentuk persamaan. Coba fokus pada variabel, hubungan, dan batasan.</p><p>Latihan terbaik adalah menuliskan definisi variabel sebelum melakukan operasi aljabar.</p>',
+      isFree: false,
+    },
+    {
+      exam_type_slug: 'simak-ui',
+      subject_slug: 'kemampuan-dasar',
+      topic_slug: 'matematika-dasar-aljabar',
+      title: 'Matematika Dasar: Pola dan Persamaan',
+      slug: 'matematika-dasar-pola-persamaan',
+      excerpt:
+        'Kombinasi video dan teks untuk memahami pola persamaan yang sering dipakai pada SIMAK UI.',
+      youtubeUrl: 'https://www.youtube.com/watch?v=ysz5S6PUM-U',
+      content:
+        '<p>Gunakan materi ini untuk mengulang cara membentuk persamaan dari cerita singkat dan mengenali pola angka.</p><p>Jika satu variabel belum bisa diselesaikan langsung, pecah dulu menjadi langkah-langkah kecil.</p>',
+      isFree: true,
+    },
+    {
+      exam_type_slug: 'cpns',
+      subject_slug: 'tes-intelegensia-umum',
+      topic_slug: 'kemampuan-verbal-analogi',
+      title: 'Menguasai Analogi Verbal CPNS',
+      slug: 'menguasai-analogi-verbal-cpns',
+      excerpt:
+        'Bacaan ringkas untuk melatih hubungan kata, padanan, dan analogi yang sering muncul di TIU.',
+      youtubeUrl: null,
+      content:
+        '<p>Analogi verbal bekerja paling baik ketika kamu menemukan hubungan inti antarkata: fungsi, sifat, sebab-akibat, atau bagian-keseluruhan.</p><p>Latihan ini membantu membangun pola pikir cepat sebelum mengerjakan soal pilihan ganda.</p>',
+      isFree: false,
+    },
+  ] as const;
+
+  const materialValues = materials.flatMap((material) => {
+    const examTypeId = examTypeIds.get(material.exam_type_slug);
+    const subjectId = subjectIds.get(material.subject_slug);
+    const topicId = material.topic_slug
+      ? topicIds.get(`${material.subject_slug}:${material.topic_slug}`)
+      : null;
+
+    if (!examTypeId || !subjectId) {
+      throw new Error(`Material seed references missing taxonomy: ${material.slug}`);
+    }
+
+    return [
+      {
+        examTypeId,
+        subjectId,
+        topicId,
+        title: material.title,
+        slug: material.slug,
+        excerpt: material.excerpt,
+        youtubeUrl: material.youtubeUrl,
+        content: material.content,
+        thumbnailUrl: null,
+        isFree: material.isFree,
+        status: 'published' as const,
+        publishedAt: now,
+        createdBy: null,
+      },
+    ];
+  });
+
+  await db
+    .insert(schema.materials)
+    .values(materialValues)
+    .onDuplicateKeyUpdate({
+      set: {
+        examTypeId: sql`values(${schema.materials.examTypeId})`,
+        subjectId: sql`values(${schema.materials.subjectId})`,
+        topicId: sql`values(${schema.materials.topicId})`,
+        title: sql`values(${schema.materials.title})`,
+        excerpt: sql`values(${schema.materials.excerpt})`,
+        youtubeUrl: sql`values(${schema.materials.youtubeUrl})`,
+        content: sql`values(${schema.materials.content})`,
+        thumbnailUrl: sql`values(${schema.materials.thumbnailUrl})`,
+        isFree: sql`values(${schema.materials.isFree})`,
+        status: sql`values(${schema.materials.status})`,
+        publishedAt: sql`values(${schema.materials.publishedAt})`,
+        updatedAt: now,
       },
     });
 }
@@ -354,6 +479,7 @@ async function main() {
   await seedExamTypePackages(seedData);
   await seedSubjects(seedData);
   await seedTopics(seedData);
+  await seedMaterials();
   await seedBlogCategories(seedData);
   await seedUsers();
 }
@@ -361,7 +487,7 @@ async function main() {
 main()
   .then(async () => {
     console.log(
-      'Seed completed: exam_types, exam_type_package_prices, subjects, topics, blog_categories, and users upserted.',
+      'Seed completed: exam_types, exam_type_package_prices, subjects, topics, materials, blog_categories, and users upserted.',
     );
     await pool.end();
   })

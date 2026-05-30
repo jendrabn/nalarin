@@ -7,7 +7,7 @@ import { requireAdmin } from "@/features/auth/services/session";
 export const metadata: Metadata = {
   title: "Admin Panel",
   description:
-    "Panel admin Nalarin.id untuk mengelola user, billing, bank soal, practice, tryout, dan blog.",
+    "Panel admin Nalarin.id untuk mengelola user, billing, bank soal, practice, materi, tryout, dan blog.",
 };
 
 export default async function AdminLayout({
