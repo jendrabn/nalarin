@@ -375,7 +375,7 @@ export function AdminDataTable<TData>({
               <SelectGroup>
                 {PAGE_SIZE_OPTIONS.map((value) => (
                   <SelectItem key={value} value={value}>
-                    {value === ALL_PAGE_SIZE ? "All" : value}
+                    {value === ALL_PAGE_SIZE ? "All (-1)" : value}
                   </SelectItem>
                 ))}
               </SelectGroup>

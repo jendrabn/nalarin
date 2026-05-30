@@ -14,6 +14,8 @@ import {
   sessionStatusValues,
   subscriptionSourceValues,
   subscriptionStatusValues,
+  vocabularyLanguageValues,
+  vocabularyTypeValues,
   transactionSourceValues,
   userRoleValues,
   userStatusValues,
@@ -148,6 +150,30 @@ export const modelEnums = {
       draft: "chart1",
       published: "chart2",
       archived: "muted",
+    },
+  ),
+  vocabularyLanguage: createEnumDefinition(
+    vocabularyLanguageValues,
+    {
+      id: "Indonesian",
+      en: "English",
+    },
+    {
+      id: "chart1",
+      en: "chart4",
+    },
+  ),
+  vocabularyType: createEnumDefinition(
+    vocabularyTypeValues,
+    {
+      synonym: "Synonym",
+      antonym: "Antonym",
+      definition: "Definition",
+    },
+    {
+      synonym: "chart2",
+      antonym: "chart3",
+      definition: "chart5",
     },
   ),
   sessionStatus: createEnumDefinition(

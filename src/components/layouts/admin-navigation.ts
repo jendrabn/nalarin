@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react"
 import {
   BookOpenCheckIcon,
+  BookTextIcon,
   CreditCardIcon,
   FileQuestionIcon,
   FileTextIcon,
@@ -107,6 +108,12 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
         href: "/admin/materials",
         icon: FileTextIcon,
         description: "Video and text learning content",
+      },
+      {
+        title: "Vocabulary",
+        href: "/admin/vocabularies",
+        icon: BookTextIcon,
+        description: "Free word game content",
       },
       {
         title: "Tryouts",

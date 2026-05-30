@@ -27,6 +27,8 @@ export const questionTypeValues = [
 export const questionDifficultyValues = ['easy', 'medium', 'hard'] as const;
 export const scoringRuleValues = ['all_or_nothing', 'partial'] as const;
 export const contentStatusValues = ['draft', 'published', 'archived'] as const;
+export const vocabularyLanguageValues = ['id', 'en'] as const;
+export const vocabularyTypeValues = ['synonym', 'antonym', 'definition'] as const;
 export const sessionStatusValues = [
   'pending',
   'in_progress',
@@ -80,6 +82,11 @@ export const questionDifficultyEnum = mysqlEnum(
 );
 export const scoringRuleEnum = mysqlEnum('scoring_rule', scoringRuleValues);
 export const contentStatusEnum = mysqlEnum('status', contentStatusValues);
+export const vocabularyLanguageEnum = mysqlEnum(
+  'language',
+  vocabularyLanguageValues,
+);
+export const vocabularyTypeEnum = mysqlEnum('type', vocabularyTypeValues);
 export const sessionStatusEnum = mysqlEnum('status', sessionStatusValues);
 export const practiceModeEnum = mysqlEnum('mode', practiceModeValues);
 export const navigationModeEnum = mysqlEnum(
@@ -1306,5 +1313,32 @@ export const materials = mysqlTable(
     ),
     index('materials_status_publish_idx').on(table.status, table.publishedAt),
     index('materials_created_by_idx').on(table.createdBy),
+  ],
+);
+
+export const vocabularies = mysqlTable(
+  'vocabularies',
+  {
+    id: int('id', { unsigned: true }).autoincrement().primaryKey(),
+    word: varchar('word', { length: 255 }).notNull(),
+    language: vocabularyLanguageEnum.notNull(),
+    difficulty: questionDifficultyEnum.notNull(),
+    type: vocabularyTypeEnum.notNull(),
+    correctMeaning: text('correct_meaning').notNull(),
+    wrongOptions: json('wrong_options').$type<string[]>().notNull(),
+    exampleSentence: text('example_sentence'),
+    status: contentStatusEnum.notNull(),
+    createdBy: int('created_by', { unsigned: true }).references(() => users.id),
+    ...auditColumns(),
+  },
+  (table) => [
+    index('vocabularies_filter_idx').on(
+      table.language,
+      table.difficulty,
+      table.type,
+      table.status,
+    ),
+    index('vocabularies_status_created_at_idx').on(table.status, table.createdAt),
+    index('vocabularies_created_by_idx').on(table.createdBy),
   ],
 );

@@ -15,6 +15,13 @@
       "when": 1780104374551,
       "tag": "0001_gifted_cyclops",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1780108553372,
+      "tag": "0002_aspiring_human_robot",
+      "breakpoints": true
     }
   ]
 }
