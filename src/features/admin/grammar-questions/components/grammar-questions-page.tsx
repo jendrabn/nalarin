@@ -205,7 +205,6 @@ function createColumns({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
-                disabled={row.original.status !== "draft"}
                 onClick={() => onDelete(row.original)}
               >
                 <Trash2Icon />
@@ -358,7 +357,6 @@ export function GrammarQuestionsPage({ questions }: GrammarQuestionsPageProps) {
         defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
         enableRowSelection
         getRowId={(row) => String(row.id)}
-        getRowCanSelect={(row) => row.status === "draft"}
         toolbarActions={
           <Button type="button" variant="outline" onClick={() => setIsFilterOpen(true)}>
             <FilterIcon data-icon="inline-start" />
@@ -387,7 +385,7 @@ export function GrammarQuestionsPage({ questions }: GrammarQuestionsPageProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete grammar question?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. Only draft grammar questions can be deleted.
+              This action cannot be undone. The grammar question will be permanently removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

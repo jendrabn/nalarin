@@ -184,13 +184,6 @@ export async function deleteGrammarQuestionAction(
     }
   }
 
-  if (existingQuestion.status !== "draft") {
-    return {
-      success: false,
-      message: "Only draft grammar questions can be deleted.",
-    }
-  }
-
   await db.delete(schema.grammarQuestions).where(eq(schema.grammarQuestions.id, questionId))
 
   revalidateGrammarRoutes(questionId)
@@ -220,19 +213,14 @@ export async function deleteGrammarQuestionsAction(
   const existingQuestions = await db
     .select({
       id: schema.grammarQuestions.id,
-      status: schema.grammarQuestions.status,
     })
     .from(schema.grammarQuestions)
     .where(inArray(schema.grammarQuestions.id, uniqueQuestionIds))
 
-  if (
-    existingQuestions.length !== uniqueQuestionIds.length ||
-    existingQuestions.some((question) => question.status !== "draft")
-  ) {
+  if (existingQuestions.length !== uniqueQuestionIds.length) {
     return {
       success: false,
-      message:
-        "One or more selected grammar questions cannot be deleted because they are not draft.",
+      message: "One or more selected grammar questions could not be found.",
     }
   }
 

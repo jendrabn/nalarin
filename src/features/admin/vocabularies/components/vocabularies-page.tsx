@@ -241,7 +241,6 @@ function createColumns({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
-                disabled={row.original.status !== "draft"}
                 onClick={() => onDelete(row.original)}
               >
                 <Trash2Icon />
@@ -352,7 +351,6 @@ export function VocabulariesPage({ vocabularies }: VocabulariesPageProps) {
         defaultPageSize="10"
         enableRowSelection
         getRowId={(vocabulary) => String(vocabulary.id)}
-        getRowCanSelect={(vocabulary) => vocabulary.status === "draft"}
         toolbarActions={
           <Button type="button" variant="outline" onClick={() => setIsFilterOpen(true)}>
             <FilterIcon data-icon="inline-start" />
@@ -400,7 +398,7 @@ export function VocabulariesPage({ vocabularies }: VocabulariesPageProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete vocabulary?</AlertDialogTitle>
             <AlertDialogDescription>
-              This vocabulary will be permanently removed. Only draft items can be deleted.
+              This vocabulary will be permanently removed from the database.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

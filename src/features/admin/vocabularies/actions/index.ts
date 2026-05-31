@@ -193,13 +193,6 @@ export async function deleteVocabularyAction(
     }
   }
 
-  if (existingVocabulary.status !== "draft") {
-    return {
-      success: false,
-      message: "Only draft vocabularies can be deleted.",
-    }
-  }
-
   await db.delete(schema.vocabularies).where(eq(schema.vocabularies.id, vocabularyId))
 
   revalidateVocabularyRoutes(vocabularyId)
@@ -229,18 +222,14 @@ export async function deleteVocabulariesAction(
   const existingVocabularies = await db
     .select({
       id: schema.vocabularies.id,
-      status: schema.vocabularies.status,
     })
     .from(schema.vocabularies)
     .where(inArray(schema.vocabularies.id, uniqueVocabularyIds))
 
-  if (
-    existingVocabularies.length !== uniqueVocabularyIds.length ||
-    existingVocabularies.some((vocabulary) => vocabulary.status !== "draft")
-  ) {
+  if (existingVocabularies.length !== uniqueVocabularyIds.length) {
     return {
       success: false,
-      message: "One or more selected vocabularies cannot be deleted because they are not draft.",
+      message: "One or more selected vocabularies could not be found.",
     }
   }
 

@@ -310,7 +310,10 @@ export function VocabularyFormPage({
                 </Field>
               </div>
 
-              <Field data-invalid={Boolean(form.formState.errors.status)}>
+              <Field
+                data-invalid={Boolean(form.formState.errors.status)}
+                className="w-full lg:w-1/3"
+              >
                 <FieldContent>
                   <FieldLabel htmlFor={`${formId}-status`} className="required">
                     Status
@@ -350,52 +353,54 @@ export function VocabularyFormPage({
 
           <Card>
             <CardHeader>
-              <CardTitle>Meaning & Distractor</CardTitle>
+              <CardTitle>Correct Option & Wrong Option</CardTitle>
               <CardDescription>
-                Add the correct meaning and one visible wrong option for the game.
+                Add the correct option and one visible wrong option for the game.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <Field data-invalid={Boolean(form.formState.errors.correctMeaning)}>
-                <FieldContent>
-                  <FieldLabel htmlFor={`${formId}-correctMeaning`} className="required">
-                    Correct Meaning
-                  </FieldLabel>
-                </FieldContent>
-                <div className="flex flex-col gap-1.5">
-                  <Input
-                    id={`${formId}-correctMeaning`}
-                    placeholder="something intangible"
-                    aria-invalid={Boolean(form.formState.errors.correctMeaning)}
-                    {...form.register("correctMeaning")}
-                  />
-                  <FieldDescription>
-                    This is the answer that should be remembered for the card.
-                  </FieldDescription>
-                  <FieldError>{form.formState.errors.correctMeaning?.message}</FieldError>
-                </div>
-              </Field>
+              <div className="grid gap-4 lg:grid-cols-2">
+                <Field data-invalid={Boolean(form.formState.errors.correctMeaning)}>
+                  <FieldContent>
+                    <FieldLabel htmlFor={`${formId}-correctMeaning`} className="required">
+                      Correct Option
+                    </FieldLabel>
+                  </FieldContent>
+                  <div className="flex flex-col gap-1.5">
+                    <Input
+                      id={`${formId}-correctMeaning`}
+                      placeholder="something intangible"
+                      aria-invalid={Boolean(form.formState.errors.correctMeaning)}
+                      {...form.register("correctMeaning")}
+                    />
+                    <FieldDescription>
+                      This is the answer that should be remembered for the card.
+                    </FieldDescription>
+                    <FieldError>{form.formState.errors.correctMeaning?.message}</FieldError>
+                  </div>
+                </Field>
 
-              <Field data-invalid={Boolean(form.formState.errors.wrongOption1)}>
-                <FieldContent>
-                  <FieldLabel htmlFor={`${formId}-wrongOption1`} className="required">
-                    Wrong Option
-                  </FieldLabel>
-                </FieldContent>
-                <div className="flex flex-col gap-1.5">
-                  <Input
-                    id={`${formId}-wrongOption1`}
-                    placeholder="wrong meaning"
-                    aria-invalid={Boolean(form.formState.errors.wrongOption1)}
-                    {...form.register("wrongOption1")}
-                  />
-                  <FieldDescription>
-                    Extra distractors stay preserved for existing entries, but only one is shown
-                    here.
-                  </FieldDescription>
-                  <FieldError>{form.formState.errors.wrongOption1?.message}</FieldError>
-                </div>
-              </Field>
+                <Field data-invalid={Boolean(form.formState.errors.wrongOption1)}>
+                  <FieldContent>
+                    <FieldLabel htmlFor={`${formId}-wrongOption1`} className="required">
+                      Wrong Option
+                    </FieldLabel>
+                  </FieldContent>
+                  <div className="flex flex-col gap-1.5">
+                    <Input
+                      id={`${formId}-wrongOption1`}
+                      placeholder="wrong meaning"
+                      aria-invalid={Boolean(form.formState.errors.wrongOption1)}
+                      {...form.register("wrongOption1")}
+                    />
+                    <FieldDescription>
+                      Extra distractors stay preserved for existing entries, but only one is shown
+                      here.
+                    </FieldDescription>
+                    <FieldError>{form.formState.errors.wrongOption1?.message}</FieldError>
+                  </div>
+                </Field>
+              </div>
 
               <Input type="hidden" tabIndex={-1} aria-hidden="true" {...form.register("wrongOption2")} />
               <Input type="hidden" tabIndex={-1} aria-hidden="true" {...form.register("wrongOption3")} />

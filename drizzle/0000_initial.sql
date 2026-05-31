@@ -108,6 +108,42 @@ CREATE TABLE `exam_types` (
 	CONSTRAINT `exam_types_slug_uq` UNIQUE(`slug`)
 );
 --> statement-breakpoint
+CREATE TABLE `grammar_questions` (
+	`id` int unsigned AUTO_INCREMENT NOT NULL,
+	`language` enum('id','en') NOT NULL,
+	`difficulty` enum('easy','medium','hard') NOT NULL,
+	`category` varchar(191),
+	`sentence_template` longtext NOT NULL,
+	`answers` json NOT NULL,
+	`distractors` json NOT NULL,
+	`status` enum('draft','published','archived') NOT NULL,
+	`created_by` int unsigned,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `grammar_questions_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `materials` (
+	`id` int unsigned AUTO_INCREMENT NOT NULL,
+	`exam_type_id` int unsigned NOT NULL,
+	`subject_id` int unsigned NOT NULL,
+	`topic_id` int unsigned,
+	`title` varchar(255) NOT NULL,
+	`slug` varchar(191) NOT NULL,
+	`excerpt` text,
+	`youtube_url` varchar(2048),
+	`content` longtext,
+	`thumbnail_url` varchar(2048),
+	`is_free` boolean NOT NULL DEFAULT true,
+	`status` enum('draft','published','archived') NOT NULL,
+	`published_at` timestamp,
+	`created_by` int unsigned,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `materials_id` PRIMARY KEY(`id`),
+	CONSTRAINT `materials_exam_type_slug_uq` UNIQUE(`exam_type_id`,`slug`)
+);
+--> statement-breakpoint
 CREATE TABLE `monthly_usage` (
 	`id` int unsigned AUTO_INCREMENT NOT NULL,
 	`user_id` int unsigned NOT NULL,
@@ -555,6 +591,22 @@ CREATE TABLE `users` (
 	CONSTRAINT `users_apple_id_uq` UNIQUE(`apple_id`)
 );
 --> statement-breakpoint
+CREATE TABLE `vocabularies` (
+	`id` int unsigned AUTO_INCREMENT NOT NULL,
+	`word` varchar(255) NOT NULL,
+	`language` enum('id','en') NOT NULL,
+	`difficulty` enum('easy','medium','hard') NOT NULL,
+	`type` enum('synonym','antonym','definition','baku','tidak_baku') NOT NULL,
+	`correct_meaning` text NOT NULL,
+	`wrong_options` json NOT NULL,
+	`example_sentence` text,
+	`status` enum('draft','published','archived') NOT NULL,
+	`created_by` int unsigned,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `vocabularies_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
 CREATE TABLE `voucher_redemptions` (
 	`id` int unsigned AUTO_INCREMENT NOT NULL,
 	`voucher_id` int unsigned NOT NULL,
@@ -596,6 +648,11 @@ ALTER TABLE `email_change_tokens` ADD CONSTRAINT `email_change_tokens_user_id_us
 ALTER TABLE `email_verification_tokens` ADD CONSTRAINT `email_verification_tokens_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `exam_type_package_prices` ADD CONSTRAINT `exam_type_package_prices_package_id_exam_type_packages_id_fk` FOREIGN KEY (`package_id`) REFERENCES `exam_type_packages`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `exam_type_packages` ADD CONSTRAINT `exam_type_packages_exam_type_id_exam_types_id_fk` FOREIGN KEY (`exam_type_id`) REFERENCES `exam_types`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `grammar_questions` ADD CONSTRAINT `grammar_questions_created_by_users_id_fk` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `materials` ADD CONSTRAINT `materials_exam_type_id_exam_types_id_fk` FOREIGN KEY (`exam_type_id`) REFERENCES `exam_types`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `materials` ADD CONSTRAINT `materials_subject_id_subjects_id_fk` FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `materials` ADD CONSTRAINT `materials_topic_id_topics_id_fk` FOREIGN KEY (`topic_id`) REFERENCES `topics`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `materials` ADD CONSTRAINT `materials_created_by_users_id_fk` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `monthly_usage` ADD CONSTRAINT `monthly_usage_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `monthly_usage` ADD CONSTRAINT `monthly_usage_exam_type_id_exam_types_id_fk` FOREIGN KEY (`exam_type_id`) REFERENCES `exam_types`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `password_reset_tokens` ADD CONSTRAINT `password_reset_tokens_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -649,6 +706,7 @@ ALTER TABLE `tryouts` ADD CONSTRAINT `tryouts_exam_type_id_exam_types_id_fk` FOR
 ALTER TABLE `tryouts` ADD CONSTRAINT `tryouts_created_by_users_id_fk` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `user_progress_snapshots` ADD CONSTRAINT `user_progress_snapshots_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `user_sessions` ADD CONSTRAINT `user_sessions_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `vocabularies` ADD CONSTRAINT `vocabularies_created_by_users_id_fk` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `voucher_redemptions` ADD CONSTRAINT `voucher_redemptions_voucher_id_vouchers_id_fk` FOREIGN KEY (`voucher_id`) REFERENCES `vouchers`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `voucher_redemptions` ADD CONSTRAINT `voucher_redemptions_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `voucher_redemptions` ADD CONSTRAINT `voucher_redemptions_payment_id_payments_id_fk` FOREIGN KEY (`payment_id`) REFERENCES `payments`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -660,6 +718,12 @@ CREATE INDEX `email_change_tokens_user_validity_idx` ON `email_change_tokens` (`
 CREATE INDEX `email_verification_tokens_user_validity_idx` ON `email_verification_tokens` (`user_id`,`invalidated_at`,`used_at`,`expires_at`);--> statement-breakpoint
 CREATE INDEX `exam_type_package_prices_active_idx` ON `exam_type_package_prices` (`is_active`);--> statement-breakpoint
 CREATE INDEX `exam_type_packages_active_idx` ON `exam_type_packages` (`is_active`);--> statement-breakpoint
+CREATE INDEX `grammar_questions_filter_idx` ON `grammar_questions` (`language`,`difficulty`,`category`,`status`);--> statement-breakpoint
+CREATE INDEX `grammar_questions_status_created_at_idx` ON `grammar_questions` (`status`,`created_at`);--> statement-breakpoint
+CREATE INDEX `grammar_questions_created_by_idx` ON `grammar_questions` (`created_by`);--> statement-breakpoint
+CREATE INDEX `materials_bank_filter_idx` ON `materials` (`exam_type_id`,`subject_id`,`topic_id`,`status`,`is_free`);--> statement-breakpoint
+CREATE INDEX `materials_status_publish_idx` ON `materials` (`status`,`published_at`);--> statement-breakpoint
+CREATE INDEX `materials_created_by_idx` ON `materials` (`created_by`);--> statement-breakpoint
 CREATE INDEX `monthly_usage_period_idx` ON `monthly_usage` (`period`);--> statement-breakpoint
 CREATE INDEX `monthly_usage_exam_type_period_idx` ON `monthly_usage` (`exam_type_id`,`period`);--> statement-breakpoint
 CREATE INDEX `password_reset_tokens_user_validity_idx` ON `password_reset_tokens` (`user_id`,`invalidated_at`,`used_at`,`expires_at`);--> statement-breakpoint
@@ -716,6 +780,9 @@ CREATE INDEX `user_sessions_user_validity_idx` ON `user_sessions` (`user_id`,`re
 CREATE INDEX `user_sessions_expires_at_idx` ON `user_sessions` (`expires_at`);--> statement-breakpoint
 CREATE INDEX `users_role_status_idx` ON `users` (`role`,`status`);--> statement-breakpoint
 CREATE INDEX `users_status_created_at_idx` ON `users` (`status`,`created_at`);--> statement-breakpoint
+CREATE INDEX `vocabularies_filter_idx` ON `vocabularies` (`language`,`difficulty`,`type`,`status`);--> statement-breakpoint
+CREATE INDEX `vocabularies_status_created_at_idx` ON `vocabularies` (`status`,`created_at`);--> statement-breakpoint
+CREATE INDEX `vocabularies_created_by_idx` ON `vocabularies` (`created_by`);--> statement-breakpoint
 CREATE INDEX `voucher_redemptions_voucher_user_idx` ON `voucher_redemptions` (`voucher_id`,`user_id`);--> statement-breakpoint
 CREATE INDEX `voucher_redemptions_voucher_redeemed_idx` ON `voucher_redemptions` (`voucher_id`,`redeemed_at`);--> statement-breakpoint
 CREATE INDEX `voucher_redemptions_user_redeemed_idx` ON `voucher_redemptions` (`user_id`,`redeemed_at`);--> statement-breakpoint
