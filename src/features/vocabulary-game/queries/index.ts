@@ -22,6 +22,7 @@ type VocabularyRow = {
   type: (typeof schema.vocabularyTypeValues)[number]
   correctMeaning: string
   wrongOptions: string[]
+  exampleSentence: string | null
   status: (typeof schema.contentStatusValues)[number]
 }
 
@@ -39,6 +40,16 @@ function matchesConfig(row: VocabularyRow, config: VocabularyGameConfig) {
   }
 
   return row.wrongOptions.length > 0
+}
+
+function getQuestionDedupeKey(row: VocabularyRow) {
+  return [
+    row.word.trim().toLowerCase(),
+    row.language,
+    row.difficulty,
+    row.type,
+    row.correctMeaning.trim().toLowerCase(),
+  ].join("|")
 }
 
 function buildGameQuestion(row: VocabularyRow): VocabularyGameQuestion | null {
@@ -78,6 +89,7 @@ function buildGameQuestion(row: VocabularyRow): VocabularyGameQuestion | null {
     leftOption: correctSide === "left" ? correctMeaning : wrongMeaning,
     rightOption: correctSide === "right" ? correctMeaning : wrongMeaning,
     correctSide,
+    exampleSentence: row.exampleSentence,
   }
 }
 
@@ -93,6 +105,7 @@ export async function getVocabularyGameSession(
       type: schema.vocabularies.type,
       correctMeaning: schema.vocabularies.correctMeaning,
       wrongOptions: schema.vocabularies.wrongOptions,
+      exampleSentence: schema.vocabularies.exampleSentence,
       status: schema.vocabularies.status,
     })
     .from(schema.vocabularies)
@@ -100,7 +113,10 @@ export async function getVocabularyGameSession(
     .orderBy(desc(schema.vocabularies.createdAt))
 
   const filteredRows = rows.filter((row) => matchesConfig(row, config))
-  const shuffledRows = shuffleArray(filteredRows)
+  const uniqueRows = Array.from(
+    new Map(filteredRows.map((row) => [getQuestionDedupeKey(row), row])).values(),
+  )
+  const shuffledRows = shuffleArray(uniqueRows)
   const selectedRows = shuffledRows.slice(0, Math.min(config.count, shuffledRows.length))
   const questions = selectedRows
     .map(buildGameQuestion)

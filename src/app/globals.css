@@ -153,6 +153,14 @@
   .pricing-card--pending:hover {
     border-color: color-mix(in oklch, var(--destructive) 88%, transparent);
   }
+
+  .vocab-shake {
+    animation: vocab-shake 260ms ease-in-out;
+  }
+
+  .vocab-cling {
+    animation: vocab-cling 240ms ease-out;
+  }
 }
 
 @keyframes pricing-card-pending-glow {
@@ -177,5 +185,47 @@
 @media (prefers-reduced-motion: reduce) {
   .pricing-card--pending {
     animation: none;
+  }
+
+  .vocab-shake,
+  .vocab-cling {
+    animation: none;
+  }
+}
+
+@keyframes vocab-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  15% {
+    transform: translateX(-2px) rotate(-1deg);
+  }
+  30% {
+    transform: translateX(3px) rotate(1deg);
+  }
+  45% {
+    transform: translateX(-3px) rotate(-1deg);
+  }
+  60% {
+    transform: translateX(2px) rotate(0.5deg);
+  }
+  75% {
+    transform: translateX(-1px) rotate(-0.25deg);
+  }
+}
+
+@keyframes vocab-cling {
+  0% {
+    transform: scale(0.96);
+    filter: saturate(0.95);
+  }
+  45% {
+    transform: scale(1.03);
+    filter: saturate(1.05);
+  }
+  100% {
+    transform: scale(1);
+    filter: saturate(1);
   }
 }

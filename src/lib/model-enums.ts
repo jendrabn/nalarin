@@ -166,14 +166,18 @@ export const modelEnums = {
   vocabularyType: createEnumDefinition(
     vocabularyTypeValues,
     {
-      synonym: "Synonym",
-      antonym: "Antonym",
-      definition: "Definition",
+      synonym: "Sinonim",
+      antonym: "Antonim",
+      definition: "Definisi",
+      baku: "Kata Baku",
+      tidak_baku: "Kata Tidak Baku",
     },
     {
       synonym: "chart2",
       antonym: "chart3",
       definition: "chart5",
+      baku: "chart1",
+      tidak_baku: "chart4",
     },
   ),
   sessionStatus: createEnumDefinition(

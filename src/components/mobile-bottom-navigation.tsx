@@ -28,6 +28,7 @@ const hiddenRoutePrefixes = [
   "/register",
   "/practice-sessions",
   "/tryout-sessions",
+  "/vocabulary/play",
   "/logout",
 ];
 

@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 
-import { getCurrentUser } from "@/features/auth/services/session"
 import { buildSeoMetadata } from "@/lib/seo"
 
 import { VocabularyPlayPage } from "@/features/vocabulary-game/components/vocabulary-play-page"
@@ -25,12 +24,9 @@ export const metadata: Metadata = buildSeoMetadata({
 })
 
 export default async function Page({ searchParams }: VocabularyPlayPageProps) {
-  const [user, query] = await Promise.all([
-    getCurrentUser(),
-    searchParams ?? Promise.resolve({}),
-  ])
+  const query = await (searchParams ?? Promise.resolve({}))
 
   const session = await getVocabularyGameSession(parseVocabularyGameConfig(query))
 
-  return <VocabularyPlayPage user={user} session={session} />
+  return <VocabularyPlayPage session={session} />
 }

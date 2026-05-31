@@ -1,13 +1,12 @@
 import type { Metadata } from "next"
 
-import { getCurrentUser } from "@/features/auth/services/session"
+import { SiteFooter } from "@/components/site-footer"
+import { SiteNavbar, type SiteUser } from "@/components/site-navbar"
 import { absoluteUrl } from "@/features/blog/utils"
+import { getCurrentUser } from "@/features/auth/services/session"
 import { buildSeoMetadata } from "@/lib/seo"
 
-import {
-  VocabularyConfigPage,
-} from "@/features/vocabulary-game/components/vocabulary-config-page"
-import { getPublishedVocabularyCount } from "@/features/vocabulary-game/queries"
+import { VocabularyConfigPage } from "@/features/vocabulary-game/components/vocabulary-config-page"
 import {
   getVocabularyGameLandingConfig,
   parseVocabularyGameConfig,
@@ -37,11 +36,16 @@ export const metadata: Metadata = buildSeoMetadata({
 })
 
 export default async function Page({ searchParams }: VocabularyPageProps) {
-  const [user, publishedCount, query] = await Promise.all([
-    getCurrentUser(),
-    getPublishedVocabularyCount(),
-    searchParams ?? Promise.resolve({}),
-  ])
+  const query = (await (searchParams ?? Promise.resolve({}))) ?? {}
+  const user = await getCurrentUser()
+  const siteUser = user
+    ? ({
+        name: user.name,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+        role: user.role,
+      } satisfies NonNullable<SiteUser>)
+    : null
 
   const initialConfig = getVocabularyGameLandingConfig(parseVocabularyGameConfig(query))
 
@@ -60,11 +64,13 @@ export default async function Page({ searchParams }: VocabularyPageProps) {
           }).replace(/</g, "\\u003c"),
         }}
       />
-      <VocabularyConfigPage
-        user={user}
-        publishedCount={publishedCount}
-        initialConfig={initialConfig}
-      />
+      <div className="flex min-h-screen flex-col bg-background text-foreground">
+        <SiteNavbar user={siteUser} />
+        <main className="flex-1">
+          <VocabularyConfigPage initialConfig={initialConfig} />
+        </main>
+        <SiteFooter />
+      </div>
     </>
   )
 }

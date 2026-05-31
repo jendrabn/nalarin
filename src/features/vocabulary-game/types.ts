@@ -22,6 +22,7 @@ export type VocabularyGameQuestion = {
   leftOption: string
   rightOption: string
   correctSide: "left" | "right"
+  exampleSentence: string | null
 }
 
 export type VocabularyGameSession = {

@@ -104,7 +104,8 @@ export const footerGroups = [
     links: [
       { label: "Latihan", href: "/practices" },
       { label: "Tryout", href: "/tryouts" },
-      { label: "Kosakata", href: "/vocabulary" },
+      { label: "Game Kosakata", href: "/vocabulary" },
+      { label: "Materi", href: "/materials" },
       { label: "Harga", href: "/pricing" },
       { label: "Progress", href: "/progress" },
     ],
