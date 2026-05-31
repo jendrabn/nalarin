@@ -2,7 +2,7 @@
 
 ## 1. Ringkasan Produk
 
-**Nalarin.id** adalah platform persiapan tes online untuk **UTBK**, **UTUL UGM**, **SIMAK UI**, dan **CPNS**. Produk menyediakan bank soal, latihan dengan **Mode Latihan** dan **Mode Quiz**, tryout rutin, review jawaban, pembahasan, progress tracking, blog edukasi, serta subscription Free, Pro, dan Max.
+**Nalarin.id** adalah platform persiapan tes online untuk **UTBK**, **UTUL UGM**, **SIMAK UI**, dan **CPNS**. Produk menyediakan bank soal, latihan dengan **Mode Latihan** dan **Mode Quiz**, tryout rutin, review jawaban, pembahasan, materi pelajaran (video + teks), game kosakata interaktif, game grammar fill-in-the-blank, progress tracking, blog edukasi, serta subscription Free, Pro, dan Max.
 
 Produk mengambil inspirasi dari pola fitur aimasukptn: landing page, bank soal, mode latihan/quiz, tryout events, review pembahasan, progress tracking, dan premium access. Namun Nalarin.id dibuat lebih sederhana dan fokus pada MVP yang bisa dibangun cepat.
 
@@ -16,7 +16,10 @@ Produk mengambil inspirasi dari pola fitur aimasukptn: landing page, bank soal, 
 - Menyediakan review jawaban, pembahasan, dan progress tracking.
 - Menyediakan ranking tryout yang akurat dan dinamis melalui query.
 - Menyediakan monetisasi sederhana melalui plan Free, Pro, dan Max.
-- Memudahkan admin mengelola user, subscriber/payment, soal, practice, tryout, dan blog.
+- Menyediakan materi pelajaran berupa video YouTube dan artikel rich text untuk mendukung proses belajar mandiri.
+- Menyediakan game kosakata interaktif berbasis swipe card untuk melatih penguasaan kosakata.
+- Menyediakan game grammar fill-in-the-blank drag-and-drop untuk melatih tata bahasa Indonesia dan Inggris.
+- Memudahkan admin mengelola user, subscriber/payment, soal, practice, tryout, materi pelajaran, kosakata, soal grammar, dan blog.
 
 ---
 
@@ -44,6 +47,7 @@ Produk mengambil inspirasi dari pola fitur aimasukptn: landing page, bank soal, 
 - Generate explanation dengan AI dari field explanation di halaman create/edit question (autofill langsung, tanpa modal, syarat semua field wajib terisi).
 - Materi pelajaran (konten video YouTube private/unlisted dan teks rich text Tiptap, dikategorisasi per exam type dan subject).
 - Game Kosakata (swipe card interaktif, konfigurasi bahasa/kesulitan/tipe, data sesi tidak disimpan di database).
+- Game Grammar Fill in Blank (drag-and-drop isian kalimat, soal dibuat admin dengan sintaks placeholder `{{ N }}`, konfigurasi bahasa/kesulitan/kategori, data sesi tidak disimpan di database).
 
 ### 3.2 Out of Scope
 
@@ -84,6 +88,9 @@ User dapat:
 - Mendapatkan Pembahasan AI per soal di halaman review (khusus plan Pro dan Max).
 - Melihat ranking tryout jika plan mengizinkan.
 - Melihat progress belajar.
+- Mengakses materi pelajaran sesuai plan (gratis untuk materi `is_free = true`; Pro/Max untuk materi berbayar).
+- Bermain game kosakata (dapat diakses semua user tanpa batasan plan).
+- Bermain game grammar fill-in-the-blank (dapat diakses semua user tanpa batasan plan).
 - Mengubah profil.
 - Membeli plan Pro atau Max untuk exam type tertentu jika belum memiliki subscription aktif untuk exam type tersebut.
 
@@ -111,6 +118,7 @@ Admin dapat:
 - Manage blog.
 - Manage materi pelajaran (CRUD materi, termasuk video YouTube dan konten Tiptap).
 - Manage kosakata (CRUD kosakata untuk game kosakata).
+- Manage soal grammar (CRUD soal grammar fill-in-the-blank dengan sintaks placeholder `{{ N }}`).
 
 ---
 
@@ -192,10 +200,13 @@ Nilai `null` pada kolom kuota berarti **unlimited** (tidak ada batas). Admin dap
 Akses user terhadap fitur adalah gabungan dari **akses plan untuk exam type terkait** dan **setting konten**.
 
 - Konten (practice, tryout) selalu berelasi ke satu exam type melalui subject-nya. Akses user ke konten tersebut ditentukan oleh plan aktif user untuk exam type yang sama.
+- Materi pelajaran juga berelasi ke satu exam type melalui subject-nya. Akses user ke materi ditentukan oleh `access_free_materials` dan `access_paid_materials` pada plan aktif user untuk exam type yang sama — mengikuti pola yang sama dengan practice dan tryout.
 - Jika tryout menampilkan ranking tetapi plan user untuk exam type tersebut tidak mengizinkan ranking, user tidak dapat melihat ranking.
 - Jika plan user mengizinkan pembahasan manual (`access_manual_explanation`) tetapi practice/tryout belum merilis pembahasan, pembahasan tetap tidak tampil.
 - Pembahasan AI (`access_ai_explanation`) tersedia per-soal on-demand — hanya dikendalikan oleh plan user untuk exam type konten tersebut, tidak bergantung pada `show_explanation_after_submit`, jadwal rilis konten, maupun apakah pembahasan manual tersedia.
 - Akses pembahasan manual membutuhkan dua kondisi: setting konten mengizinkan **dan** plan user mengizinkan. Akses Pembahasan AI hanya membutuhkan satu kondisi: plan user mengizinkan (`access_ai_explanation = true`).
+- Game Kosakata tidak terikat pada exam type dan tidak memerlukan plan berbayar — dapat diakses semua user.
+- Game Grammar Fill in Blank tidak terikat pada exam type dan tidak memerlukan plan berbayar — dapat diakses semua user.
 
 ### 5.7 Jadwal Rilis Hasil, Ranking, dan Pembahasan Tryout
 
@@ -303,7 +314,7 @@ Sistem hanya menggunakan Google OAuth sebagai satu-satunya metode autentikasi. T
 
 - Hero section.
 - Kategori tes: UTBK, UTUL UGM, SIMAK UI, CPNS.
-- Highlight fitur: bank soal, mode latihan, mode quiz, tryout rutin, ranking, review pembahasan, progress tracking.
+- Highlight fitur: bank soal, mode latihan, mode quiz, tryout rutin, ranking, review pembahasan, materi pelajaran, game kosakata, game grammar, progress tracking.
 - Cara kerja.
 - Plan harga.
 - FAQ.
@@ -556,8 +567,6 @@ ATURAN PENULISAN:
 - `{manual_explanation_block}`: jika `manual_explanation` ada, diisi dengan `Pembahasan dari admin: {manual_explanation}` agar AI dapat memperluas atau melengkapinya. Jika null, blok ini dikosongkan.
 - `{answer_status}`: diisi `"benar"`, `"salah"`, atau `"tidak dijawab"`.
 
-
-
 ### 7.7 Hasil dan Ranking Tryout
 
 #### 7.7.1 Halaman Hasil Tryout
@@ -605,7 +614,6 @@ Halaman ini ditampilkan setelah user selesai mengerjakan tryout (session berstat
 - Ranking dihitung secara dinamis dari query, tidak disimpan sebagai field di database.
 - Hanya `tryout_sessions` berstatus `graded` yang masuk perhitungan ranking.
 
-
 ### 7.8 Progress / Tracking
 
 #### Mekanisme Update
@@ -643,7 +651,6 @@ Waktu update terakhir ditampilkan sebagai teks kecil di bawah kartu statistik, b
 - Daftar practice dan tryout yang sudah diselesaikan (status `graded`), diurutkan dari yang terbaru.
 - Tidak ada filter periode — user cukup scroll untuk melihat riwayat lebih lama.
 - Per item: label tipe (Latihan/Quiz/Tryout), label jenis ujian, judul konten, tanggal pengerjaan, jumlah benar, jumlah salah, skor, dan tombol Review (jika tersedia sesuai setting dan plan).
-
 
 ### 7.9 Blog
 
@@ -793,6 +800,104 @@ Setelah konfigurasi diset, sistem mengambil kosakata dari database yang cocok de
 - Data sesi tidak tersimpan di database — refresh menghapus progres.
 - Jika kosakata tersedia kurang dari jumlah soal yang dikonfigurasi, game tetap dapat dimainkan dengan jumlah soal yang tersedia (minimal 5 soal).
 - Game dapat diakses oleh semua user (tidak memerlukan plan berbayar).
+
+---
+
+### 7.13 Game Grammar Fill in Blank
+
+#### Deskripsi
+
+Game interaktif drag-and-drop di mana user melengkapi kalimat rumpang dengan cara menyeret chip kata ke dalam kotak blank yang tersedia. Soal dibuat admin menggunakan sintaks placeholder `{{ N }}` di dalam kalimat. Game tersedia dalam bahasa Indonesia, Inggris, atau campuran. Data sesi tidak disimpan di database; refresh halaman mengulang sesi dari awal.
+
+#### Konfigurasi Sebelum Mulai
+
+| Parameter | Pilihan |
+|---|---|
+| Bahasa | Indonesia, Inggris, Campuran |
+| Tingkat Kesulitan | Mudah, Sedang, Sulit |
+| Kategori | Semua, atau kategori tertentu (misal: Simple Present, Past Tense, Kata Depan, Konjungsi) |
+| Jumlah Soal | 5, 10, 15 (default: 10) |
+
+Jika tidak ada soal yang cocok dengan filter, sistem menampilkan pesan yang sesuai dan user diminta mengubah konfigurasi.
+
+#### Mekanisme Game
+
+**Layout satu soal:**
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  Soal 3 / 10                                             │
+│                                                          │
+│  She [   1   ] to school every day and [   2   ]        │
+│  her homework at night.                                  │
+│                                                          │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐       │
+│  │  goes   │ │   do    │ │  does   │ │  going  │       │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘       │
+│                                                          │
+│                      [ Submit ]                          │
+└──────────────────────────────────────────────────────────┘
+```
+
+- Kalimat ditampilkan di bagian atas dengan kotak blank bertanda nomor (`[ 1 ]`, `[ 2 ]`, dst.) menggantikan posisi setiap `{{ N }}`.
+- Di bawah kalimat: pool chip kata yang dapat di-drag — berisi semua `answers` (jawaban benar dari semua blank) ditambah `distractors` (opsi salah), semuanya diacak urutannya.
+- Tombol **Submit** aktif hanya jika semua kotak blank sudah terisi.
+- Nomor soal dan progress bar ditampilkan di atas.
+
+**Cara mengisi blank:**
+
+Dua mekanisme yang keduanya harus didukung:
+
+1. **Drag and drop** — user menyeret chip dari pool dan melepasnya di atas kotak blank. Efek visual: chip "mengikuti" kursor/jari saat diseret; kotak blank berubah warna (highlight) saat chip didekatkan.
+2. **Klik/tap to place** — user mengklik/mengetuk chip di pool (chip terpilih, diberi border highlight), lalu mengklik/mengetuk kotak blank yang ingin diisi.
+
+**Pertukaran chip:**
+
+- Chip yang sudah ditempatkan di blank dapat diseret kembali ke pool (blank menjadi kosong kembali), atau ditukar langsung ke blank lain dengan menyeret chip dari blank A ke blank B.
+- Jika user menempatkan chip baru ke blank yang sudah terisi, chip lama otomatis kembali ke pool.
+
+**Feedback setelah Submit:**
+
+- Setiap blank yang benar berubah menjadi **hijau**.
+- Setiap blank yang salah berubah menjadi **merah** dan menampilkan jawaban yang benar di bawah blank tersebut.
+- Chip di pool dikunci (tidak dapat dipindah lagi).
+- Setelah jeda singkat (~2 detik) atau setelah user mengklik "Lanjut", pindah ke soal berikutnya.
+- Skor per soal: jumlah blank yang benar dibagi total blank dalam soal (penilaian partial per soal).
+
+**Akhir game:**
+
+Setelah semua soal selesai, tampilkan halaman ringkasan:
+
+- Total soal.
+- Total blank benar dari seluruh soal.
+- Total blank (jumlah seluruh blank di semua soal).
+- Akurasi keseluruhan (persentase blank benar).
+- Tombol "Main Lagi" (konfigurasi sama) dan "Ubah Konfigurasi".
+
+#### Mekanisme Pengambilan Soal
+
+- Soal diambil dari tabel `grammar_questions` berstatus `published` berdasarkan filter konfigurasi (language, difficulty, category).
+- Soal diacak setiap sesi (Fisher-Yates shuffle server-side).
+- Untuk setiap soal, sistem mengirim:
+  - `sentence_template` yang sudah diproses: placeholder `{{ N }}` diganti token internal yang aman untuk dirender sebagai blank box di client.
+  - `answer_count`: jumlah blank dalam soal (tanpa mengirim `answers` langsung agar tidak mudah di-inspect).
+  - `distractors`: opsi salah.
+  - `chips`: array gabungan semua `answers` + `distractors`, diacak server-side. Client merender chips ini sebagai chip yang dapat didrag.
+- **Jawaban (`answers`) tidak boleh dikirim ke client sebelum user submit.** Setelah user submit, client mengirim jawaban user ke server untuk divalidasi; server merespons dengan penilaian per blank.
+- Validasi jawaban di server: perbandingan **case-insensitive** dan **trim whitespace**.
+- **Data sesi tidak disimpan di database.** Jika halaman di-refresh, sesi dimulai dari awal dengan soal baru.
+
+#### Acceptance Criteria
+
+- Drag-and-drop berfungsi di desktop (mouse) dan mobile (touch/tap).
+- Highlight drop zone saat chip didekatkan.
+- Pertukaran chip antar blank dan kembali ke pool berjalan lancar.
+- Submit hanya aktif jika semua blank terisi.
+- Feedback benar/salah tampil jelas per blank setelah submit.
+- Jawaban tidak dikirim ke client sebelum user submit (divalidasi server-side).
+- Validasi jawaban case-insensitive dan toleran whitespace.
+- Jika soal yang tersedia kurang dari jumlah yang dikonfigurasi, game tetap berjalan dengan jumlah soal yang ada (minimal 3 soal).
+- Game dapat diakses semua user tanpa batasan plan.
 
 ---
 
@@ -1173,6 +1278,85 @@ Admin dapat:
 - Baris dengan error ditampilkan per baris; admin dapat memilih membatalkan import atau hanya mengimport baris valid.
 - Kosakata hasil import masuk status `draft` secara default.
 - `word` + `language` + `type` tidak harus unik (boleh ada kosakata dengan kata yang sama tetapi tipe atau bahasa berbeda).
+
+### 8.11 Manage Grammar Questions
+
+Admin dapat:
+
+- Melihat daftar soal grammar dengan filter bahasa, kesulitan, kategori, dan status.
+- Membuat soal grammar baru.
+- Mengedit soal grammar yang sudah ada.
+- Mengubah status soal: `draft`, `published`, `archived`.
+- Menghapus soal berstatus `draft`.
+- Import soal grammar via Excel.
+
+#### UI Pembuatan Soal dengan Sintaks Placeholder
+
+Ini adalah bagian paling kritis dari admin panel grammar. Admin mengisi soal menggunakan textarea atau field teks biasa dengan sintaks `{{ N }}` untuk menandai posisi blank:
+
+**Contoh input admin:**
+
+```
+She {{ 1 }} to school every day and {{ 2 }} her homework at night.
+```
+
+**Mekanisme dinamis di admin panel:**
+
+- Admin mengetik kalimat di field `sentence_template`.
+- Setiap kali admin mengetik `{{ N }}` (dengan N adalah angka integer ≥ 1), sistem **secara otomatis mendeteksi dan menampilkan field jawaban** berlabel "Jawaban untuk blank {{ N }}" di bawah textarea.
+- Field jawaban muncul sesuai urutan N yang ditemukan di template ({{ 1 }} muncul pertama, {{ 2 }} kedua, dst.).
+- Jika admin menghapus `{{ N }}` dari template, field jawaban yang bersesuaian hilang secara otomatis dan data di field itu dikosongkan.
+- Jika urutan N tidak berurutan (misalnya ada `{{ 1 }}` dan `{{ 3 }}` tapi tidak ada `{{ 2 }}`), sistem menampilkan pesan validasi: *"Placeholder harus berurutan mulai dari {{ 1 }}. Placeholder {{ 2 }} belum ada."*
+- Jumlah placeholder maksimal per soal: **5**.
+
+**Preview soal:**
+
+Di bawah form, tersedia preview real-time yang merender `sentence_template` dengan kotak blank visual (seperti yang akan dilihat user di game), sehingga admin dapat langsung mengecek tampilan soal.
+
+**Field lainnya:**
+
+| Field | Keterangan |
+|---|---|
+| `sentence_template` | Kalimat dengan placeholder `{{ N }}` (wajib) |
+| Jawaban blank 1 ... N | Field yang muncul dinamis per placeholder (semua wajib diisi sebelum publish) |
+| `language` | Indonesia atau Inggris (wajib) |
+| `difficulty` | Mudah, Sedang, Sulit (wajib) |
+| `category` | Teks bebas, opsional — contoh: "Simple Present", "Kata Depan", "Past Tense". Digunakan sebagai filter di layar konfigurasi game. |
+| `distractors` | Satu atau lebih opsi salah yang ditambahkan ke pool chip (wajib minimal 1) |
+| `status` | draft / published / archived |
+
+**Validasi publish soal grammar:**
+
+- `sentence_template` tidak boleh kosong.
+- Harus memiliki minimal satu placeholder (`{{ 1 }}` wajib ada).
+- Placeholder harus berurutan mulai dari `{{ 1 }}` tanpa lewatan.
+- Semua field jawaban (sesuai jumlah placeholder) wajib diisi.
+- Minimal satu `distractors` wajib diisi.
+- Jawaban yang benar tidak boleh ada dalam daftar `distractors` (case-insensitive) — sistem memvalidasi dan menampilkan peringatan jika terdeteksi duplikasi.
+
+#### Template Import Excel Soal Grammar
+
+| Kolom | Keterangan |
+|---|---|
+| `sentence_template` | Kalimat dengan placeholder `{{ N }}` (wajib) |
+| `answer_1` | Jawaban untuk blank {{ 1 }} (wajib) |
+| `answer_2` | Jawaban untuk blank {{ 2 }} (wajib jika ada {{ 2 }} di template) |
+| `answer_3` | Jawaban untuk blank {{ 3 }} (opsional) |
+| `answer_4` | Jawaban untuk blank {{ 4 }} (opsional) |
+| `answer_5` | Jawaban untuk blank {{ 5 }} (opsional) |
+| `language` | Nilai: `id` atau `en` (wajib) |
+| `difficulty` | Nilai: `easy`, `medium`, `hard` (wajib) |
+| `category` | Kategori bebas (opsional) |
+| `distractor_1` | Opsi salah pertama (wajib) |
+| `distractor_2` | Opsi salah kedua (opsional) |
+| `distractor_3` | Opsi salah ketiga (opsional) |
+
+**Behavior import:**
+
+- Sistem memvalidasi setiap baris: memastikan jumlah kolom `answer_N` sesuai dengan jumlah placeholder di `sentence_template`, serta memastikan placeholder berurutan.
+- Baris dengan error ditampilkan per baris; admin dapat memilih membatalkan semua atau hanya mengimport baris valid.
+- Soal hasil import masuk status `draft` secara default.
+- Validasi duplikasi jawaban vs distractor dijalankan per baris saat import.
 
 ---
 
@@ -1923,6 +2107,33 @@ Menyimpan data kosakata yang digunakan dalam Game Kosakata. Setiap record mewaki
 
 **Catatan game:** Saat user memulai game, sistem mengambil kosakata berstatus `published` sesuai filter (language, difficulty, type), mengacaknya, dan mengirim semua soal ke client dalam satu response. Setiap soal menampilkan `correct_meaning` sebagai satu pilihan dan satu entry acak dari `wrong_options` sebagai pilihan lainnya. Posisi kiri/kanan diacak per soal. Data sesi (urutan soal, jawaban user) tidak disimpan di database — client menyimpan state sesi dalam memori browser saja.
 
+### 10.31 grammar_questions
+
+Menyimpan soal grammar fill-in-the-blank yang digunakan dalam Game Grammar. Setiap record merepresentasikan satu kalimat dengan satu atau lebih posisi blank beserta jawaban benarnya dan opsi salah (distractors).
+
+| Field | Keterangan |
+|---|---|
+| id | Primary key |
+| language | enum VocabularyLanguage (`id` = Indonesia, `en` = Inggris) — menggunakan enum yang sama dengan `vocabularies` |
+| difficulty | enum QuestionDifficulty (`easy`, `medium`, `hard`) — menggunakan enum yang sama dengan soal bank |
+| category | VARCHAR nullable — kategori grammar bebas (contoh: "Simple Present", "Kata Depan", "Past Tense"). Digunakan untuk filter di layar konfigurasi game dan filter admin. Tidak divalidasi sebagai enum agar admin bebas menambah kategori baru tanpa perlu migrasi. |
+| sentence_template | TEXT — kalimat dengan placeholder `{{ N }}` (N dimulai dari 1, berurutan). Contoh: `"She {{ 1 }} to school every day and {{ 2 }} her homework at night."` |
+| answers | JSON — array of objects berurutan berdasarkan `order`, masing-masing merepresentasikan jawaban benar untuk satu blank. Format: `[{"order": 1, "answer": "goes"}, {"order": 2, "answer": "does"}]`. Urutan wajib sesuai nomor placeholder di `sentence_template`. |
+| distractors | JSON — array of strings berisi opsi salah yang ditampilkan sebagai chip tambahan di pool. Minimal 1 elemen. Tidak boleh mengandung nilai yang sama dengan salah satu `answers` (case-insensitive). Contoh: `["go", "going", "did", "doing"]` |
+| status | enum ContentStatus |
+| created_by | FK users, nullable |
+| created_at | Tanggal dibuat |
+| updated_at | Tanggal update |
+
+**Catatan desain `answers` vs `distractors`:**
+
+Field `answers` dan `distractors` disimpan terpisah secara sengaja:
+
+- `answers` adalah data sensitif yang **tidak dikirim ke client** saat soal di-fetch untuk game. Server menggunakan `answers` hanya saat memvalidasi submit jawaban user.
+- `distractors` dikirim ke client bersama chip jawaban (yang sudah diacak server-side) untuk membentuk pool chip. Dengan pemisahan ini, client tidak dapat mengintip jawaban lewat network response.
+
+**Catatan game:** Saat user memulai game grammar, sistem mengambil soal berstatus `published` sesuai filter, mengacaknya server-side, lalu untuk setiap soal mengirim: kalimat dengan placeholder dirender menjadi token blank, jumlah blank (`answer_count`), dan array `chips` (gabungan semua nilai `answers` + `distractors`, diacak server-side) — **tanpa** mengirim field `answers`. Setelah user submit, jawaban dikirim ke server untuk divalidasi per blank secara case-insensitive. Data sesi tidak disimpan di database.
+
 ---
 
 ## 11. Unique Constraints Penting
@@ -1957,6 +2168,7 @@ Menyimpan data kosakata yang digunakan dalam Game Kosakata. Setiap record mewaki
 | blog_posts | slug |
 | materials | **exam_type_id + slug** (scoped per exam type, bukan globally unique — mengikuti pola yang sama dengan `practices`) |
 | vocabularies | tidak ada unique constraint wajib — kata yang sama boleh hadir dengan tipe atau bahasa berbeda |
+| grammar_questions | tidak ada unique constraint wajib — kalimat yang sama boleh digunakan untuk kategori atau bahasa berbeda |
 
 Catatan: karena MySQL tidak mendukung partial unique index sederhana untuk semua kasus, beberapa aturan seperti satu subscription aktif per kombinasi `user_id + exam_type_id` dan satu payment pending aktif per `user_id + exam_type_id` dijaga di service layer dengan transaction/locking.
 
@@ -1964,7 +2176,7 @@ Catatan: karena MySQL tidak mendukung partial unique index sederhana untuk semua
 
 ## 12. Relasi Utama
 
-- `exam_types` memiliki banyak `subjects`, `practices`, dan `tryouts`.
+- `exam_types` memiliki banyak `subjects`, `practices`, `tryouts`, dan `materials`.
 - `subjects` memiliki banyak `topics` dan `questions`.
 - `questions` memiliki banyak `question_options`.
 - `practices` memiliki banyak `practice_questions`.
@@ -1985,6 +2197,7 @@ Catatan: karena MySQL tidak mendukung partial unique index sederhana untuk semua
 - `users` memiliki banyak `user_sessions` (satu per perangkat/login aktif).
 - `exam_types` memiliki banyak `materials`. `subjects` memiliki banyak `materials`. `topics` memiliki banyak `materials` (nullable). Relasi ini mengikuti pola denormalisasi yang sama dengan `practices`.
 - `vocabularies` adalah tabel standalone yang tidak berelasi ke `exam_types` atau `subjects`. Kosakata bersifat lintas ujian dan dapat digunakan oleh semua user tanpa konteks exam type.
+- `grammar_questions` adalah tabel standalone yang tidak berelasi ke `exam_types` atau `subjects`. Soal grammar bersifat lintas ujian. Field `category` adalah teks bebas, bukan FK ke tabel terpisah.
 
 ---
 
@@ -1994,6 +2207,7 @@ Catatan: karena MySQL tidak mendukung partial unique index sederhana untuk semua
 
 - Semua field `slug` menggunakan format lowercase kebab-case: hanya huruf `a-z`, angka `0-9`, dan tanda hubung. Spasi dan karakter khusus dikonversi saat penyimpanan.
 - **URL routing untuk `practices`:** Karena `practices.slug` unik per `exam_type_id` (bukan globally unique), URL practice harus menyertakan exam type sebagai konteks. Format URL yang wajib digunakan: `/latihan/{exam_type_slug}/{practice_slug}`. Format `/latihan/{practice_slug}` tanpa exam type **tidak boleh digunakan** karena slug tidak globally unique dan bisa ambigu. Endpoint API juga mengikuti pola ini: `GET /api/practices/{exam_type_slug}/{practice_slug}`.
+- **URL routing untuk `materials`:** Karena `materials.slug` juga unik per `exam_type_id` (mengikuti pola yang sama dengan `practices`), URL materi wajib menyertakan exam type sebagai konteks. Format URL: `/materi/{exam_type_slug}/{material_slug}`. Endpoint API: `GET /api/materials/{exam_type_slug}/{material_slug}`. Format tanpa prefix exam type tidak boleh digunakan.
 - **URL routing untuk `tryouts`:** `tryouts.slug` globally unique, sehingga URL cukup `/tryout/{tryout_slug}` tanpa perlu prefix exam type.
 - Pada `user_progress_snapshots`, jika `subject_id > 0`, maka `exam_type_id` juga harus `> 0` dan subject tersebut harus berasal dari exam type yang sama. Kombinasi `exam_type_id = 0` dan `subject_id > 0` tidak valid.
 - Nilai sentinel `0` pada `user_progress_snapshots` hanya boleh digunakan untuk scope agregat, bukan untuk relasi nyata ke `exam_types` atau `subjects`.
@@ -2133,7 +2347,7 @@ Setelah seluruh tryout session di-submit (semua section selesai):
 **Validasi pada saat create dan update (early feedback):**
 Service layer memvalidasi konsistensi relasi pada saat operasi create dan update, bukan hanya saat publish. Validasi yang dijalankan pada create/update:
 
-- Subject harus berasal dari exam type yang sama dengan practice/tryout.
+- Subject harus berasal dari exam type yang sama dengan practice/tryout/materials.
 - Topic (jika diisi) harus berasal dari subject yang dipilih.
 - Jika `starts_at` dan `ends_at` keduanya diisi, `ends_at` harus lebih besar dari `starts_at`.
 - `enforce_end_time` tidak boleh diset `true` jika `ends_at` null atau belum diisi.
@@ -2154,7 +2368,7 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
   - Jadwal, setting tampilan hasil/ranking/pembahasan, dan `allow_review_before_submit` hanya dapat diedit selama belum ada `tryout_sessions` untuk tryout tersebut.
   - Section, soal, `wrong_answer_penalty`, `shuffle_questions`, dan `shuffle_options` dilarang diedit setelah ada session apapun.
   - Transisi `published → draft` hanya diizinkan jika belum ada session. `published → archived` diizinkan kapan saja. `archived` bersifat final.
-- Field `created_by` pada questions, practices, dan tryouts wajib diisi untuk konten yang dibuat melalui admin panel. Nullable hanya untuk data seed, migrasi, atau import sistem lama.
+- Field `created_by` pada questions, practices, tryouts, **materials, vocabularies, dan grammar_questions** wajib diisi untuk konten yang dibuat melalui admin panel. Nullable hanya untuk data seed, migrasi, atau import sistem lama.
 - Record `practice_questions` tidak boleh dihapus jika sudah direferensikan oleh `practice_session_questions`. Jika soal harus dikeluarkan dari practice, buat versi baru practice.
 - Record `tryout_questions` tidak boleh dihapus jika sudah direferensikan oleh `tryout_session_questions`. Jika soal harus dikeluarkan dari section, buat versi baru tryout.
 - `scoring_rule` wajib diisi (NOT NULL) untuk soal bertipe `multiple_answer`. Validasi ini diterapkan di level service layer dan import Excel.
@@ -2310,8 +2524,9 @@ Hanya berlaku untuk akun lama yang dimigrasikan dan belum memiliki `email_verifi
 - Blog categories dan posts.
 - Landing page final.
 
-### Phase 7 — Materi Pelajaran dan Game Kosakata
+### Phase 7 — Materi Pelajaran, Game Kosakata, dan Game Grammar
 
+- Migrasi `exam_type_plans`: menambah kolom `access_free_materials` (default `true`) dan `access_paid_materials` (default `false` untuk Free, `true` untuk Pro/Max). Nilai default diisi via migration script, bukan seed ulang.
 - Tabel `materials` dengan field `exam_type_id`, `subject_id`, `topic_id`, `youtube_url`, `content` (Tiptap), `is_free`, `status`, `published_at`.
 - Halaman daftar materi (grid kartu, filter exam type/subject/topic).
 - Halaman detail materi (embed YouTube player + render konten Tiptap).
@@ -2322,6 +2537,11 @@ Hanya berlaku untuk akun lama yang dimigrasikan dan belum memiliki `email_verifi
 - Mekanisme swipe kartu dengan efek tilt, snap-back, dan animasi Framer Motion.
 - Fetch soal game dari server (satu kali per sesi, diacak server-side); state sesi disimpan di memori browser saja — tidak ada write ke database saat bermain.
 - Admin panel: CRUD kosakata, import kosakata via Excel, filter dan manajemen status.
+- Tabel `grammar_questions` dengan field `sentence_template` (teks dengan placeholder `{{ N }}`), `answers` (JSON array berurutan), `distractors` (JSON array), `language`, `difficulty`, `category` (teks bebas nullable), `status`.
+- Halaman Game Grammar: layar konfigurasi (bahasa/kesulitan/kategori/jumlah soal), game drag-and-drop fill-in-the-blank, feedback per blank setelah submit, halaman ringkasan sesi.
+- Server-side: parsing dan validasi placeholder `{{ N }}`, endpoint fetch soal (mengirim chip gabungan tanpa `answers`), endpoint submit (validasi per blank case-insensitive, return penilaian per blank).
+- Client-side: rendering blank box dari token placeholder, mekanisme drag-and-drop dan tap-to-place, pertukaran chip antar blank, preview soal di admin panel.
+- Admin panel: CRUD soal grammar, UI placeholder dinamis (field jawaban muncul otomatis saat placeholder dideteksi), preview real-time soal, validasi publish, import soal grammar via Excel.
 
 ---
 
@@ -2341,5 +2561,6 @@ Hanya berlaku untuk akun lama yang dimigrasikan dan belum memiliki `email_verifi
 - Jumlah materi yang dipublish.
 - Jumlah view halaman detail materi.
 - Jumlah kosakata yang dipublish untuk Game Kosakata.
+- Jumlah soal grammar yang dipublish untuk Game Grammar.
 
 ---
