@@ -12,8 +12,8 @@ export default async function Page() {
     <VocabularyFormPage
       mode="create"
       title="Create Vocabulary"
-      description="Create a vocabulary card for the free game and define the correct meaning plus distractors."
-      submitLabel="Create vocabulary"
+      description="Create a vocabulary card for the game and define the correct meaning plus distractors."
+      submitLabel="Create Vocabulary"
       backHref="/admin/vocabularies"
     />
   )

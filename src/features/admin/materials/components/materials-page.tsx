@@ -10,6 +10,7 @@ import {
   EyeIcon,
   PencilLineIcon,
   PlusIcon,
+  FilterIcon,
   RocketIcon,
   ArchiveIcon,
   Trash2Icon,
@@ -37,6 +38,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Field, FieldContent, FieldLabel } from "@/components/ui/field"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
@@ -294,6 +303,7 @@ export function MaterialsPage({ materials, lookups }: MaterialsPageProps) {
   const [examTypeFilter, setExamTypeFilter] = useState(ALL_VALUE)
   const [subjectFilter, setSubjectFilter] = useState(ALL_VALUE)
   const [statusFilter, setStatusFilter] = useState(ALL_VALUE)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
 
   const filteredSubjects = useMemo(() => {
     if (examTypeFilter === ALL_VALUE) {
@@ -402,88 +412,6 @@ export function MaterialsPage({ materials, lookups }: MaterialsPageProps) {
         }
       />
 
-      <div className="grid gap-4 rounded-2xl border border-border/60 bg-card p-4 shadow-sm md:grid-cols-4">
-        <Field>
-          <FieldContent>
-            <FieldLabel>Exam Type</FieldLabel>
-          </FieldContent>
-          <Select
-            value={examTypeFilter}
-            onValueChange={(value) => {
-              setExamTypeFilter(value)
-              setSubjectFilter(ALL_VALUE)
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="All exam types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL_VALUE}>All exam types</SelectItem>
-              {lookups.examTypes.map((examType) => (
-                <SelectItem key={examType.id} value={String(examType.id)}>
-                  {examType.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-
-        <Field>
-          <FieldContent>
-            <FieldLabel>Subject</FieldLabel>
-          </FieldContent>
-          <Select
-            value={subjectFilter}
-            onValueChange={setSubjectFilter}
-            disabled={filteredSubjects.length === 0}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="All subjects" />
-            </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_VALUE}>All subjects</SelectItem>
-                {filteredSubjects.map((subject) => (
-                  <SelectItem key={subject.id} value={String(subject.id)}>
-                    {subject.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-
-        <Field>
-          <FieldContent>
-            <FieldLabel>Status</FieldLabel>
-          </FieldContent>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL_VALUE}>All statuses</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
-            </SelectContent>
-          </Select>
-        </Field>
-
-        <div className="flex items-end justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full md:w-auto"
-            onClick={() => {
-              setExamTypeFilter(ALL_VALUE)
-              setSubjectFilter(ALL_VALUE)
-              setStatusFilter(ALL_VALUE)
-            }}
-          >
-            Reset Filters
-          </Button>
-        </div>
-      </div>
-
       <AdminDataTable
         data={filteredMaterials}
         columns={columns}
@@ -495,6 +423,25 @@ export function MaterialsPage({ materials, lookups }: MaterialsPageProps) {
           updatedAt: false,
         }}
         defaultPageSize="10"
+        toolbarActions={
+          <Button type="button" variant="outline" onClick={() => setIsFilterOpen(true)}>
+            <FilterIcon data-icon="inline-start" />
+            Filter
+          </Button>
+        }
+      />
+
+      <MaterialFilterDialog
+        open={isFilterOpen}
+        onOpenChange={setIsFilterOpen}
+        examTypeFilter={examTypeFilter}
+        setExamTypeFilter={setExamTypeFilter}
+        subjectFilter={subjectFilter}
+        setSubjectFilter={setSubjectFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        lookups={lookups}
+        filteredSubjects={filteredSubjects}
       />
 
       <AlertDialog
@@ -529,5 +476,124 @@ export function MaterialsPage({ materials, lookups }: MaterialsPageProps) {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+function MaterialFilterDialog({
+  open,
+  onOpenChange,
+  examTypeFilter,
+  setExamTypeFilter,
+  subjectFilter,
+  setSubjectFilter,
+  statusFilter,
+  setStatusFilter,
+  lookups,
+  filteredSubjects,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  examTypeFilter: string
+  setExamTypeFilter: (value: string) => void
+  subjectFilter: string
+  setSubjectFilter: (value: string) => void
+  statusFilter: string
+  setStatusFilter: (value: string) => void
+  lookups: MaterialsPageProps["lookups"]
+  filteredSubjects: MaterialSubjectLookup[]
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Filter Materials</DialogTitle>
+          <DialogDescription>Narrow the table using exam type, subject, and status.</DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field>
+            <FieldContent>
+              <FieldLabel>Exam Type</FieldLabel>
+            </FieldContent>
+            <Select
+              value={examTypeFilter}
+              onValueChange={(value) => {
+                setExamTypeFilter(value)
+                setSubjectFilter(ALL_VALUE)
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="All exam types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_VALUE}>All</SelectItem>
+                {lookups.examTypes.map((examType) => (
+                  <SelectItem key={examType.id} value={String(examType.id)}>
+                    {examType.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field>
+            <FieldContent>
+              <FieldLabel>Subject</FieldLabel>
+            </FieldContent>
+            <Select
+              value={subjectFilter}
+              onValueChange={setSubjectFilter}
+              disabled={filteredSubjects.length === 0}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="All subjects" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_VALUE}>All</SelectItem>
+                {filteredSubjects.map((subject) => (
+                  <SelectItem key={subject.id} value={String(subject.id)}>
+                    {subject.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field>
+            <FieldContent>
+              <FieldLabel>Status</FieldLabel>
+            </FieldContent>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_VALUE}>All</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setExamTypeFilter(ALL_VALUE)
+              setSubjectFilter(ALL_VALUE)
+              setStatusFilter(ALL_VALUE)
+            }}
+          >
+            Reset
+          </Button>
+          <Button type="button" onClick={() => onOpenChange(false)}>
+            Apply
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

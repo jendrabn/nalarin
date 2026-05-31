@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import type {
   Column,
   ColumnDef,
@@ -72,6 +72,7 @@ type AdminDataTableProps<TData> = {
   getRowId?: (row: TData, index: number) => string
   getRowCanSelect?: (row: TData) => boolean
   onDeleteSelected?: (rows: TData[]) => Promise<boolean> | boolean
+  toolbarActions?: ReactNode
 }
 
 const PAGE_SIZE_OPTIONS = ["10", "25", "50", "100", "-1"] as const
@@ -132,6 +133,7 @@ export function AdminDataTable<TData>({
   getRowId,
   getRowCanSelect,
   onDeleteSelected,
+  toolbarActions,
 }: AdminDataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] =
@@ -274,11 +276,13 @@ export function AdminDataTable<TData>({
               variant="destructive-solid"
               onClick={() => void handleDeleteSelected()}
               disabled={isDeletingSelected}
-            >
+              >
               <Trash2Icon data-icon="inline-start" />
               Delete ({selectedCount})
             </Button>
           ) : null}
+
+          {toolbarActions}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -375,7 +379,7 @@ export function AdminDataTable<TData>({
               <SelectGroup>
                 {PAGE_SIZE_OPTIONS.map((value) => (
                   <SelectItem key={value} value={value}>
-                    {value === ALL_PAGE_SIZE ? "All (-1)" : value}
+                    {value === ALL_PAGE_SIZE ? "All" : value}
                   </SelectItem>
                 ))}
               </SelectGroup>

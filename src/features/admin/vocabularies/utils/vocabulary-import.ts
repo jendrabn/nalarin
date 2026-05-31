@@ -25,6 +25,14 @@ export type VocabularyImportRowError = {
 export type ParsedVocabularyImportWorkbook = {
   rows: VocabularyImportRowValues[]
   rowErrors: VocabularyImportRowError[]
+  previewRows: VocabularyImportPreviewRow[]
+}
+
+export type VocabularyImportPreviewRow = {
+  rowNumber: number
+  values: Partial<VocabularyImportRowValues>
+  errors: string[]
+  isValid: boolean
 }
 
 export const vocabularyImportHeaders = [
@@ -142,6 +150,7 @@ export async function parseVocabularyImportWorkbook(
 
   const parsedRows: VocabularyImportRowValues[] = []
   const rowErrors: VocabularyImportRowError[] = []
+  const previewRows: VocabularyImportPreviewRow[] = []
 
   rows.forEach((row, index) => {
     const rowNumber = index + 2
@@ -167,20 +176,35 @@ export async function parseVocabularyImportWorkbook(
     const validated = vocabularyImportRowSchema.safeParse(normalized)
 
     if (!validated.success) {
+      const values = normalized as Partial<VocabularyImportRowValues>
+
       rowErrors.push({
         rowNumber,
         errors: validated.error.issues.map((issue) => issue.message),
-        values: normalized as Partial<VocabularyImportRowValues>,
+        values,
+      })
+      previewRows.push({
+        rowNumber,
+        values,
+        errors: validated.error.issues.map((issue) => issue.message),
+        isValid: false,
       })
       return
     }
 
     parsedRows.push(validated.data)
+    previewRows.push({
+      rowNumber,
+      values: validated.data,
+      errors: [],
+      isValid: true,
+    })
   })
 
   return {
     rows: parsedRows,
     rowErrors,
+    previewRows,
   }
 }
 

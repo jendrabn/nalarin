@@ -128,6 +128,11 @@ type TopicAccuracySnapshot = {
   topic_name: string;
   accuracy: number;
 };
+type GrammarQuestionAnswer = {
+  order: number;
+  answer: string;
+};
+type GrammarQuestionAnswerArray = GrammarQuestionAnswer[];
 
 const createdAt = () =>
   timestamp('created_at', { mode: 'date' }).defaultNow().notNull();
@@ -1340,5 +1345,34 @@ export const vocabularies = mysqlTable(
     ),
     index('vocabularies_status_created_at_idx').on(table.status, table.createdAt),
     index('vocabularies_created_by_idx').on(table.createdBy),
+  ],
+);
+
+export const grammarQuestions = mysqlTable(
+  'grammar_questions',
+  {
+    id: int('id', { unsigned: true }).autoincrement().primaryKey(),
+    language: vocabularyLanguageEnum.notNull(),
+    difficulty: questionDifficultyEnum.notNull(),
+    category: varchar('category', { length: 191 }),
+    sentenceTemplate: longtext('sentence_template').notNull(),
+    answers: json('answers').$type<GrammarQuestionAnswerArray>().notNull(),
+    distractors: json('distractors').$type<string[]>().notNull(),
+    status: contentStatusEnum.notNull(),
+    createdBy: int('created_by', { unsigned: true }).references(() => users.id),
+    ...auditColumns(),
+  },
+  (table) => [
+    index('grammar_questions_filter_idx').on(
+      table.language,
+      table.difficulty,
+      table.category,
+      table.status,
+    ),
+    index('grammar_questions_status_created_at_idx').on(
+      table.status,
+      table.createdAt,
+    ),
+    index('grammar_questions_created_by_idx').on(table.createdBy),
   ],
 );

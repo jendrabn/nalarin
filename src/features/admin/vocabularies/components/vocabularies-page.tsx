@@ -8,6 +8,7 @@ import {
   EllipsisVerticalIcon,
   EyeIcon,
   FileDownIcon,
+  FilterIcon,
   PencilLineIcon,
   PlusIcon,
   Trash2Icon,
@@ -35,6 +36,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Field, FieldContent, FieldLabel } from "@/components/ui/field"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getModelEnumBadgeMeta } from "@/lib/model-enums"
@@ -254,6 +263,7 @@ export function VocabulariesPage({ vocabularies }: VocabulariesPageProps) {
   const [statusFilter, setStatusFilter] = useState<FilterValue>("all")
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
 
   const filteredVocabularies = useMemo(() => {
     return vocabularies.filter((item) => {
@@ -314,7 +324,7 @@ export function VocabulariesPage({ vocabularies }: VocabulariesPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Vocabulary"
-        subtitle="Manage free vocabulary cards, meanings, distractors, and publication status for the game."
+        subtitle="Manage vocabulary cards, meanings, distractors, and publication status for the game."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline">
@@ -333,93 +343,6 @@ export function VocabulariesPage({ vocabularies }: VocabulariesPageProps) {
         }
       />
 
-      <div className="grid gap-4 xl:grid-cols-[repeat(4,minmax(0,1fr))]">
-        <Field>
-          <FieldContent>
-            <FieldLabel>Language</FieldLabel>
-          </FieldContent>
-          <Select value={languageFilter} onValueChange={setLanguageFilter}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="All languages" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All languages</SelectItem>
-              {vocabularyLanguageValues.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {vocabularyLanguageLabels[value]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-
-        <Field>
-          <FieldContent>
-            <FieldLabel>Difficulty</FieldLabel>
-          </FieldContent>
-          <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="All difficulties" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All difficulties</SelectItem>
-              {vocabularyDifficultyValues.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {vocabularyDifficultyLabels[value]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-
-        <Field>
-          <FieldContent>
-            <FieldLabel>Type</FieldLabel>
-          </FieldContent>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="All types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              {vocabularyTypeValues.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {vocabularyTypeLabels[value]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-
-        <Field>
-          <FieldContent>
-            <FieldLabel>Status</FieldLabel>
-          </FieldContent>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              {vocabularyStatusValues.map((value) => {
-                const badge = getModelEnumBadgeMeta("contentStatus", value)
-
-                return (
-                  <SelectItem key={value} value={value}>
-                    {badge.label}
-                  </SelectItem>
-                )
-              })}
-            </SelectContent>
-          </Select>
-        </Field>
-      </div>
-
-      <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-        All vocabulary cards are free content and available to every user. Use drafts for
-        unfinished entries and publish only when the meaning and distractors are ready.
-      </div>
-
       <AdminDataTable
         data={filteredVocabularies}
         columns={columns}
@@ -430,6 +353,12 @@ export function VocabulariesPage({ vocabularies }: VocabulariesPageProps) {
         enableRowSelection
         getRowId={(vocabulary) => String(vocabulary.id)}
         getRowCanSelect={(vocabulary) => vocabulary.status === "draft"}
+        toolbarActions={
+          <Button type="button" variant="outline" onClick={() => setIsFilterOpen(true)}>
+            <FilterIcon data-icon="inline-start" />
+            Filter
+          </Button>
+        }
         onDeleteSelected={async (selectedVocabularies) => {
           const result = await deleteVocabulariesAction(
             selectedVocabularies.map((vocabulary) => vocabulary.id),
@@ -444,6 +373,19 @@ export function VocabulariesPage({ vocabularies }: VocabulariesPageProps) {
           toast.error(result.message)
           return false
         }}
+      />
+
+      <VocabularyFilterDialog
+        open={isFilterOpen}
+        onOpenChange={setIsFilterOpen}
+        languageFilter={languageFilter}
+        setLanguageFilter={setLanguageFilter}
+        difficultyFilter={difficultyFilter}
+        setDifficultyFilter={setDifficultyFilter}
+        typeFilter={typeFilter}
+        setTypeFilter={setTypeFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
       />
 
       <AlertDialog
@@ -470,5 +412,142 @@ export function VocabulariesPage({ vocabularies }: VocabulariesPageProps) {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+function VocabularyFilterDialog({
+  open,
+  onOpenChange,
+  languageFilter,
+  setLanguageFilter,
+  difficultyFilter,
+  setDifficultyFilter,
+  typeFilter,
+  setTypeFilter,
+  statusFilter,
+  setStatusFilter,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  languageFilter: FilterValue
+  setLanguageFilter: (value: FilterValue) => void
+  difficultyFilter: FilterValue
+  setDifficultyFilter: (value: FilterValue) => void
+  typeFilter: FilterValue
+  setTypeFilter: (value: FilterValue) => void
+  statusFilter: FilterValue
+  setStatusFilter: (value: FilterValue) => void
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Filter Vocabulary</DialogTitle>
+          <DialogDescription>
+            Narrow the table using language, difficulty, type, and status.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field>
+            <FieldContent>
+              <FieldLabel>Language</FieldLabel>
+            </FieldContent>
+            <Select value={languageFilter} onValueChange={setLanguageFilter}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="All languages" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                {vocabularyLanguageValues.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {vocabularyLanguageLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field>
+            <FieldContent>
+              <FieldLabel>Difficulty</FieldLabel>
+            </FieldContent>
+            <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="All difficulties" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                {vocabularyDifficultyValues.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {vocabularyDifficultyLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field>
+            <FieldContent>
+              <FieldLabel>Type</FieldLabel>
+            </FieldContent>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="All types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                {vocabularyTypeValues.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {vocabularyTypeLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field>
+            <FieldContent>
+              <FieldLabel>Status</FieldLabel>
+            </FieldContent>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                {vocabularyStatusValues.map((value) => {
+                  const badge = getModelEnumBadgeMeta("contentStatus", value)
+
+                  return (
+                    <SelectItem key={value} value={value}>
+                      {badge.label}
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setLanguageFilter("all")
+              setDifficultyFilter("all")
+              setTypeFilter("all")
+              setStatusFilter("all")
+            }}
+          >
+            Reset
+          </Button>
+          <Button type="button" onClick={() => onOpenChange(false)}>
+            Apply
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

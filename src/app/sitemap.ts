@@ -46,6 +46,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.78,
     },
     {
+      url: absoluteUrl("/grammar"),
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.78,
+    },
+    {
       url: absoluteUrl("/blog"),
       lastModified: now,
       changeFrequency: "weekly",

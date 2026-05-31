@@ -51,7 +51,7 @@ export default async function Page({ params }: EditVocabularyPageProps) {
       vocabularyId={id}
       title={`Edit ${vocabulary.word}`}
       description="Update the vocabulary card, meaning, distractors, and status."
-      submitLabel="Save changes"
+      submitLabel="Save Changes"
       backHref={`/admin/vocabularies/${id}`}
       initialValues={vocabulary}
     />

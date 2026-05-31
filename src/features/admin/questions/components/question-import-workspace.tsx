@@ -384,7 +384,7 @@ export function QuestionImportWorkspace({ mode, lookups }: QuestionImportWorkspa
               </div>
 
               <div className="overflow-hidden rounded-2xl border border-border/60">
-                <Table>
+                <Table className="text-sm">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-16">ROW</TableHead>

@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react"
 import {
   BookOpenCheckIcon,
-  BookTextIcon,
+  BookOpenTextIcon,
   CreditCardIcon,
   FileQuestionIcon,
   FileTextIcon,
@@ -15,6 +15,7 @@ import {
   TrophyIcon,
   UserRoundCheckIcon,
   UsersRoundIcon,
+  SpellCheckIcon,
 } from "lucide-react"
 
 export type AdminNavigationItem = {
@@ -110,16 +111,27 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
         description: "Video and text learning content",
       },
       {
-        title: "Vocabulary",
-        href: "/admin/vocabularies",
-        icon: BookTextIcon,
-        description: "Free word game content",
-      },
-      {
         title: "Tryouts",
         href: "/admin/tryouts",
         icon: TrophyIcon,
         description: "Multi-section tryouts",
+      },
+    ],
+  },
+  {
+    title: "Game",
+    items: [
+      {
+        title: "Grammar",
+        href: "/admin/grammar",
+        icon: SpellCheckIcon,
+        description: "Fill in blank grammar questions",
+      },
+      {
+        title: "Vocabulary",
+        href: "/admin/vocabularies",
+        icon: BookOpenTextIcon,
+        description: "Free word game content",
       },
     ],
   },

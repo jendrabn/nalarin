@@ -23,13 +23,13 @@ import {
   vocabularyTypeLabels,
   vocabularyTypeValues,
 } from "../constants"
-import type { VocabularyImportRowValues } from "../schemas"
 import {
   downloadVocabularyImportTemplate,
   parseVocabularyImportWorkbook,
   type ParsedVocabularyImportWorkbook,
+  type VocabularyImportPreviewRow,
 } from "../utils/vocabulary-import"
-import { formatVocabularyWrongOptions, previewVocabularyText } from "../utils/vocabulary"
+import { previewVocabularyText } from "../utils/vocabulary"
 
 const STORAGE_KEY = "nalarin-admin-vocabulary-import"
 
@@ -96,6 +96,17 @@ function CopyableBadge({
   )
 }
 
+function displayVocabularyLabel(
+  labels: Record<string, string>,
+  value?: string | null,
+) {
+  if (!value) {
+    return "-"
+  }
+
+  return labels[value] ?? value
+}
+
 function AvailableValuesReference() {
   return (
     <Card>
@@ -108,7 +119,7 @@ function AvailableValuesReference() {
       <CardContent className="space-y-6">
         <div className="grid gap-4 md:grid-cols-4">
           <div className="space-y-2">
-            <p className="text-sm font-medium">language</p>
+            <p className="text-sm font-medium text-foreground">language</p>
             <div className="flex flex-wrap gap-2">
               {vocabularyLanguageValues.map((value) => (
                 <CopyableBadge key={value} value={value} />
@@ -116,7 +127,7 @@ function AvailableValuesReference() {
             </div>
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium">difficulty</p>
+            <p className="text-sm font-medium text-foreground">difficulty</p>
             <div className="flex flex-wrap gap-2">
               {vocabularyDifficultyValues.map((value) => (
                 <CopyableBadge key={value} value={value} />
@@ -124,7 +135,7 @@ function AvailableValuesReference() {
             </div>
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium">type</p>
+            <p className="text-sm font-medium text-foreground">type</p>
             <div className="flex flex-wrap gap-2">
               {vocabularyTypeValues.map((value) => (
                 <CopyableBadge key={value} value={value} />
@@ -132,14 +143,10 @@ function AvailableValuesReference() {
             </div>
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium">status</p>
+            <p className="text-sm font-medium text-foreground">status</p>
             <div className="flex flex-wrap gap-2">
               {vocabularyStatusValues.map((value) => (
-                <CopyableBadge
-                  key={value}
-                  value={value}
-                  variant={value === "published" ? "default" : "outline"}
-                />
+                <CopyableBadge key={value} value={value} />
               ))}
             </div>
           </div>
@@ -165,150 +172,86 @@ function AvailableValuesReference() {
 
 function ImportSummary({ payload }: { payload: StoredImportPayload }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Import Preview</CardTitle>
-        <CardDescription>
-          Review the parsed rows before importing them into the vocabulary bank.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              File
-            </p>
-            <p className="mt-1 text-sm font-medium text-foreground">
-              {payload.fileName ?? "Uploaded workbook"}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              Valid rows
-            </p>
-            <p className="mt-1 text-sm font-medium text-foreground">{payload.rows.length}</p>
-          </div>
-          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              Invalid rows
-            </p>
-            <p className="mt-1 text-sm font-medium text-foreground">
-              {payload.rowErrors.length}
-            </p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="grid gap-3 md:grid-cols-3">
+      <div className="rounded-xl border border-border/60 p-4">
+        <p className="text-sm text-muted-foreground">Valid rows</p>
+        <p className="mt-2 text-2xl font-semibold">{payload.rows.length}</p>
+      </div>
+      <div className="rounded-xl border border-border/60 p-4">
+        <p className="text-sm text-muted-foreground">Invalid rows</p>
+        <p className="mt-2 text-2xl font-semibold">{payload.rowErrors.length}</p>
+      </div>
+      <div className="rounded-xl border border-border/60 p-4">
+        <p className="text-sm text-muted-foreground">File</p>
+        <p className="mt-2 break-words text-sm font-medium text-foreground">
+          {payload.fileName ?? "Unknown workbook"}
+        </p>
+      </div>
+    </div>
   )
 }
 
-function ValidRowsTable({ rows }: { rows: VocabularyImportRowValues[] }) {
+function PreviewRowsTable({
+  rows,
+}: {
+  rows: VocabularyImportPreviewRow[]
+}) {
   if (rows.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Valid Rows</CardTitle>
-          <CardDescription>No valid rows were parsed from the workbook.</CardDescription>
+          <CardTitle>Preview Rows</CardTitle>
+          <CardDescription>No rows were parsed from the workbook.</CardDescription>
         </CardHeader>
       </Card>
     )
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Valid Rows</CardTitle>
-        <CardDescription>
-          These rows will be imported using the status specified in the workbook.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Word</TableHead>
-              <TableHead>Language</TableHead>
-              <TableHead>Difficulty</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Wrong Options</TableHead>
-              <TableHead>Example Sentence</TableHead>
-              <TableHead>Status</TableHead>
+    <div className="overflow-hidden rounded-2xl border border-border/60">
+      <Table className="text-sm">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-16">ROW</TableHead>
+            <TableHead>WORD</TableHead>
+            <TableHead>LANGUAGE</TableHead>
+            <TableHead>DIFFICULTY</TableHead>
+            <TableHead>TYPE</TableHead>
+            <TableHead>WRONG OPTIONS</TableHead>
+            <TableHead>EXAMPLE SENTENCE</TableHead>
+            <TableHead>STATUS</TableHead>
+            <TableHead>ERRORS</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row) => (
+            <TableRow key={row.rowNumber}>
+              <TableCell className="font-medium tabular-nums">{row.rowNumber}</TableCell>
+              <TableCell className="max-w-[18rem] whitespace-normal">{row.values.word || "-"}</TableCell>
+              <TableCell>{displayVocabularyLabel(vocabularyLanguageLabels, row.values.language)}</TableCell>
+              <TableCell>{displayVocabularyLabel(vocabularyDifficultyLabels, row.values.difficulty)}</TableCell>
+              <TableCell>{displayVocabularyLabel(vocabularyTypeLabels, row.values.type)}</TableCell>
+              <TableCell className="max-w-[18rem] whitespace-normal text-sm">
+                {[
+                  row.values.wrongOption1,
+                  row.values.wrongOption2,
+                  row.values.wrongOption3,
+                ]
+                  .filter((option) => option && option.trim().length > 0)
+                  .join(", ")}
+              </TableCell>
+              <TableCell className="max-w-[22rem] whitespace-normal text-sm">
+                {previewVocabularyText(row.values.exampleSentence ?? "", 120) || "-"}
+              </TableCell>
+              <TableCell>{displayVocabularyLabel(vocabularyStatusLabels, row.values.status)}</TableCell>
+              <TableCell className="max-w-[24rem] whitespace-normal text-sm text-destructive">
+                {row.errors.length > 0 ? row.errors.join(" ") : "OK"}
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row, index) => (
-              <TableRow key={`${row.word}-${index}`}>
-                <TableCell className="font-medium text-foreground">{row.word}</TableCell>
-                <TableCell>{vocabularyLanguageLabels[row.language]}</TableCell>
-                <TableCell>{vocabularyDifficultyLabels[row.difficulty]}</TableCell>
-                <TableCell>{vocabularyTypeLabels[row.type]}</TableCell>
-                <TableCell>
-                  <pre className="whitespace-pre-wrap text-sm leading-6 text-foreground">
-                    {formatVocabularyWrongOptions(
-                      [row.wrongOption1, row.wrongOption2, row.wrongOption3].filter(
-                        (option) => option.trim().length > 0,
-                      ),
-                    )}
-                  </pre>
-                </TableCell>
-                <TableCell className="max-w-[22rem] whitespace-normal text-sm text-muted-foreground">
-                  {previewVocabularyText(row.exampleSentence, 120) || "-"}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={row.status === "published" ? "default" : "outline"}
-                    className="rounded-full"
-                  >
-                    {vocabularyStatusLabels[row.status]}
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
-}
-
-function InvalidRowsTable({ rows }: { rows: StoredImportPayload["rowErrors"] }) {
-  if (rows.length === 0) {
-    return null
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Invalid Rows</CardTitle>
-        <CardDescription>
-          Fix these rows in the workbook or exclude them from import.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Row</TableHead>
-              <TableHead>Word</TableHead>
-              <TableHead>Errors</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row) => (
-              <TableRow key={row.rowNumber}>
-                <TableCell className="tabular-nums">{row.rowNumber}</TableCell>
-                <TableCell className="font-medium text-foreground">
-                  {row.values.word || "-"}
-                </TableCell>
-                <TableCell className="whitespace-normal text-sm text-destructive">
-                  {row.errors.join(" ")}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   )
 }
 
@@ -324,7 +267,7 @@ export function VocabularyImportWorkspace({ mode }: VocabularyImportWorkspacePro
   const [isImporting, setIsImporting] = useState(false)
 
   const validRows = useMemo(() => payload?.rows ?? [], [payload?.rows])
-  const invalidRows = useMemo(() => payload?.rowErrors ?? [], [payload?.rowErrors])
+  const previewRows = useMemo(() => payload?.previewRows ?? [], [payload?.previewRows])
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -383,7 +326,7 @@ export function VocabularyImportWorkspace({ mode }: VocabularyImportWorkspacePro
         title={mode === "upload" ? "Import Vocabulary" : "Import Preview"}
         subtitle={
           mode === "upload"
-            ? "Upload an Excel workbook to validate vocabulary rows before saving them."
+            ? "Upload an Excel workbook to validate vocabulary rows before importing them."
             : "Review the parsed workbook and import only the valid rows into the free vocabulary bank."
         }
         actions={
@@ -401,12 +344,11 @@ export function VocabularyImportWorkspace({ mode }: VocabularyImportWorkspacePro
 
       {mode === "upload" ? (
         <>
-          <AvailableValuesReference />
           <Card>
             <CardHeader>
               <CardTitle>Upload Workbook</CardTitle>
               <CardDescription>
-                Choose the template file after filling in your vocabulary rows.
+                This template includes the following fields: word, language, difficulty, type, correct_meaning, wrong_option_1, wrong_option_2, wrong_option_3, example_sentence, and status.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
@@ -417,26 +359,46 @@ export function VocabularyImportWorkspace({ mode }: VocabularyImportWorkspacePro
                 className="hidden"
                 onChange={(event) => void handleFileChange(event)}
               />
+              <label
+                htmlFor="vocabulary-import-file"
+                className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/60 bg-muted/20 px-6 py-12 text-center transition-colors hover:bg-muted/30"
+              >
+                <UploadIcon />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Choose Excel file</p>
+                  <p className="text-sm text-muted-foreground">
+                    Upload .xlsx file to continue to preview.
+                  </p>
+                </div>
+              </label>
+
               <div className="flex flex-wrap gap-2">
-                <Button asChild>
-                  <label htmlFor="vocabulary-import-file" className="cursor-pointer">
-                    <UploadIcon data-icon="inline-start" />
-                    Choose File
-                  </label>
-                </Button>
-                <Button type="button" variant="outline" onClick={() => downloadVocabularyImportTemplate()}>
-                  <FileDownIcon data-icon="inline-start" />
-                  Download Template Again
+                <Button asChild variant="outline" className="w-fit">
+                  <Link href="/admin/vocabularies/import/preview">
+                    <FileDownIcon data-icon="inline-start" />
+                    Open preview
+                  </Link>
                 </Button>
               </div>
             </CardContent>
           </Card>
+
+          <AvailableValuesReference />
         </>
       ) : payload ? (
-        <>
-          <ImportSummary payload={payload} />
-          <ValidRowsTable rows={validRows} />
-          <InvalidRowsTable rows={invalidRows} />
+        <div className="flex flex-col gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Import Preview</CardTitle>
+              <CardDescription>
+                Review the parsed rows before importing them into the vocabulary bank.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <ImportSummary payload={payload} />
+              <PreviewRowsTable rows={previewRows} />
+            </CardContent>
+          </Card>
 
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Button asChild variant="outline">
@@ -450,7 +412,7 @@ export function VocabularyImportWorkspace({ mode }: VocabularyImportWorkspacePro
               {isImporting ? "Importing..." : `Import ${validRows.length} Rows`}
             </Button>
           </div>
-        </>
+        </div>
       ) : (
         <Card>
           <CardHeader>

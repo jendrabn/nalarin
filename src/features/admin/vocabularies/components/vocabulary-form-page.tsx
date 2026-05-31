@@ -8,7 +8,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 
 import { AdminFormPage } from "@/components/admin-form-page"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -21,13 +20,8 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 
-import {
-  createVocabularyAction,
-  updateVocabularyAction,
-} from "../actions"
+import { createVocabularyAction, updateVocabularyAction } from "../actions"
 import {
   vocabularyDifficultyLabels,
   vocabularyDifficultyValues,
@@ -40,10 +34,6 @@ import {
 } from "../constants"
 import type { VocabularyDetails } from "../queries"
 import { vocabularyFormSchema, type VocabularyFormValues } from "../schemas"
-import {
-  formatVocabularyWrongOptions,
-  previewVocabularyText,
-} from "../utils/vocabulary"
 
 type VocabularyFormPageProps = {
   mode: "create" | "edit"
@@ -55,9 +45,7 @@ type VocabularyFormPageProps = {
   initialValues?: VocabularyDetails | null
 }
 
-function buildDefaultValues(
-  initialValues?: VocabularyDetails | null,
-): VocabularyFormValues {
+function buildDefaultValues(initialValues?: VocabularyDetails | null): VocabularyFormValues {
   return {
     word: initialValues?.word ?? "",
     language: initialValues?.language ?? "id",
@@ -106,24 +94,15 @@ export function VocabularyFormPage({
     form.reset(defaultValues)
   }, [defaultValues, form])
 
-  const watchedWord = useWatch({ control: form.control, name: "word" })
   const watchedLanguage = useWatch({ control: form.control, name: "language" })
   const watchedDifficulty = useWatch({ control: form.control, name: "difficulty" })
   const watchedType = useWatch({ control: form.control, name: "type" })
   const watchedStatus = useWatch({ control: form.control, name: "status" })
-  const watchedCorrectMeaning = useWatch({ control: form.control, name: "correctMeaning" })
-  const watchedWrongOption1 = useWatch({ control: form.control, name: "wrongOption1" })
-  const watchedWrongOption2 = useWatch({ control: form.control, name: "wrongOption2" })
-  const watchedWrongOption3 = useWatch({ control: form.control, name: "wrongOption3" })
-  const watchedExampleSentence = useWatch({ control: form.control, name: "exampleSentence" })
+
   const selectedLanguage = (watchedLanguage ?? "id") as VocabularyFormValues["language"]
   const selectedDifficulty = (watchedDifficulty ?? "easy") as VocabularyFormValues["difficulty"]
   const selectedType = (watchedType ?? "synonym") as VocabularyFormValues["type"]
   const selectedStatus = (watchedStatus ?? "draft") as VocabularyFormValues["status"]
-
-  const wrongOptions = [watchedWrongOption1, watchedWrongOption2, watchedWrongOption3].filter(
-    (option): option is string => option.trim().length > 0,
-  )
 
   const isSubmitting = form.formState.isSubmitting
   const rootError = form.formState.errors.root?.message
@@ -189,366 +168,256 @@ export function VocabularyFormPage({
       }
     >
       <form id={formId} onSubmit={handleSubmit}>
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-          <FieldGroup className="gap-6">
-            {rootError ? (
-              <p className="text-sm text-destructive" aria-live="polite">
-                {rootError}
-              </p>
-            ) : null}
+        <FieldGroup className="gap-6">
+          {rootError ? (
+            <p className="text-sm text-destructive" aria-live="polite">
+              {rootError}
+            </p>
+          ) : null}
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Vocabulary Details</CardTitle>
-                <CardDescription>
-                  Configure the free vocabulary card, its meaning, and the distractors used in the game.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <Field data-invalid={Boolean(form.formState.errors.word)}>
-                  <FieldContent>
-                    <FieldLabel htmlFor={`${formId}-word`} className="required">
-                      Word
-                    </FieldLabel>
-                  </FieldContent>
-                  <div className="flex flex-col gap-1.5">
-                    <Input
-                      id={`${formId}-word`}
-                      placeholder="abstrak"
-                      aria-invalid={Boolean(form.formState.errors.word)}
-                      {...form.register("word")}
-                    />
-                    <FieldDescription>
-                      Keep the word short and clear for card-based review.
-                    </FieldDescription>
-                    <FieldError>{form.formState.errors.word?.message}</FieldError>
-                  </div>
-                </Field>
-
-                <div className="grid gap-4 lg:grid-cols-3">
-                  <Field data-invalid={Boolean(form.formState.errors.language)}>
-                    <FieldContent>
-                      <FieldLabel htmlFor={`${formId}-language`} className="required">
-                        Language
-                      </FieldLabel>
-                    </FieldContent>
-                    <div className="flex flex-col gap-1.5">
-                      <Select
-                        value={selectedLanguage}
-                        onValueChange={(value) =>
-                          form.setValue("language", value as VocabularyFormValues["language"], {
-                            shouldDirty: true,
-                            shouldValidate: true,
-                          })
-                        }
-                      >
-                        <SelectTrigger
-                          id={`${formId}-language`}
-                          className="w-full"
-                          aria-invalid={Boolean(form.formState.errors.language)}
-                        >
-                          <SelectValue placeholder="Select language" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {vocabularyLanguageValues.map((value) => (
-                            <SelectItem key={value} value={value}>
-                              {vocabularyLanguageLabels[value]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FieldError>{form.formState.errors.language?.message}</FieldError>
-                    </div>
-                  </Field>
-
-                  <Field data-invalid={Boolean(form.formState.errors.difficulty)}>
-                    <FieldContent>
-                      <FieldLabel htmlFor={`${formId}-difficulty`} className="required">
-                        Difficulty
-                      </FieldLabel>
-                    </FieldContent>
-                    <div className="flex flex-col gap-1.5">
-                      <Select
-                        value={selectedDifficulty}
-                        onValueChange={(value) =>
-                          form.setValue(
-                            "difficulty",
-                            value as VocabularyFormValues["difficulty"],
-                            {
-                              shouldDirty: true,
-                              shouldValidate: true,
-                            },
-                          )
-                        }
-                      >
-                        <SelectTrigger
-                          id={`${formId}-difficulty`}
-                          className="w-full"
-                          aria-invalid={Boolean(form.formState.errors.difficulty)}
-                        >
-                          <SelectValue placeholder="Select difficulty" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {vocabularyDifficultyValues.map((value) => (
-                            <SelectItem key={value} value={value}>
-                              {vocabularyDifficultyLabels[value]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FieldError>{form.formState.errors.difficulty?.message}</FieldError>
-                    </div>
-                  </Field>
-
-                  <Field data-invalid={Boolean(form.formState.errors.type)}>
-                    <FieldContent>
-                      <FieldLabel htmlFor={`${formId}-type`} className="required">
-                        Type
-                      </FieldLabel>
-                    </FieldContent>
-                    <div className="flex flex-col gap-1.5">
-                      <Select
-                        value={selectedType}
-                        onValueChange={(value) =>
-                          form.setValue("type", value as VocabularyFormValues["type"], {
-                            shouldDirty: true,
-                            shouldValidate: true,
-                          })
-                        }
-                      >
-                        <SelectTrigger
-                          id={`${formId}-type`}
-                          className="w-full"
-                          aria-invalid={Boolean(form.formState.errors.type)}
-                        >
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {vocabularyTypeValues.map((value) => (
-                            <SelectItem key={value} value={value}>
-                              {vocabularyTypeLabels[value]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FieldError>{form.formState.errors.type?.message}</FieldError>
-                    </div>
-                  </Field>
+          <Card>
+            <CardHeader>
+              <CardTitle>Vocabulary Details</CardTitle>
+              <CardDescription>
+                Configure the vocabulary card, its metadata, and publication status.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Field data-invalid={Boolean(form.formState.errors.word)}>
+                <FieldContent>
+                  <FieldLabel htmlFor={`${formId}-word`} className="required">
+                    Word
+                  </FieldLabel>
+                </FieldContent>
+                <div className="flex flex-col gap-1.5">
+                  <Input
+                    id={`${formId}-word`}
+                    placeholder="abstract"
+                    aria-invalid={Boolean(form.formState.errors.word)}
+                    {...form.register("word")}
+                  />
+                  <FieldDescription>
+                    Keep the word short and clear for card-based review.
+                  </FieldDescription>
+                  <FieldError>{form.formState.errors.word?.message}</FieldError>
                 </div>
+              </Field>
 
-                <Field data-invalid={Boolean(form.formState.errors.status)}>
+              <div className="grid gap-4 lg:grid-cols-3">
+                <Field data-invalid={Boolean(form.formState.errors.language)}>
                   <FieldContent>
-                    <FieldLabel htmlFor={`${formId}-status`} className="required">
-                      Status
+                    <FieldLabel htmlFor={`${formId}-language`} className="required">
+                      Language
                     </FieldLabel>
                   </FieldContent>
                   <div className="flex flex-col gap-1.5">
                     <Select
-                      value={selectedStatus}
+                      value={selectedLanguage}
                       onValueChange={(value) =>
-                        form.setValue("status", value as VocabularyFormValues["status"], {
+                        form.setValue("language", value as VocabularyFormValues["language"], {
                           shouldDirty: true,
                           shouldValidate: true,
                         })
                       }
                     >
                       <SelectTrigger
-                        id={`${formId}-status`}
+                        id={`${formId}-language`}
                         className="w-full"
-                        aria-invalid={Boolean(form.formState.errors.status)}
+                        aria-invalid={Boolean(form.formState.errors.language)}
                       >
-                        <SelectValue placeholder="Select status" />
+                        <SelectValue placeholder="Select language" />
                       </SelectTrigger>
                       <SelectContent>
-                        {vocabularyStatusValues.map((value) => {
-                          const badge = getModelEnumBadgeMeta("contentStatus", value)
-
-                          return (
-                            <SelectItem key={value} value={value}>
-                              {badge.label}
-                            </SelectItem>
-                          )
-                        })}
+                        {vocabularyLanguageValues.map((value) => (
+                          <SelectItem key={value} value={value}>
+                            {vocabularyLanguageLabels[value]}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
-                    <FieldDescription>{statusDescription(selectedStatus)}</FieldDescription>
-                    <FieldError>{form.formState.errors.status?.message}</FieldError>
+                    <FieldError>{form.formState.errors.language?.message}</FieldError>
                   </div>
                 </Field>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Meaning & Distractors</CardTitle>
-                <CardDescription>
-                  Add the correct meaning and one to three wrong options used by the free game.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <Field data-invalid={Boolean(form.formState.errors.correctMeaning)}>
+                <Field data-invalid={Boolean(form.formState.errors.difficulty)}>
                   <FieldContent>
-                    <FieldLabel htmlFor={`${formId}-correctMeaning`} className="required">
-                      Correct Meaning
+                    <FieldLabel htmlFor={`${formId}-difficulty`} className="required">
+                      Difficulty
                     </FieldLabel>
                   </FieldContent>
                   <div className="flex flex-col gap-1.5">
-                    <Textarea
-                      id={`${formId}-correctMeaning`}
-                      rows={4}
-                      placeholder="sesuatu yang tidak konkret"
-                      aria-invalid={Boolean(form.formState.errors.correctMeaning)}
-                      {...form.register("correctMeaning")}
-                    />
-                    <FieldDescription>
-                      This is the answer that should be remembered for the card.
-                    </FieldDescription>
-                    <FieldError>{form.formState.errors.correctMeaning?.message}</FieldError>
+                    <Select
+                      value={selectedDifficulty}
+                      onValueChange={(value) =>
+                        form.setValue("difficulty", value as VocabularyFormValues["difficulty"], {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
+                      }
+                    >
+                      <SelectTrigger
+                        id={`${formId}-difficulty`}
+                        className="w-full"
+                        aria-invalid={Boolean(form.formState.errors.difficulty)}
+                      >
+                        <SelectValue placeholder="Select difficulty" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vocabularyDifficultyValues.map((value) => (
+                          <SelectItem key={value} value={value}>
+                            {vocabularyDifficultyLabels[value]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldError>{form.formState.errors.difficulty?.message}</FieldError>
                   </div>
                 </Field>
 
-                <div className="grid gap-4 lg:grid-cols-3">
-                  <Field data-invalid={Boolean(form.formState.errors.wrongOption1)}>
-                    <FieldContent>
-                      <FieldLabel htmlFor={`${formId}-wrongOption1`} className="required">
-                        Wrong Option 1
-                      </FieldLabel>
-                    </FieldContent>
-                    <div className="flex flex-col gap-1.5">
-                      <Input
-                        id={`${formId}-wrongOption1`}
-                        placeholder="makna salah pertama"
-                        aria-invalid={Boolean(form.formState.errors.wrongOption1)}
-                        {...form.register("wrongOption1")}
-                      />
-                      <FieldError>{form.formState.errors.wrongOption1?.message}</FieldError>
-                    </div>
-                  </Field>
-
-                  <Field data-invalid={Boolean(form.formState.errors.wrongOption2)}>
-                    <FieldContent>
-                      <FieldLabel htmlFor={`${formId}-wrongOption2`}>Wrong Option 2</FieldLabel>
-                    </FieldContent>
-                    <div className="flex flex-col gap-1.5">
-                      <Input
-                        id={`${formId}-wrongOption2`}
-                        placeholder="opsional"
-                        aria-invalid={Boolean(form.formState.errors.wrongOption2)}
-                        {...form.register("wrongOption2")}
-                      />
-                      <FieldError>{form.formState.errors.wrongOption2?.message}</FieldError>
-                    </div>
-                  </Field>
-
-                  <Field data-invalid={Boolean(form.formState.errors.wrongOption3)}>
-                    <FieldContent>
-                      <FieldLabel htmlFor={`${formId}-wrongOption3`}>Wrong Option 3</FieldLabel>
-                    </FieldContent>
-                    <div className="flex flex-col gap-1.5">
-                      <Input
-                        id={`${formId}-wrongOption3`}
-                        placeholder="opsional"
-                        aria-invalid={Boolean(form.formState.errors.wrongOption3)}
-                        {...form.register("wrongOption3")}
-                      />
-                      <FieldError>{form.formState.errors.wrongOption3?.message}</FieldError>
-                    </div>
-                  </Field>
-                </div>
-
-                <Field data-invalid={Boolean(form.formState.errors.exampleSentence)}>
+                <Field data-invalid={Boolean(form.formState.errors.type)}>
                   <FieldContent>
-                    <FieldLabel htmlFor={`${formId}-exampleSentence`}>
-                      Example Sentence
+                    <FieldLabel htmlFor={`${formId}-type`} className="required">
+                      Type
                     </FieldLabel>
                   </FieldContent>
                   <div className="flex flex-col gap-1.5">
-                    <Textarea
-                      id={`${formId}-exampleSentence`}
-                      rows={3}
-                      placeholder="Contoh penggunaan kata di dalam kalimat."
-                      aria-invalid={Boolean(form.formState.errors.exampleSentence)}
-                      {...form.register("exampleSentence")}
-                    />
-                    <FieldDescription>Optional, but useful for language context.</FieldDescription>
-                    <FieldError>{form.formState.errors.exampleSentence?.message}</FieldError>
+                    <Select
+                      value={selectedType}
+                      onValueChange={(value) =>
+                        form.setValue("type", value as VocabularyFormValues["type"], {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
+                      }
+                    >
+                      <SelectTrigger
+                        id={`${formId}-type`}
+                        className="w-full"
+                        aria-invalid={Boolean(form.formState.errors.type)}
+                      >
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vocabularyTypeValues.map((value) => (
+                          <SelectItem key={value} value={value}>
+                            {vocabularyTypeLabels[value]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldError>{form.formState.errors.type?.message}</FieldError>
                   </div>
                 </Field>
-              </CardContent>
-            </Card>
-          </FieldGroup>
+              </div>
 
-          <aside className="space-y-6">
-            <Card className="overflow-hidden">
-              <div className="h-1 bg-gradient-to-r from-chart-1 via-chart-2 to-chart-4" />
-              <CardHeader>
-                <CardTitle>Live Preview</CardTitle>
-                <CardDescription>
-                  A compact view of how this free vocabulary card will read in the game.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="soft" className={getModelEnumBadgeMeta("vocabularyLanguage", selectedLanguage).className}>
-                    {vocabularyLanguageLabels[selectedLanguage]}
-                  </Badge>
-                  <Badge variant="soft" className={getModelEnumBadgeMeta("questionDifficulty", selectedDifficulty).className}>
-                    {vocabularyDifficultyLabels[selectedDifficulty]}
-                  </Badge>
-                  <Badge variant="soft" className={getModelEnumBadgeMeta("vocabularyType", selectedType).className}>
-                    {vocabularyTypeLabels[selectedType]}
-                  </Badge>
-                  <Badge variant="soft" className={getModelEnumBadgeMeta("contentStatus", selectedStatus).className}>
-                    {vocabularyStatusLabels[selectedStatus]}
-                  </Badge>
+              <Field data-invalid={Boolean(form.formState.errors.status)}>
+                <FieldContent>
+                  <FieldLabel htmlFor={`${formId}-status`} className="required">
+                    Status
+                  </FieldLabel>
+                </FieldContent>
+                <div className="flex flex-col gap-1.5">
+                  <Select
+                    value={selectedStatus}
+                    onValueChange={(value) =>
+                      form.setValue("status", value as VocabularyFormValues["status"], {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
+                  >
+                    <SelectTrigger
+                      id={`${formId}-status`}
+                      className="w-full"
+                      aria-invalid={Boolean(form.formState.errors.status)}
+                    >
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vocabularyStatusValues.map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {vocabularyStatusLabels[value]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>{statusDescription(selectedStatus)}</FieldDescription>
+                  <FieldError>{form.formState.errors.status?.message}</FieldError>
                 </div>
+              </Field>
+            </CardContent>
+          </Card>
 
-                <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                    Word
-                  </p>
-                  <p className="mt-1 text-lg font-semibold text-foreground">
-                    {watchedWord?.trim() || "Untitled word"}
-                  </p>
-
-                  <div className="mt-4 space-y-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                        Correct meaning
-                      </p>
-                      <p className="mt-1 text-sm leading-6 text-foreground">
-                        {previewVocabularyText(watchedCorrectMeaning, 180) || "No meaning yet."}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                        Wrong options
-                      </p>
-                      {wrongOptions.length > 0 ? (
-                        <pre className="mt-1 whitespace-pre-wrap text-sm leading-6 text-foreground">
-                          {formatVocabularyWrongOptions(wrongOptions)}
-                        </pre>
-                      ) : (
-                        <p className="mt-1 text-sm text-muted-foreground">No distractors yet.</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                        Example sentence
-                      </p>
-                      <p className="mt-1 text-sm leading-6 text-foreground">
-                        {previewVocabularyText(watchedExampleSentence, 180) ||
-                          "No example sentence yet."}
-                      </p>
-                    </div>
-                  </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Meaning & Distractor</CardTitle>
+              <CardDescription>
+                Add the correct meaning and one visible wrong option for the game.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Field data-invalid={Boolean(form.formState.errors.correctMeaning)}>
+                <FieldContent>
+                  <FieldLabel htmlFor={`${formId}-correctMeaning`} className="required">
+                    Correct Meaning
+                  </FieldLabel>
+                </FieldContent>
+                <div className="flex flex-col gap-1.5">
+                  <Input
+                    id={`${formId}-correctMeaning`}
+                    placeholder="something intangible"
+                    aria-invalid={Boolean(form.formState.errors.correctMeaning)}
+                    {...form.register("correctMeaning")}
+                  />
+                  <FieldDescription>
+                    This is the answer that should be remembered for the card.
+                  </FieldDescription>
+                  <FieldError>{form.formState.errors.correctMeaning?.message}</FieldError>
                 </div>
-              </CardContent>
-            </Card>
-          </aside>
-        </div>
+              </Field>
+
+              <Field data-invalid={Boolean(form.formState.errors.wrongOption1)}>
+                <FieldContent>
+                  <FieldLabel htmlFor={`${formId}-wrongOption1`} className="required">
+                    Wrong Option
+                  </FieldLabel>
+                </FieldContent>
+                <div className="flex flex-col gap-1.5">
+                  <Input
+                    id={`${formId}-wrongOption1`}
+                    placeholder="wrong meaning"
+                    aria-invalid={Boolean(form.formState.errors.wrongOption1)}
+                    {...form.register("wrongOption1")}
+                  />
+                  <FieldDescription>
+                    Extra distractors stay preserved for existing entries, but only one is shown
+                    here.
+                  </FieldDescription>
+                  <FieldError>{form.formState.errors.wrongOption1?.message}</FieldError>
+                </div>
+              </Field>
+
+              <Input type="hidden" tabIndex={-1} aria-hidden="true" {...form.register("wrongOption2")} />
+              <Input type="hidden" tabIndex={-1} aria-hidden="true" {...form.register("wrongOption3")} />
+
+              <Field data-invalid={Boolean(form.formState.errors.exampleSentence)}>
+                <FieldContent>
+                  <FieldLabel htmlFor={`${formId}-exampleSentence`}>Example Sentence</FieldLabel>
+                </FieldContent>
+                <div className="flex flex-col gap-1.5">
+                  <Input
+                    id={`${formId}-exampleSentence`}
+                    placeholder="Example sentence using the word in context."
+                    aria-invalid={Boolean(form.formState.errors.exampleSentence)}
+                    {...form.register("exampleSentence")}
+                  />
+                  <FieldDescription>Optional, but useful for language context.</FieldDescription>
+                  <FieldError>{form.formState.errors.exampleSentence?.message}</FieldError>
+                </div>
+              </Field>
+            </CardContent>
+          </Card>
+        </FieldGroup>
       </form>
     </AdminFormPage>
   )
