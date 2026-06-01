@@ -6,7 +6,6 @@ import {
   CalendarDaysIcon,
   FileTextIcon,
   LockIcon,
-  PlayCircleIcon,
   VideoIcon,
 } from "lucide-react"
 
@@ -15,13 +14,7 @@ import { SiteNavbar, type SiteUser } from "@/components/site-navbar"
 import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
+import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { formatBlogDate } from "@/features/blog/utils"
 
@@ -78,12 +71,11 @@ export function MaterialDetailPage({
                   {material.topicName}
                 </Badge>
               ) : null}
-              <Badge
-                variant={material.isFree ? "secondary" : "destructive"}
-                className="rounded-full"
-              >
-                {material.isFree ? "Gratis" : "Premium"}
-              </Badge>
+              {material.isFree ? null : (
+                <Badge variant="destructive" className="rounded-full">
+                  Premium
+                </Badge>
+              )}
             </div>
 
             <PageHeader
@@ -108,155 +100,87 @@ export function MaterialDetailPage({
                 <CalendarDaysIcon className="size-4" />
                 {formatBlogDate(material.publishedAt)}
               </span>
-              <span className="inline-flex items-center gap-1.5">
-                <PlayCircleIcon className="size-4" />
-                {material.contentMode === "mixed"
-                  ? "Video + Teks"
-                  : material.contentMode === "video"
-                    ? "Video"
-                    : "Teks"}
-              </span>
             </div>
           </div>
         </section>
 
-        <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start">
-            <div className="min-w-0 space-y-6">
-              {canAccessContent ? (
-                <>
-                  {hasVideo && hasText ? (
-                    <Tabs defaultValue="video" className="w-full">
-                      <TabsList className="w-full justify-start gap-2 bg-transparent p-0">
-                        <TabsTrigger
-                          value="video"
-                          className="rounded-full border border-border/70 bg-card px-4 py-2 data-active:border-primary/25 data-active:bg-primary/10"
-                        >
-                          <VideoIcon />
-                          Video
-                        </TabsTrigger>
-                        <TabsTrigger
-                          value="text"
-                          className="rounded-full border border-border/70 bg-card px-4 py-2 data-active:border-primary/25 data-active:bg-primary/10"
-                        >
-                          <FileTextIcon />
-                          Teks
-                        </TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="video" className="mt-4">
-                        <MediaCard title="Video Pembelajaran">
-                          {embedUrl ? (
-                            <div className="overflow-hidden rounded-lg border bg-secondary/30">
-                              <div className="aspect-video">
-                                <iframe
-                                  className="h-full w-full"
-                                  src={embedUrl}
-                                  title={material.title}
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                  allowFullScreen
-                                />
-                              </div>
-                            </div>
-                          ) : (
-                            <EmptyMediaFallback
-                              icon={<VideoIcon />}
-                              title="URL video belum tersedia"
-                              description="Admin belum menambahkan tautan YouTube untuk materi ini."
-                            />
-                          )}
-                        </MediaCard>
-                      </TabsContent>
-                      <TabsContent value="text" className="mt-4">
-                        <TextMaterialCard content={material.content} />
-                      </TabsContent>
-                    </Tabs>
-                  ) : hasVideo ? (
-                    <MediaCard title="Video Pembelajaran">
-                      {embedUrl ? (
-                        <div className="overflow-hidden rounded-lg border bg-secondary/30">
-                          <div className="aspect-video">
-                            <iframe
-                              className="h-full w-full"
-                              src={embedUrl}
-                              title={material.title}
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                              allowFullScreen
-                            />
-                          </div>
+        <article className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+          <div className="min-w-0 space-y-6">
+            {canAccessContent ? (
+              <>
+                {hasVideo ? (
+                  <MediaCard>
+                    {embedUrl ? (
+                      <div className="overflow-hidden rounded-lg border bg-secondary/30">
+                        <div className="aspect-video">
+                          <iframe
+                            className="h-full w-full"
+                            src={embedUrl}
+                            title={material.title}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                          />
                         </div>
-                      ) : (
-                        <EmptyMediaFallback
-                          icon={<VideoIcon />}
-                          title="URL video belum tersedia"
-                          description="Admin belum menambahkan tautan YouTube untuk materi ini."
-                        />
-                      )}
-                    </MediaCard>
-                  ) : null}
+                      </div>
+                    ) : (
+                      <EmptyMediaFallback
+                        icon={<VideoIcon />}
+                        title="URL video belum tersedia"
+                        description="Admin belum menambahkan tautan YouTube untuk materi ini."
+                      />
+                    )}
+                  </MediaCard>
+                ) : null}
 
-                  {hasText ? (
-                    <TextMaterialCard content={material.content} />
-                  ) : null}
-                </>
-              ) : (
-                <Card className="border-border/75 bg-card py-6 shadow-sm">
-                  <CardContent className="flex flex-col gap-4 px-5">
-                    <div className="flex size-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
-                      <LockIcon className="size-5" />
-                    </div>
-                    <div className="space-y-2">
-                      <h2 className="text-xl font-semibold text-foreground">
-                        Materi ini premium
-                      </h2>
-                      <p className="text-sm leading-6 text-muted-foreground">
-                        Konten lengkap video dan teks hanya bisa dibuka untuk paket Pro atau Max
-                        pada exam type ini.
-                      </p>
-                    </div>
-                    <Button asChild className="w-fit">
-                      <Link href="/pricing">
-                        Upgrade Sekarang
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            <aside className="space-y-6">
-              <Card className="border-border/75 bg-card py-5 shadow-sm">
-                <CardHeader className="gap-2 px-5 pb-0">
-                  <CardTitle className="text-base">Ringkasan Materi</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 px-5 pt-4">
-                  <DetailMeta label="Jenis Ujian" value={material.examTypeName} />
-                  <DetailMeta label="Mata Pelajaran" value={material.subjectName} />
-                  <DetailMeta label="Topik" value={material.topicName ?? "-"} />
-                  <DetailMeta
-                    label="Akses"
-                    value={material.isFree ? "Gratis" : "Premium"}
-                  />
+                {hasText ? (
+                  <TextMaterialCard content={material.content} />
+                ) : null}
+              </>
+            ) : (
+              <Card className="border-border/75 bg-card py-6 shadow-sm">
+                <CardContent className="flex flex-col gap-4 px-5">
+                  <div className="flex size-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+                    <LockIcon className="size-5" />
+                  </div>
+                  <div className="space-y-2">
+                    <h2 className="text-xl font-semibold text-foreground">
+                      Materi ini premium
+                    </h2>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      Konten lengkap video dan teks hanya bisa dibuka untuk paket Pro atau Max
+                      pada exam type ini.
+                    </p>
+                  </div>
+                  <Button asChild className="w-fit">
+                    <Link href="/pricing">
+                      Upgrade Sekarang
+                    </Link>
+                  </Button>
                 </CardContent>
               </Card>
-
-              {material.relatedMaterials.length ? (
-                <Card className="border-border/75 bg-card py-5 shadow-sm">
-                  <CardHeader className="gap-2 px-5 pb-0">
-                    <CardTitle className="text-base">Materi Terkait</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 px-5 pt-4">
-                    {material.relatedMaterials.map((relatedMaterial) => (
-                      <RelatedMaterialCard
-                        key={relatedMaterial.id}
-                        material={relatedMaterial}
-                      />
-                    ))}
-                  </CardContent>
-                </Card>
-              ) : null}
-            </aside>
+            )}
           </div>
-        </section>
+        </article>
+
+        {material.relatedMaterials.length ? (
+          <section className="border-t bg-secondary/45 py-12 sm:py-16">
+            <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="mb-8">
+                <h2 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
+                  Materi Terkait
+                </h2>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {material.relatedMaterials.map((relatedMaterial) => (
+                  <RelatedMaterialCard
+                    key={relatedMaterial.id}
+                    material={relatedMaterial}
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : null}
       </main>
       <SiteFooter />
     </div>
@@ -264,18 +188,13 @@ export function MaterialDetailPage({
 }
 
 function MediaCard({
-  title,
   children,
 }: {
-  title: string
   children: ReactNode
 }) {
   return (
     <Card className="border-border/75 bg-card py-5 shadow-sm">
-      <CardHeader className="gap-2 px-5 pb-0">
-        <CardTitle className="text-base">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="px-5 pt-4">{children}</CardContent>
+      <CardContent className="px-5">{children}</CardContent>
     </Card>
   )
 }
@@ -284,10 +203,7 @@ function TextMaterialCard({ content }: { content: string | null }) {
   if (!content?.trim()) {
     return (
       <Card className="border-border/75 bg-card py-5 shadow-sm">
-        <CardHeader className="gap-2 px-5 pb-0">
-          <CardTitle className="text-base">Teks Materi</CardTitle>
-        </CardHeader>
-        <CardContent className="px-5 pt-4">
+        <CardContent className="px-5">
           <EmptyMediaFallback
             icon={<FileTextIcon />}
             title="Konten teks belum tersedia"
@@ -300,10 +216,7 @@ function TextMaterialCard({ content }: { content: string | null }) {
 
   return (
     <Card className="border-border/75 bg-card py-5 shadow-sm">
-      <CardHeader className="gap-2 px-5 pb-0">
-        <CardTitle className="text-base">Teks Materi</CardTitle>
-      </CardHeader>
-      <CardContent className="px-5 pt-4">
+      <CardContent className="px-5">
         <div
           className={cn(
             "min-w-0 text-base leading-8 text-foreground/90 sm:text-lg sm:leading-9",
@@ -342,15 +255,6 @@ function EmptyMediaFallback({
   )
 }
 
-function DetailMeta({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-border/70 pb-3 last:border-b-0 last:pb-0">
-      <span className="text-sm font-medium text-muted-foreground">{label}</span>
-      <span className="text-right text-sm font-semibold text-foreground">{value}</span>
-    </div>
-  )
-}
-
 function RelatedMaterialCard({ material }: { material: PublicMaterialDetail["relatedMaterials"][number] }) {
   const actionHref = `/materials/${material.slug}`
 
@@ -369,12 +273,14 @@ function RelatedMaterialCard({ material }: { material: PublicMaterialDetail["rel
               {material.subjectName}
             </p>
           </div>
-          <Badge
-            variant={material.isFree ? "secondary" : "destructive"}
-            className="shrink-0 rounded-full text-[0.72rem]"
-          >
-            {material.isFree ? "Gratis" : "Premium"}
-          </Badge>
+          {material.isFree ? null : (
+            <Badge
+              variant="destructive"
+              className="shrink-0 rounded-full text-[0.72rem]"
+            >
+              Premium
+            </Badge>
+          )}
         </div>
       </Card>
     </Link>

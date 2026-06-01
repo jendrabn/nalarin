@@ -9,7 +9,6 @@ import {
   BookOpenIcon,
   LayoutListIcon,
   LockIcon,
-  PlayCircleIcon,
   VideoIcon,
 } from "lucide-react"
 
@@ -327,40 +326,33 @@ function MaterialCard({
   const actionHref = accessAllowed
     ? `/materials/exam/${material.examTypeSlug}/${material.slug}`
     : "/pricing"
+  const hasVideo = material.contentMode === "video" || material.contentMode === "mixed"
 
   return (
     <Card className="group flex h-full flex-col rounded-lg border-border/75 bg-card py-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg">
       <CardHeader className="gap-2.5 px-5 pb-0">
-        <div className="flex items-start justify-between gap-3">
-          <Badge
-            variant="outline"
-            size="sm"
-            className={cn(
-              "shrink-0 rounded-full font-semibold",
-              material.contentMode === "mixed"
-                ? "border-chart-2/20 bg-chart-2/10 text-chart-2"
-                : material.contentMode === "video"
-                  ? "border-chart-1/20 bg-chart-1/10 text-chart-1"
-                  : "border-chart-3/20 bg-chart-3/10 text-chart-3",
+        {hasVideo || !material.isFree ? (
+          <div className="flex items-start justify-between gap-3">
+            {hasVideo ? (
+              <Badge
+                variant="outline"
+                size="sm"
+                className="shrink-0 rounded-full border-chart-1/20 bg-chart-1/10 font-semibold text-chart-1"
+              >
+                <VideoIcon />
+                Video
+              </Badge>
+            ) : (
+              <span aria-hidden="true" />
             )}
-          >
-            {material.contentMode === "mixed"
-              ? "Video + Teks"
-              : material.contentMode === "video"
-                ? "Video"
-                : "Teks"}
-          </Badge>
-          {material.isFree ? (
-            <Badge variant="secondary" size="sm" className="shrink-0 rounded-full font-semibold">
-              Gratis
-            </Badge>
-          ) : (
-            <Badge variant="destructive" size="sm" className="shrink-0 rounded-full font-semibold">
-              <LockIcon data-icon="inline-start" />
-              Premium
-            </Badge>
-          )}
-        </div>
+            {material.isFree ? null : (
+              <Badge variant="destructive" size="sm" className="shrink-0 rounded-full font-semibold">
+                <LockIcon data-icon="inline-start" />
+                Premium
+              </Badge>
+            )}
+          </div>
+        ) : null}
 
         <div className="flex flex-col gap-1.5">
           <CardTitle className="line-clamp-2 text-[1.05rem] font-semibold leading-6 text-foreground sm:text-[1.08rem]">
@@ -373,16 +365,14 @@ function MaterialCard({
       </CardHeader>
 
       <CardContent className="mt-auto flex flex-col gap-3.5 px-5 pt-3.5">
-        <div className="flex items-center justify-between gap-3">
-          <MaterialMetaItem>
-            {material.contentMode === "video" ? <VideoIcon /> : <PlayCircleIcon />}
-            {material.contentMode === "mixed" ? "Video + Teks" : material.contentMode === "video" ? "Video" : "Teks"}
-          </MaterialMetaItem>
-          <MaterialMetaItem>
-            <BookOpenIcon />
-            {material.subjectName}
-          </MaterialMetaItem>
-        </div>
+        {material.topicName ? (
+          <div className="flex items-center gap-3">
+            <MaterialMetaItem>
+              <BookOpenIcon />
+              {material.topicName}
+            </MaterialMetaItem>
+          </div>
+        ) : null}
 
         <Button
           asChild

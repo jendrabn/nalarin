@@ -14,7 +14,6 @@ export function MaterialRichTextEditor(props: MaterialRichTextEditorProps) {
       value={props.value}
       onChange={props.onChange}
       disabled={props.disabled}
-      placeholder="Write the material content here..."
     />
   )
 }

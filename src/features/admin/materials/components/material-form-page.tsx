@@ -10,7 +10,6 @@ import { UploadIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { AdminFormPage } from "@/components/admin-form-page"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -24,7 +23,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { getModelEnumBadgeMeta } from "@/lib/model-enums"
 
 import {
   createMaterialAction,
@@ -38,7 +36,6 @@ import type {
 } from "../queries"
 import { materialFormSchema, type MaterialFormValues } from "../schemas"
 import { MaterialRichTextEditor } from "./material-rich-text-editor"
-import { getMaterialContentMode } from "../utils/material"
 import { uploadMaterialImage } from "../utils/upload"
 
 const TOPIC_NONE_VALUE = "__none__"
@@ -86,22 +83,6 @@ function statusDescription(status: MaterialFormValues["status"]) {
   return "Saved as a draft and hidden from the public listing."
 }
 
-function contentModeDescription(mode: ReturnType<typeof getMaterialContentMode>) {
-  if (mode === "mixed") {
-    return "This material includes both a YouTube embed and rich text content."
-  }
-
-  if (mode === "video") {
-    return "This material is video-only."
-  }
-
-  if (mode === "text") {
-    return "This material is text-only."
-  }
-
-  return "Add a YouTube URL or rich text content before publishing."
-}
-
 export function MaterialFormPage({
   mode,
   materialId,
@@ -132,8 +113,6 @@ export function MaterialFormPage({
   const watchedStatus = useWatch({ control: form.control, name: "status" })
   const watchedIsFree = useWatch({ control: form.control, name: "isFree" })
   const watchedThumbnailUrl = useWatch({ control: form.control, name: "thumbnailUrl" })
-  const watchedYoutubeUrl = useWatch({ control: form.control, name: "youtubeUrl" })
-  const watchedContent = useWatch({ control: form.control, name: "content" })
 
   const selectedExamTypeId = Number(watchedExamTypeId || 0)
   const selectedSubjectId = Number(watchedSubjectId || 0)
@@ -143,7 +122,6 @@ export function MaterialFormPage({
   )
   const filteredTopics = lookups.topics.filter((topic) => topic.subjectId === selectedSubjectId)
   const selectedSubject = lookups.subjects.find((subject) => subject.id === selectedSubjectId)
-  const contentMode = getMaterialContentMode(watchedYoutubeUrl, watchedContent)
   const isSubmitting = form.formState.isSubmitting
   const rootError = form.formState.errors.root?.message
 
@@ -368,38 +346,48 @@ export function MaterialFormPage({
                   <FieldLabel>Thumbnail</FieldLabel>
                 </FieldContent>
                 <div className="flex flex-col gap-3">
-                  <div className="overflow-hidden rounded-xl border border-border/60 bg-muted/20">
-                    <div className="relative aspect-video w-full">
-                      {watchedThumbnailUrl ? (
-                        <Image
-                          src={watchedThumbnailUrl}
-                          alt="Material thumbnail preview"
-                          fill
-                          sizes="(max-width: 1024px) 100vw, 50vw"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                          No thumbnail selected.
-                        </div>
-                      )}
-                    </div>
+                  <div className="mx-auto w-full max-w-sm">
+                    {watchedThumbnailUrl ? (
+                      <Image
+                        src={watchedThumbnailUrl}
+                        alt="Material thumbnail preview"
+                        width={960}
+                        height={540}
+                        className="h-auto w-full rounded-xl border border-border/60 object-cover"
+                      />
+                    ) : (
+                      <div className="flex aspect-video items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/30 text-sm text-muted-foreground">
+                        No thumbnail selected.
+                      </div>
+                    )}
                   </div>
-                  <div className="flex flex-col gap-2 lg:flex-row">
-                    <Input
-                      placeholder="https://..."
-                      aria-invalid={Boolean(form.formState.errors.thumbnailUrl)}
-                      {...form.register("thumbnailUrl")}
-                    />
+
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => thumbnailInputRef.current?.click()}
                     >
                       <UploadIcon data-icon="inline-start" />
-                      Upload
+                      Upload Thumbnail
                     </Button>
+                    {watchedThumbnailUrl ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() =>
+                          form.setValue("thumbnailUrl", "", {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          })
+                        }
+                      >
+                        Remove
+                      </Button>
+                    ) : null}
                   </div>
+
+                  <input type="hidden" {...form.register("thumbnailUrl")} />
                   <input
                     ref={thumbnailInputRef}
                     type="file"
@@ -416,7 +404,7 @@ export function MaterialFormPage({
                     }}
                   />
                   <FieldDescription>
-                    Optional. You can upload a thumbnail or paste an image URL.
+                    Optional cover image for the material card and public detail page.
                   </FieldDescription>
                   <FieldError>{form.formState.errors.thumbnailUrl?.message}</FieldError>
                 </div>
@@ -587,51 +575,10 @@ export function MaterialFormPage({
                       />
                     )}
                   />
-                  <FieldDescription>{contentModeDescription(contentMode)}</FieldDescription>
                   <FieldError>{form.formState.errors.content?.message}</FieldError>
                 </div>
               </Field>
 
-              <div className="grid gap-3 rounded-xl border border-border/60 bg-muted/20 p-4 lg:grid-cols-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                    Content mode
-                  </p>
-                  <div className="mt-2">
-                    <Badge
-                      variant="soft"
-                      className={
-                        contentMode === "mixed"
-                          ? "border-chart-2/20 bg-chart-2/10 text-chart-2"
-                          : contentMode === "video"
-                            ? "border-chart-1/20 bg-chart-1/10 text-chart-1"
-                            : contentMode === "text"
-                              ? "border-chart-3/20 bg-chart-3/10 text-chart-3"
-                              : "border-border bg-muted text-muted-foreground"
-                      }
-                    >
-                      {contentMode === "mixed"
-                        ? "Video + Text"
-                        : contentMode === "video"
-                          ? "Video"
-                          : contentMode === "text"
-                            ? "Text"
-                            : "Empty"}
-                    </Badge>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                    Publication
-                  </p>
-                  <div className="mt-2 text-sm font-medium text-foreground">
-                    {getModelEnumBadgeMeta("contentStatus", watchedStatus).label}
-                  </div>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {contentModeDescription(contentMode)}
-                </div>
-              </div>
             </CardContent>
           </Card>
         </FieldGroup>
