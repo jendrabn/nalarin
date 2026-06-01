@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useMemo, useState, useTransition, type ReactNode } from "react"
 import {
@@ -473,7 +472,7 @@ function SubjectTabs({
     <aside
       role="tablist"
       aria-label="Pilih Mata Pelajaran"
-      className="flex w-full flex-col gap-2 lg:sticky lg:top-24"
+      className="flex w-full flex-col gap-1.5 rounded-2xl border border-border/70 bg-card/55 p-1.5 shadow-xs lg:sticky lg:top-24"
     >
       {subjects.map((subject) => {
         const active = subject.id === activeSubjectId
@@ -485,28 +484,16 @@ function SubjectTabs({
             role="tab"
             aria-selected={active}
             onClick={() => onSubjectChange(subject.id)}
-            variant={active ? "default" : "outline"}
+            variant="ghost"
             size="xl"
             className={cn(
-              "w-full min-w-0 justify-start rounded-full font-semibold tracking-normal shadow-sm",
-              !active && "text-muted-foreground hover:border-primary/30 hover:text-foreground",
+              "relative h-auto min-h-12 w-full min-w-0 justify-start overflow-hidden rounded-xl border px-4 py-3 text-left font-medium tracking-normal transition-all duration-200 before:absolute before:left-2 before:top-1/2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-full",
+              active
+                ? "border-primary/30 bg-primary/10 pl-5 text-primary shadow-sm shadow-primary/10 before:bg-primary hover:bg-primary/15 hover:text-primary"
+                : "border-transparent bg-transparent text-muted-foreground before:bg-transparent hover:border-border hover:bg-muted/70 hover:text-foreground",
             )}
           >
-            <span className="flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-sm [&_svg]:size-4">
-              {subject.logoUrl ? (
-                <Image
-                  src={subject.logoUrl}
-                  alt=""
-                  width={20}
-                  height={20}
-                  unoptimized
-                  className="size-full object-contain"
-                />
-              ) : (
-                <BookOpenIcon />
-              )}
-            </span>
-            <span className="min-w-0 truncate text-left">{subject.name}</span>
+            <span className="min-w-0 truncate text-left leading-5">{subject.name}</span>
           </Button>
         )
       })}
