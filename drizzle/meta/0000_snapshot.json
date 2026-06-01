@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "24d9337c-6b58-47cc-9fa0-8cf6f558dbf5",
+  "id": "69cf2f37-1ef6-46b3-9587-e5cb365e96e8",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "blog_categories": {
@@ -5459,7 +5459,7 @@
         },
         "type": {
           "name": "type",
-          "type": "enum('synonym','antonym','definition','baku','tidak_baku')",
+          "type": "enum('synonym','antonym','definition','standard','nonstandard')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -5471,9 +5471,9 @@
           "notNull": true,
           "autoincrement": false
         },
-        "wrong_options": {
-          "name": "wrong_options",
-          "type": "json",
+        "wrong_option": {
+          "name": "wrong_option",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false

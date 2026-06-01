@@ -154,11 +154,8 @@ function AvailableValuesReference() {
 
         <div className="grid gap-3 rounded-xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground md:grid-cols-2">
           <p>
-            <span className="font-medium text-foreground">wrong_option_1</span> is required.
-          </p>
-          <p>
-            <span className="font-medium text-foreground">wrong_option_2</span> and{" "}
-            <span className="font-medium text-foreground">wrong_option_3</span> are optional.
+            <span className="font-medium text-foreground">wrong_option</span> is required and is
+            the only wrong answer shown in the game.
           </p>
           <p>
             <span className="font-medium text-foreground">status</span> is required and must be one of{" "}
@@ -217,7 +214,7 @@ function PreviewRowsTable({
             <TableHead>LANGUAGE</TableHead>
             <TableHead>DIFFICULTY</TableHead>
             <TableHead>TYPE</TableHead>
-            <TableHead>WRONG OPTIONS</TableHead>
+            <TableHead>WRONG OPTION</TableHead>
             <TableHead>EXAMPLE SENTENCE</TableHead>
             <TableHead>STATUS</TableHead>
             <TableHead>ERRORS</TableHead>
@@ -232,13 +229,7 @@ function PreviewRowsTable({
               <TableCell>{displayVocabularyLabel(vocabularyDifficultyLabels, row.values.difficulty)}</TableCell>
               <TableCell>{displayVocabularyLabel(vocabularyTypeLabels, row.values.type)}</TableCell>
               <TableCell className="max-w-[18rem] whitespace-normal text-sm">
-                {[
-                  row.values.wrongOption1,
-                  row.values.wrongOption2,
-                  row.values.wrongOption3,
-                ]
-                  .filter((option) => option && option.trim().length > 0)
-                  .join(", ")}
+                {row.values.wrongOption || "-"}
               </TableCell>
               <TableCell className="max-w-[22rem] whitespace-normal text-sm">
                 {previewVocabularyText(row.values.exampleSentence ?? "", 120) || "-"}
@@ -348,7 +339,7 @@ export function VocabularyImportWorkspace({ mode }: VocabularyImportWorkspacePro
             <CardHeader>
               <CardTitle>Upload Workbook</CardTitle>
               <CardDescription>
-                This template includes the following fields: word, language, difficulty, type, correct_meaning, wrong_option_1, wrong_option_2, wrong_option_3, example_sentence, and status.
+                This template includes the following fields: word, language, difficulty, type, correct_meaning, wrong_option, example_sentence, and status.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">

@@ -461,27 +461,21 @@
     },
     {
       "subject_slug": "literasi-bahasa-inggris",
-      "name": "Vocabulary in Context",
-      "slug": "vocabulary-in-context",
-      "order_index": 4
-    },
-    {
-      "subject_slug": "literasi-bahasa-inggris",
       "name": "Author's Purpose",
       "slug": "authors-purpose",
-      "order_index": 5
+      "order_index": 4
     },
     {
       "subject_slug": "literasi-bahasa-inggris",
       "name": "Text Structure",
       "slug": "text-structure",
-      "order_index": 6
+      "order_index": 5
     },
     {
       "subject_slug": "literasi-bahasa-inggris",
       "name": "Reference and Cohesion",
       "slug": "reference-cohesion",
-      "order_index": 7
+      "order_index": 6
     },
     {
       "subject_slug": "penalaran-matematika",
@@ -611,21 +605,9 @@
     },
     {
       "subject_slug": "tes-kemampuan-dasar-umum",
-      "name": "Bahasa Indonesia: Tata Bahasa",
-      "slug": "bahasa-indonesia-tata-bahasa",
-      "order_index": 6
-    },
-    {
-      "subject_slug": "tes-kemampuan-dasar-umum",
       "name": "Bahasa Inggris: Reading Comprehension",
       "slug": "bahasa-inggris-reading-comprehension",
-      "order_index": 7
-    },
-    {
-      "subject_slug": "tes-kemampuan-dasar-umum",
-      "name": "Bahasa Inggris: Grammar and Vocabulary",
-      "slug": "bahasa-inggris-grammar-vocabulary",
-      "order_index": 8
+      "order_index": 6
     },
     {
       "subject_slug": "tka-saintek",
@@ -794,12 +776,6 @@
       "name": "Bahasa Inggris: Reading Comprehension",
       "slug": "bahasa-inggris-reading-comprehension-simak",
       "order_index": 6
-    },
-    {
-      "subject_slug": "kemampuan-dasar",
-      "name": "Bahasa Inggris: Structure and Vocabulary",
-      "slug": "bahasa-inggris-structure-vocabulary",
-      "order_index": 7
     },
     {
       "subject_slug": "kemampuan-ipa",

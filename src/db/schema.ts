@@ -28,7 +28,13 @@ export const questionDifficultyValues = ['easy', 'medium', 'hard'] as const;
 export const scoringRuleValues = ['all_or_nothing', 'partial'] as const;
 export const contentStatusValues = ['draft', 'published', 'archived'] as const;
 export const vocabularyLanguageValues = ['id', 'en'] as const;
-export const vocabularyTypeValues = ['synonym', 'antonym', 'definition', 'baku', 'tidak_baku'] as const;
+export const vocabularyTypeValues = [
+  'synonym',
+  'antonym',
+  'definition',
+  'standard',
+  'nonstandard',
+] as const;
 export const sessionStatusValues = [
   'pending',
   'in_progress',
@@ -1330,7 +1336,7 @@ export const vocabularies = mysqlTable(
     difficulty: questionDifficultyEnum.notNull(),
     type: vocabularyTypeEnum.notNull(),
     correctMeaning: text('correct_meaning').notNull(),
-    wrongOptions: json('wrong_options').$type<string[]>().notNull(),
+    wrongOption: text('wrong_option').notNull(),
     exampleSentence: text('example_sentence'),
     status: contentStatusEnum.notNull(),
     createdBy: int('created_by', { unsigned: true }).references(() => users.id),

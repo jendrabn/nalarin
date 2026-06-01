@@ -30,7 +30,7 @@ import {
   vocabularyTypeLabels,
 } from "../constants"
 import type { VocabularyDetails } from "../queries"
-import { formatVocabularyWrongOptions, previewVocabularyText } from "../utils/vocabulary"
+import { previewVocabularyText } from "../utils/vocabulary"
 
 type VocabularyDetailPageProps = {
   vocabulary: VocabularyDetails
@@ -87,7 +87,7 @@ export function VocabularyDetailPage({ vocabulary }: VocabularyDetailPageProps) 
                 {vocabulary.word}
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
-                Free content for the vocabulary game. Review the meaning, distractors, and
+                Free content for the vocabulary game. Review the correct option, wrong option, and
                 example sentence before publishing.
               </p>
             </div>
@@ -152,13 +152,13 @@ export function VocabularyDetailPage({ vocabulary }: VocabularyDetailPageProps) 
 
           <Card>
             <CardHeader>
-              <CardTitle>Wrong Options</CardTitle>
-              <CardDescription>Distractors used for the free card gameplay.</CardDescription>
+              <CardTitle>Wrong Option</CardTitle>
+              <CardDescription>The single wrong answer used in the game.</CardDescription>
             </CardHeader>
             <CardContent>
-              <pre className="whitespace-pre-wrap text-sm leading-6 text-foreground">
-                {formatVocabularyWrongOptions(vocabulary.wrongOptions)}
-              </pre>
+              <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">
+                {vocabulary.wrongOption}
+              </p>
             </CardContent>
           </Card>
 

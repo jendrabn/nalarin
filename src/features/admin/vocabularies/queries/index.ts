@@ -11,7 +11,7 @@ export type VocabularyRow = {
   difficulty: (typeof schema.questionDifficultyValues)[number]
   type: (typeof schema.vocabularyTypeValues)[number]
   correctMeaning: string
-  wrongOptions: string[]
+  wrongOption: string
   exampleSentence: string | null
   status: (typeof schema.contentStatusValues)[number]
   createdBy: number | null
@@ -30,7 +30,7 @@ function selectVocabularyColumns() {
     difficulty: schema.vocabularies.difficulty,
     type: schema.vocabularies.type,
     correctMeaning: schema.vocabularies.correctMeaning,
-    wrongOptions: schema.vocabularies.wrongOptions,
+    wrongOption: schema.vocabularies.wrongOption,
     exampleSentence: schema.vocabularies.exampleSentence,
     status: schema.vocabularies.status,
     createdBy: schema.vocabularies.createdBy,
@@ -47,7 +47,7 @@ function normalizeVocabularyRow(row: {
   difficulty: (typeof schema.questionDifficultyValues)[number]
   type: (typeof schema.vocabularyTypeValues)[number]
   correctMeaning: string
-  wrongOptions: string[] | null
+  wrongOption: string | null
   exampleSentence: string | null
   status: (typeof schema.contentStatusValues)[number]
   createdBy: number | null
@@ -57,7 +57,7 @@ function normalizeVocabularyRow(row: {
 }): VocabularyRow {
   return {
     ...row,
-    wrongOptions: row.wrongOptions ?? [],
+    wrongOption: row.wrongOption ?? "",
     exampleSentence: row.exampleSentence ?? null,
     createdBy: row.createdBy ?? null,
     createdByName: row.createdByName ?? null,

@@ -7,9 +7,6 @@ import { getCurrentUser } from "@/features/auth/services/session"
 import { buildSeoMetadata } from "@/lib/seo"
 
 import { GrammarConfigPage } from "@/features/grammar-game/components/grammar-config-page"
-import {
-  getGrammarGameDiscoveryData,
-} from "@/features/grammar-game/queries"
 import { parseGrammarGameConfig } from "@/features/grammar-game/utils"
 
 type GrammarPageProps = {
@@ -24,7 +21,7 @@ type GrammarPageProps = {
 export const metadata: Metadata = buildSeoMetadata({
   title: "Game Grammar",
   description:
-    "Mainkan grammar fill in blank gratis dengan konfigurasi bahasa, tingkat kesulitan, kategori, dan jumlah soal sebelum mulai bermain.",
+    "Mainkan grammar fill in blank gratis dengan konfigurasi bahasa, tingkat kesulitan, dan jumlah soal sebelum mulai bermain.",
   path: "/grammar",
   keywords: [
     "Game Grammar",
@@ -47,7 +44,6 @@ export default async function Page({ searchParams }: GrammarPageProps) {
       } satisfies NonNullable<SiteUser>)
     : null
 
-  const discoveryData = await getGrammarGameDiscoveryData()
   const initialConfig = parseGrammarGameConfig(query)
 
   return (
@@ -68,10 +64,7 @@ export default async function Page({ searchParams }: GrammarPageProps) {
       <div className="flex min-h-screen flex-col bg-background text-foreground">
         <SiteNavbar user={siteUser} />
         <main className="flex-1">
-          <GrammarConfigPage
-            initialConfig={initialConfig}
-            availableCategories={discoveryData.categories}
-          />
+          <GrammarConfigPage initialConfig={initialConfig} />
         </main>
         <SiteFooter />
       </div>

@@ -6,7 +6,6 @@ import { db, schema } from "@/db"
 
 import {
   shuffleArray,
-  pickRandom,
 } from "../utils"
 import type {
   VocabularyGameConfig,
@@ -21,7 +20,7 @@ type VocabularyRow = {
   difficulty: (typeof schema.questionDifficultyValues)[number]
   type: (typeof schema.vocabularyTypeValues)[number]
   correctMeaning: string
-  wrongOptions: string[]
+  wrongOption: string
   exampleSentence: string | null
   status: (typeof schema.contentStatusValues)[number]
 }
@@ -39,7 +38,7 @@ function matchesConfig(row: VocabularyRow, config: VocabularyGameConfig) {
     return false
   }
 
-  return row.wrongOptions.length > 0
+  return row.wrongOption.trim().length > 0
 }
 
 function getQuestionDedupeKey(row: VocabularyRow) {
@@ -54,25 +53,13 @@ function getQuestionDedupeKey(row: VocabularyRow) {
 
 function buildGameQuestion(row: VocabularyRow): VocabularyGameQuestion | null {
   const correctMeaning = row.correctMeaning.trim()
-  const normalizedWrongOptions = row.wrongOptions
-    .map((option) => option.trim())
-    .filter((option) => option.length > 0)
+  const wrongMeaning = row.wrongOption.trim()
 
-  if (normalizedWrongOptions.length === 0) {
+  if (wrongMeaning.length === 0) {
     return null
   }
 
-  const filteredWrongOptions = normalizedWrongOptions.filter(
-    (option) => option.toLowerCase() !== correctMeaning.toLowerCase(),
-  )
-
-  if (filteredWrongOptions.length === 0) {
-    return null
-  }
-
-  const wrongMeaning = pickRandom(filteredWrongOptions)
-
-  if (!wrongMeaning) {
+  if (wrongMeaning.toLowerCase() === correctMeaning.toLowerCase()) {
     return null
   }
 
@@ -104,7 +91,7 @@ export async function getVocabularyGameSession(
       difficulty: schema.vocabularies.difficulty,
       type: schema.vocabularies.type,
       correctMeaning: schema.vocabularies.correctMeaning,
-      wrongOptions: schema.vocabularies.wrongOptions,
+      wrongOption: schema.vocabularies.wrongOption,
       exampleSentence: schema.vocabularies.exampleSentence,
       status: schema.vocabularies.status,
     })

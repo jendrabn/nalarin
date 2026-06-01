@@ -41,9 +41,7 @@ export const vocabularyImportHeaders = [
   "difficulty",
   "type",
   "correct_meaning",
-  "wrong_option_1",
-  "wrong_option_2",
-  "wrong_option_3",
+  "wrong_option",
   "example_sentence",
   "status",
 ] as const
@@ -99,8 +97,8 @@ export function createVocabularyImportTemplateWorkbook() {
       `Use one of: ${vocabularyTypeValues.join(", ")}.`,
     ],
     [
-      "wrong_option_1",
-      "At least one wrong option is required. You can fill wrong_option_2 and wrong_option_3 if needed.",
+      "wrong_option",
+      "Required. This is the single wrong answer shown in the game.",
     ],
     [
       "example_sentence",
@@ -166,9 +164,12 @@ export async function parseVocabularyImportWorkbook(
       ),
       type: normalizeValue(cellValue(row, ["type"]), vocabularyTypeValues),
       correctMeaning: cellValue(row, ["correct_meaning", "correctMeaning"]),
-      wrongOption1: cellValue(row, ["wrong_option_1", "wrongOption1"]),
-      wrongOption2: cellValue(row, ["wrong_option_2", "wrongOption2"]),
-      wrongOption3: cellValue(row, ["wrong_option_3", "wrongOption3"]),
+      wrongOption: cellValue(row, [
+        "wrong_option",
+        "wrongOption",
+        "wrong_option_1",
+        "wrongOption1",
+      ]),
       exampleSentence: cellValue(row, ["example_sentence", "exampleSentence"]),
       status: normalizeValue(cellValue(row, ["status"]), vocabularyStatusValues),
     }

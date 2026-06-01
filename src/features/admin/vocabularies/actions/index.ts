@@ -11,7 +11,7 @@ import { flattenZodError } from "@/lib/actions"
 import type { VocabularyImportRowValues } from "../schemas"
 import { vocabularyFormSchema, type VocabularyFormValues } from "../schemas"
 import {
-  buildVocabularyWrongOptions,
+  normalizeVocabularyWrongOption,
   normalizeNullableText,
 } from "../utils/vocabulary"
 import { getVocabularyById } from "../queries"
@@ -46,18 +46,14 @@ function parseVocabularyValues(values: VocabularyFormValues) {
     }
   }
 
-  const wrongOptions = buildVocabularyWrongOptions({
-    wrongOption1: validated.data.wrongOption1,
-    wrongOption2: validated.data.wrongOption2,
-    wrongOption3: validated.data.wrongOption3,
-  })
+  const wrongOption = normalizeVocabularyWrongOption(validated.data.wrongOption)
 
-  if (wrongOptions.length < 1) {
+  if (wrongOption.length < 1) {
     return {
       success: false as const,
       message: "Please provide at least one wrong option.",
       fieldErrors: {
-        wrongOption1: ["Provide at least one wrong option."],
+        wrongOption: ["Provide a wrong option."],
       },
     }
   }
@@ -70,7 +66,7 @@ function parseVocabularyValues(values: VocabularyFormValues) {
       difficulty: validated.data.difficulty,
       type: validated.data.type,
       correctMeaning: validated.data.correctMeaning.trim(),
-      wrongOptions,
+      wrongOption,
       exampleSentence: normalizeNullableText(validated.data.exampleSentence),
       status: validated.data.status,
     },
@@ -108,7 +104,7 @@ export async function createVocabularyAction(
         difficulty: parsed.data.difficulty,
         type: parsed.data.type,
         correctMeaning: parsed.data.correctMeaning,
-        wrongOptions: parsed.data.wrongOptions,
+        wrongOption: parsed.data.wrongOption,
         exampleSentence: parsed.data.exampleSentence,
         status: parsed.data.status,
         createdBy: user.id,
@@ -121,7 +117,9 @@ export async function createVocabularyAction(
       success: true,
       data: { id: created.id },
     }
-  } catch {
+  } catch (error) {
+    console.error("Failed to create vocabulary:", error)
+
     return {
       success: false,
       message: "Failed to create the vocabulary.",
@@ -159,7 +157,7 @@ export async function updateVocabularyAction(
         difficulty: parsed.data.difficulty,
         type: parsed.data.type,
         correctMeaning: parsed.data.correctMeaning,
-        wrongOptions: parsed.data.wrongOptions,
+        wrongOption: parsed.data.wrongOption,
         exampleSentence: parsed.data.exampleSentence,
         status: parsed.data.status,
       })
@@ -171,7 +169,9 @@ export async function updateVocabularyAction(
       success: true,
       data: { id: vocabularyId },
     }
-  } catch {
+  } catch (error) {
+    console.error("Failed to update vocabulary:", error)
+
     return {
       success: false,
       message: "Failed to update the vocabulary.",
@@ -280,11 +280,7 @@ export async function importVocabularyRowsAction(
         difficulty: row.difficulty,
         type: row.type,
         correctMeaning: row.correctMeaning.trim(),
-        wrongOptions: buildVocabularyWrongOptions({
-          wrongOption1: row.wrongOption1,
-          wrongOption2: row.wrongOption2,
-          wrongOption3: row.wrongOption3,
-        }),
+        wrongOption: normalizeVocabularyWrongOption(row.wrongOption),
         exampleSentence: normalizeNullableText(row.exampleSentence),
         status: row.status,
         createdBy: user.id,
@@ -300,7 +296,9 @@ export async function importVocabularyRowsAction(
         importedCount: rows.length,
       },
     }
-  } catch {
+  } catch (error) {
+    console.error("Failed to import vocabularies:", error)
+
     return {
       success: false,
       message: "Failed to import vocabularies.",

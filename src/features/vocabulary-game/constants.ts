@@ -5,21 +5,21 @@ import { modelEnums } from "@/lib/model-enums"
 export const vocabularyGameLanguageValues = ["all", ...vocabularyLanguageValues] as const
 export type VocabularyGameLanguage = (typeof vocabularyGameLanguageValues)[number]
 export const vocabularyGameLanguageLabels = {
-  all: "Campuran",
+  all: "Mixed",
   ...modelEnums.vocabularyLanguage.labels,
 } as const
 
 export const vocabularyGameDifficultyValues = ["all", ...questionDifficultyValues] as const
 export type VocabularyGameDifficulty = (typeof vocabularyGameDifficultyValues)[number]
 export const vocabularyGameDifficultyLabels = {
-  all: "Campuran",
+  all: "Mixed",
   ...modelEnums.questionDifficulty.labels,
 } as const
 
 export const vocabularyGameTypeValues = ["all", ...vocabularyTypeValues] as const
 export type VocabularyGameType = (typeof vocabularyGameTypeValues)[number]
 export const vocabularyGameTypeLabels = {
-  all: "Campuran",
+  all: "Mixed",
   ...modelEnums.vocabularyType.labels,
 } as const
 

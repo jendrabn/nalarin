@@ -52,9 +52,7 @@ function buildDefaultValues(initialValues?: VocabularyDetails | null): Vocabular
     difficulty: initialValues?.difficulty ?? "easy",
     type: initialValues?.type ?? "synonym",
     correctMeaning: initialValues?.correctMeaning ?? "",
-    wrongOption1: initialValues?.wrongOptions[0] ?? "",
-    wrongOption2: initialValues?.wrongOptions[1] ?? "",
-    wrongOption3: initialValues?.wrongOptions[2] ?? "",
+    wrongOption: initialValues?.wrongOption ?? "",
     exampleSentence: initialValues?.exampleSentence ?? "",
     status: initialValues?.status ?? "draft",
   }
@@ -380,30 +378,26 @@ export function VocabularyFormPage({
                   </div>
                 </Field>
 
-                <Field data-invalid={Boolean(form.formState.errors.wrongOption1)}>
+                <Field data-invalid={Boolean(form.formState.errors.wrongOption)}>
                   <FieldContent>
-                    <FieldLabel htmlFor={`${formId}-wrongOption1`} className="required">
+                    <FieldLabel htmlFor={`${formId}-wrongOption`} className="required">
                       Wrong Option
                     </FieldLabel>
                   </FieldContent>
                   <div className="flex flex-col gap-1.5">
                     <Input
-                      id={`${formId}-wrongOption1`}
+                      id={`${formId}-wrongOption`}
                       placeholder="wrong meaning"
-                      aria-invalid={Boolean(form.formState.errors.wrongOption1)}
-                      {...form.register("wrongOption1")}
+                      aria-invalid={Boolean(form.formState.errors.wrongOption)}
+                      {...form.register("wrongOption")}
                     />
                     <FieldDescription>
-                      Extra distractors stay preserved for existing entries, but only one is shown
-                      here.
+                      This is the only wrong answer shown against the correct option.
                     </FieldDescription>
-                    <FieldError>{form.formState.errors.wrongOption1?.message}</FieldError>
+                    <FieldError>{form.formState.errors.wrongOption?.message}</FieldError>
                   </div>
                 </Field>
               </div>
-
-              <Input type="hidden" tabIndex={-1} aria-hidden="true" {...form.register("wrongOption2")} />
-              <Input type="hidden" tabIndex={-1} aria-hidden="true" {...form.register("wrongOption3")} />
 
               <Field data-invalid={Boolean(form.formState.errors.exampleSentence)}>
                 <FieldContent>

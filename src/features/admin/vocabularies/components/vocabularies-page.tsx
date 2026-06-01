@@ -148,13 +148,13 @@ function createColumns({
       },
     },
     {
-      accessorKey: "wrongOptions",
-      meta: { label: vocabularyColumnLabels.wrongOptions },
-      header: ({ column }) => <SortableHeader column={column}>Wrong Options</SortableHeader>,
+      accessorKey: "wrongOption",
+      meta: { label: vocabularyColumnLabels.wrongOption },
+      header: ({ column }) => <SortableHeader column={column}>Wrong Option</SortableHeader>,
       cell: ({ row }) => (
-        <Badge variant="outline" className="tabular-nums">
-          {row.original.wrongOptions.length}
-        </Badge>
+        <span className="block max-w-[24rem] truncate text-sm text-muted-foreground">
+          {row.original.wrongOption}
+        </span>
       ),
     },
     {
@@ -323,7 +323,7 @@ export function VocabulariesPage({ vocabularies }: VocabulariesPageProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Vocabulary"
-        subtitle="Manage vocabulary cards, meanings, distractors, and publication status for the game."
+        subtitle="Manage vocabulary cards, correct options, wrong options, and publication status for the game."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline">

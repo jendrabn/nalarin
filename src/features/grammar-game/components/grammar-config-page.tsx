@@ -1,14 +1,14 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { CirclePlayIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
 import {
+  grammarGameConfigDefaults,
   grammarGameCountValues,
   grammarGameDifficultyLabels,
   grammarGameDifficultyValues,
@@ -20,13 +20,11 @@ import { buildGrammarGameSearchParams } from "../utils"
 
 type GrammarConfigPageProps = {
   initialConfig: GrammarGameConfig
-  availableCategories: string[]
 }
 
 const configSections = [
   { key: "language", title: "Bahasa", tone: "sky" },
   { key: "difficulty", title: "Level", tone: "amber" },
-  { key: "category", title: "Kategori", tone: "violet" },
   { key: "count", title: "Jumlah", tone: "emerald" },
 ] as const
 
@@ -35,18 +33,18 @@ type SectionTone = (typeof configSections)[number]["tone"]
 
 export function GrammarConfigPage({
   initialConfig,
-  availableCategories,
 }: GrammarConfigPageProps) {
   const router = useRouter()
-  const [config, setConfig] = useState(initialConfig)
-
-  const sortedCategories = useMemo(
-    () => Array.from(new Set(availableCategories)).sort((left, right) => left.localeCompare(right)),
-    [availableCategories],
-  )
+  const [config, setConfig] = useState<GrammarGameConfig>({
+    ...initialConfig,
+    category: grammarGameConfigDefaults.category,
+  })
 
   const startGame = () => {
-    const searchParams = buildGrammarGameSearchParams(config)
+    const searchParams = buildGrammarGameSearchParams({
+      ...config,
+      category: grammarGameConfigDefaults.category,
+    })
     router.push(`/grammar/play?${searchParams}`)
   }
 
@@ -66,30 +64,13 @@ export function GrammarConfigPage({
           {configSections.map((section) => {
             const key = section.key as ConfigKey
 
-            if (key === "category") {
-              return (
-                <CategoryPicker
-                  key={section.key}
-                  title={section.title}
-                  tone={section.tone}
-                  value={config.category}
-                  categories={sortedCategories}
-                  onChange={(value) =>
-                    setConfig((current) => ({
-                      ...current,
-                      category: value,
-                    }))
-                  }
-                />
-              )
-            }
-
             return (
               <ConfigPickerGroup
                 key={section.key}
                 title={section.title}
                 tone={section.tone}
                 value={config[key]}
+                className={key === "count" ? "lg:col-span-2" : undefined}
                 onChange={(nextValue) =>
                   setConfig((current) => ({
                     ...current,
@@ -124,11 +105,13 @@ function ConfigPickerGroup({
   title,
   tone,
   value,
+  className,
   onChange,
 }: {
   title: string
   tone: SectionTone
   value: string | number
+  className?: string
   onChange: (value: string | number) => void
 }) {
   const values =
@@ -139,7 +122,7 @@ function ConfigPickerGroup({
         : grammarGameCountValues
 
   return (
-    <div className="space-y-3">
+    <div className={cn("space-y-3", className)}>
       <div className="text-sm font-semibold tracking-tight text-foreground">{title}</div>
       <div className="flex flex-wrap gap-2.5">
         {values.map((option) => {
@@ -173,63 +156,6 @@ function ConfigPickerGroup({
   )
 }
 
-function CategoryPicker({
-  title,
-  tone,
-  value,
-  categories,
-  onChange,
-}: {
-  title: string
-  tone: SectionTone
-  value: string
-  categories: string[]
-  onChange: (value: string) => void
-}) {
-  return (
-    <div className="space-y-3">
-      <div className="text-sm font-semibold tracking-tight text-foreground">{title}</div>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="h-10 rounded-full border-border/60 bg-background text-sm font-medium shadow-none">
-          <SelectValue placeholder="Semua kategori" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Semua kategori</SelectItem>
-          {categories.map((category) => (
-            <SelectItem key={category} value={category}>
-              {category}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <div className="flex flex-wrap gap-2">
-        {categories.slice(0, 4).map((category) => {
-          const active = value.trim().toLowerCase() === category.trim().toLowerCase()
-
-          return (
-            <Button
-              key={category}
-              type="button"
-              size="sm"
-              variant="outline"
-              aria-pressed={active}
-              onClick={() => onChange(category)}
-              className={cn(
-                "h-9 rounded-full px-3 text-xs font-medium transition-all",
-                active
-                  ? getToneButtonClasses(tone)
-                  : "border-border bg-background text-muted-foreground shadow-none hover:text-foreground dark:border-input/80 dark:bg-input/10 dark:hover:bg-input/20 dark:hover:text-foreground",
-              )}
-            >
-              {category}
-            </Button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
 function getToneButtonClasses(tone: SectionTone) {
   if (tone === "sky") {
     return "border-sky-500 bg-sky-500 text-white shadow-[0_10px_24px_-14px_rgba(14,165,233,0.6)] hover:bg-sky-500 hover:text-white dark:border-sky-300/35 dark:bg-sky-500/20 dark:text-sky-50 dark:hover:bg-sky-500/30 dark:hover:text-sky-50"
@@ -237,10 +163,6 @@ function getToneButtonClasses(tone: SectionTone) {
 
   if (tone === "amber") {
     return "border-amber-500 bg-amber-500 text-white shadow-[0_10px_24px_-14px_rgba(245,158,11,0.55)] hover:bg-amber-500 hover:text-white dark:border-amber-300/35 dark:bg-amber-500/20 dark:text-amber-50 dark:hover:bg-amber-500/30 dark:hover:text-amber-50"
-  }
-
-  if (tone === "violet") {
-    return "border-violet-500 bg-violet-500 text-white shadow-[0_10px_24px_-14px_rgba(139,92,246,0.58)] hover:bg-violet-500 hover:text-white dark:border-violet-300/35 dark:bg-violet-500/20 dark:text-violet-50 dark:hover:bg-violet-500/30 dark:hover:text-violet-50"
   }
 
   return "border-emerald-500 bg-emerald-500 text-white shadow-[0_10px_24px_-14px_rgba(16,185,129,0.58)] hover:bg-emerald-500 hover:text-white dark:border-emerald-300/35 dark:bg-emerald-500/20 dark:text-emerald-50 dark:hover:bg-emerald-500/30 dark:hover:text-emerald-50"

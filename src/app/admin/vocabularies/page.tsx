@@ -5,7 +5,7 @@ import { getVocabularies } from "@/features/admin/vocabularies/queries"
 
 export const metadata: Metadata = {
   title: "Vocabulary",
-  description: "Manage free vocabulary cards, meanings, distractors, and status.",
+  description: "Manage free vocabulary cards, correct options, wrong options, and status.",
 }
 
 export default async function Page() {

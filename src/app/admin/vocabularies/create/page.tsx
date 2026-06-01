@@ -4,7 +4,7 @@ import { VocabularyFormPage } from "@/features/admin/vocabularies/components/voc
 
 export const metadata: Metadata = {
   title: "Create Vocabulary",
-  description: "Create a free vocabulary card with meaning and distractors.",
+  description: "Create a free vocabulary card with one correct option and one wrong option.",
 }
 
 export default async function Page() {
@@ -12,7 +12,7 @@ export default async function Page() {
     <VocabularyFormPage
       mode="create"
       title="Create Vocabulary"
-      description="Create a vocabulary card for the game and define the correct meaning plus distractors."
+      description="Create a vocabulary card for the game and define one correct option plus one wrong option."
       submitLabel="Create Vocabulary"
       backHref="/admin/vocabularies"
     />
