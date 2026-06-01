@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/page-header"
+import { PremiumBadge } from "@/components/premium-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -81,16 +82,16 @@ type PracticesExplorerProps = {
   selectedExamTypeSlug?: string
 }
 
-const difficultyCardClasses: Record<PracticeDifficulty, string> = {
-  easy: "border-chart-2/35 shadow-chart-2/10 hover:border-chart-2/55 hover:shadow-chart-2/20",
-  medium: "border-chart-3/35 shadow-chart-3/10 hover:border-chart-3/55 hover:shadow-chart-3/20",
-  hard: "border-chart-4/35 shadow-chart-4/10 hover:border-chart-4/55 hover:shadow-chart-4/20",
-}
-
 const difficultyBadgeClasses: Record<PracticeDifficulty, string> = {
   easy: "border-chart-2/25 bg-chart-2/10 text-chart-2",
   medium: "border-chart-3/25 bg-chart-3/10 text-chart-3",
   hard: "border-chart-4/25 bg-chart-4/10 text-chart-4",
+}
+
+const difficultyCardThemeClasses: Record<PracticeDifficulty, string> = {
+  easy: "from-chart-2/10 via-chart-2/3 to-card hover:border-chart-2/30 hover:from-chart-2/16 hover:via-chart-2/6 hover:shadow-chart-2/10 hover:ring-chart-2/20",
+  medium: "from-chart-3/12 via-chart-3/4 to-card hover:border-chart-3/30 hover:from-chart-3/18 hover:via-chart-3/7 hover:shadow-chart-3/10 hover:ring-chart-3/20",
+  hard: "from-chart-4/10 via-chart-4/3 to-card hover:border-chart-4/30 hover:from-chart-4/16 hover:via-chart-4/6 hover:shadow-chart-4/10 hover:ring-chart-4/20",
 }
 
 const modeLabels: Record<PracticeMode, string> = {
@@ -291,7 +292,7 @@ export function PracticesExplorer({
           />
         ) : null}
 
-        <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start">
+        <div className="grid gap-6 lg:grid-cols-[19rem_minmax(0,1fr)] lg:items-start">
           <SubjectTabs
             subjects={visibleSubjects}
             activeSubjectId={activeSubjectId}
@@ -472,7 +473,7 @@ function SubjectTabs({
     <aside
       role="tablist"
       aria-label="Pilih Mata Pelajaran"
-      className="flex w-full flex-col gap-1.5 rounded-2xl border border-border/70 bg-card/55 p-1.5 shadow-xs lg:sticky lg:top-24"
+      className="flex w-full flex-col gap-1 rounded-2xl border border-border/70 bg-card/75 p-1.5 shadow-xs lg:sticky lg:top-24"
     >
       {subjects.map((subject) => {
         const active = subject.id === activeSubjectId
@@ -487,13 +488,25 @@ function SubjectTabs({
             variant="ghost"
             size="xl"
             className={cn(
-              "relative h-auto min-h-12 w-full min-w-0 justify-start overflow-hidden rounded-xl border px-4 py-3 text-left font-medium tracking-normal transition-all duration-200 before:absolute before:left-2 before:top-1/2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-full",
+              "relative h-auto min-h-11 w-full min-w-0 justify-start gap-3 overflow-hidden rounded-xl border px-4 py-3 text-left font-medium tracking-normal transition-all duration-200 before:absolute before:left-2 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full",
               active
                 ? "border-primary/30 bg-primary/10 pl-5 text-primary shadow-sm shadow-primary/10 before:bg-primary hover:bg-primary/15 hover:text-primary"
-                : "border-transparent bg-transparent text-muted-foreground before:bg-transparent hover:border-border hover:bg-muted/70 hover:text-foreground",
+                : "border-transparent bg-muted/25 text-muted-foreground before:bg-transparent hover:border-border hover:bg-muted/70 hover:text-foreground",
             )}
           >
             <span className="min-w-0 truncate text-left leading-5">{subject.name}</span>
+            <Badge
+              variant="outline"
+              size="sm"
+              className={cn(
+                "ml-auto rounded-full border-transparent tabular-nums transition-colors",
+                active
+                  ? "bg-primary/15 text-primary"
+                  : "bg-muted/70 text-muted-foreground",
+              )}
+            >
+              {subject.practiceCount}
+            </Badge>
           </Button>
         )
       })}
@@ -525,7 +538,7 @@ function PracticeList({
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 2xl:grid-cols-3">
           {practices.map((practice) => (
             <PracticeCard
               key={practice.id}
@@ -563,71 +576,83 @@ function PracticeCard({
   return (
     <Card
       className={cn(
-        "flex h-full flex-col rounded-lg bg-card py-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg",
-        difficultyCardClasses[practice.difficulty],
+        "group flex h-full gap-0 overflow-hidden rounded-xl border border-border bg-linear-to-br py-0 shadow-md shadow-foreground/5 ring-1 ring-border/50 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg",
+        difficultyCardThemeClasses[practice.difficulty],
       )}
     >
-      <CardHeader className="gap-2.5 px-5 pb-0">
-        <div className="flex items-start justify-between gap-3">
-          <Badge
-            variant="outline"
-            size="sm"
-            className={cn(
-              "shrink-0 rounded-full font-semibold",
-              difficultyBadgeClasses[practice.difficulty],
-            )}
-          >
-            <GaugeIcon />
-            {practiceDifficultyLabels[practice.difficulty]}
-          </Badge>
-          {practice.isFree ? null : (
-            <Badge variant="destructive" size="sm" className="shrink-0 rounded-full font-semibold">
-              <LockIcon data-icon="inline-start" />
-              Premium
+      <div className="flex flex-1 flex-col gap-4 px-4 pt-4 pb-4 sm:px-5 sm:pt-5 sm:pb-5">
+        <CardHeader className="gap-3.5 px-0 pt-0 pb-0">
+          <div className="flex items-start justify-between gap-3">
+            <Badge
+              variant="outline"
+              size="sm"
+              className={cn(
+                "shrink-0 rounded-full font-semibold",
+                difficultyBadgeClasses[practice.difficulty],
+              )}
+            >
+              <GaugeIcon />
+              {practiceDifficultyLabels[practice.difficulty]}
             </Badge>
+            {practice.isFree ? null : (
+              <PremiumBadge showIcon />
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <CardTitle
+              id={titleId}
+              role="heading"
+              aria-level={3}
+              className="line-clamp-2 text-[1rem] font-semibold leading-[1.45] text-foreground sm:text-[1.04rem]"
+            >
+              {practice.title}
+            </CardTitle>
+            <p className="line-clamp-3 text-[0.86rem] font-normal leading-[1.6] text-muted-foreground sm:text-[0.9rem]">
+              {practice.description ?? "Latihan soal terkurasi untuk memperkuat pemahaman materi."}
+            </p>
+          </div>
+        </CardHeader>
+
+        <CardContent className="mt-auto flex flex-col gap-3.5 px-0 pt-0 pb-0 sm:gap-4">
+          <div className="flex items-center justify-between gap-3">
+            <PracticeMetaItem>
+              <BookOpenIcon />
+              {practice.questionCount} Soal
+            </PracticeMetaItem>
+            <PracticeMetaItem>
+              <ClockIcon />
+              {durationLabel}
+            </PracticeMetaItem>
+          </div>
+
+          {accessAllowed ? (
+            <Button
+              type="button"
+              aria-label={`${actionLabel} ${practice.title}`}
+              onClick={onStart}
+              className="w-full font-semibold shadow-sm transition-all duration-200 group-hover:shadow-md"
+              size="lg"
+            >
+              {actionLabel}
+              <ArrowRightIcon data-icon="inline-end" />
+            </Button>
+          ) : (
+            <Button
+              asChild
+              aria-label={`${actionLabel} ${practice.title}`}
+              className="w-full border-primary/20 bg-primary/5 font-semibold text-primary shadow-sm transition-all duration-200 hover:bg-primary/10 hover:text-primary group-hover:shadow-md"
+              variant="outline"
+              size="lg"
+            >
+              <Link href="/pricing">
+                <LockIcon data-icon="inline-start" />
+                {actionLabel}
+              </Link>
+            </Button>
           )}
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <CardTitle
-            id={titleId}
-            role="heading"
-            aria-level={3}
-            className="line-clamp-2 text-[1.05rem] font-semibold leading-6 text-foreground sm:text-[1.08rem]"
-          >
-            {practice.title}
-          </CardTitle>
-          <p className="line-clamp-3 text-[0.9rem] font-normal leading-6 text-muted-foreground sm:text-[0.925rem]">
-            {practice.description ?? "Latihan soal terkurasi untuk memperkuat pemahaman materi."}
-          </p>
-        </div>
-      </CardHeader>
-
-      <CardContent className="mt-auto flex flex-col gap-3.5 px-5 pt-3.5">
-        <div className="flex items-center justify-between gap-3">
-          <PracticeMetaItem>
-            <BookOpenIcon />
-            {practice.questionCount} Soal
-          </PracticeMetaItem>
-          <PracticeMetaItem>
-            <ClockIcon />
-            {durationLabel}
-          </PracticeMetaItem>
-        </div>
-
-        <Button
-          type="button"
-          aria-label={`${actionLabel} ${practice.title}`}
-          onClick={onStart}
-          className="w-full"
-          variant={accessAllowed ? "default" : "secondary"}
-          size="lg"
-        >
-          {!accessAllowed ? <LockIcon data-icon="inline-start" /> : null}
-          {actionLabel}
-          {accessAllowed ? <ArrowRightIcon data-icon="inline-end" /> : null}
-        </Button>
-      </CardContent>
+        </CardContent>
+      </div>
     </Card>
   )
 }

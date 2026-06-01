@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { useMemo, useState, type ReactNode } from "react"
 import {
@@ -12,6 +13,7 @@ import {
 } from "lucide-react"
 
 import { PageHeader } from "@/components/page-header"
+import { PremiumBadge } from "@/components/premium-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -138,7 +140,7 @@ export function MaterialsExplorer({
             />
           ) : null}
 
-          <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start">
+          <div className="grid gap-6 lg:grid-cols-[19rem_minmax(0,1fr)] lg:items-start">
             <SubjectTabs
               subjects={visibleSubjects}
               activeSubjectId={activeSubjectId}
@@ -226,7 +228,7 @@ function SubjectTabs({
     <aside
       role="tablist"
       aria-label="Pilih Mata Pelajaran"
-      className="flex w-full flex-col gap-1.5 rounded-2xl border border-border/70 bg-card/55 p-1.5 shadow-xs lg:sticky lg:top-24"
+      className="flex w-full flex-col gap-1 rounded-2xl border border-border/70 bg-card/75 p-1.5 shadow-xs lg:sticky lg:top-24"
     >
       {subjects.map((subject) => {
         const active = subject.id === activeSubjectId
@@ -241,10 +243,10 @@ function SubjectTabs({
             variant="ghost"
             size="xl"
             className={cn(
-              "relative h-auto min-h-12 w-full min-w-0 justify-start gap-3 overflow-hidden rounded-xl border px-4 py-3 text-left font-medium tracking-normal transition-all duration-200 before:absolute before:left-2 before:top-1/2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-full",
+              "relative h-auto min-h-11 w-full min-w-0 justify-start gap-3 overflow-hidden rounded-xl border px-4 py-3 text-left font-medium tracking-normal transition-all duration-200 before:absolute before:left-2 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full",
               active
                 ? "border-primary/30 bg-primary/10 pl-5 text-primary shadow-sm shadow-primary/10 before:bg-primary hover:bg-primary/15 hover:text-primary"
-                : "border-transparent bg-transparent text-muted-foreground before:bg-transparent hover:border-border hover:bg-muted/70 hover:text-foreground",
+                : "border-transparent bg-muted/25 text-muted-foreground before:bg-transparent hover:border-border hover:bg-muted/70 hover:text-foreground",
             )}
           >
             <span className="min-w-0 truncate text-left leading-5">{subject.name}</span>
@@ -289,11 +291,12 @@ function MaterialList({
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-          {materials.map((material) => (
+        <div className="grid gap-5 sm:grid-cols-2 2xl:grid-cols-3">
+          {materials.map((material, index) => (
             <MaterialCard
               key={material.id}
               material={material}
+              eagerImage={index === 0}
               premiumExamTypeIds={premiumExamTypeIds}
             />
           ))}
@@ -305,26 +308,64 @@ function MaterialList({
 
 function MaterialCard({
   material,
+  eagerImage,
   premiumExamTypeIds,
 }: {
   material: PublicMaterialSummary
+  eagerImage: boolean
   premiumExamTypeIds: number[]
 }) {
   const accessAllowed = canAccessMaterial({
     isFree: material.isFree,
     hasPremiumAccess: premiumExamTypeIds.includes(material.examTypeId),
   })
-  const actionLabel = accessAllowed ? "Buka Materi" : "Upgrade Untuk Akses"
+  const actionLabel = accessAllowed ? "Lihat Materi" : "Upgrade Untuk Akses"
   const actionHref = accessAllowed
     ? `/materials/exam/${material.examTypeSlug}/${material.slug}`
     : "/pricing"
   const hasVideo = material.contentMode === "video" || material.contentMode === "mixed"
 
   return (
-    <Card className="group flex h-full flex-col rounded-lg border-border/75 bg-card py-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg">
-      <CardHeader className="gap-2.5 px-5 pb-0">
+    <Card className="group flex h-full gap-0 overflow-hidden rounded-xl border border-border bg-card py-0 shadow-md shadow-foreground/5 ring-1 ring-border/50 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg hover:shadow-primary/10 hover:ring-primary/15">
+      <div className="relative aspect-[16/9] overflow-hidden border-b border-border/60 bg-muted/35 sm:aspect-[16/8.75]">
+        {material.thumbnailUrl ? (
+          <>
+            <Image
+              src={material.thumbnailUrl}
+              alt=""
+              fill
+              loading={eagerImage ? "eager" : "lazy"}
+              sizes="(max-width: 768px) 100vw, (max-width: 1536px) 50vw, 33vw"
+              unoptimized
+              className="scale-110 object-cover opacity-35 blur-md transition duration-500 group-hover:scale-[1.13] group-hover:opacity-45"
+            />
+            <Image
+              src={material.thumbnailUrl}
+              alt={material.title}
+              fill
+              loading={eagerImage ? "eager" : "lazy"}
+              sizes="(max-width: 768px) 100vw, (max-width: 1536px) 50vw, 33vw"
+              unoptimized
+              className="object-contain transition duration-500 group-hover:scale-[1.015] group-hover:saturate-110"
+            />
+          </>
+        ) : (
+          <div className="relative flex size-full items-center justify-center overflow-hidden bg-secondary/70">
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:22px_22px] opacity-30" />
+            <div className="absolute -right-10 -top-10 size-32 rounded-full bg-primary/12 blur-2xl" />
+            <div className="absolute -bottom-12 left-6 size-32 rounded-full bg-chart-1/12 blur-2xl" />
+            <div className="relative flex max-w-[78%] flex-col items-center gap-2 text-center">
+              <span className="grid size-10 place-items-center rounded-lg border border-primary/15 bg-background/85 text-primary shadow-sm [&_svg]:size-5">
+                <BookOpenIcon />
+              </span>
+              <span className="line-clamp-2 text-sm font-semibold leading-5 text-foreground/75">
+                {material.subjectName}
+              </span>
+            </div>
+          </div>
+        )}
         {hasVideo || !material.isFree ? (
-          <div className="flex items-start justify-between gap-3">
+          <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-3 sm:inset-x-4 sm:top-4">
             {hasVideo ? (
               <Badge
                 variant="outline"
@@ -338,47 +379,51 @@ function MaterialCard({
               <span aria-hidden="true" />
             )}
             {material.isFree ? null : (
-              <Badge variant="destructive" size="sm" className="shrink-0 rounded-full font-semibold">
-                <LockIcon data-icon="inline-start" />
-                Premium
-              </Badge>
+              <PremiumBadge showIcon />
             )}
           </div>
         ) : null}
+      </div>
 
-        <div className="flex flex-col gap-1.5">
-          <CardTitle className="line-clamp-2 text-[1.05rem] font-semibold leading-6 text-foreground sm:text-[1.08rem]">
-            {material.title}
-          </CardTitle>
-          <p className="line-clamp-3 text-[0.9rem] font-normal leading-6 text-muted-foreground sm:text-[0.925rem]">
-            {material.excerpt ?? "Materi pembelajaran terkurasi untuk memperkuat pemahaman kamu."}
-          </p>
-        </div>
-      </CardHeader>
-
-      <CardContent className="mt-auto flex flex-col gap-3.5 px-5 pt-3.5">
-        {material.topicName ? (
-          <div className="flex items-center gap-3">
-            <MaterialMetaItem>
-              <BookOpenIcon />
-              {material.topicName}
-            </MaterialMetaItem>
+      <div className="flex flex-1 flex-col gap-3.5 px-4 pt-3.5 pb-4 sm:gap-4 sm:px-5 sm:pt-4 sm:pb-5">
+        <CardHeader className="gap-2 px-0 pt-0 pb-0">
+          <div className="flex flex-col gap-1.5">
+            <CardTitle className="line-clamp-2 text-[1rem] font-semibold leading-[1.45] text-foreground sm:text-[1.04rem]">
+              {material.title}
+            </CardTitle>
+            <p className="line-clamp-3 text-[0.86rem] font-normal leading-[1.55] text-muted-foreground sm:text-[0.9rem]">
+              {material.excerpt ?? "Materi pembelajaran terkurasi untuk memperkuat pemahaman kamu."}
+            </p>
           </div>
-        ) : null}
+        </CardHeader>
 
-        <Button
-          asChild
-          variant={accessAllowed ? "default" : "secondary"}
-          size="lg"
-          className="w-full"
-        >
-          <Link href={actionHref}>
-            {!accessAllowed ? <LockIcon data-icon="inline-start" /> : null}
-            {actionLabel}
-            {accessAllowed ? <ArrowRightIcon data-icon="inline-end" /> : null}
-          </Link>
-        </Button>
-      </CardContent>
+        <CardContent className="mt-auto flex flex-col gap-3.5 px-0 pt-0 pb-0 sm:gap-4">
+          {material.topicName ? (
+            <div className="flex items-center gap-3">
+              <MaterialMetaItem>
+                <BookOpenIcon />
+                {material.topicName}
+              </MaterialMetaItem>
+            </div>
+          ) : null}
+
+          <Button
+            asChild
+            variant={accessAllowed ? "default" : "outline"}
+            size="lg"
+            className={cn(
+              "w-full font-semibold shadow-sm transition-all duration-200 group-hover:shadow-md",
+              !accessAllowed && "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary",
+            )}
+            >
+              <Link href={actionHref}>
+                {!accessAllowed ? <LockIcon data-icon="inline-start" /> : null}
+                {actionLabel}
+                {accessAllowed ? <ArrowRightIcon data-icon="inline-end" /> : null}
+              </Link>
+            </Button>
+        </CardContent>
+      </div>
     </Card>
   )
 }

@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/page-header"
+import { PremiumBadge } from "@/components/premium-badge"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar"
 import { Badge } from "@/components/ui/badge"
@@ -253,10 +254,7 @@ function TryoutInfoCard({
           {tryout.isFree ? (
             <Badge variant="soft" size="default">Gratis</Badge>
           ) : (
-            <Badge variant="destructive" size="default">
-              <LockIcon data-icon="inline-start" />
-              Premium
-            </Badge>
+            <PremiumBadge showIcon size="default" />
           )}
         </div>
 

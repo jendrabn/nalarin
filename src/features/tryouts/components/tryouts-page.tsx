@@ -19,6 +19,7 @@ import {
 import { SiteFooter } from "@/components/site-footer"
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar"
 import { PageHeader } from "@/components/page-header"
+import { PremiumBadge } from "@/components/premium-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -173,7 +174,7 @@ export function TryoutsPage({
                   </EmptyHeader>
                 </Empty>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                   {visibleTryouts.map((tryout) => (
                     <TryoutCard
                       key={tryout.id}
@@ -300,12 +301,12 @@ function TryoutCard({
   })
 
   return (
-    <Card className="group flex h-full flex-col rounded-lg border-border/75 bg-card py-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg">
+    <Card className="group flex h-full gap-0 overflow-hidden rounded-xl border border-border bg-card py-0 shadow-md shadow-foreground/5 ring-1 ring-border/50 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg hover:shadow-primary/10 hover:ring-primary/15">
       <Link
         href={`/tryouts/${tryout.slug}`}
-        className="flex flex-1 flex-col outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="flex flex-1 flex-col gap-4 px-4 pt-4 pb-0 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-5 sm:pt-5"
       >
-        <CardHeader className="gap-2.5 px-5 pb-0">
+        <CardHeader className="gap-3.5 px-0 pt-0 pb-0">
           <div className="flex items-start justify-between gap-3">
             <Badge
               variant="outline"
@@ -316,25 +317,22 @@ function TryoutCard({
               {statusMeta.label}
             </Badge>
             {tryout.isFree ? null : (
-              <Badge variant="destructive" size="sm" className="shrink-0 rounded-full font-semibold">
-                <LockIcon data-icon="inline-start" />
-                Premium
-              </Badge>
+              <PremiumBadge showIcon />
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <CardTitle className="line-clamp-2 text-[1.05rem] font-semibold leading-6 text-foreground sm:text-[1.08rem]">
+          <div className="flex flex-col gap-2">
+            <CardTitle className="line-clamp-2 text-[1rem] font-semibold leading-[1.45] text-foreground sm:text-[1.04rem]">
               {tryout.title}
             </CardTitle>
-            <p className="line-clamp-3 text-[0.9rem] font-normal leading-6 text-muted-foreground sm:text-[0.925rem]">
+            <p className="line-clamp-3 text-[0.86rem] font-normal leading-[1.6] text-muted-foreground sm:text-[0.9rem]">
               {tryout.description ?? "Simulasi tryout multi-section dengan timer per subtest."}
             </p>
           </div>
         </CardHeader>
 
-        <CardContent className="mt-auto flex flex-1 flex-col px-5 pt-2.5">
-          <div className="grid gap-1.5 rounded-lg border border-border/70 bg-secondary/35 p-2.5">
+        <CardContent className="mt-auto flex flex-1 flex-col px-0 pt-0 pb-0">
+          <div className="grid gap-2 rounded-xl border border-border/60 bg-secondary/30 p-3">
             <TryoutMetaRow
               icon={<CalendarDaysIcon />}
               value={formatShortDateRange(tryout.startsAt, tryout.endsAt)}
@@ -346,7 +344,7 @@ function TryoutCard({
             />
           </div>
 
-          <div className="mt-2.5 grid grid-cols-3 gap-2">
+          <div className="mt-3 grid grid-cols-3 gap-2.5 sm:mt-3.5">
             <TryoutMetric label="Subtes" value={tryout.sectionCount.toString()} />
             <TryoutMetric label="Soal" value={tryout.questionCount.toString()} />
             <TryoutMetric
@@ -357,36 +355,37 @@ function TryoutCard({
         </CardContent>
       </Link>
 
-      <div className="px-5 pt-3">
+      <div className="px-4 pt-3.5 pb-4 sm:px-5 sm:pb-5">
         {actionHref ? (
           <Button
             asChild
-            variant="default"
+            variant={accessAllowed ? "default" : "outline"}
             size="lg"
             className={cn(
-              "w-full font-semibold transition-colors",
-              statusMeta.actionClassName,
-              "group-hover:bg-primary/90",
+              "w-full font-semibold shadow-sm transition-all duration-200 group-hover:shadow-md",
+              accessAllowed
+                ? cn(statusMeta.actionClassName, "group-hover:bg-primary/90")
+                : "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary",
             )}
-          >
-            <Link href={actionHref}>
-              {!accessAllowed && !tryout.isFree ? <LockIcon data-icon="inline-start" /> : null}
-              {actionLabel}
-              <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
-            </Link>
-          </Button>
-        ) : (
+            >
+              <Link href={actionHref}>
+                {!accessAllowed && !tryout.isFree ? <LockIcon data-icon="inline-start" /> : null}
+                {actionLabel}
+                {accessAllowed ? <ArrowRightIcon data-icon="inline-end" aria-hidden="true" /> : null}
+              </Link>
+            </Button>
+          ) : (
           <Button
             type="button"
             variant="secondary"
             size="lg"
-            disabled
-            className={cn("w-full font-semibold text-muted-foreground", statusMeta.actionClassName)}
-          >
-            {!accessAllowed && !tryout.isFree ? <LockIcon data-icon="inline-start" /> : null}
-            {actionLabel}
-          </Button>
-        )}
+              disabled
+              className={cn("w-full font-semibold text-muted-foreground", statusMeta.actionClassName)}
+            >
+              {!accessAllowed && !tryout.isFree ? <LockIcon data-icon="inline-start" /> : null}
+              {actionLabel}
+            </Button>
+          )}
       </div>
     </Card>
   )
@@ -422,7 +421,7 @@ function TryoutMetaRow({
 
 function TryoutMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-border/70 bg-background/70 px-2.5 py-1.5">
+    <div className="rounded-lg border border-border/60 bg-background/80 px-3 py-2 shadow-sm shadow-foreground/5">
       <span className="block truncate text-[0.9rem] font-semibold text-foreground">
         {value}
       </span>

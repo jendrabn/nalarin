@@ -12,6 +12,7 @@ import {
 import { SiteFooter } from "@/components/site-footer"
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar"
 import { PageHeader } from "@/components/page-header"
+import { PremiumBadge } from "@/components/premium-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -72,9 +73,7 @@ export function MaterialDetailPage({
                 </Badge>
               ) : null}
               {material.isFree ? null : (
-                <Badge variant="destructive" className="rounded-full">
-                  Premium
-                </Badge>
+                <PremiumBadge size="default" />
               )}
             </div>
 
@@ -274,12 +273,7 @@ function RelatedMaterialCard({ material }: { material: PublicMaterialDetail["rel
             </p>
           </div>
           {material.isFree ? null : (
-            <Badge
-              variant="destructive"
-              className="shrink-0 rounded-full text-[0.72rem]"
-            >
-              Premium
-            </Badge>
+            <PremiumBadge className="text-[0.72rem]" />
           )}
         </div>
       </Card>

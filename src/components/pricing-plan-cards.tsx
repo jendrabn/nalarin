@@ -7,7 +7,6 @@ import {
   BanIcon,
   CheckIcon,
   CreditCardIcon,
-  GraduationCapIcon,
   MessageCircleIcon,
   SparklesIcon,
 } from "lucide-react"
@@ -17,6 +16,8 @@ import { formatCurrencyIDR } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+
+const EXAM_TYPE_PLACEHOLDER_IMAGE = "/images/placeholders/exam-type-logo.svg"
 
 export type PricingPlanCardAction = {
   label: string
@@ -80,18 +81,14 @@ export function PricingPlanCards({
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent" />
             <div className="absolute left-5 top-5 flex size-16 items-center justify-center rounded-lg border bg-background/90 shadow-lg backdrop-blur">
-              {plan.logoUrl ? (
-                <Image
-                  src={plan.logoUrl}
-                  alt={`${plan.name} logo`}
-                  width={56}
-                  height={56}
-                  className="size-12 object-contain"
-                  unoptimized
-                />
-              ) : (
-                <GraduationCapIcon className="size-8 text-primary" />
-              )}
+              <Image
+                src={plan.logoUrl ?? EXAM_TYPE_PLACEHOLDER_IMAGE}
+                alt={plan.logoUrl ? `${plan.name} logo` : ""}
+                width={56}
+                height={56}
+                className="size-12 object-contain"
+                unoptimized
+              />
             </div>
           </div>
 

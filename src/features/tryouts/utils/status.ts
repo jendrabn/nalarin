@@ -151,7 +151,7 @@ function formatShortDate(value: Date | null) {
 
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
-    month: "short",
+    month: "long",
   }).format(value)
 }
 
