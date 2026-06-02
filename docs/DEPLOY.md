@@ -1,37 +1,37 @@
 # Deployment Guide
 
-Panduan ini menjelaskan deployment Nalarin ke VPS Ubuntu Server 22.04 dengan Bun, PM2, Nginx, dan GitHub Actions. First deploy tetap dilakukan manual karena file `.env` harus dibuat langsung di VPS dan tidak disimpan di GitHub.
+This guide explains how to deploy Nalarin to an Ubuntu Server 22.04 VPS using Bun, PM2, Nginx, and GitHub Actions.
 
-## Ringkasan
+The first deployment must be performed manually because the `.env` file must be created directly on the VPS. The workflow does not create, modify, or transmit `.env` values.
+
+## Target Configuration
 
 - OS: Ubuntu Server 22.04 LTS
-- App runtime: Bun
+- Application VPS user: `deploy`
+- Application directory: `/var/www/nalarin`
+- Runtime: Bun
 - Process manager: PM2
 - Reverse proxy: Nginx
 - SSL: Certbot
-- Database: MySQL
-- User VPS aplikasi: `deploy`
-- Folder aplikasi: `/var/www/nalarin`
-- Branch deploy: `main`
-- Port aplikasi default: `3001`, bisa diubah lewat `APP_PORT` di `.env`
+- Auto-deploy branch: `main`
+- Application port: `APP_PORT` from `.env`, default `3001`
 
-Workflow GitHub Actions berada di `.github/workflows/deploy.yml`. Workflow akan SSH ke VPS, masuk ke `/var/www/nalarin`, mengambil perubahan terbaru dari `origin/main`, menjalankan `bun install`, `bun run build`, lalu reload PM2.
+The auto-deploy workflow is located at `.github/workflows/deploy.yml`.
 
-## 1. Prasyarat
+## 1. Prerequisites
 
-Pastikan sudah tersedia:
+Make sure the following are available:
 
-- VPS Ubuntu Server 22.04 LTS
-- Domain sudah mengarah ke IP VPS
-- Akses root atau user sudo ke VPS
-- Port `22`, `80`, dan `443` terbuka
-- Repository GitHub sudah berisi workflow deploy
-- File `.env.example` tersedia di repository
-- Kredensial MySQL dan API key production siap diisi manual ke `.env`
+- A domain pointing to the VPS IP address.
+- Root access or a sudo user on the VPS.
+- Open ports `22`, `80`, and `443`.
+- The GitHub repository is accessible from the VPS.
+- `.env.example` is available in the repository.
+- Production database credentials and API keys are ready.
 
-## 2. Install Paket Dasar
+## 2. Server Setup
 
-Login ke VPS sebagai root atau user sudo, lalu jalankan:
+Log in to the VPS as root or as a sudo user.
 
 ```bash
 sudo apt update
@@ -39,7 +39,7 @@ sudo apt upgrade -y
 sudo apt install -y git nginx mysql-server build-essential python3 curl ca-certificates unzip
 ```
 
-Jika memakai UFW:
+If you use UFW:
 
 ```bash
 sudo ufw allow OpenSSH
@@ -48,99 +48,79 @@ sudo ufw enable
 sudo ufw status
 ```
 
-Amankan MySQL:
+Secure MySQL:
 
 ```bash
 sudo mysql_secure_installation
 ```
 
-## 3. Buat User Deploy
+## 3. Create the Deploy User and Application Directory
 
-Gunakan user non-root untuk menjalankan aplikasi. Contoh username: `deploy`.
+Use a non-root user. This guide uses the username `deploy`.
 
 ```bash
 sudo adduser deploy
 sudo usermod -aG sudo deploy
-```
-
-Buat folder aplikasi dan berikan ownership ke user `deploy`:
-
-```bash
 sudo mkdir -p /var/www/nalarin
 sudo chown -R deploy:deploy /var/www/nalarin
 sudo chmod 755 /var/www
 sudo chmod 755 /var/www/nalarin
 ```
 
-Login sebagai user `deploy`:
+Switch to the `deploy` user:
 
 ```bash
 sudo -iu deploy
 ```
 
-## 4. Install Bun Sebagai User Deploy
-
-Bun harus diinstall oleh user yang menjalankan aplikasi, yaitu `deploy`.
+Install Bun as the `deploy` user:
 
 ```bash
 curl -fsSL https://bun.sh/install | bash
 source ~/.bashrc
 bun -v
-```
-
-Pastikan Bun ada di path berikut:
-
-```bash
 which bun
 ```
 
-Umumnya hasilnya:
-
-```text
-/home/deploy/.bun/bin/bun
-```
-
-## 5. Install PM2 Sebagai User Deploy
-
-Workflow bisa menginstall PM2 otomatis jika belum ada, tetapi untuk first deploy lebih baik install manual:
+Install PM2:
 
 ```bash
 bun add -g pm2
 pm2 -v
 ```
 
-Tambahkan PM2 startup agar proses kembali hidup setelah VPS reboot:
+Enable PM2 startup:
 
 ```bash
 pm2 startup
 ```
 
-PM2 akan menampilkan perintah `sudo env PATH=... pm2 startup ...`. Jalankan perintah tersebut persis seperti output PM2.
+Run the `sudo env PATH=... pm2 startup ...` command displayed by PM2, then switch back to the `deploy` user if the shell changes.
 
-## 6. Setup SSH untuk GitHub Actions ke VPS
+## 4. Create `VPS_SSH_KEY` for GitHub Actions
 
-Bagian ini membuat `VPS_SSH_KEY`, yaitu private key yang disimpan di GitHub Actions agar runner bisa SSH ke VPS sebagai user `deploy`.
+`VPS_SSH_KEY` is the private key stored in GitHub Actions so the workflow can SSH into the VPS as the `deploy` user.
 
-Jalankan di komputer lokal, bukan di VPS:
+Create the key on your local computer, not on the VPS:
 
 ```bash
 ssh-keygen -t ed25519 -C "github-actions-nalarin-deploy" -f ./nalarin-gh-actions-vps
 ```
 
-Saat diminta passphrase, tekan `Enter` dua kali agar passphrase kosong. GitHub Actions workflow ini tidak menyiapkan SSH agent untuk private key yang memakai passphrase.
+When prompted for a passphrase, press `Enter` twice. This workflow does not configure an SSH agent for private keys that use a passphrase.
 
-Perintah ini membuat dua file:
+Generated files:
 
-- `nalarin-gh-actions-vps`: private key, isi file ini menjadi GitHub Secret `VPS_SSH_KEY`
-- `nalarin-gh-actions-vps.pub`: public key, isi file ini dipasang ke VPS
+- `nalarin-gh-actions-vps`: private key for the GitHub Secret `VPS_SSH_KEY`
+- `nalarin-gh-actions-vps.pub`: public key for the VPS
 
-Copy public key ke VPS:
+Install the public key on the VPS:
 
 ```bash
 ssh-copy-id -i ./nalarin-gh-actions-vps.pub deploy@YOUR_VPS_IP
 ```
 
-Jika `ssh-copy-id` tidak tersedia, pasang manual:
+If `ssh-copy-id` is not available, install the key manually:
 
 ```bash
 ssh deploy@YOUR_VPS_IP
@@ -150,44 +130,40 @@ nano ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 ```
 
-Paste isi `nalarin-gh-actions-vps.pub` ke `authorized_keys`, satu key per baris.
-
-Test SSH dari komputer lokal:
+Paste the contents of `nalarin-gh-actions-vps.pub` into `authorized_keys`, then test the connection:
 
 ```bash
 ssh -i ./nalarin-gh-actions-vps deploy@YOUR_VPS_IP
 ```
 
-Jika berhasil login tanpa password user, key sudah benar.
+## 5. Configure GitHub Secrets and Variables
 
-## 7. Setup GitHub Secrets dan Variables
-
-Buka GitHub repository, lalu masuk ke:
+Open:
 
 ```text
-Settings -> Secrets and variables -> Actions
+Repository -> Settings -> Secrets and variables -> Actions
 ```
 
-Tambahkan repository secrets:
+Add the following repository secrets:
 
-- `VPS_HOST`: IP atau hostname VPS, contoh `203.0.113.10`
+- `VPS_HOST`: VPS IP address or hostname, for example `203.0.113.10`
 - `VPS_USER`: `deploy`
-- `VPS_PORT`: `22`, opsional karena workflow default ke `22`
-- `VPS_SSH_KEY`: isi private key dari file `nalarin-gh-actions-vps`
+- `VPS_PORT`: `22`, optional because the workflow defaults to `22`
+- `VPS_SSH_KEY`: the contents of the private key `nalarin-gh-actions-vps`
 
-Cara mengambil isi private key:
+Read the private key on Linux/macOS:
 
 ```bash
 cat ./nalarin-gh-actions-vps
 ```
 
-Jika memakai PowerShell di Windows:
+Or on PowerShell:
 
 ```powershell
 Get-Content -Raw .\nalarin-gh-actions-vps
 ```
 
-Copy seluruh isi, termasuk:
+Copy the entire content, including:
 
 ```text
 -----BEGIN OPENSSH PRIVATE KEY-----
@@ -195,58 +171,53 @@ Copy seluruh isi, termasuk:
 -----END OPENSSH PRIVATE KEY-----
 ```
 
-Tambahkan repository variable jika path deploy berbeda:
+Add the repository variable below if the deployment path does not use the default value:
 
 - `DEPLOY_PATH`: `/var/www/nalarin`
 
-Jika tidak dibuat, workflow memakai default `/var/www/nalarin`.
+## 6. Configure VPS Access to the GitHub Repository
 
-## 8. Setup SSH dari VPS ke GitHub Repository
+The workflow runs `git fetch origin main` from the VPS. Therefore, the `deploy` user on the VPS must have pull access to the repository.
 
-Workflow menjalankan `git fetch origin main` dari VPS. Artinya user `deploy` di VPS harus punya akses pull ke repository.
+Use a different key from `VPS_SSH_KEY`. The key in this section is only used by the VPS to pull the repository from GitHub.
 
-Gunakan key yang berbeda dari `VPS_SSH_KEY`. `VPS_SSH_KEY` hanya untuk GitHub Actions login ke VPS, sedangkan key di bagian ini hanya untuk VPS pull repository dari GitHub.
-
-Login sebagai `deploy` di VPS:
+On the VPS, as the `deploy` user:
 
 ```bash
 sudo -iu deploy
-```
-
-Buat SSH key khusus untuk pull repository:
-
-```bash
 ssh-keygen -t ed25519 -C "deploy@nalarin-vps" -f ~/.ssh/github_nalarin
 chmod 700 ~/.ssh
 chmod 600 ~/.ssh/github_nalarin
 chmod 644 ~/.ssh/github_nalarin.pub
+ssh-keyscan github.com >> ~/.ssh/known_hosts
+chmod 644 ~/.ssh/known_hosts
 ```
 
-Tampilkan public key:
+Display the public key:
 
 ```bash
 cat ~/.ssh/github_nalarin.pub
 ```
 
-Tambahkan public key tersebut ke GitHub repository:
+Add it to GitHub:
 
 ```text
 Repository -> Settings -> Deploy keys -> Add deploy key
 ```
 
-Gunakan:
+Fill in:
 
 - Title: `nalarin-vps-deploy`
-- Key: isi dari `~/.ssh/github_nalarin.pub`
-- Allow write access: jangan dicentang
+- Key: the contents of `~/.ssh/github_nalarin.pub`
+- Allow write access: leave unchecked
 
-Buat SSH config untuk GitHub:
+Create the SSH config file:
 
 ```bash
 nano ~/.ssh/config
 ```
 
-Isi:
+Content:
 
 ```sshconfig
 Host github.com
@@ -256,147 +227,72 @@ Host github.com
   IdentitiesOnly yes
 ```
 
-Set permission:
+Set the correct permissions and test the connection:
 
 ```bash
 chmod 600 ~/.ssh/config
 ssh -T git@github.com
 ```
 
-Jika muncul pesan bahwa GitHub berhasil mengenali key, akses pull sudah siap.
+A successful GitHub message usually still says that shell access is not available. This is normal as long as GitHub recognizes the key.
 
-## 9. Clone Repository untuk First Deploy
+## 7. First Manual Deployment
 
-Masih sebagai user `deploy`:
+Continue as the `deploy` user.
+
+Clone the repository:
 
 ```bash
 cd /var/www
 git clone git@github.com:OWNER/REPOSITORY.git nalarin
 cd /var/www/nalarin
-```
-
-Ganti `OWNER/REPOSITORY` sesuai repository Nalarin.
-
-Pastikan remote memakai SSH:
-
-```bash
 git remote -v
 ```
 
-Jika masih HTTPS, ubah:
+Replace `OWNER/REPOSITORY` with your actual repository. If the remote still uses HTTPS:
 
 ```bash
 git remote set-url origin git@github.com:OWNER/REPOSITORY.git
 ```
 
-Pastikan folder tetap dimiliki user `deploy`:
+Set the basic permissions:
 
 ```bash
 sudo chown -R deploy:deploy /var/www/nalarin
-find /var/www/nalarin -type d -exec chmod 755 {} \;
-find /var/www/nalarin -type f -exec chmod 644 {} \;
-```
-
-## 10. Permission Folder Upload dan File Environment
-
-Folder upload lokal harus bisa ditulis oleh aplikasi:
-
-```bash
-cd /var/www/nalarin
+chmod 755 /var/www/nalarin
 mkdir -p public/uploads
 chmod 755 public
 chmod 775 public/uploads
-chown -R deploy:deploy public/uploads
 ```
 
-Buat `.env` manual dari `.env.example`:
+Create `.env` manually:
 
 ```bash
 cp .env.example .env
 nano .env
-```
-
-Set permission `.env` agar hanya user `deploy` yang bisa membaca dan menulis:
-
-```bash
-chown deploy:deploy .env
 chmod 600 .env
 ```
 
-Jangan commit `.env`. Workflow GitHub Actions tidak membuat, mengubah, atau mengirim nilai `.env`.
+`.env` checklist:
 
-## 11. Isi Environment Production
+- `NODE_ENV=production`
+- `APP_URL` and `NEXT_PUBLIC_APP_URL` match the production domain.
+- `APP_PORT=3001` or another port that will be used by Nginx.
+- `DATABASE_URL` points to the production database.
+- `SESSION_PASSWORD` is at least 32 characters long.
+- `GOOGLE_REDIRECT_URI` exactly matches the callback URL configured in Google Cloud.
+- Email provider, Midtrans, AI, cron, and file storage variables are configured according to production needs.
+- `FILE_STORAGE_PUBLIC_DIR=public/uploads` if using local uploads.
 
-Minimal nilai penting yang perlu dicek:
+Important note: `NEXT_PUBLIC_*` variables are read during `bun run build`, so their values must be correct before building.
 
-```env
-NODE_ENV=production
-APP_NAME=Nalarin
-APP_URL=https://nalarin.id
-NEXT_PUBLIC_APP_URL=https://nalarin.id
-NEXT_PUBLIC_APP_NAME=Nalarin
-APP_PORT=3001
+## 8. Database, Migration, and Seed
 
-DATABASE_URL=mysql://nalarin:CHANGE_TO_A_STRONG_PASSWORD@127.0.0.1:3306/nalarin
-
-SESSION_PASSWORD=use-a-string-with-at-least-32-characters
-SESSION_COOKIE_NAME=nalarin_session
-SESSION_TTL_DAYS=7
-BCRYPT_ROUNDS=10
-
-GOOGLE_CLIENT_ID=from-google-cloud
-GOOGLE_CLIENT_SECRET=from-google-cloud
-GOOGLE_REDIRECT_URI=https://nalarin.id/api/auth/google/callback
-
-EMAIL_PROVIDER=resend
-MAIL_FROM="Nalarin <no-reply@nalarin.id>"
-RESEND_API_KEY=required-if-email-provider-is-resend
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=
-SMTP_PASSWORD=
-SMTP_FROM=
-
-PAYMENT_GATEWAY_ENABLED=true
-MIDTRANS_IS_PRODUCTION=true
-MIDTRANS_SERVER_KEY=required-if-midtrans-is-enabled
-MIDTRANS_CLIENT_KEY=required-if-midtrans-is-enabled
-MIDTRANS_MERCHANT_ID=required-if-midtrans-is-enabled
-
-AI_PROVIDER=openai-compatible
-AI_API_KEY=your-ai-api-key
-AI_BASE_URL=
-AI_MODEL_QUESTION_GENERATION=gpt-4.1-mini
-AI_MODEL_EXPLANATION_GENERATION=gpt-4.1-mini
-AI_MODEL_GRADING=gpt-4.1-mini
-
-FILE_STORAGE_DRIVER=local
-FILE_STORAGE_BASE_URL=https://nalarin.id/uploads
-FILE_STORAGE_PUBLIC_DIR=public/uploads
-
-CRON_SECRET=use-a-random-string-with-at-least-16-characters
-PRACTICE_ABANDONED_HOURS=24
-TRYOUT_ABANDONED_HOURS=72
-SUBSCRIPTION_EXPIRY_CRON_ENABLED=true
-```
-
-Catatan environment:
-
-- `GOOGLE_REDIRECT_URI` harus sama persis dengan callback yang didaftarkan di Google Cloud.
-- Semua variable dengan prefix `NEXT_PUBLIC_` dibaca saat `bun run build`, jadi nilainya harus benar sebelum build production.
-- `.env` harus berada di root project `/var/www/nalarin/.env`, bukan di folder `src`.
-- Jika domain bukan `nalarin.id`, cek juga metadata domain di source code.
-
-## 12. Setup Database MySQL
-
-Masuk ke MySQL sebagai root:
+Create the MySQL database and user:
 
 ```bash
 sudo mysql
 ```
-
-Buat database dan user aplikasi:
 
 ```sql
 CREATE DATABASE nalarin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -406,24 +302,24 @@ FLUSH PRIVILEGES;
 EXIT;
 ```
 
-Jalankan migration SQL:
+Run the migration:
 
 ```bash
 cd /var/www/nalarin
 cat drizzle/*.sql | mysql -u nalarin -p nalarin
 ```
 
-Seed data awal:
+Seed the initial data:
 
 ```bash
 bun run db:seed
 ```
 
-Untuk deploy berikutnya, jangan menjalankan semua file migration lama dua kali. Jalankan hanya migration baru sesuai prosedur tim.
+For future deployments, do not run all old migrations again. Run only the new migrations according to the team procedure.
 
-## 13. Build dan First Start Manual
+## 9. Build and Run with PM2
 
-Install dependency dan build:
+Install dependencies and build the application:
 
 ```bash
 cd /var/www/nalarin
@@ -431,21 +327,19 @@ bun install
 bun run build
 ```
 
-Smoke test langsung:
+Run a smoke test:
 
 ```bash
 bun run start -- --port 3001
 ```
 
-Test dari VPS:
+In another SSH session, test the application:
 
 ```bash
 curl -I http://127.0.0.1:3001
 ```
 
-Jika aplikasi berhasil start, hentikan dengan `Ctrl+C`.
-
-Start dengan PM2:
+If it works, stop the `bun run start` process with `Ctrl+C`, then run the application with PM2:
 
 ```bash
 pm2 startOrReload ecosystem.config.cjs --update-env
@@ -453,30 +347,24 @@ pm2 save
 pm2 status nalarin
 ```
 
-Lihat log:
+Basic logs and operations:
 
 ```bash
 pm2 logs nalarin
-```
-
-Command operasional PM2:
-
-```bash
 pm2 restart nalarin --update-env
 pm2 stop nalarin
-pm2 status nalarin
 pm2 monit
 ```
 
-## 14. Configure Nginx
+## 10. Configure Nginx
 
-Buat site Nginx:
+Create the site configuration:
 
 ```bash
 sudo nano /etc/nginx/sites-available/nalarin
 ```
 
-Isi:
+Content:
 
 ```nginx
 server {
@@ -502,7 +390,7 @@ server {
 }
 ```
 
-Aktifkan site:
+Enable the site:
 
 ```bash
 sudo ln -sf /etc/nginx/sites-available/nalarin /etc/nginx/sites-enabled/nalarin
@@ -511,40 +399,28 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-## 15. Install SSL dengan Certbot
-
-Install Certbot:
+## 11. Install SSL
 
 ```bash
 sudo snap install core
 sudo snap refresh core
 sudo snap install --classic certbot
 sudo ln -sf /snap/bin/certbot /usr/bin/certbot
-```
-
-Request SSL:
-
-```bash
 sudo certbot --nginx -d nalarin.id -d www.nalarin.id
+sudo certbot renew --dry-run
 ```
 
-Jika hanya memakai domain utama:
+If you only use the main domain:
 
 ```bash
 sudo certbot --nginx -d nalarin.id
 ```
 
-Test auto-renewal:
+## 12. Auto Deployment
 
-```bash
-sudo certbot renew --dry-run
-```
+After the first manual deployment is complete, every push to the `main` branch will run the workflow.
 
-## 16. Auto Deploy dari GitHub Actions
-
-Setelah first deploy manual selesai, auto deploy berjalan saat ada push ke branch `main`.
-
-Workflow akan:
+The workflow performs the following steps:
 
 ```bash
 cd /var/www/nalarin
@@ -554,22 +430,22 @@ bun install
 bun run build
 pm2 startOrReload ecosystem.config.cjs --update-env
 pm2 save
-pm2 status nalarin
 ```
 
-Karena workflow memakai `git reset --hard origin/main`, perubahan manual pada file yang dilacak Git di VPS akan ditimpa. File `.env` aman karena tidak dilacak Git, selama tetap ada di `/var/www/nalarin/.env`.
+Consequence of `git reset --hard`: manual changes to Git-tracked files on the VPS will be overwritten. The `.env` file is safe as long as it remains untracked by Git and is stored at `/var/www/nalarin/.env`.
 
-Workflow akan gagal jika:
+The workflow will fail if:
 
-- `/var/www/nalarin/.git` belum ada
-- `/var/www/nalarin/.env` belum ada
-- user `deploy` tidak bisa pull repository
-- permission folder membuat build atau upload gagal
-- Bun build gagal
+- `/var/www/nalarin/.git` does not exist.
+- `/var/www/nalarin/.env` does not exist.
+- The `deploy` user cannot SSH from GitHub Actions.
+- The `deploy` user cannot pull the repository from GitHub.
+- `bun install` or `bun run build` fails.
+- PM2 cannot reload the process.
 
-## 17. Checklist Permission
+## 13. Permission Checklist
 
-Jalankan ini untuk audit permission dasar:
+Audit:
 
 ```bash
 namei -l /var/www/nalarin
@@ -579,28 +455,28 @@ ls -ld /home/deploy/.ssh
 ls -l /home/deploy/.ssh/authorized_keys /home/deploy/.ssh/config /home/deploy/.ssh/github_nalarin
 ```
 
-Nilai yang diharapkan:
+Target permissions:
 
 ```text
-/var/www                  root:root      755
-/var/www/nalarin          deploy:deploy  755
-/var/www/nalarin/.env     deploy:deploy  600
-/var/www/nalarin/public   deploy:deploy  755
-/var/www/nalarin/public/uploads deploy:deploy 775
-/home/deploy/.ssh         deploy:deploy  700
-/home/deploy/.ssh/authorized_keys deploy:deploy 600
-/home/deploy/.ssh/config  deploy:deploy  600
-/home/deploy/.ssh/github_nalarin deploy:deploy 600
+/var/www                              root:root      755
+/var/www/nalarin                      deploy:deploy  755
+/var/www/nalarin/.env                 deploy:deploy  600
+/var/www/nalarin/public               deploy:deploy  755
+/var/www/nalarin/public/uploads       deploy:deploy  775
+/home/deploy/.ssh                     deploy:deploy  700
+/home/deploy/.ssh/authorized_keys     deploy:deploy  600
+/home/deploy/.ssh/config              deploy:deploy  600
+/home/deploy/.ssh/github_nalarin      deploy:deploy  600
 ```
 
-Jika perlu memperbaiki:
+Fix permissions if needed:
 
 ```bash
 sudo chown -R deploy:deploy /var/www/nalarin
 sudo chmod 755 /var/www /var/www/nalarin
-sudo chmod 600 /var/www/nalarin/.env
 sudo chmod 755 /var/www/nalarin/public
 sudo chmod 775 /var/www/nalarin/public/uploads
+sudo chmod 600 /var/www/nalarin/.env
 sudo chown -R deploy:deploy /home/deploy/.ssh
 sudo chmod 700 /home/deploy/.ssh
 sudo chmod 600 /home/deploy/.ssh/authorized_keys
@@ -608,35 +484,32 @@ sudo chmod 600 /home/deploy/.ssh/config
 sudo chmod 600 /home/deploy/.ssh/github_nalarin
 ```
 
-## 18. Final Check
-
-Setelah SSL dan PM2 aktif:
+## 14. Final Check
 
 ```bash
 curl -I https://nalarin.id
 pm2 status nalarin
 pm2 logs nalarin --lines 50
-sudo systemctl status nginx
 sudo nginx -t
+sudo systemctl status nginx
 ```
 
-Cek aplikasi:
+Application checklist:
 
-- Homepage bisa diakses
-- Login dan register berjalan
-- Admin redirect ke `/admin` berjalan
-- Upload file berjalan
-- Google OAuth callback sesuai domain production
-- Sitemap dan robots memakai domain production
-- Log PM2 tidak berisi error berulang
+- The homepage opens correctly.
+- Login and registration work.
+- Admin users are redirected to `/admin` correctly.
+- File uploads work.
+- The Google OAuth callback matches the production domain.
+- The sitemap and robots files use the production domain.
+- PM2 logs do not contain recurring errors.
 
 ## Troubleshooting
 
-- Jika GitHub Actions gagal SSH, cek `VPS_HOST`, `VPS_USER`, `VPS_PORT`, `VPS_SSH_KEY`, dan isi `/home/deploy/.ssh/authorized_keys`.
-- Jika `git fetch` gagal, cek deploy key repository dari VPS: `ssh -T git@github.com`.
-- Jika workflow gagal karena `.env`, buat `/var/www/nalarin/.env` manual dan set permission `chmod 600 .env`.
-- Jika upload gagal, cek ownership dan permission `public/uploads`.
-- Jika domain tidak terbuka, cek `sudo nginx -t`, DNS, firewall, dan Certbot.
-- Jika aplikasi tidak start, cek `pm2 logs nalarin`.
-- Jika perubahan `.env` tidak terbaca, jalankan `pm2 restart nalarin --update-env`.
-- Jika build gagal, jalankan `bun run build` manual di VPS sebagai user `deploy` untuk melihat error lengkap.
+- GitHub Actions SSH fails: check `VPS_HOST`, `VPS_USER`, `VPS_PORT`, `VPS_SSH_KEY`, and `/home/deploy/.ssh/authorized_keys`.
+- `git fetch` fails: check the VPS deploy key with `ssh -T git@github.com`.
+- The workflow fails because of `.env`: manually create `/var/www/nalarin/.env` and run `chmod 600 .env`.
+- Uploads fail: check the ownership and permissions of `public/uploads`.
+- The domain does not open: check DNS, firewall, `sudo nginx -t`, and the Nginx status.
+- `.env` changes are not loaded: run `pm2 restart nalarin --update-env`.
+- The build fails: run `bun run build` manually on the VPS as the `deploy` user.
