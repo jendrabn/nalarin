@@ -86,7 +86,7 @@ function HeroSection() {
                   <span className="text-primary">Seleksi PTN</span>
                 </>
               }
-              subtitle="Latih kemampuan, pantau progres, dan jalani persiapan PTN dengan lebih terarah."
+              subtitle="Persiapkan seleksi PTN dengan alur belajar yang terarah melalui latihan fokus, tryout berkala, dan evaluasi hasil yang mudah ditindaklanjuti."
               titleClassName="mx-auto max-w-4xl text-balance text-[3.25rem] font-extrabold leading-[1.05] tracking-tight sm:text-[3.95rem] lg:text-[4.45rem]"
               subtitleClassName="mx-auto mt-6 max-w-xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg"
             />

@@ -6,8 +6,8 @@ import {
   BarChart3Icon,
   BookOpenCheckIcon,
   CrownIcon,
-  NewspaperIcon,
   TrophyIcon,
+  UserIcon,
   type LucideIcon,
 } from "lucide-react";
 
@@ -19,8 +19,14 @@ const bottomNavIcons: Record<string, LucideIcon> = {
   "/tryouts": TrophyIcon,
   "/progress": BarChart3Icon,
   "/pricing": CrownIcon,
-  "/blog": NewspaperIcon,
+  "/profile": UserIcon,
 };
+
+const mobileNavLinks = navLinks.map((item) =>
+  item.href === "/blog"
+    ? { label: "Profil", href: "/profile" }
+    : item,
+);
 
 const hiddenRoutePrefixes = [
   "/admin",
@@ -46,7 +52,7 @@ export function MobileBottomNavigation() {
         className="fixed inset-x-0 bottom-0 z-50 border-t border-border/80 bg-background/94 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl md:hidden"
       >
         <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
-          {navLinks.map((item) => {
+          {mobileNavLinks.map((item) => {
             const isActive = isRouteMatch(pathname, item.href);
             const Icon = bottomNavIcons[item.href];
 
