@@ -2,17 +2,20 @@
 require("dotenv").config({ path: `${__dirname}/.env` });
 
 const appPort = process.env.APP_PORT || "3001";
+const bunPath = process.env.HOME ? `${process.env.HOME}/.bun/bin` : "";
+const processPath = [bunPath, process.env.PATH].filter(Boolean).join(":");
 
 module.exports = {
   apps: [
     {
       name: "nalarin",
-      script: "npm",
+      script: "bun",
       args: `run start -- --port ${appPort}`,
-      cwd: "/var/www/nalarin",
+      cwd: __dirname,
       env: {
         NODE_ENV: "production",
         APP_PORT: appPort,
+        PATH: processPath,
       },
     },
   ],

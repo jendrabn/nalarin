@@ -1,82 +1,37 @@
 # Deployment Guide
 
-This guide explains how to deploy Nalarin on an Ubuntu 22.04 LTS VPS with a self-hosted Next.js server behind Nginx. You can choose either Node.js/npm or Bun as the runtime.
+Panduan ini menjelaskan deployment Nalarin ke VPS Ubuntu Server 22.04 dengan Bun, PM2, Nginx, dan GitHub Actions. First deploy tetap dilakukan manual karena file `.env` harus dibuat langsung di VPS dan tidak disimpan di GitHub.
 
-## Overview
+## Ringkasan
 
-Nalarin is a Next.js web application that uses MySQL as the primary database, `iron-session` based session cookies, and production integrations such as Google OAuth, an email provider, Midtrans, and an AI provider.
+- OS: Ubuntu Server 22.04 LTS
+- App runtime: Bun
+- Process manager: PM2
+- Reverse proxy: Nginx
+- SSL: Certbot
+- Database: MySQL
+- User VPS aplikasi: `deploy`
+- Folder aplikasi: `/var/www/nalarin`
+- Branch deploy: `main`
+- Port aplikasi default: `3001`, bisa diubah lewat `APP_PORT` di `.env`
 
-For production, do not expose `next start` directly to the internet. Run the application on localhost, put Nginx in front of it as a reverse proxy, and enable SSL with Certbot.
+Workflow GitHub Actions berada di `.github/workflows/deploy.yml`. Workflow akan SSH ke VPS, masuk ke `/var/www/nalarin`, mengambil perubahan terbaru dari `origin/main`, menjalankan `bun install`, `bun run build`, lalu reload PM2.
 
-## Tech Stack
+## 1. Prasyarat
 
-- Next.js 16.2.5
-- React 19.2.4
-- TypeScript
-- Drizzle ORM + SQL migrations in the `drizzle/` folder
-- MySQL 8
-- `mysql2`
-- `iron-session`
-- `bcrypt`
-- Tailwind CSS v4
-- shadcn/ui and Radix UI
-- Nginx as the reverse proxy
-- Certbot for SSL
-- Production runtime: choose Node.js 22 LTS/npm or Bun
+Pastikan sudah tersedia:
 
-## Runtime Options
+- VPS Ubuntu Server 22.04 LTS
+- Domain sudah mengarah ke IP VPS
+- Akses root atau user sudo ke VPS
+- Port `22`, `80`, dan `443` terbuka
+- Repository GitHub sudah berisi workflow deploy
+- File `.env.example` tersedia di repository
+- Kredensial MySQL dan API key production siap diisi manual ke `.env`
 
-Choose one runtime and use it consistently on the server.
+## 2. Install Paket Dasar
 
-### Option A: Node.js/npm
-
-This is the default option because the repo includes `package-lock.json`.
-
-Use these commands for install, seed, build, and start:
-
-```bash
-npm ci
-npm run db:seed
-npm run build
-npm run start -- --port 3001
-```
-
-### Option B: Bun
-
-Bun can run the same scripts from `package.json`. Because this repo still has `package-lock.json`, validate `bun install`, `bun run build`, and the smoke test before switching the production service to Bun.
-
-Use these commands for install, seed, build, and start:
-
-```bash
-bun install
-bun run db:seed
-bun run build
-bun run start -- --port 3001
-```
-
-If a native dependency fails during install or build with Bun, use Node.js/npm for production.
-
-## Prerequisites
-
-- Ubuntu 22.04 LTS VPS
-- Active domain pointing to the server IP
-- A record for the main domain, and optionally `www`
-- User access with `sudo`
-- Open ports 80 and 443
-- MySQL credentials
-- API keys for the external services used by the application
-
-## Important Notes
-
-- `src/app/layout.tsx`, `src/app/robots.ts`, and `src/app/sitemap.ts` use the `https://nalarin.id` domain.
-- If the production domain is different, update `APP_URL`, `NEXT_PUBLIC_APP_URL`, and `GOOGLE_REDIRECT_URI` in `.env`, then update the metadata domain in the source code as well.
-- This app uses local uploads in `public/uploads/`, so the folder must exist and be writable by the application user.
-- Do not run `next dev` in production. Build the app first, then run the `start` script.
-- This guide assumes a single application instance. If you later run multiple instances or multiple servers, configure shared cache and a deployment identifier according to your Next.js self-hosting needs.
-
-## 1. Prepare the Server
-
-Update the system and install base packages:
+Login ke VPS sebagai root atau user sudo, lalu jalankan:
 
 ```bash
 sudo apt update
@@ -84,61 +39,48 @@ sudo apt upgrade -y
 sudo apt install -y git nginx mysql-server build-essential python3 curl ca-certificates unzip
 ```
 
-Secure the MySQL installation:
-
-```bash
-sudo mysql_secure_installation
-```
-
-If you use UFW, open the required ports:
+Jika memakai UFW:
 
 ```bash
 sudo ufw allow OpenSSH
 sudo ufw allow 'Nginx Full'
 sudo ufw enable
+sudo ufw status
 ```
 
-## 2. Install the Runtime
-
-Choose one option.
-
-### Option A: Install Node.js 22 LTS
+Amankan MySQL:
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt install -y nodejs
-node -v
-npm -v
+sudo mysql_secure_installation
 ```
 
-### Option B: Install Bun
+## 3. Buat User Deploy
 
-Bun must be installed as the user that runs the application. If you are not logged in as `deploy` yet, skip this command for now and run it after `sudo -iu deploy` in the next step.
-
-```bash
-curl -fsSL https://bun.sh/install | bash
-source ~/.bashrc
-bun -v
-```
-
-## 3. Create a Deployment User
-
-Run the application with a non-root user. This guide uses `deploy` as the example username.
+Gunakan user non-root untuk menjalankan aplikasi. Contoh username: `deploy`.
 
 ```bash
 sudo adduser deploy
 sudo usermod -aG sudo deploy
-sudo mkdir -p /var/www/nalarin
-sudo chown -R deploy:deploy /var/www/nalarin
 ```
 
-Log in as the deployment user:
+Buat folder aplikasi dan berikan ownership ke user `deploy`:
+
+```bash
+sudo mkdir -p /var/www/nalarin
+sudo chown -R deploy:deploy /var/www/nalarin
+sudo chmod 755 /var/www
+sudo chmod 755 /var/www/nalarin
+```
+
+Login sebagai user `deploy`:
 
 ```bash
 sudo -iu deploy
 ```
 
-If you chose Bun and have not installed it yet, install it now as `deploy`:
+## 4. Install Bun Sebagai User Deploy
+
+Bun harus diinstall oleh user yang menjalankan aplikasi, yaitu `deploy`.
 
 ```bash
 curl -fsSL https://bun.sh/install | bash
@@ -146,91 +88,246 @@ source ~/.bashrc
 bun -v
 ```
 
-## 4. Clone the Repository and Install Dependencies
+Pastikan Bun ada di path berikut:
 
-Clone the repository to the server:
+```bash
+which bun
+```
+
+Umumnya hasilnya:
+
+```text
+/home/deploy/.bun/bin/bun
+```
+
+## 5. Install PM2 Sebagai User Deploy
+
+Workflow bisa menginstall PM2 otomatis jika belum ada, tetapi untuk first deploy lebih baik install manual:
+
+```bash
+bun add -g pm2
+pm2 -v
+```
+
+Tambahkan PM2 startup agar proses kembali hidup setelah VPS reboot:
+
+```bash
+pm2 startup
+```
+
+PM2 akan menampilkan perintah `sudo env PATH=... pm2 startup ...`. Jalankan perintah tersebut persis seperti output PM2.
+
+## 6. Setup SSH untuk GitHub Actions ke VPS
+
+Bagian ini membuat `VPS_SSH_KEY`, yaitu private key yang disimpan di GitHub Actions agar runner bisa SSH ke VPS sebagai user `deploy`.
+
+Jalankan di komputer lokal, bukan di VPS:
+
+```bash
+ssh-keygen -t ed25519 -C "github-actions-nalarin-deploy" -f ./nalarin-gh-actions-vps
+```
+
+Saat diminta passphrase, tekan `Enter` dua kali agar passphrase kosong. GitHub Actions workflow ini tidak menyiapkan SSH agent untuk private key yang memakai passphrase.
+
+Perintah ini membuat dua file:
+
+- `nalarin-gh-actions-vps`: private key, isi file ini menjadi GitHub Secret `VPS_SSH_KEY`
+- `nalarin-gh-actions-vps.pub`: public key, isi file ini dipasang ke VPS
+
+Copy public key ke VPS:
+
+```bash
+ssh-copy-id -i ./nalarin-gh-actions-vps.pub deploy@YOUR_VPS_IP
+```
+
+Jika `ssh-copy-id` tidak tersedia, pasang manual:
+
+```bash
+ssh deploy@YOUR_VPS_IP
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+nano ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+```
+
+Paste isi `nalarin-gh-actions-vps.pub` ke `authorized_keys`, satu key per baris.
+
+Test SSH dari komputer lokal:
+
+```bash
+ssh -i ./nalarin-gh-actions-vps deploy@YOUR_VPS_IP
+```
+
+Jika berhasil login tanpa password user, key sudah benar.
+
+## 7. Setup GitHub Secrets dan Variables
+
+Buka GitHub repository, lalu masuk ke:
+
+```text
+Settings -> Secrets and variables -> Actions
+```
+
+Tambahkan repository secrets:
+
+- `VPS_HOST`: IP atau hostname VPS, contoh `203.0.113.10`
+- `VPS_USER`: `deploy`
+- `VPS_PORT`: `22`, opsional karena workflow default ke `22`
+- `VPS_SSH_KEY`: isi private key dari file `nalarin-gh-actions-vps`
+
+Cara mengambil isi private key:
+
+```bash
+cat ./nalarin-gh-actions-vps
+```
+
+Jika memakai PowerShell di Windows:
+
+```powershell
+Get-Content -Raw .\nalarin-gh-actions-vps
+```
+
+Copy seluruh isi, termasuk:
+
+```text
+-----BEGIN OPENSSH PRIVATE KEY-----
+...
+-----END OPENSSH PRIVATE KEY-----
+```
+
+Tambahkan repository variable jika path deploy berbeda:
+
+- `DEPLOY_PATH`: `/var/www/nalarin`
+
+Jika tidak dibuat, workflow memakai default `/var/www/nalarin`.
+
+## 8. Setup SSH dari VPS ke GitHub Repository
+
+Workflow menjalankan `git fetch origin main` dari VPS. Artinya user `deploy` di VPS harus punya akses pull ke repository.
+
+Gunakan key yang berbeda dari `VPS_SSH_KEY`. `VPS_SSH_KEY` hanya untuk GitHub Actions login ke VPS, sedangkan key di bagian ini hanya untuk VPS pull repository dari GitHub.
+
+Login sebagai `deploy` di VPS:
+
+```bash
+sudo -iu deploy
+```
+
+Buat SSH key khusus untuk pull repository:
+
+```bash
+ssh-keygen -t ed25519 -C "deploy@nalarin-vps" -f ~/.ssh/github_nalarin
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/github_nalarin
+chmod 644 ~/.ssh/github_nalarin.pub
+```
+
+Tampilkan public key:
+
+```bash
+cat ~/.ssh/github_nalarin.pub
+```
+
+Tambahkan public key tersebut ke GitHub repository:
+
+```text
+Repository -> Settings -> Deploy keys -> Add deploy key
+```
+
+Gunakan:
+
+- Title: `nalarin-vps-deploy`
+- Key: isi dari `~/.ssh/github_nalarin.pub`
+- Allow write access: jangan dicentang
+
+Buat SSH config untuk GitHub:
+
+```bash
+nano ~/.ssh/config
+```
+
+Isi:
+
+```sshconfig
+Host github.com
+  HostName github.com
+  User git
+  IdentityFile /home/deploy/.ssh/github_nalarin
+  IdentitiesOnly yes
+```
+
+Set permission:
+
+```bash
+chmod 600 ~/.ssh/config
+ssh -T git@github.com
+```
+
+Jika muncul pesan bahwa GitHub berhasil mengenali key, akses pull sudah siap.
+
+## 9. Clone Repository untuk First Deploy
+
+Masih sebagai user `deploy`:
 
 ```bash
 cd /var/www
-git clone <REPO_URL> nalarin
+git clone git@github.com:OWNER/REPOSITORY.git nalarin
+cd /var/www/nalarin
+```
+
+Ganti `OWNER/REPOSITORY` sesuai repository Nalarin.
+
+Pastikan remote memakai SSH:
+
+```bash
+git remote -v
+```
+
+Jika masih HTTPS, ubah:
+
+```bash
+git remote set-url origin git@github.com:OWNER/REPOSITORY.git
+```
+
+Pastikan folder tetap dimiliki user `deploy`:
+
+```bash
+sudo chown -R deploy:deploy /var/www/nalarin
+find /var/www/nalarin -type d -exec chmod 755 {} \;
+find /var/www/nalarin -type f -exec chmod 644 {} \;
+```
+
+## 10. Permission Folder Upload dan File Environment
+
+Folder upload lokal harus bisa ditulis oleh aplikasi:
+
+```bash
 cd /var/www/nalarin
 mkdir -p public/uploads
+chmod 755 public
+chmod 775 public/uploads
+chown -R deploy:deploy public/uploads
 ```
 
-Use the SSH repository URL if you have an SSH key configured. Otherwise, use HTTPS.
-
-Install dependencies according to the runtime:
-
-Node.js/npm:
-
-```bash
-npm ci
-```
-
-Bun:
-
-```bash
-bun install
-```
-
-## 5. Set Up MySQL
-
-Create a dedicated database and application user:
-
-```bash
-sudo mysql
-```
-
-Run this in the MySQL prompt:
-
-```sql
-CREATE DATABASE nalarin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'nalarin'@'localhost' IDENTIFIED BY 'CHANGE_TO_A_STRONG_PASSWORD';
-GRANT ALL PRIVILEGES ON nalarin.* TO 'nalarin'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;
-```
-
-If the database runs on another host, adjust the host in `DATABASE_URL`.
-
-### Run Migrations
-
-This repo stores SQL migrations in the `drizzle/` folder. Run them in order:
-
-```bash
-cat drizzle/*.sql | mysql -u nalarin -p nalarin
-```
-
-The command above prompts for the MySQL password for the `nalarin` user.
-
-### Seed Initial Data
-
-After migrations finish, run the seed command according to the runtime:
-
-Node.js/npm:
-
-```bash
-npm run db:seed
-```
-
-Bun:
-
-```bash
-bun run db:seed
-```
-
-The seed command inserts the base taxonomy data, blog categories, and example accounts.
-
-## 6. Prepare the Environment File
-
-Copy all content from `./.env.example` to `.env` in the project root, then update the sensitive production values. Do not remove other variables because this repo has strict environment validation.
+Buat `.env` manual dari `.env.example`:
 
 ```bash
 cp .env.example .env
 nano .env
 ```
 
-Example values that usually need to be adjusted:
+Set permission `.env` agar hanya user `deploy` yang bisa membaca dan menulis:
+
+```bash
+chown deploy:deploy .env
+chmod 600 .env
+```
+
+Jangan commit `.env`. Workflow GitHub Actions tidak membuat, mengubah, atau mengirim nilai `.env`.
+
+## 11. Isi Environment Production
+
+Minimal nilai penting yang perlu dicek:
 
 ```env
 NODE_ENV=production
@@ -284,132 +381,104 @@ TRYOUT_ABANDONED_HOURS=72
 SUBSCRIPTION_EXPIRY_CRON_ENABLED=true
 ```
 
-### Environment Notes
+Catatan environment:
 
-- `GOOGLE_REDIRECT_URI` must exactly match `APP_URL + /api/auth/google/callback`.
-- If `EMAIL_PROVIDER=resend`, `RESEND_API_KEY` is required.
-- If `EMAIL_PROVIDER=smtp`, `SMTP_HOST`, `SMTP_USER`, and `SMTP_PASSWORD` are required.
-- If `PAYMENT_GATEWAY_ENABLED=true`, all `MIDTRANS_*` values are required.
-- If `PAYMENT_GATEWAY_ENABLED=false`, manual payment fields such as `MANUAL_PAYMENT_WHATSAPP_NUMBER` and e-wallet numbers must be set.
+- `GOOGLE_REDIRECT_URI` harus sama persis dengan callback yang didaftarkan di Google Cloud.
+- Semua variable dengan prefix `NEXT_PUBLIC_` dibaca saat `bun run build`, jadi nilainya harus benar sebelum build production.
+- `.env` harus berada di root project `/var/www/nalarin/.env`, bukan di folder `src`.
+- Jika domain bukan `nalarin.id`, cek juga metadata domain di source code.
 
-## 7. Build Production and Smoke Test
+## 12. Setup Database MySQL
 
-Make sure `.env` is ready and the database has been migrated and seeded.
-
-Node.js/npm:
+Masuk ke MySQL sebagai root:
 
 ```bash
-npm run build
-npm run start -- --port 3001
+sudo mysql
 ```
 
-Bun:
+Buat database dan user aplikasi:
+
+```sql
+CREATE DATABASE nalarin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'nalarin'@'localhost' IDENTIFIED BY 'CHANGE_TO_A_STRONG_PASSWORD';
+GRANT ALL PRIVILEGES ON nalarin.* TO 'nalarin'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+Jalankan migration SQL:
 
 ```bash
+cd /var/www/nalarin
+cat drizzle/*.sql | mysql -u nalarin -p nalarin
+```
+
+Seed data awal:
+
+```bash
+bun run db:seed
+```
+
+Untuk deploy berikutnya, jangan menjalankan semua file migration lama dua kali. Jalankan hanya migration baru sesuai prosedur tim.
+
+## 13. Build dan First Start Manual
+
+Install dependency dan build:
+
+```bash
+cd /var/www/nalarin
+bun install
 bun run build
+```
+
+Smoke test langsung:
+
+```bash
 bun run start -- --port 3001
 ```
 
-Temporarily open `http://SERVER_IP:3001` or use an SSH tunnel to confirm the application starts. After the smoke test, stop the process with `Ctrl+C` before creating the production service.
-
-## 8. Run the Application as a Service
-
-Use `systemd` so the application starts automatically after reboot. Create the service file for the runtime you chose.
-
-### Option A: Node.js/npm Service
-
-Create the service file:
+Test dari VPS:
 
 ```bash
-sudo tee /etc/systemd/system/nalarin.service > /dev/null <<'EOF'
-[Unit]
-Description=Nalarin Next.js App
-After=network.target mysql.service
-
-[Service]
-Type=simple
-User=deploy
-Group=deploy
-WorkingDirectory=/var/www/nalarin
-Environment=NODE_ENV=production
-Environment=APP_PORT=3001
-ExecStart=/usr/bin/npm run start -- --port 3001
-Restart=always
-RestartSec=5
-KillSignal=SIGTERM
-TimeoutStopSec=30
-
-[Install]
-WantedBy=multi-user.target
-EOF
+curl -I http://127.0.0.1:3001
 ```
 
-### Option B: Bun Service
+Jika aplikasi berhasil start, hentikan dengan `Ctrl+C`.
 
-Confirm the Bun path:
+Start dengan PM2:
 
 ```bash
-which bun
+pm2 startOrReload ecosystem.config.cjs --update-env
+pm2 save
+pm2 status nalarin
 ```
 
-If the result is `/home/deploy/.bun/bin/bun`, create this service file:
+Lihat log:
 
 ```bash
-sudo tee /etc/systemd/system/nalarin.service > /dev/null <<'EOF'
-[Unit]
-Description=Nalarin Next.js App
-After=network.target mysql.service
-
-[Service]
-Type=simple
-User=deploy
-Group=deploy
-WorkingDirectory=/var/www/nalarin
-Environment=NODE_ENV=production
-Environment=APP_PORT=3001
-Environment=PATH=/home/deploy/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ExecStart=/home/deploy/.bun/bin/bun run start -- --port 3001
-Restart=always
-RestartSec=5
-KillSignal=SIGTERM
-TimeoutStopSec=30
-
-[Install]
-WantedBy=multi-user.target
-EOF
+pm2 logs nalarin
 ```
 
-If `which bun` returns a different path, adjust `Environment=PATH` and `ExecStart`.
-
-### Enable the Service
+Command operasional PM2:
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable nalarin
-sudo systemctl start nalarin
-sudo systemctl status nalarin
+pm2 restart nalarin --update-env
+pm2 stop nalarin
+pm2 status nalarin
+pm2 monit
 ```
 
-View logs:
+## 14. Configure Nginx
+
+Buat site Nginx:
 
 ```bash
-journalctl -u nalarin -f
+sudo nano /etc/nginx/sites-available/nalarin
 ```
 
-Common operational commands:
+Isi:
 
-```bash
-sudo systemctl restart nalarin
-sudo systemctl stop nalarin
-sudo systemctl status nalarin
-```
-
-## 9. Configure Nginx
-
-Create a new site file:
-
-```bash
-sudo tee /etc/nginx/sites-available/nalarin > /dev/null <<'EOF'
+```nginx
 server {
     listen 80;
     listen [::]:80;
@@ -431,26 +500,18 @@ server {
         proxy_read_timeout 60s;
     }
 }
-EOF
 ```
 
-Enable the site and test the config:
+Aktifkan site:
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/nalarin /etc/nginx/sites-enabled/nalarin
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-If the default Nginx site is still enabled and conflicts with this site, remove the default symlink:
-
-```bash
+sudo ln -sf /etc/nginx/sites-available/nalarin /etc/nginx/sites-enabled/nalarin
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-## 10. Install SSL with Certbot
+## 15. Install SSL dengan Certbot
 
 Install Certbot:
 
@@ -461,91 +522,121 @@ sudo snap install --classic certbot
 sudo ln -sf /snap/bin/certbot /usr/bin/certbot
 ```
 
-Request a certificate:
+Request SSL:
 
 ```bash
 sudo certbot --nginx -d nalarin.id -d www.nalarin.id
 ```
 
-If you only use one domain, run:
+Jika hanya memakai domain utama:
 
 ```bash
 sudo certbot --nginx -d nalarin.id
 ```
 
-Verify renewal:
+Test auto-renewal:
 
 ```bash
 sudo certbot renew --dry-run
 ```
 
-If you update `.env` after SSL is active, restart the application:
+## 16. Auto Deploy dari GitHub Actions
+
+Setelah first deploy manual selesai, auto deploy berjalan saat ada push ke branch `main`.
+
+Workflow akan:
 
 ```bash
-sudo systemctl restart nalarin
-```
-
-## 11. Deploy Future Updates
-
-Log in as `deploy`:
-
-```bash
-sudo -iu deploy
 cd /var/www/nalarin
-git pull
-```
-
-Install dependencies and build according to the runtime.
-
-Node.js/npm:
-
-```bash
-npm ci
-npm run build
-sudo systemctl restart nalarin
-```
-
-Bun:
-
-```bash
+git fetch origin main
+git reset --hard origin/main
 bun install
 bun run build
-sudo systemctl restart nalarin
+pm2 startOrReload ecosystem.config.cjs --update-env
+pm2 save
+pm2 status nalarin
 ```
 
-If there are new migrations, run them before restarting the application:
+Karena workflow memakai `git reset --hard origin/main`, perubahan manual pada file yang dilacak Git di VPS akan ditimpa. File `.env` aman karena tidak dilacak Git, selama tetap ada di `/var/www/nalarin/.env`.
+
+Workflow akan gagal jika:
+
+- `/var/www/nalarin/.git` belum ada
+- `/var/www/nalarin/.env` belum ada
+- user `deploy` tidak bisa pull repository
+- permission folder membuat build atau upload gagal
+- Bun build gagal
+
+## 17. Checklist Permission
+
+Jalankan ini untuk audit permission dasar:
 
 ```bash
-cat drizzle/*.sql | mysql -u nalarin -p nalarin
+namei -l /var/www/nalarin
+ls -ld /var/www /var/www/nalarin /var/www/nalarin/public /var/www/nalarin/public/uploads
+ls -l /var/www/nalarin/.env
+ls -ld /home/deploy/.ssh
+ls -l /home/deploy/.ssh/authorized_keys /home/deploy/.ssh/config /home/deploy/.ssh/github_nalarin
 ```
 
-For repeated deployments, do not run old SQL migration files twice. Apply only new migrations or use the migration procedure agreed on by the team.
+Nilai yang diharapkan:
 
-## 12. Final Check
+```text
+/var/www                  root:root      755
+/var/www/nalarin          deploy:deploy  755
+/var/www/nalarin/.env     deploy:deploy  600
+/var/www/nalarin/public   deploy:deploy  755
+/var/www/nalarin/public/uploads deploy:deploy 775
+/home/deploy/.ssh         deploy:deploy  700
+/home/deploy/.ssh/authorized_keys deploy:deploy 600
+/home/deploy/.ssh/config  deploy:deploy  600
+/home/deploy/.ssh/github_nalarin deploy:deploy 600
+```
 
-After SSL is active, verify:
+Jika perlu memperbaiki:
+
+```bash
+sudo chown -R deploy:deploy /var/www/nalarin
+sudo chmod 755 /var/www /var/www/nalarin
+sudo chmod 600 /var/www/nalarin/.env
+sudo chmod 755 /var/www/nalarin/public
+sudo chmod 775 /var/www/nalarin/public/uploads
+sudo chown -R deploy:deploy /home/deploy/.ssh
+sudo chmod 700 /home/deploy/.ssh
+sudo chmod 600 /home/deploy/.ssh/authorized_keys
+sudo chmod 600 /home/deploy/.ssh/config
+sudo chmod 600 /home/deploy/.ssh/github_nalarin
+```
+
+## 18. Final Check
+
+Setelah SSL dan PM2 aktif:
 
 ```bash
 curl -I https://nalarin.id
+pm2 status nalarin
+pm2 logs nalarin --lines 50
 sudo systemctl status nginx
-sudo systemctl status nalarin
+sudo nginx -t
 ```
 
-Quick checklist:
+Cek aplikasi:
 
-- Homepage loads
-- Login and registration work
-- Admin redirect to `/admin` works
-- File upload works
-- Google OAuth callback matches the production domain
-- Sitemap and robots use the correct domain
-- Service logs do not show repeated errors
+- Homepage bisa diakses
+- Login dan register berjalan
+- Admin redirect ke `/admin` berjalan
+- Upload file berjalan
+- Google OAuth callback sesuai domain production
+- Sitemap dan robots memakai domain production
+- Log PM2 tidak berisi error berulang
 
-## Quick Troubleshooting
+## Troubleshooting
 
-- If login fails after moving to production, check `APP_URL`, `NEXT_PUBLIC_APP_URL`, and `GOOGLE_REDIRECT_URI`.
-- If uploads fail, make sure `public/uploads/` exists and is writable by the `deploy` user.
-- If Nginx rejects large requests, increase `client_max_body_size`.
-- If the application fails to start, check `journalctl -u nalarin -f`.
-- If install or build fails with Bun, redeploy with Node.js/npm.
-- If the domain is different from `nalarin.id`, update the metadata domain in `src/app/layout.tsx`, `src/app/robots.ts`, and `src/app/sitemap.ts`.
+- Jika GitHub Actions gagal SSH, cek `VPS_HOST`, `VPS_USER`, `VPS_PORT`, `VPS_SSH_KEY`, dan isi `/home/deploy/.ssh/authorized_keys`.
+- Jika `git fetch` gagal, cek deploy key repository dari VPS: `ssh -T git@github.com`.
+- Jika workflow gagal karena `.env`, buat `/var/www/nalarin/.env` manual dan set permission `chmod 600 .env`.
+- Jika upload gagal, cek ownership dan permission `public/uploads`.
+- Jika domain tidak terbuka, cek `sudo nginx -t`, DNS, firewall, dan Certbot.
+- Jika aplikasi tidak start, cek `pm2 logs nalarin`.
+- Jika perubahan `.env` tidak terbaca, jalankan `pm2 restart nalarin --update-env`.
+- Jika build gagal, jalankan `bun run build` manual di VPS sebagai user `deploy` untuk melihat error lengkap.
