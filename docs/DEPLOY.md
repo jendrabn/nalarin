@@ -101,40 +101,36 @@ Run the `sudo env PATH=... pm2 startup ...` command displayed by PM2, then switc
 
 `VPS_SSH_KEY` is the private key stored in GitHub Actions so the workflow can SSH into the VPS as the `deploy` user.
 
-Create the key on your local computer, not on the VPS:
+Generate this key directly on the VPS as the `deploy` user:
 
 ```bash
-ssh-keygen -t ed25519 -C "github-actions-nalarin-deploy" -f ./nalarin-gh-actions-vps
+sudo -iu deploy
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+ssh-keygen -t ed25519 -C "github-actions-nalarin-deploy" -f ~/.ssh/nalarin-gh-actions-vps
 ```
 
 When prompted for a passphrase, press `Enter` twice. This workflow does not configure an SSH agent for private keys that use a passphrase.
 
 Generated files:
 
-- `nalarin-gh-actions-vps`: private key for the GitHub Secret `VPS_SSH_KEY`
-- `nalarin-gh-actions-vps.pub`: public key for the VPS
+- `~/.ssh/nalarin-gh-actions-vps`: private key for the GitHub Secret `VPS_SSH_KEY`
+- `~/.ssh/nalarin-gh-actions-vps.pub`: public key for the VPS
 
-Install the public key on the VPS:
-
-```bash
-ssh-copy-id -i ./nalarin-gh-actions-vps.pub deploy@YOUR_VPS_IP
-```
-
-If `ssh-copy-id` is not available, install the key manually:
+Allow the key to log in as the `deploy` user:
 
 ```bash
-ssh deploy@YOUR_VPS_IP
-mkdir -p ~/.ssh
-chmod 700 ~/.ssh
-nano ~/.ssh/authorized_keys
+cat ~/.ssh/nalarin-gh-actions-vps.pub >> ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 ```
 
-Paste the contents of `nalarin-gh-actions-vps.pub` into `authorized_keys`, then test the connection:
+Display the private key:
 
 ```bash
-ssh -i ./nalarin-gh-actions-vps deploy@YOUR_VPS_IP
+cat ~/.ssh/nalarin-gh-actions-vps
 ```
+
+Keep this output available for the next section. It will be copied into the GitHub Secret `VPS_SSH_KEY`.
 
 ## 5. Configure GitHub Secrets and Variables
 
@@ -149,18 +145,12 @@ Add the following repository secrets:
 - `VPS_HOST`: VPS IP address or hostname, for example `203.0.113.10`
 - `VPS_USER`: `deploy`
 - `VPS_PORT`: `22`, optional because the workflow defaults to `22`
-- `VPS_SSH_KEY`: the contents of the private key `nalarin-gh-actions-vps`
+- `VPS_SSH_KEY`: the contents of the private key displayed from `~/.ssh/nalarin-gh-actions-vps`
 
-Read the private key on Linux/macOS:
+The private key was displayed in the previous section with:
 
 ```bash
-cat ./nalarin-gh-actions-vps
-```
-
-Or on PowerShell:
-
-```powershell
-Get-Content -Raw .\nalarin-gh-actions-vps
+cat ~/.ssh/nalarin-gh-actions-vps
 ```
 
 Copy the entire content, including:
@@ -169,6 +159,13 @@ Copy the entire content, including:
 -----BEGIN OPENSSH PRIVATE KEY-----
 ...
 -----END OPENSSH PRIVATE KEY-----
+```
+
+After the GitHub Secret has been saved, remove the private key file from the VPS. The VPS only needs the public key inside `authorized_keys`; GitHub Actions is the side that needs the private key.
+
+```bash
+rm ~/.ssh/nalarin-gh-actions-vps
+chmod 644 ~/.ssh/nalarin-gh-actions-vps.pub
 ```
 
 Add the repository variable below if the deployment path does not use the default value:
@@ -273,6 +270,26 @@ nano .env
 chmod 600 .env
 ```
 
+Generate internal secrets directly on the VPS:
+
+```bash
+bun -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+bun -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Use one generated value for `SESSION_PASSWORD` and a different generated value for `CRON_SECRET`:
+
+```env
+SESSION_PASSWORD=first-generated-value
+CRON_SECRET=second-generated-value
+```
+
+If Node.js is not available but OpenSSL is available, use:
+
+```bash
+openssl rand -hex 32
+```
+
 `.env` checklist:
 
 - `NODE_ENV=production`
@@ -280,6 +297,7 @@ chmod 600 .env
 - `APP_PORT=3001` or another port that will be used by Nginx.
 - `DATABASE_URL` points to the production database.
 - `SESSION_PASSWORD` is at least 32 characters long.
+- `CRON_SECRET` is a random secret, different from `SESSION_PASSWORD`.
 - `GOOGLE_REDIRECT_URI` exactly matches the callback URL configured in Google Cloud.
 - Email provider, Midtrans, AI, cron, and file storage variables are configured according to production needs.
 - `FILE_STORAGE_PUBLIC_DIR=public/uploads` if using local uploads.
