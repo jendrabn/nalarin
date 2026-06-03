@@ -483,10 +483,9 @@ Uploaded files are written at runtime into `public/uploads`. In production,
 serve `/uploads/` directly from Nginx instead of proxying those requests to
 Next.js. This avoids cached 404 responses for files created after the build.
 
-Profile avatars are returned by the application through
-`/api/account/avatar/<filename>` and read from the same `public/uploads/avatars`
-directory. Other uploaded assets such as blog, question, and taxonomy images
-still use `/uploads/...`, so the Nginx `/uploads/` alias is still required.
+Profile avatars are stored under `public/uploads/avatars` and returned as
+`/uploads/avatars/<filename>`, the same public upload path pattern used by
+taxonomy, question, and blog images.
 
 ## 11. Install SSL
 
@@ -522,7 +521,7 @@ bun run build
 pm2 startOrReload ecosystem.config.cjs --update-env
 pm2 save
 curl -I https://nalarin.web.id/logout
-curl https://nalarin.web.id/api/account/avatar/avatar-1-00000000-0000-0000-0000-000000000000.png
+curl -I https://nalarin.web.id/uploads/avatars/__nalarin-smoke-test__.png
 ```
 
 Consequence of `git reset --hard`: manual changes to Git-tracked files on the VPS will be overwritten. The `.env` file and `public/uploads` files are safe as long as they remain untracked by Git and are stored under `/var/www/nalarin`.
@@ -535,7 +534,7 @@ After PM2 reloads, the workflow runs smoke tests against the production domain:
 
 - `GET /logout` must not return a `Set-Cookie` header that clears `nalarin_session`.
 - `/logout` must not redirect to `localhost` or `127.0.0.1`.
-- `/api/account/avatar/<filename>` must be handled by the dynamic avatar route.
+- `/uploads/avatars/` must be served by Nginx/public uploads.
 
 If one of these checks fails, the deployment is not actually serving the fixed
 build or the reverse proxy/environment configuration is still wrong.
@@ -610,7 +609,7 @@ Application checklist:
 - `curl -I https://nalarin.web.id/logout` does not include `Set-Cookie: nalarin_session=...Max-Age=0`.
 - `curl -I https://nalarin.web.id/logout` does not redirect to `localhost`.
 - File uploads work. Test non-avatar uploaded files with `curl -I https://nalarin.web.id/uploads/...`.
-- Profile avatar files work after upload. Test the saved `avatar_url` with `curl -I https://nalarin.web.id/api/account/avatar/<filename>`.
+- Profile avatar files work after upload. Test the saved `avatar_url` with `curl -I https://nalarin.web.id/uploads/avatars/<filename>`.
 - The Google OAuth callback matches the production domain.
 - The sitemap and robots files use the production domain.
 - PM2 logs do not contain recurring errors.

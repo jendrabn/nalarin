@@ -88,6 +88,11 @@ jobs:
           FILE_STORAGE_PUBLIC_DIR_VALUE="${FILE_STORAGE_PUBLIC_DIR_VALUE:-public/uploads}"
 
           if [ "$NODE_ENV_VALUE" = "production" ]; then
+            if [ -z "$APP_URL_VALUE" ] || [ -z "$NEXT_PUBLIC_APP_URL_VALUE" ]; then
+              echo "APP_URL dan NEXT_PUBLIC_APP_URL wajib diisi di production."
+              exit 1
+            fi
+
             if printf '%s\n%s\n' "$APP_URL_VALUE" "$NEXT_PUBLIC_APP_URL_VALUE" | grep -Eq 'localhost|127\.0\.0\.1'; then
               echo "APP_URL dan NEXT_PUBLIC_APP_URL production tidak boleh memakai localhost."
               exit 1
@@ -115,7 +120,7 @@ jobs:
           pm2 status nalarin
 
           if [ "$NODE_ENV_VALUE" = "production" ]; then
-            LOGOUT_HEADERS="$(curl -k -sSI "$APP_URL_VALUE/logout" || true)"
+            LOGOUT_HEADERS="$(curl -k --max-time 20 -sSI "$APP_URL_VALUE/logout" || true)"
 
             if printf '%s\n' "$LOGOUT_HEADERS" | grep -Eiq 'set-cookie: .*Max-Age=0'; then
               echo "Smoke test gagal: GET /logout masih menghapus session cookie."
@@ -127,11 +132,10 @@ jobs:
               exit 1
             fi
 
-            AVATAR_SMOKE_PATH="/api/account/avatar/avatar-1-00000000-0000-0000-0000-000000000000.png"
-            AVATAR_BODY="$(curl -k -sS "$APP_URL_VALUE$AVATAR_SMOKE_PATH" || true)"
+            AVATAR_SMOKE_HEADERS="$(curl -k --max-time 20 -sSI "$APP_URL_VALUE/uploads/avatars/__nalarin-smoke-test__.png" || true)"
 
-            if ! printf '%s' "$AVATAR_BODY" | head -c 32 | grep -q "Not found"; then
-              echo "Smoke test gagal: route avatar dinamis belum aktif di production."
+            if ! printf '%s\n' "$AVATAR_SMOKE_HEADERS" | grep -Eq '^HTTP/.* 404'; then
+              echo "Smoke test gagal: /uploads/avatars tidak dilayani oleh Nginx/public uploads."
               exit 1
             fi
           fi
