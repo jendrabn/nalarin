@@ -13,6 +13,7 @@ import {
   stripHtml,
   truncateText,
 } from "@/features/blog/utils";
+import { SITE_ICON_URL } from "@/lib/seo";
 
 type BlogDetailPageProps = {
   params: Promise<{ slug: string }>;
@@ -120,7 +121,7 @@ export default async function Page({ params }: BlogDetailPageProps) {
       url: absoluteUrl("/"),
       logo: {
         "@type": "ImageObject",
-        url: absoluteUrl("/favicon.ico"),
+        url: absoluteUrl(SITE_ICON_URL),
       },
     },
     datePublished: post.publishedAt?.toISOString(),

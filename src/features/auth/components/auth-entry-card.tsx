@@ -34,7 +34,7 @@ export function AuthEntryCard() {
   return (
     <div className="w-full max-w-[25rem] px-5">
       <div className="flex flex-col items-center text-center">
-        <SiteLogo className="text-[2.25rem]" />
+        <SiteLogo className="h-9 w-[11.75rem]" />
         <h1 className="mt-8 text-2xl font-bold tracking-tight sm:text-[1.75rem]">
           Selamat Datang di Nalarin
         </h1>
