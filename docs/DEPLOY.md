@@ -428,6 +428,14 @@ server {
 
     client_max_body_size 50m;
 
+    location /uploads/ {
+        alias /var/www/nalarin/public/uploads/;
+        try_files $uri =404;
+        access_log off;
+        expires 1h;
+        add_header Cache-Control "public, max-age=3600";
+    }
+
     location / {
         proxy_pass http://127.0.0.1:3001;
         proxy_http_version 1.1;
@@ -452,6 +460,10 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl reload nginx
 ```
+
+Uploaded files are written at runtime into `public/uploads`. In production,
+serve `/uploads/` directly from Nginx instead of proxying those requests to
+Next.js. This avoids cached 404 responses for files created after the build.
 
 ## 11. Install SSL
 
@@ -553,7 +565,7 @@ Application checklist:
 - The homepage opens correctly.
 - Login and registration work.
 - Admin users are redirected to `/admin` correctly.
-- File uploads work.
+- File uploads work. Test an uploaded file with `curl -I https://your-domain.example/uploads/...`.
 - The Google OAuth callback matches the production domain.
 - The sitemap and robots files use the production domain.
 - PM2 logs do not contain recurring errors.
@@ -563,7 +575,8 @@ Application checklist:
 - GitHub Actions SSH fails: check `VPS_HOST`, `VPS_USER`, `VPS_PORT`, `VPS_SSH_KEY`, and `/home/deploy/.ssh/authorized_keys`.
 - `git fetch` fails: check the VPS deploy key with `ssh -T git@github.com`.
 - The workflow fails because of `.env`: manually create `/var/www/nalarin/.env` and run `chmod 600 .env`.
-- Uploads fail: check the ownership and permissions of `public/uploads`.
+- Uploads fail: check the ownership and permissions of `public/uploads`, and ensure Nginx has a `location /uploads/` block using `alias /var/www/nalarin/public/uploads/`.
+- Uploaded files exist on disk but return 404: reload Nginx after adding the `/uploads/` alias, then test the exact file URL with `curl -I`.
 - The domain does not open: check DNS, firewall, `sudo nginx -t`, and the Nginx status.
 - `.env` changes are not loaded: run `bun run build`, then `pm2 restart nalarin --update-env`.
 - Google OAuth still uses an old client ID: run `curl -I https://your-domain.example/api/auth/google` and inspect the `location` header, then rebuild and restart PM2.
