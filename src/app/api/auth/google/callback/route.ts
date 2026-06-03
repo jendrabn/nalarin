@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
         .set({
           email,
           emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
-          avatarUrl: googleUser.picture ?? user.avatarUrl,
+          avatarUrl: user.avatarUrl ?? googleUser.picture,
           updatedAt: new Date(),
         })
         .where(eq(schema.users.id, user.id));

@@ -4,6 +4,7 @@ import { join } from "node:path"
 
 import { NextResponse } from "next/server"
 
+import { env } from "@/config/env"
 import { getCurrentUser } from "@/features/auth/services/session"
 
 const AVATAR_MIME_EXTENSIONS: Record<string, string> = {
@@ -45,14 +46,14 @@ export async function POST(request: Request) {
 
   const buffer = Buffer.from(await file.arrayBuffer())
   const filename = `avatar-${user.id}-${randomUUID()}${extension}`
-  const uploadDirectory = join(process.cwd(), "public", "uploads", "avatars")
+  const uploadDirectory = join(process.cwd(), env.FILE_STORAGE_PUBLIC_DIR, "avatars")
   const uploadPath = join(uploadDirectory, filename)
 
   await mkdir(uploadDirectory, { recursive: true })
   await writeFile(uploadPath, buffer)
 
   return NextResponse.json({
-    url: `/uploads/avatars/${filename}`,
+    url: `/api/account/avatar/${filename}`,
     filename,
   })
 }

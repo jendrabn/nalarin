@@ -30,6 +30,7 @@ import {
   SidebarRail,
   SidebarSeparator,
 } from "@/components/ui/sidebar"
+import { logoutAction } from "@/features/auth/actions"
 
 export type AdminSidebarUser = {
   name: string
@@ -107,12 +108,17 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
                       Profile
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild variant="destructive">
-                    <Link href="/logout">
-                      <LogOutIcon />
-                      Logout
-                    </Link>
-                  </DropdownMenuItem>
+                  <form action={logoutAction}>
+                    <DropdownMenuItem asChild variant="destructive">
+                      <button
+                        type="submit"
+                        className="flex w-full items-center gap-2 text-left"
+                      >
+                        <LogOutIcon />
+                        Logout
+                      </button>
+                    </DropdownMenuItem>
+                  </form>
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
         .set({
           email: email ?? user.email,
           emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
-          avatarUrl: facebookUser.picture?.data?.url ?? user.avatarUrl,
+          avatarUrl: user.avatarUrl ?? facebookUser.picture?.data?.url,
           updatedAt: new Date(),
         })
         .where(eq(schema.users.id, user.id));
