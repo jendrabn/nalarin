@@ -76,10 +76,63 @@ jobs:
           git fetch origin "$DEPLOY_BRANCH"
           git reset --hard "origin/$DEPLOY_BRANCH"
 
+          read_env() {
+            local key="$1"
+            (grep -E "^${key}=" .env || true) | tail -n 1 | cut -d '=' -f 2- | sed -e 's/\r$//' -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//"
+          }
+
+          NODE_ENV_VALUE="$(read_env NODE_ENV)"
+          APP_URL_VALUE="$(read_env APP_URL)"
+          NEXT_PUBLIC_APP_URL_VALUE="$(read_env NEXT_PUBLIC_APP_URL)"
+          FILE_STORAGE_PUBLIC_DIR_VALUE="$(read_env FILE_STORAGE_PUBLIC_DIR)"
+          FILE_STORAGE_PUBLIC_DIR_VALUE="${FILE_STORAGE_PUBLIC_DIR_VALUE:-public/uploads}"
+
+          if [ "$NODE_ENV_VALUE" = "production" ]; then
+            if printf '%s\n%s\n' "$APP_URL_VALUE" "$NEXT_PUBLIC_APP_URL_VALUE" | grep -Eq 'localhost|127\.0\.0\.1'; then
+              echo "APP_URL dan NEXT_PUBLIC_APP_URL production tidak boleh memakai localhost."
+              exit 1
+            fi
+
+            if [ "$APP_URL_VALUE" != "$NEXT_PUBLIC_APP_URL_VALUE" ]; then
+              echo "APP_URL dan NEXT_PUBLIC_APP_URL harus sama di production."
+              exit 1
+            fi
+          fi
+
+          mkdir -p \
+            "$FILE_STORAGE_PUBLIC_DIR_VALUE" \
+            "$FILE_STORAGE_PUBLIC_DIR_VALUE/avatars" \
+            "$FILE_STORAGE_PUBLIC_DIR_VALUE/blog" \
+            "$FILE_STORAGE_PUBLIC_DIR_VALUE/questions" \
+            "$FILE_STORAGE_PUBLIC_DIR_VALUE/taxonomy"
+          chmod -R ug+rwX "$FILE_STORAGE_PUBLIC_DIR_VALUE"
+
           bun install
           bun run build
 
           pm2 startOrReload ecosystem.config.cjs --update-env
           pm2 save
           pm2 status nalarin
+
+          if [ "$NODE_ENV_VALUE" = "production" ]; then
+            LOGOUT_HEADERS="$(curl -k -sSI "$APP_URL_VALUE/logout" || true)"
+
+            if printf '%s\n' "$LOGOUT_HEADERS" | grep -Eiq 'set-cookie: .*Max-Age=0'; then
+              echo "Smoke test gagal: GET /logout masih menghapus session cookie."
+              exit 1
+            fi
+
+            if printf '%s\n' "$LOGOUT_HEADERS" | grep -Eiq 'location: https?://(localhost|127\.0\.0\.1)'; then
+              echo "Smoke test gagal: redirect production masih mengarah ke localhost."
+              exit 1
+            fi
+
+            AVATAR_SMOKE_PATH="/api/account/avatar/avatar-1-00000000-0000-0000-0000-000000000000.png"
+            AVATAR_BODY="$(curl -k -sS "$APP_URL_VALUE$AVATAR_SMOKE_PATH" || true)"
+
+            if ! printf '%s' "$AVATAR_BODY" | head -c 32 | grep -q "Not found"; then
+              echo "Smoke test gagal: route avatar dinamis belum aktif di production."
+              exit 1
+            fi
+          fi
           REMOTE

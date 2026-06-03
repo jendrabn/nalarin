@@ -22,7 +22,7 @@ The auto-deploy workflow is located at `.github/workflows/deploy.yml`.
 
 Make sure the following are available:
 
-- A domain pointing to the VPS IP address.
+- A domain pointing to the VPS IP address, for example `nalarin.web.id`.
 - Root access or a sudo user on the VPS.
 - Open ports `22`, `80`, and `443`.
 - The GitHub repository is accessible from the VPS.
@@ -252,14 +252,14 @@ Replace `OWNER/REPOSITORY` with your actual repository. If the remote still uses
 git remote set-url origin git@github.com:OWNER/REPOSITORY.git
 ```
 
-Set the basic permissions:
+Set the basic permissions and create runtime upload directories:
 
 ```bash
 sudo chown -R deploy:deploy /var/www/nalarin
 chmod 755 /var/www/nalarin
-mkdir -p public/uploads
+mkdir -p public/uploads/{avatars,blog,questions,taxonomy}
 chmod 755 public
-chmod 775 public/uploads
+chmod -R 775 public/uploads
 ```
 
 Create `.env` manually:
@@ -293,7 +293,7 @@ openssl rand -hex 32
 `.env` checklist:
 
 - `NODE_ENV=production`
-- `APP_URL` and `NEXT_PUBLIC_APP_URL` match the production domain.
+- `APP_URL` and `NEXT_PUBLIC_APP_URL` are identical and match the production domain, for example `https://nalarin.web.id`.
 - `APP_PORT=3001` or another port that will be used by Nginx.
 - `DATABASE_URL` points to the production database.
 - `SESSION_PASSWORD` is at least 32 characters long.
@@ -392,9 +392,9 @@ Use production values, not localhost values:
 
 ```env
 NODE_ENV=production
-APP_URL=https://your-domain.example
-NEXT_PUBLIC_APP_URL=https://your-domain.example
-GOOGLE_REDIRECT_URI=https://your-domain.example/api/auth/google/callback
+APP_URL=https://nalarin.web.id
+NEXT_PUBLIC_APP_URL=https://nalarin.web.id
+GOOGLE_REDIRECT_URI=https://nalarin.web.id/api/auth/google/callback
 ```
 
 After any `.env` change, rebuild and reload the process:
@@ -409,14 +409,14 @@ For OAuth changes, verify the running app is using the expected client ID and
 callback URL:
 
 ```bash
-curl -I https://your-domain.example/api/auth/google
+curl -I https://nalarin.web.id/api/auth/google
 ```
 
 The `location` header must contain the expected `client_id` and this redirect
 URI, URL-encoded:
 
 ```text
-https://your-domain.example/api/auth/google/callback
+https://nalarin.web.id/api/auth/google/callback
 ```
 
 If the `location` header still shows an old `client_id`, rebuild the app and
@@ -442,7 +442,7 @@ Content:
 server {
     listen 80;
     listen [::]:80;
-    server_name nalarin.id www.nalarin.id;
+    server_name nalarin.web.id www.nalarin.web.id;
 
     client_max_body_size 50m;
 
@@ -483,6 +483,11 @@ Uploaded files are written at runtime into `public/uploads`. In production,
 serve `/uploads/` directly from Nginx instead of proxying those requests to
 Next.js. This avoids cached 404 responses for files created after the build.
 
+Profile avatars are returned by the application through
+`/api/account/avatar/<filename>` and read from the same `public/uploads/avatars`
+directory. Other uploaded assets such as blog, question, and taxonomy images
+still use `/uploads/...`, so the Nginx `/uploads/` alias is still required.
+
 ## 11. Install SSL
 
 ```bash
@@ -490,14 +495,14 @@ sudo snap install core
 sudo snap refresh core
 sudo snap install --classic certbot
 sudo ln -sf /snap/bin/certbot /usr/bin/certbot
-sudo certbot --nginx -d nalarin.id -d www.nalarin.id
+sudo certbot --nginx -d nalarin.web.id -d www.nalarin.web.id
 sudo certbot renew --dry-run
 ```
 
 If you only use the main domain:
 
 ```bash
-sudo certbot --nginx -d nalarin.id
+sudo certbot --nginx -d nalarin.web.id
 ```
 
 ## 12. Auto Deployment
@@ -510,13 +515,30 @@ The workflow performs the following steps:
 cd /var/www/nalarin
 git fetch origin main
 git reset --hard origin/main
+mkdir -p public/uploads/{avatars,blog,questions,taxonomy}
+chmod -R ug+rwX public/uploads
 bun install
 bun run build
 pm2 startOrReload ecosystem.config.cjs --update-env
 pm2 save
+curl -I https://nalarin.web.id/logout
+curl https://nalarin.web.id/api/account/avatar/avatar-1-00000000-0000-0000-0000-000000000000.png
 ```
 
-Consequence of `git reset --hard`: manual changes to Git-tracked files on the VPS will be overwritten. The `.env` file is safe as long as it remains untracked by Git and is stored at `/var/www/nalarin/.env`.
+Consequence of `git reset --hard`: manual changes to Git-tracked files on the VPS will be overwritten. The `.env` file and `public/uploads` files are safe as long as they remain untracked by Git and are stored under `/var/www/nalarin`.
+
+The workflow also validates that production `APP_URL` and
+`NEXT_PUBLIC_APP_URL` are not localhost values and are identical, then recreates
+the runtime upload directories before building.
+
+After PM2 reloads, the workflow runs smoke tests against the production domain:
+
+- `GET /logout` must not return a `Set-Cookie` header that clears `nalarin_session`.
+- `/logout` must not redirect to `localhost` or `127.0.0.1`.
+- `/api/account/avatar/<filename>` must be handled by the dynamic avatar route.
+
+If one of these checks fails, the deployment is not actually serving the fixed
+build or the reverse proxy/environment configuration is still wrong.
 
 The workflow will fail if:
 
@@ -533,7 +555,7 @@ Audit:
 
 ```bash
 namei -l /var/www/nalarin
-ls -ld /var/www /var/www/nalarin /var/www/nalarin/public /var/www/nalarin/public/uploads
+ls -ld /var/www /var/www/nalarin /var/www/nalarin/public /var/www/nalarin/public/uploads /var/www/nalarin/public/uploads/avatars
 ls -l /var/www/nalarin/.env
 ls -ld /home/deploy/.ssh
 ls -l /home/deploy/.ssh/authorized_keys /home/deploy/.ssh/config /home/deploy/.ssh/github_nalarin
@@ -547,6 +569,7 @@ Target permissions:
 /var/www/nalarin/.env                 deploy:deploy  600
 /var/www/nalarin/public               deploy:deploy  755
 /var/www/nalarin/public/uploads       deploy:deploy  775
+/var/www/nalarin/public/uploads/avatars deploy:deploy 775
 /home/deploy/.ssh                     deploy:deploy  700
 /home/deploy/.ssh/authorized_keys     deploy:deploy  600
 /home/deploy/.ssh/config              deploy:deploy  600
@@ -559,7 +582,8 @@ Fix permissions if needed:
 sudo chown -R deploy:deploy /var/www/nalarin
 sudo chmod 755 /var/www /var/www/nalarin
 sudo chmod 755 /var/www/nalarin/public
-sudo chmod 775 /var/www/nalarin/public/uploads
+sudo mkdir -p /var/www/nalarin/public/uploads/{avatars,blog,questions,taxonomy}
+sudo chmod -R 775 /var/www/nalarin/public/uploads
 sudo chmod 600 /var/www/nalarin/.env
 sudo chown -R deploy:deploy /home/deploy/.ssh
 sudo chmod 700 /home/deploy/.ssh
@@ -571,7 +595,7 @@ sudo chmod 600 /home/deploy/.ssh/github_nalarin
 ## 14. Final Check
 
 ```bash
-curl -I https://nalarin.id
+curl -I https://nalarin.web.id
 pm2 status nalarin
 pm2 logs nalarin --lines 50
 sudo nginx -t
@@ -583,7 +607,10 @@ Application checklist:
 - The homepage opens correctly.
 - Login and registration work.
 - Admin users are redirected to `/admin` correctly.
-- File uploads work. Test an uploaded file with `curl -I https://your-domain.example/uploads/...`.
+- `curl -I https://nalarin.web.id/logout` does not include `Set-Cookie: nalarin_session=...Max-Age=0`.
+- `curl -I https://nalarin.web.id/logout` does not redirect to `localhost`.
+- File uploads work. Test non-avatar uploaded files with `curl -I https://nalarin.web.id/uploads/...`.
+- Profile avatar files work after upload. Test the saved `avatar_url` with `curl -I https://nalarin.web.id/api/account/avatar/<filename>`.
 - The Google OAuth callback matches the production domain.
 - The sitemap and robots files use the production domain.
 - PM2 logs do not contain recurring errors.
@@ -597,5 +624,5 @@ Application checklist:
 - Uploaded files exist on disk but return 404: reload Nginx after adding the `/uploads/` alias, then test the exact file URL with `curl -I`.
 - The domain does not open: check DNS, firewall, `sudo nginx -t`, and the Nginx status.
 - `.env` changes are not loaded: run `bun run build`, then `pm2 restart nalarin --update-env`.
-- Google OAuth still uses an old client ID: run `curl -I https://your-domain.example/api/auth/google` and inspect the `location` header, then rebuild and restart PM2.
+- Google OAuth still uses an old client ID: run `curl -I https://nalarin.web.id/api/auth/google` and inspect the `location` header, then rebuild and restart PM2.
 - The build fails: run `bun run build` manually on the VPS as the `deploy` user.

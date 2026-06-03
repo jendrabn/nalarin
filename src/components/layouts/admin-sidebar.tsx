@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -64,6 +65,7 @@ function isActiveRoute(pathname: string, href: string) {
 
 export function AdminSidebar({ user }: AdminSidebarProps) {
   const pathname = usePathname()
+  const [isLoggingOut, startLogoutTransition] = React.useTransition()
 
   return (
     <Sidebar
@@ -108,17 +110,19 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
                       Profile
                     </Link>
                   </DropdownMenuItem>
-                  <form action={logoutAction}>
-                    <DropdownMenuItem asChild variant="destructive">
-                      <button
-                        type="submit"
-                        className="flex w-full items-center gap-2 text-left"
-                      >
-                        <LogOutIcon />
-                        Logout
-                      </button>
-                    </DropdownMenuItem>
-                  </form>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    disabled={isLoggingOut}
+                    onSelect={(event) => {
+                      event.preventDefault()
+                      startLogoutTransition(async () => {
+                        await logoutAction()
+                      })
+                    }}
+                  >
+                    <LogOutIcon />
+                    Logout
+                  </DropdownMenuItem>
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
