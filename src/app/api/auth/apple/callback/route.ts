@@ -9,8 +9,8 @@ import {
   getSession,
 } from "@/features/auth/services/session";
 
-function redirectWithError(request: NextRequest, error: string) {
-  return NextResponse.redirect(new URL(`/login?error=${error}`, request.url));
+function redirectWithError(error: string) {
+  return NextResponse.redirect(new URL(`/login?error=${error}`, env.APP_URL));
 }
 
 function fallbackName(email: string) {
@@ -19,7 +19,7 @@ function fallbackName(email: string) {
 
 export async function GET(request: NextRequest) {
   if (!env.APPLE_AUTH_ENABLED) {
-    return redirectWithError(request, "auth_provider_disabled");
+    return redirectWithError("auth_provider_disabled");
   }
 
   const code = request.nextUrl.searchParams.get("code");
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   const session = await getSession();
 
   if (oauthError) {
-    return redirectWithError(request, "apple_cancelled");
+    return redirectWithError("apple_cancelled");
   }
 
   if (
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     !session.oauthNonce ||
     state !== session.oauthState
   ) {
-    return redirectWithError(request, "invalid_oauth_state");
+    return redirectWithError("invalid_oauth_state");
   }
 
   try {
@@ -48,11 +48,11 @@ export async function GET(request: NextRequest) {
     });
 
     if (!appleUser.email && !existingByAppleId) {
-      return redirectWithError(request, "apple_email_missing");
+      return redirectWithError("apple_email_missing");
     }
 
     if (appleUser.email && !appleUser.emailVerified) {
-      return redirectWithError(request, "apple_email_unverified");
+      return redirectWithError("apple_email_unverified");
     }
 
     const email = appleUser.email?.toLowerCase();
@@ -66,16 +66,16 @@ export async function GET(request: NextRequest) {
 
     if (existingByEmail) {
       if (!existingByEmail.appleId) {
-        return redirectWithError(request, "apple_account_not_linked");
+        return redirectWithError("apple_account_not_linked");
       }
 
       if (existingByEmail.appleId !== appleUser.sub) {
-        return redirectWithError(request, "apple_account_mismatch");
+        return redirectWithError("apple_account_mismatch");
       }
     }
 
     if (user && user.status !== "active") {
-      return redirectWithError(request, "account_inactive");
+      return redirectWithError("account_inactive");
     }
 
     if (!user && email) {
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!user) {
-      return redirectWithError(request, "auth_failed");
+      return redirectWithError("auth_failed");
     }
 
     await createAuthenticatedSession({
@@ -111,15 +111,15 @@ export async function GET(request: NextRequest) {
       role: user.role,
     });
 
-    return NextResponse.redirect(new URL("/profile", request.url));
+    return NextResponse.redirect(new URL("/profile", env.APP_URL));
   } catch (error) {
     const message = error instanceof Error ? error.message : "auth_failed";
 
     if (message.startsWith("apple_")) {
-      return redirectWithError(request, message);
+      return redirectWithError(message);
     }
 
     console.error("Apple login failed:", error);
-    return redirectWithError(request, "auth_failed");
+    return redirectWithError("auth_failed");
   }
 }

@@ -286,6 +286,10 @@ chmod 600 .env
 
 Important note: `NEXT_PUBLIC_*` variables are read during `bun run build`, so their values must be correct before building.
 
+If OAuth values are changed after the app has already been built, rebuild the
+application before reloading PM2. The built server can still serve values from
+the previous build until `bun run build` is run again.
+
 ## 8. Database, Migration, and Seed
 
 Create the MySQL database and user:
@@ -354,6 +358,56 @@ pm2 logs nalarin
 pm2 restart nalarin --update-env
 pm2 stop nalarin
 pm2 monit
+```
+
+## 9.1 Updating `.env` After Deployment
+
+Edit the production environment file only on the VPS:
+
+```bash
+cd /var/www/nalarin
+nano .env
+chmod 600 .env
+```
+
+Use production values, not localhost values:
+
+```env
+NODE_ENV=production
+APP_URL=https://your-domain.example
+NEXT_PUBLIC_APP_URL=https://your-domain.example
+GOOGLE_REDIRECT_URI=https://your-domain.example/api/auth/google/callback
+```
+
+After any `.env` change, rebuild and reload the process:
+
+```bash
+cd /var/www/nalarin
+bun run build
+pm2 restart nalarin --update-env
+```
+
+For OAuth changes, verify the running app is using the expected client ID and
+callback URL:
+
+```bash
+curl -I https://your-domain.example/api/auth/google
+```
+
+The `location` header must contain the expected `client_id` and this redirect
+URI, URL-encoded:
+
+```text
+https://your-domain.example/api/auth/google/callback
+```
+
+If the `location` header still shows an old `client_id`, rebuild the app and
+restart PM2 again. If it still does not change, check that PM2 is running from
+the expected directory:
+
+```bash
+pm2 describe nalarin
+pm2 env nalarin | grep GOOGLE_CLIENT_ID
 ```
 
 ## 10. Configure Nginx
@@ -511,5 +565,6 @@ Application checklist:
 - The workflow fails because of `.env`: manually create `/var/www/nalarin/.env` and run `chmod 600 .env`.
 - Uploads fail: check the ownership and permissions of `public/uploads`.
 - The domain does not open: check DNS, firewall, `sudo nginx -t`, and the Nginx status.
-- `.env` changes are not loaded: run `pm2 restart nalarin --update-env`.
+- `.env` changes are not loaded: run `bun run build`, then `pm2 restart nalarin --update-env`.
+- Google OAuth still uses an old client ID: run `curl -I https://your-domain.example/api/auth/google` and inspect the `location` header, then rebuild and restart PM2.
 - The build fails: run `bun run build` manually on the VPS as the `deploy` user.

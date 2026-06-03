@@ -9,8 +9,8 @@ import {
   getSession,
 } from "@/features/auth/services/session";
 
-function redirectWithError(request: NextRequest, error: string) {
-  return NextResponse.redirect(new URL(`/login?error=${error}`, request.url));
+function redirectWithError(error: string) {
+  return NextResponse.redirect(new URL(`/login?error=${error}`, env.APP_URL));
 }
 
 function fallbackName(email: string) {
@@ -19,7 +19,7 @@ function fallbackName(email: string) {
 
 export async function GET(request: NextRequest) {
   if (!env.GOOGLE_AUTH_ENABLED) {
-    return redirectWithError(request, "auth_provider_disabled");
+    return redirectWithError("auth_provider_disabled");
   }
 
   const code = request.nextUrl.searchParams.get("code");
@@ -28,18 +28,18 @@ export async function GET(request: NextRequest) {
   const session = await getSession();
 
   if (oauthError) {
-    return redirectWithError(request, "google_cancelled");
+    return redirectWithError("google_cancelled");
   }
 
   if (!code || !state || !session.oauthState || state !== session.oauthState) {
-    return redirectWithError(request, "invalid_oauth_state");
+    return redirectWithError("invalid_oauth_state");
   }
 
   try {
     const googleUser = await getGoogleUser(code);
 
     if (!googleUser.email_verified) {
-      return redirectWithError(request, "google_email_unverified");
+      return redirectWithError("google_email_unverified");
     }
 
     const email = googleUser.email.toLowerCase();
@@ -55,16 +55,16 @@ export async function GET(request: NextRequest) {
 
     if (existingByEmail) {
       if (!existingByEmail.googleId) {
-        return redirectWithError(request, "google_account_not_linked");
+        return redirectWithError("google_account_not_linked");
       }
 
       if (existingByEmail.googleId !== googleUser.sub) {
-        return redirectWithError(request, "google_account_mismatch");
+        return redirectWithError("google_account_mismatch");
       }
     }
 
     if (user && user.status !== "active") {
-      return redirectWithError(request, "account_inactive");
+      return redirectWithError("account_inactive");
     }
 
     if (!user) {
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!user) {
-      return redirectWithError(request, "auth_failed");
+      return redirectWithError("auth_failed");
     }
 
     await createAuthenticatedSession({
@@ -102,15 +102,15 @@ export async function GET(request: NextRequest) {
       role: user.role,
     });
 
-    return NextResponse.redirect(new URL("/profile", request.url));
+    return NextResponse.redirect(new URL("/profile", env.APP_URL));
   } catch (error) {
     const message = error instanceof Error ? error.message : "auth_failed";
 
     if (message.startsWith("google_")) {
-      return redirectWithError(request, message);
+      return redirectWithError(message);
     }
 
     console.error("Google login failed:", error);
-    return redirectWithError(request, "auth_failed");
+    return redirectWithError("auth_failed");
   }
 }
