@@ -62,7 +62,7 @@ import type {
   MaterialSubjectLookup,
   MaterialTopicLookup,
 } from "../queries"
-import { getMaterialContentMode, previewMaterialContent } from "../utils/material"
+import { getMaterialContentMode } from "../utils/material"
 
 type MaterialsPageProps = {
   materials: MaterialRow[]
@@ -124,40 +124,41 @@ function createColumns({
 }): ColumnDef<MaterialRow>[] {
   return [
     {
-      accessorKey: "title",
-      meta: { label: "Title" },
-      header: ({ column }) => <SortableHeader column={column}>Title</SortableHeader>,
+      accessorKey: "thumbnailUrl",
+      meta: { label: "Thumbnail" },
+      header: ({ column }) => <SortableHeader column={column}>Thumbnail</SortableHeader>,
+      enableSorting: false,
       cell: ({ row }) => {
         const material = row.original
-        const summary =
-          material.excerpt || previewMaterialContent(material.content) || "No description available."
 
         return (
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="relative mt-0.5 h-12 w-16 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted/30">
-              {material.thumbnailUrl ? (
-                <Image
-                  src={material.thumbnailUrl}
-                  alt={material.title}
-                  fill
-                  sizes="64px"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-[11px] text-muted-foreground">
-                  No image
-                </div>
-              )}
-            </div>
-            <div className="min-w-0 space-y-1">
-              <span className="block font-medium text-foreground">{material.title}</span>
-              <p className="line-clamp-2 max-w-[34rem] whitespace-normal text-sm text-muted-foreground">
-                {summary}
-              </p>
-            </div>
+          <div className="relative h-12 w-16 overflow-hidden rounded-lg border border-border/60 bg-muted/30">
+            {material.thumbnailUrl ? (
+              <Image
+                src={material.thumbnailUrl}
+                alt={material.title}
+                fill
+                sizes="64px"
+                className="object-cover"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-[11px] text-muted-foreground">
+                No image
+              </div>
+            )}
           </div>
         )
       },
+    },
+    {
+      accessorKey: "title",
+      meta: { label: "Title" },
+      header: ({ column }) => <SortableHeader column={column}>Title</SortableHeader>,
+      cell: ({ row }) => (
+        <span className="block min-w-[16rem] max-w-[34rem] truncate font-medium text-foreground">
+          {row.original.title}
+        </span>
+      ),
     },
     {
       accessorKey: "examTypeName",
@@ -418,6 +419,7 @@ export function MaterialsPage({ materials, lookups }: MaterialsPageProps) {
         searchPlaceholder="Search materials..."
         emptyMessage="No materials found."
         defaultColumnVisibility={{
+          thumbnailUrl: false,
           publishedAt: false,
           createdAt: false,
           updatedAt: false,

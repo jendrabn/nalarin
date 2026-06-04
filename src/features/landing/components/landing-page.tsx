@@ -16,12 +16,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PricingPlanCards } from "@/components/pricing-plan-cards";
 import { getPricingPlanViews } from "@/lib/pricing-plans";
 import { cn } from "@/lib/utils";
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar";
 import { SiteFooter } from "@/components/site-footer";
 import { TestimonialsSlider } from "@/components/testimonials-slider";
+import { PricingPlansSlider } from "@/features/landing/components/pricing-plans-slider";
 import { faqs } from "@/features/landing/data";
 import {
   featureHighlights,
@@ -178,7 +178,7 @@ function HowItWorksSection() {
 }
 
 async function PricingSection() {
-  const plans = (await getPricingPlanViews()).slice(0, 3).map((plan) => ({
+  const plans = (await getPricingPlanViews()).map((plan) => ({
     plan,
     featured: plan.discountPercent > 0,
     action: {
@@ -196,7 +196,7 @@ async function PricingSection() {
         description="Pilih akses belajar sesuai ritme persiapanmu, dari latihan dasar sampai tryout intensif dengan pembahasan penuh."
       />
       <div className="mx-auto mt-10 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <PricingPlanCards plans={plans} />
+        <PricingPlansSlider plans={plans} />
       </div>
     </section>
   );

@@ -3,13 +3,13 @@ import type { Metadata } from "next";
 import { env } from "@/config/env";
 import { absoluteUrl } from "@/features/blog/utils";
 
-export const SITE_NAME = "Nalarin.id";
+export const SITE_NAME = "Nalarin";
 export const SITE_URL = env.APP_URL;
 export const SITE_LOGO_URL = "/images/brand/logo-nalarin.svg";
 export const SITE_ICON_URL = "/favicon.ico";
 export const SITE_ICON_SVG_URL = "/images/brand/logo-initial-nalarin.svg";
 export const SITE_DESCRIPTION =
-  "Nalarin.id membantu persiapan UTBK, UTUL UGM, SIMAK UI, dan CPNS dengan bank soal, Mode Latihan, Mode Quiz, tryout rutin, pembahasan, ranking, dan progress tracking.";
+  "Nalarin membantu persiapan UTBK, UTUL UGM, SIMAK UI, dan CPNS dengan bank soal, Mode Latihan, Mode Quiz, tryout rutin, pembahasan, ranking, dan progress tracking.";
 
 type BuildSeoMetadataOptions = {
   title: string;
