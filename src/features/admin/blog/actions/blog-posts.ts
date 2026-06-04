@@ -1,11 +1,12 @@
 "use server"
 
 import { and, eq, inArray, ne } from "drizzle-orm"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { z } from "zod"
 
 import { db, schema } from "@/db"
 import { requireAdmin } from "@/features/auth/services/session"
+import { CACHE_TAGS, cacheTagFor } from "@/lib/cache-tags"
 
 import type { BlogPostStatus } from "../constants"
 import { blogPostFormSchema, type BlogPostFormValues } from "../schemas"
@@ -116,15 +117,20 @@ async function findUniqueBlogPostSlug(
 }
 
 function revalidateBlogRoutes(slug?: string, previousSlug?: string) {
+  updateTag(CACHE_TAGS.blog)
+  updateTag(CACHE_TAGS.sitemap)
+
   revalidatePath("/admin/blog")
   revalidatePath("/admin/blog-categories")
   revalidatePath("/blog")
 
   if (slug) {
+    updateTag(cacheTagFor.blogPost(slug))
     revalidatePath(`/blog/${slug}`)
   }
 
   if (previousSlug && previousSlug !== slug) {
+    updateTag(cacheTagFor.blogPost(previousSlug))
     revalidatePath(`/blog/${previousSlug}`)
   }
 }

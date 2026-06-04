@@ -1,9 +1,11 @@
 import "server-only"
 
 import { and, asc, eq } from "drizzle-orm"
+import { cacheLife, cacheTag } from "next/cache"
 
 import { db, schema } from "@/db"
 import { getPackageFinalPrice, isUnlimitedQuota } from "@/lib/billing"
+import { CACHE_TAGS } from "@/lib/cache-tags"
 
 export type PricingPlanView = {
   priceId: number
@@ -30,6 +32,10 @@ export type PricingPlanView = {
 }
 
 export async function getPricingPlanViews(): Promise<PricingPlanView[]> {
+  "use cache"
+  cacheLife("hours")
+  cacheTag(CACHE_TAGS.pricing, CACHE_TAGS.examTypes)
+
   const rows = await db
     .select({
       priceId: schema.examTypePackagePrices.id,

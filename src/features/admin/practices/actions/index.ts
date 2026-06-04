@@ -1,11 +1,12 @@
 "use server"
 
 import { and, eq, inArray, ne } from "drizzle-orm"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { z } from "zod"
 
 import { db, schema } from "@/db"
 import { requireAdmin } from "@/features/auth/services/session"
+import { CACHE_TAGS } from "@/lib/cache-tags"
 
 import { getPracticeById } from "../queries"
 import { practiceFormSchema, type PracticeFormValues } from "../schemas"
@@ -92,6 +93,9 @@ function isDuplicateEntryError(error: unknown) {
 }
 
 function revalidatePracticeRoutes(practiceId?: number, slug?: string, previousSlug?: string) {
+  updateTag(CACHE_TAGS.practiceDiscovery)
+  updateTag(CACHE_TAGS.sitemap)
+
   revalidatePath("/admin/practices")
   revalidatePath("/admin/practices/create")
   revalidatePath("/practices")

@@ -1,11 +1,12 @@
 "use server"
 
 import { and, eq, inArray, ne } from "drizzle-orm"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 
 import { db, schema } from "@/db"
 import { getExamTypeById } from "@/features/admin/exam-types/queries"
 import { requireAdmin } from "@/features/auth/services/session"
+import { CACHE_TAGS, cacheTagFor } from "@/lib/cache-tags"
 import {
   ActionResult,
   flattenZodError,
@@ -189,6 +190,9 @@ function revalidateMaterialRoutes(payload: {
   slug?: string
   previousSlug?: string | null
 }) {
+  updateTag(CACHE_TAGS.materials)
+  updateTag(CACHE_TAGS.sitemap)
+
   revalidatePath("/admin/materials")
   revalidatePath("/admin/materials/create")
   revalidatePath("/materials")
@@ -199,11 +203,13 @@ function revalidateMaterialRoutes(payload: {
   }
 
   if (payload.slug) {
+    updateTag(cacheTagFor.material(payload.slug))
     revalidatePath(`/materials/exam/${payload.examTypeSlug}/${payload.slug}`)
     revalidatePath(`/materials/${payload.slug}`)
   }
 
   if (payload.previousSlug && payload.previousSlug !== payload.slug) {
+    updateTag(cacheTagFor.material(payload.previousSlug))
     revalidatePath(`/materials/${payload.previousSlug}`)
 
     if (payload.previousExamTypeSlug) {

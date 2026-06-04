@@ -1,9 +1,11 @@
 import "server-only"
 
 import { and, desc, eq, gt } from "drizzle-orm"
+import { revalidateTag } from "next/cache"
 
 import { db, schema } from "@/db"
 import { getPackageEndDate, getRenewalStartDate } from "@/lib/billing"
+import { CACHE_TAGS } from "@/lib/cache-tags"
 import { mapMidtransPaymentMethod, type MidtransNotificationPayload } from "@/lib/midtrans"
 
 import type { AdminPaymentDetails } from "../queries"
@@ -150,6 +152,8 @@ export async function activatePaymentSubscription(
         finalAmount: currentPayment.amount,
         redeemedAt: now,
       })
+
+      revalidateTag(CACHE_TAGS.voucherPromos, { expire: 0 })
 
       return { success: true }
     }

@@ -1,8 +1,10 @@
 import "server-only"
 
 import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm"
+import { cacheLife, cacheTag } from "next/cache"
 
 import { db, schema } from "@/db"
+import { CACHE_TAGS, cacheTagFor } from "@/lib/cache-tags"
 
 import type { TryoutAvailabilityStatus } from "../utils/status"
 import { resolveTryoutAvailabilityStatus } from "../utils/status"
@@ -80,6 +82,8 @@ export type PublicTryoutDiscoveryData = {
   serverNow: string
 }
 
+type PublicTryoutCatalogData = Omit<PublicTryoutDiscoveryData, "userSessions">
+
 const visibleTryoutCondition = and(
   inArray(schema.tryouts.status, ["published", "archived"]),
   isNotNull(schema.tryouts.publishedAt),
@@ -88,8 +92,24 @@ const visibleTryoutCondition = and(
 export async function getPublicTryoutDiscoveryData(
   userId?: number,
 ): Promise<PublicTryoutDiscoveryData> {
+  const [catalog, userSessions] = await Promise.all([
+    getPublicTryoutCatalog(),
+    userId ? getUserTryoutSessions(userId) : Promise.resolve([]),
+  ])
+
+  return {
+    ...catalog,
+    userSessions: userSessions.map(mapUserSessionSummary),
+  }
+}
+
+async function getPublicTryoutCatalog(): Promise<PublicTryoutCatalogData> {
+  "use cache"
+  cacheLife("minutes")
+  cacheTag(CACHE_TAGS.tryouts, CACHE_TAGS.examTypes, CACHE_TAGS.sitemap)
+
   const now = new Date()
-  const [examTypes, tryouts, stats, userSessions] = await Promise.all([
+  const [examTypes, tryouts, stats] = await Promise.all([
     db
       .select({
         id: schema.examTypes.id,
@@ -103,7 +123,6 @@ export async function getPublicTryoutDiscoveryData(
       .orderBy(asc(schema.examTypes.id)),
     getVisibleTryoutRows(),
     getTryoutCompositionStats(),
-    userId ? getUserTryoutSessions(userId) : Promise.resolve([]),
   ])
 
   const statMap = new Map(stats.map((row) => [row.tryoutId, row]))
@@ -118,7 +137,6 @@ export async function getPublicTryoutDiscoveryData(
       coverUrl: examType.coverUrl ?? null,
     })),
     tryouts: publicTryouts,
-    userSessions: userSessions.map(mapUserSessionSummary),
     serverNow: now.toISOString(),
   }
 }
@@ -126,6 +144,10 @@ export async function getPublicTryoutDiscoveryData(
 export async function getPublicTryoutBySlug(
   slug: string,
 ): Promise<PublicTryoutDetail | null> {
+  "use cache"
+  cacheLife("minutes")
+  cacheTag(CACHE_TAGS.tryouts, cacheTagFor.tryout(slug))
+
   const now = new Date()
   const rows = await db
     .select(selectVisibleTryoutColumns())

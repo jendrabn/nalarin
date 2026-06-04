@@ -1,11 +1,12 @@
 "use server"
 
 import { and, eq, inArray } from "drizzle-orm"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { z } from "zod"
 
 import { db, schema } from "@/db"
 import { requireAdmin } from "@/features/auth/services/session"
+import { CACHE_TAGS } from "@/lib/cache-tags"
 
 import {
   questionFormSchema,
@@ -133,6 +134,10 @@ function isDuplicateEntryError(error: unknown) {
 }
 
 function revalidateQuestionRoutes(questionId?: number) {
+  updateTag(CACHE_TAGS.practiceDiscovery)
+  updateTag(CACHE_TAGS.tryouts)
+  updateTag(CACHE_TAGS.sitemap)
+
   revalidatePath("/admin/questions")
   revalidatePath("/admin/questions/create")
   revalidatePath("/admin/questions/import")

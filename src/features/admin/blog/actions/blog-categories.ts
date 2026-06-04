@@ -1,11 +1,12 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { eq, inArray } from "drizzle-orm"
 import { z } from "zod"
 
 import { db, schema } from "@/db"
 import { requireAdmin } from "@/features/auth/services/session"
+import { CACHE_TAGS } from "@/lib/cache-tags"
 
 import { blogCategoryFormSchema, type BlogCategoryFormValues } from "../schemas"
 import { getBlogCategoryById } from "../queries"
@@ -60,6 +61,9 @@ function isDuplicateEntryError(error: unknown) {
 }
 
 function revalidateBlogCategoryRoutes(categoryId?: number) {
+  updateTag(CACHE_TAGS.blog)
+  updateTag(CACHE_TAGS.sitemap)
+
   revalidatePath("/admin/blog-categories")
 
   if (categoryId) {

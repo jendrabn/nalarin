@@ -1,5 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { MobileBottomNavigation } from "@/components/mobile-bottom-navigation";
+import { PwaRegister } from "@/components/pwa-register";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { env } from "@/config/env";
@@ -13,15 +15,22 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.APP_URL),
+  applicationName: SITE_NAME,
+  manifest: "/manifest.webmanifest",
   title: {
     default: SITE_NAME,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
   icons: {
-    icon: [{ url: SITE_ICON_URL, type: "image/svg+xml" }],
-    shortcut: [{ url: SITE_ICON_URL, type: "image/svg+xml" }],
-    apple: [{ url: SITE_ICON_URL, type: "image/svg+xml" }],
+    icon: [{ url: SITE_ICON_URL, type: "image/x-icon" }],
+    shortcut: [{ url: SITE_ICON_URL, type: "image/x-icon" }],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: SITE_NAME,
   },
   openGraph: {
     siteName: SITE_NAME,
@@ -41,6 +50,10 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#0053c6",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -57,11 +70,14 @@ export default function RootLayout({
         suppressHydrationWarning
         className="flex min-h-full flex-col"
       >
-        <TooltipProvider>
-          {children}
-          <MobileBottomNavigation />
-          <Toaster richColors />
-        </TooltipProvider>
+        <Suspense fallback={null}>
+          <TooltipProvider>
+            {children}
+            <MobileBottomNavigation />
+            <Toaster richColors />
+            <PwaRegister />
+          </TooltipProvider>
+        </Suspense>
       </body>
     </html>
   );

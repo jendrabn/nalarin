@@ -1,8 +1,10 @@
 import "server-only"
 
 import { and, asc, desc, eq, isNotNull, lte, notInArray, sql } from "drizzle-orm"
+import { cacheLife, cacheTag } from "next/cache"
 
 import { db, schema } from "@/db"
+import { CACHE_TAGS, cacheTagFor } from "@/lib/cache-tags"
 
 import { extractYouTubeVideoId } from "../utils/youtube"
 
@@ -80,11 +82,11 @@ type MaterialSummaryRow = {
   publishedAt: Date | null
 }
 
-type MaterialRowWithUpdatedAt = MaterialSummaryRow & {
-  updatedAt: Date
-}
-
 export async function getPublicMaterialDiscoveryData(): Promise<PublicMaterialDiscoveryData> {
+  "use cache"
+  cacheLife("minutes")
+  cacheTag(CACHE_TAGS.materials, CACHE_TAGS.examTypes)
+
   const now = new Date()
   const [examTypes, subjects, materials, subjectMaterialCounts] = await Promise.all([
     db
@@ -145,6 +147,9 @@ export async function getPublicMaterialDiscoveryData(): Promise<PublicMaterialDi
 export async function getPublishedMaterialBySlug(
   slug: string,
 ): Promise<PublicMaterialDetail | null> {
+  "use cache"
+  cacheTag(CACHE_TAGS.materials, cacheTagFor.material(slug))
+
   const now = new Date()
   const [row] = await db
     .select(selectVisibleMaterialColumns())
@@ -156,9 +161,11 @@ export async function getPublishedMaterialBySlug(
     .limit(1)
 
   if (!row) {
+    cacheLife("minutes")
     return null
   }
 
+  cacheLife("hours")
   const relatedMaterials = await getRelatedMaterials(row.id, row.examTypeId, row.subjectId)
 
   return {
@@ -171,6 +178,9 @@ export async function getPublishedMaterialByExamTypeAndSlug(
   examTypeSlug: string,
   slug: string,
 ): Promise<PublicMaterialDetail | null> {
+  "use cache"
+  cacheTag(CACHE_TAGS.materials, cacheTagFor.material(slug))
+
   const now = new Date()
   const [row] = await db
     .select(selectVisibleMaterialColumns())
@@ -188,9 +198,11 @@ export async function getPublishedMaterialByExamTypeAndSlug(
     .limit(1)
 
   if (!row) {
+    cacheLife("minutes")
     return null
   }
 
+  cacheLife("hours")
   const relatedMaterials = await getRelatedMaterials(row.id, row.examTypeId, row.subjectId)
 
   return {
@@ -200,6 +212,10 @@ export async function getPublishedMaterialByExamTypeAndSlug(
 }
 
 export async function getPublishedMaterialSitemapEntries() {
+  "use cache"
+  cacheLife("minutes")
+  cacheTag(CACHE_TAGS.materials, CACHE_TAGS.sitemap)
+
   const rows = await getVisibleMaterialRows(new Date())
 
   return rows.map((row) => ({
@@ -300,8 +316,6 @@ async function getRelatedMaterials(
 
   return [...rows, ...fallbackRows].map(mapMaterialSummary)
 }
-
-type VisibleMaterialRow = Awaited<ReturnType<typeof getVisibleMaterialRows>>[number]
 
 function mapMaterialSummary(row: MaterialSummaryRow): PublicMaterialSummary {
   const youtubeVideoId = extractYouTubeVideoId(row.youtubeUrl)

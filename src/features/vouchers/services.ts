@@ -1,8 +1,10 @@
 import "server-only"
 
 import { and, count, eq, gt, isNull, lte } from "drizzle-orm"
+import { cacheLife, cacheTag } from "next/cache"
 
 import { db, schema } from "@/db"
+import { CACHE_TAGS } from "@/lib/cache-tags"
 
 export type VoucherValidationResult =
   | {
@@ -99,6 +101,10 @@ export async function validateVoucherForCheckout({
 }
 
 export async function getPublicVoucherPromos() {
+  "use cache"
+  cacheLife("minutes")
+  cacheTag(CACHE_TAGS.voucherPromos)
+
   const now = new Date()
   const vouchers = await db
     .select({

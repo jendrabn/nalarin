@@ -1,11 +1,12 @@
 "use server"
 
 import { and, eq, inArray, ne } from "drizzle-orm"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { z } from "zod"
 
 import { db, schema } from "@/db"
 import { requireAdmin } from "@/features/auth/services/session"
+import { CACHE_TAGS, cacheTagFor } from "@/lib/cache-tags"
 
 import { tryoutFormSchema, type TryoutFormValues } from "../schemas"
 import { getTryoutById } from "../queries"
@@ -115,6 +116,9 @@ function isDuplicateEntryError(error: unknown) {
 }
 
 function revalidateTryoutRoutes(tryoutId?: number, slug?: string, previousSlug?: string) {
+  updateTag(CACHE_TAGS.tryouts)
+  updateTag(CACHE_TAGS.sitemap)
+
   revalidatePath("/admin/tryouts")
   revalidatePath("/admin/tryouts/create")
   revalidatePath("/tryouts")
@@ -129,10 +133,12 @@ function revalidateTryoutRoutes(tryoutId?: number, slug?: string, previousSlug?:
   }
 
   if (slug) {
+    updateTag(cacheTagFor.tryout(slug))
     revalidatePath(`/tryouts/${slug}`)
   }
 
   if (previousSlug && previousSlug !== slug) {
+    updateTag(cacheTagFor.tryout(previousSlug))
     revalidatePath(`/tryouts/${previousSlug}`)
   }
 }

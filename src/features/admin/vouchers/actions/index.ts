@@ -1,10 +1,11 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { inArray } from "drizzle-orm"
 
 import { db, schema } from "@/db"
 import { flattenZodError, isDuplicateEntryError, type ActionResult } from "@/lib/actions"
+import { CACHE_TAGS } from "@/lib/cache-tags"
 import { requireAdmin } from "@/features/auth/services/session"
 import { normalizeVoucherCode } from "@/features/vouchers/services"
 
@@ -113,6 +114,8 @@ export async function deleteVoucherAction(voucherId: number) {
 }
 
 function revalidateVoucherRoutes(voucherId?: number) {
+  updateTag(CACHE_TAGS.voucherPromos)
+
   revalidatePath("/admin/vouchers")
   revalidatePath("/pricing")
 

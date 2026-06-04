@@ -2,10 +2,11 @@
 
 import { eq } from "drizzle-orm"
 import { inArray } from "drizzle-orm"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 
 import { db, schema } from "@/db"
 import { requireAdmin } from "@/features/auth/services/session"
+import { CACHE_TAGS } from "@/lib/cache-tags"
 import {
   ActionResult,
   buildUniqueSlug,
@@ -71,6 +72,13 @@ function parseNullableDateTime(value: string) {
 }
 
 function revalidateExamTypeRoutes() {
+  updateTag(CACHE_TAGS.examTypes)
+  updateTag(CACHE_TAGS.pricing)
+  updateTag(CACHE_TAGS.practiceDiscovery)
+  updateTag(CACHE_TAGS.materials)
+  updateTag(CACHE_TAGS.tryouts)
+  updateTag(CACHE_TAGS.sitemap)
+
   revalidatePath("/admin/exam-types")
   revalidatePath("/admin/exam-types/create")
   revalidatePath("/pricing")

@@ -1,6 +1,5 @@
 import "server-only";
 
-import { cache } from "react";
 import {
   and,
   count,
@@ -14,8 +13,10 @@ import {
   or,
   sql,
 } from "drizzle-orm";
+import { cacheLife, cacheTag } from "next/cache";
 
 import { db, schema } from "@/db";
+import { CACHE_TAGS, cacheTagFor } from "@/lib/cache-tags";
 
 import { BLOG_PAGE_SIZE } from "../utils";
 
@@ -171,6 +172,10 @@ export async function getPublishedBlogListing({
   query: string;
   categorySlug?: string;
 }): Promise<BlogListingResult> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(CACHE_TAGS.blog);
+
   const safePage = Math.max(page, 1);
   const offset = (safePage - 1) * BLOG_PAGE_SIZE;
   const where = blogListWhere(query, categorySlug);
@@ -206,7 +211,11 @@ export async function getPublishedBlogListing({
   };
 }
 
-export const getPublishedBlogCategories = cache(async () => {
+export async function getPublishedBlogCategories() {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(CACHE_TAGS.blog);
+
   const postCount = sql<number>`count(${schema.blogPosts.id})`;
   const rows = await db
     .select({
@@ -232,9 +241,12 @@ export const getPublishedBlogCategories = cache(async () => {
     description: row.description ?? null,
     postCount: Number(row.postCount ?? 0),
   }));
-});
+}
 
-export const getPublishedBlogPostBySlug = cache(async (slug: string) => {
+export async function getPublishedBlogPostBySlug(slug: string) {
+  "use cache";
+  cacheTag(CACHE_TAGS.blog, cacheTagFor.blogPost(slug));
+
   const [post] = await db
     .select({
       ...selectSummaryColumns(),
@@ -250,9 +262,11 @@ export const getPublishedBlogPostBySlug = cache(async (slug: string) => {
     .limit(1);
 
   if (!post) {
+    cacheLife("minutes");
     return null;
   }
 
+  cacheLife("days");
   return {
     ...mapSummary(post),
     authorId: post.authorId ?? null,
@@ -260,10 +274,18 @@ export const getPublishedBlogPostBySlug = cache(async (slug: string) => {
     seoTitle: post.seoTitle ?? null,
     metaDescription: post.metaDescription ?? null,
   } satisfies PublishedBlogPostDetails;
-});
+}
 
 export async function getRelatedBlogPosts(post: PublishedBlogPostDetails) {
-  const relatedPosts = post.categoryId
+  return getRelatedBlogPostsForPost(post.id, post.categoryId);
+}
+
+async function getRelatedBlogPostsForPost(postId: number, categoryId: number | null) {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(CACHE_TAGS.blog);
+
+  const relatedPosts = categoryId
     ? await db
         .select(selectSummaryColumns())
         .from(schema.blogPosts)
@@ -272,8 +294,8 @@ export async function getRelatedBlogPosts(post: PublishedBlogPostDetails) {
         .where(
           and(
             publishedPostCondition(),
-            eq(schema.blogPosts.categoryId, post.categoryId),
-            ne(schema.blogPosts.id, post.id),
+            eq(schema.blogPosts.categoryId, categoryId),
+            ne(schema.blogPosts.id, postId),
           ),
         )
         .orderBy(desc(schema.blogPosts.publishedAt), desc(schema.blogPosts.createdAt))
@@ -284,7 +306,7 @@ export async function getRelatedBlogPosts(post: PublishedBlogPostDetails) {
     return relatedPosts.map(mapSummary);
   }
 
-  const excludedIds = [post.id, ...relatedPosts.map((item) => item.id)];
+  const excludedIds = [postId, ...relatedPosts.map((item) => item.id)];
   const latestPosts = await db
     .select(selectSummaryColumns())
     .from(schema.blogPosts)
@@ -303,6 +325,10 @@ export async function getRelatedBlogPosts(post: PublishedBlogPostDetails) {
 }
 
 export async function getPublishedBlogSitemapEntries() {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(CACHE_TAGS.blog, CACHE_TAGS.sitemap);
+
   const rows = await db
     .select({
       slug: schema.blogPosts.slug,

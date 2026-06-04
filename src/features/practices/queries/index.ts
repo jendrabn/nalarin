@@ -1,8 +1,10 @@
 import "server-only"
 
 import { and, asc, eq, isNotNull, sql } from "drizzle-orm"
+import { cacheLife, cacheTag } from "next/cache"
 
 import { db, schema } from "@/db"
+import { CACHE_TAGS } from "@/lib/cache-tags"
 
 import {
   getPracticeDifficulty,
@@ -71,6 +73,10 @@ const publishedPracticeCondition = and(
 )
 
 export async function getPracticeDiscoveryData(): Promise<PracticeDiscoveryData> {
+  "use cache"
+  cacheLife("hours")
+  cacheTag(CACHE_TAGS.practiceDiscovery, CACHE_TAGS.examTypes, CACHE_TAGS.sitemap)
+
   const [examTypes, subjects, topics, practices, questionStats] = await Promise.all([
     db
       .select({

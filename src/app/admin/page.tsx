@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { connection } from "next/server"
 
 import { AdminDashboardPage } from "@/features/admin/dashboard/components/admin-dashboard-page"
 import { getAdminDashboardData } from "@/features/admin/dashboard/queries"
@@ -10,6 +11,8 @@ export const metadata: Metadata = {
 }
 
 export default async function AdminPage() {
+  await connection()
+
   const data = await getAdminDashboardData()
 
   return <AdminDashboardPage data={data} />
