@@ -1,19 +1,13 @@
 import Link from "next/link"
-import { ArrowLeftIcon, ClockIcon, TrophyIcon } from "lucide-react"
+import { ArrowLeftIcon } from "lucide-react"
 import type { ReactNode } from "react"
 
+import { EmptyState } from "@/components/empty-state"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PageHeader } from "@/components/page-header"
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 
@@ -97,17 +91,7 @@ export function TryoutRankingPage({ data }: { data: TryoutRankingData }) {
                       </TableBody>
                     </Table>
                   ) : (
-                    <Empty className="border bg-muted/20">
-                      <EmptyHeader>
-                        <EmptyMedia variant="icon">
-                          <TrophyIcon />
-                        </EmptyMedia>
-                        <EmptyTitle>Belum Ada Ranking</EmptyTitle>
-                        <EmptyDescription>
-                          Ranking akan muncul setelah ada sesi yang selesai dinilai.
-                        </EmptyDescription>
-                      </EmptyHeader>
-                    </Empty>
+                    <EmptyState title="Belum Ada Ranking" className="py-12" />
                   )}
                 </CardContent>
               </Card>
@@ -125,22 +109,12 @@ function RankingUnavailable({
   data: TryoutRankingData
 }) {
   return (
-    <Empty className="min-h-[24rem] border bg-card">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <ClockIcon />
-        </EmptyMedia>
-        <EmptyTitle>Ranking Belum Tersedia</EmptyTitle>
-        <EmptyDescription>
-          {data.release.releaseAt
-            ? `Ranking dijadwalkan rilis pada ${formatDateTime(data.release.releaseAt)}.`
-            : "Jadwal rilis ranking akan diinformasikan oleh admin."}
-        </EmptyDescription>
-      </EmptyHeader>
+    <div className="flex min-h-[24rem] flex-col items-center justify-center gap-4">
+      <EmptyState title="Ranking Belum Tersedia" className="py-0" />
       <Button asChild variant="outline">
         <Link href={`/tryout-sessions/${data.session.id}/result`}>Kembali ke Hasil</Link>
       </Button>
-    </Empty>
+    </div>
   )
 }
 
@@ -264,13 +238,6 @@ function getInitials(name: string) {
     .join("")
     .slice(0, 2)
     .toUpperCase()
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value))
 }
 
 function formatNumber(value: number) {

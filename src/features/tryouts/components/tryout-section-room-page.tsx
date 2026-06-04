@@ -15,13 +15,13 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   ClockIcon,
-  FileTextIcon,
   FlagIcon,
   Loader2Icon,
   SendIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 
+import { EmptyState as DataEmptyState } from "@/components/empty-state"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,7 +35,6 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Progress } from "@/components/ui/progress"
 
 import {
@@ -563,19 +562,7 @@ function RoomPrimaryActions({
 }
 
 function EmptyState() {
-  return (
-    <Empty className="max-w-md border bg-card">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <FileTextIcon />
-        </EmptyMedia>
-        <EmptyTitle>Belum ada soal</EmptyTitle>
-        <EmptyDescription>
-          Section ini belum memiliki snapshot soal yang dapat dikerjakan.
-        </EmptyDescription>
-      </EmptyHeader>
-    </Empty>
-  )
+  return <DataEmptyState title="Belum Ada Soal" className="max-w-md" />
 }
 
 function FinishDialog({

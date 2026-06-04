@@ -29,6 +29,7 @@ import {
   YAxis,
 } from "recharts"
 
+import { EmptyState } from "@/components/empty-state"
 import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
 import {
@@ -51,14 +52,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty"
 import {
   ChartContainer,
   ChartTooltip,
@@ -356,18 +349,7 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
                 </PieChart>
               </ChartContainer>
             ) : (
-              <Empty className="min-h-[220px] border border-border/60 bg-muted/20">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <BarChart3Icon />
-                  </EmptyMedia>
-                  <EmptyTitle>No session status yet</EmptyTitle>
-                  <EmptyDescription>
-                    Status analytics will appear after sessions are recorded.
-                  </EmptyDescription>
-                </EmptyHeader>
-                <EmptyContent />
-              </Empty>
+              <EmptyState title="No Session Status Yet" className="min-h-[220px]" />
             )}
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs">
               {sessionStatusLegendItems.map((item) => (
@@ -426,18 +408,7 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
                 </BarChart>
               </ChartContainer>
             ) : (
-              <Empty className="min-h-[220px] border border-border/60 bg-muted/20">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <BarChart3Icon />
-                  </EmptyMedia>
-                  <EmptyTitle>No score data yet</EmptyTitle>
-                  <EmptyDescription>
-                    The distribution chart will appear after the first graded session.
-                  </EmptyDescription>
-                </EmptyHeader>
-                <EmptyContent />
-              </Empty>
+              <EmptyState title="No Score Data Yet" className="min-h-[220px]" />
             )}
           </CardContent>
         </Card>
@@ -487,18 +458,7 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
                 </BarChart>
               </ChartContainer>
             ) : (
-              <Empty className="min-h-[220px] border border-border/60 bg-muted/20">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <BarChart3Icon />
-                  </EmptyMedia>
-                  <EmptyTitle>No subtest analytics yet</EmptyTitle>
-                  <EmptyDescription>
-                    Subtest analytics will appear after graded sessions are available.
-                  </EmptyDescription>
-                </EmptyHeader>
-                <EmptyContent />
-              </Empty>
+              <EmptyState title="No Subtest Analytics Yet" className="min-h-[220px]" />
             )}
           </CardContent>
         </Card>
@@ -615,18 +575,7 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
               </TableBody>
             </Table>
           ) : (
-            <Empty className="min-h-[280px] border border-border/60 bg-muted/20">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <TrophyIcon />
-                </EmptyMedia>
-                <EmptyTitle>No leaderboard yet</EmptyTitle>
-                <EmptyDescription>
-                  Participant rankings will appear after graded sessions are available.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent />
-            </Empty>
+            <EmptyState title="No Leaderboard Yet" className="min-h-[280px]" />
           )}
         </CardContent>
       </Card>

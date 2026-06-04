@@ -11,11 +11,11 @@ import {
 } from "lucide-react"
 import type { ReactNode } from "react"
 
+import { EmptyState } from "@/components/empty-state"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PageHeader } from "@/components/page-header"
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Progress } from "@/components/ui/progress"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
@@ -24,7 +24,6 @@ import type { TryoutResultData, TryoutSectionResult } from "../types"
 
 export function TryoutResultPage({ data }: { data: TryoutResultData }) {
   const resultLocked = !data.resultRelease.available
-  const releaseText = formatReleaseText(data.resultRelease.releaseAt)
 
   return (
     <main className="min-h-svh bg-muted/35 px-4 py-6 sm:px-6 lg:px-8">
@@ -44,7 +43,7 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
         />
 
         {resultLocked ? (
-          <LockedResultCard releaseText={releaseText} sessionId={data.id} />
+          <LockedResultCard sessionId={data.id} />
         ) : (
           <>
             {!data.isFinal ? (
@@ -188,28 +187,14 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
   )
 }
 
-function LockedResultCard({
-  releaseText,
-  sessionId,
-}: {
-  releaseText: string
-  sessionId: number
-}) {
+function LockedResultCard({ sessionId }: { sessionId: number }) {
   return (
-    <Empty className="min-h-[24rem] border bg-card">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <ClockIcon />
-        </EmptyMedia>
-        <EmptyTitle>Hasil Belum Tersedia</EmptyTitle>
-        <EmptyDescription>
-          Hasil tryout belum bisa ditampilkan. {releaseText}
-        </EmptyDescription>
-      </EmptyHeader>
+    <div className="flex min-h-[24rem] flex-col items-center justify-center gap-4">
+      <EmptyState title="Hasil Belum Tersedia" className="py-0" />
       <Button asChild variant="outline">
         <Link href={`/tryout-sessions/${sessionId}`}>Kembali ke Tryout</Link>
       </Button>
-    </Empty>
+    </div>
   )
 }
 
@@ -315,21 +300,6 @@ const metricToneClasses = {
     icon: "bg-chart-3/10 text-chart-3",
     value: "text-chart-3",
   },
-}
-
-function formatReleaseText(releaseAt: string | null) {
-  if (!releaseAt) {
-    return "Jadwal rilis akan diinformasikan oleh admin."
-  }
-
-  return `Hasil dijadwalkan rilis pada ${formatDateTime(releaseAt)}.`
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value))
 }
 
 function formatNumber(value: number) {

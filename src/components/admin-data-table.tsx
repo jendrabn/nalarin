@@ -59,6 +59,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { EmptyState } from "@/components/empty-state"
 import { cn } from "@/lib/utils"
 
 type AdminDataTableProps<TData> = {
@@ -352,9 +353,9 @@ export function AdminDataTable<TData>({
               <TableRow>
                 <TableCell
                   colSpan={table.getAllLeafColumns().length}
-                  className="h-24 text-center text-sm text-muted-foreground"
+                  className="h-32"
                 >
-                  {emptyMessage}
+                  <EmptyState title={emptyMessage} className="py-6" />
                 </TableCell>
               </TableRow>
             )}

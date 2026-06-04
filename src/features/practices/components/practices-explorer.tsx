@@ -11,13 +11,12 @@ import {
   CheckCircle2Icon,
   ClockIcon,
   GaugeIcon,
-  GraduationCapIcon,
-  LayoutListIcon,
   LoaderCircleIcon,
   LockIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 
+import { EmptyState } from "@/components/empty-state"
 import { PageHeader } from "@/components/page-header"
 import { PremiumBadge } from "@/components/premium-badge"
 import { Badge } from "@/components/ui/badge"
@@ -48,13 +47,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty"
 import { cn } from "@/lib/utils"
 
 import { startPracticeSessionAction } from "../actions"
@@ -260,17 +252,7 @@ export function PracticesExplorer({
   if (data.examTypes.length === 0) {
     return (
       <main className="mx-auto flex min-h-[62vh] w-full max-w-7xl items-center px-4 py-16 sm:px-6 lg:px-8">
-        <Empty className="border bg-card">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <GraduationCapIcon />
-            </EmptyMedia>
-            <EmptyTitle>Belum ada tipe ujian</EmptyTitle>
-            <EmptyDescription>
-              Latihan akan muncul setelah tipe ujian dan bank soal dipublikasikan.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <EmptyState title="Belum Ada Tipe Ujian" />
       </main>
     )
   }
@@ -301,19 +283,7 @@ export function PracticesExplorer({
 
           <div className="min-w-0">
             {visibleSubjects.length === 0 ? (
-              <Empty className="min-h-72 border bg-card">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <BookOpenIcon />
-                  </EmptyMedia>
-                  <EmptyTitle>Belum Ada Mata Pelajaran</EmptyTitle>
-                  <EmptyDescription>
-                    {activeExamType?.name
-                      ? `${activeExamType.name} belum memiliki mata pelajaran yang tersedia.`
-                      : "Tipe ujian ini belum memiliki mata pelajaran."}
-                  </EmptyDescription>
-                </EmptyHeader>
-              </Empty>
+              <EmptyState title="Belum Ada Mata Pelajaran" className="min-h-72" />
             ) : (
               <PracticeList
                 practices={visiblePractices}
@@ -526,17 +496,7 @@ function PracticeList({
   return (
     <section>
       {practices.length === 0 ? (
-        <Empty className="min-h-72 border bg-card">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <LayoutListIcon />
-            </EmptyMedia>
-            <EmptyTitle>Belum ada latihan</EmptyTitle>
-            <EmptyDescription>
-              Coba pilih mata pelajaran lain atau cek kembali setelah bank soal diperbarui.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <EmptyState title="Belum Ada Latihan" className="min-h-72" />
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 2xl:grid-cols-3">
           {practices.map((practice) => (

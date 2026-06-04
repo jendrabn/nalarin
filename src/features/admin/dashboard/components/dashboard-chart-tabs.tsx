@@ -17,10 +17,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
-import { BarChart3Icon } from "lucide-react"
 
+import { EmptyState } from "@/components/empty-state"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import {
   ChartContainer,
   ChartTooltip,
@@ -444,18 +443,7 @@ function ChartPanel({
           {hasData ? (
             children
           ) : (
-            <Empty className="flex-1 border border-border/60 bg-muted/20">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <BarChart3Icon />
-                </EmptyMedia>
-                <EmptyTitle>No data yet</EmptyTitle>
-                <EmptyDescription>
-                  This chart will populate once the underlying operational data exists.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent />
-            </Empty>
+            <EmptyState title="No Data Yet" className="flex-1" />
           )}
         </div>
       </CardContent>

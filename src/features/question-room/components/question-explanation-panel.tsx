@@ -1,6 +1,4 @@
-import { FileTextIcon } from "lucide-react"
-
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
+import { EmptyState } from "@/components/empty-state"
 import { cn } from "@/lib/utils"
 
 import { QuestionAiExplanation } from "./question-ai-explanation"
@@ -12,7 +10,6 @@ export function QuestionExplanationPanel({
   question,
   aiExplanation,
   emptyTitle = "Pembahasan belum tersedia",
-  emptyDescription = "Admin belum menambahkan pembahasan untuk soal ini.",
   className,
   readingMode = "default",
 }: {
@@ -28,15 +25,7 @@ export function QuestionExplanationPanel({
 
   if (explanations.length === 0 && !aiExplanation) {
     return (
-      <Empty className={cn("border bg-muted/20 py-7", className)}>
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <FileTextIcon />
-          </EmptyMedia>
-          <EmptyTitle>{emptyTitle}</EmptyTitle>
-          <EmptyDescription>{emptyDescription}</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      <EmptyState title={emptyTitle} className={cn("py-7", className)} />
     )
   }
 
@@ -50,15 +39,7 @@ export function QuestionExplanationPanel({
         />
       ) : null}
       {explanations.length === 0 ? (
-        <Empty className="border bg-muted/20 py-7">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <FileTextIcon />
-            </EmptyMedia>
-            <EmptyTitle>{emptyTitle}</EmptyTitle>
-            <EmptyDescription>{emptyDescription}</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <EmptyState title={emptyTitle} className="py-7" />
       ) : null}
       {explanations.map((item) => (
         <section key={item.label} className={cn("rounded-lg border bg-background", isComfortable ? "p-5" : "p-4")}>

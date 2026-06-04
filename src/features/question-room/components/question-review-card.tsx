@@ -1,8 +1,8 @@
 import type { ReactNode } from "react"
 import { FileTextIcon } from "lucide-react"
 
+import { EmptyState } from "@/components/empty-state"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { cn } from "@/lib/utils"
 
 import { QuestionContent } from "./question-content"
@@ -126,15 +126,7 @@ export function QuestionReviewCard({
               readingMode={readingMode}
             />
           ) : (
-            <Empty className="border bg-muted/20 py-7">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <FileTextIcon />
-                </EmptyMedia>
-                <EmptyTitle>{explanationEmptyTitle}</EmptyTitle>
-                <EmptyDescription>{explanationEmptyDescription}</EmptyDescription>
-                </EmptyHeader>
-              </Empty>
+            <EmptyState title={explanationEmptyTitle} className="py-7" />
             )}
         </div>
       </CardContent>

@@ -1,17 +1,9 @@
-import { LayoutListIcon } from "lucide-react"
-
+import { EmptyState } from "@/components/empty-state"
 import { ExamTypeCard } from "@/components/exam-type-card"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar"
 import { PageHeader } from "@/components/page-header"
 import type { CurrentUser } from "@/features/auth/services/session"
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty"
 
 import type { PracticeDiscoveryData } from "../queries"
 
@@ -47,17 +39,7 @@ export function PracticeExamTypesPage({
 
         <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
           {data.examTypes.length === 0 ? (
-            <Empty className="min-h-80 border bg-card">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <LayoutListIcon />
-                </EmptyMedia>
-                <EmptyTitle>Belum Ada Jenis Ujian</EmptyTitle>
-                <EmptyDescription>
-                  Jenis ujian akan tampil setelah data tersedia.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <EmptyState title="Belum Ada Jenis Ujian" className="min-h-80" />
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
               {data.examTypes.map((examType) => (

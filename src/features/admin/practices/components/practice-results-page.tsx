@@ -27,6 +27,7 @@ import {
   YAxis,
 } from "recharts"
 
+import { EmptyState } from "@/components/empty-state"
 import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -50,13 +51,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty"
 import {
   ChartContainer,
   ChartTooltip,
@@ -323,17 +317,7 @@ export function PracticeResultsPage({ insight }: PracticeResultsPageProps) {
                 </BarChart>
               </ChartContainer>
             ) : (
-              <Empty className="border-0 py-10">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <BarChart3Icon />
-                  </EmptyMedia>
-                  <EmptyTitle>No graded sessions yet</EmptyTitle>
-                  <EmptyDescription>
-                    Score distribution will appear once participants submit and get graded.
-                  </EmptyDescription>
-                </EmptyHeader>
-              </Empty>
+              <EmptyState title="No Graded Sessions Yet" />
             )}
           </CardContent>
         </Card>
@@ -386,17 +370,7 @@ export function PracticeResultsPage({ insight }: PracticeResultsPageProps) {
                 </div>
               </>
             ) : (
-              <Empty className="border-0 py-10">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <CheckCircle2Icon />
-                  </EmptyMedia>
-                  <EmptyTitle>No session status yet</EmptyTitle>
-                  <EmptyDescription>
-                    Status analytics will appear after sessions are recorded.
-                  </EmptyDescription>
-                </EmptyHeader>
-              </Empty>
+              <EmptyState title="No Session Status Yet" />
             )}
           </CardContent>
         </Card>
@@ -437,17 +411,7 @@ export function PracticeResultsPage({ insight }: PracticeResultsPageProps) {
                 </BarChart>
               </ChartContainer>
             ) : (
-              <Empty className="border-0 py-10">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <UsersIcon />
-                  </EmptyMedia>
-                  <EmptyTitle>No participant data yet</EmptyTitle>
-                  <EmptyDescription>
-                    Attempt frequency will appear once participants start this practice.
-                  </EmptyDescription>
-                </EmptyHeader>
-              </Empty>
+              <EmptyState title="No Participant Data Yet" />
             )}
           </CardContent>
         </Card>
@@ -589,17 +553,7 @@ export function PracticeResultsPage({ insight }: PracticeResultsPageProps) {
               </Table>
             </div>
           ) : (
-            <Empty className="border border-dashed border-border/60 py-12">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <UsersIcon />
-                </EmptyMedia>
-                <EmptyTitle>No participant sessions yet</EmptyTitle>
-                <EmptyDescription>
-                  Participant rankings will appear after the first practice session is recorded.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <EmptyState title="No Participant Sessions Yet" className="py-12" />
           )}
         </CardContent>
       </Card>

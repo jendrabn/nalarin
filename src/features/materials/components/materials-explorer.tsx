@@ -7,23 +7,16 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   BookOpenIcon,
-  LayoutListIcon,
   LockIcon,
   VideoIcon,
 } from "lucide-react"
 
+import { EmptyState } from "@/components/empty-state"
 import { PageHeader } from "@/components/page-header"
 import { PremiumBadge } from "@/components/premium-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty"
 import { cn } from "@/lib/utils"
 
 import type { PublicMaterialDiscoveryData, PublicMaterialSummary } from "../queries"
@@ -95,17 +88,7 @@ export function MaterialsExplorer({
   if (data.examTypes.length === 0) {
     return (
       <main className="mx-auto flex min-h-[62vh] w-full max-w-7xl items-center px-4 py-16 sm:px-6 lg:px-8">
-        <Empty className="border bg-card">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <BookOpenIcon />
-            </EmptyMedia>
-            <EmptyTitle>Belum ada jenis ujian</EmptyTitle>
-            <EmptyDescription>
-              Materi akan muncul setelah exam type dan data materi dipublikasikan.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <EmptyState title="Belum Ada Jenis Ujian" />
       </main>
     )
   }
@@ -149,19 +132,7 @@ export function MaterialsExplorer({
 
             <div className="min-w-0">
               {visibleSubjects.length === 0 ? (
-                <Empty className="min-h-72 border bg-card">
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <LayoutListIcon />
-                    </EmptyMedia>
-                    <EmptyTitle>Belum Ada Mata Pelajaran</EmptyTitle>
-                    <EmptyDescription>
-                      {activeExamType?.name
-                        ? `${activeExamType.name} belum memiliki mata pelajaran yang tersedia.`
-                        : "Tipe ujian ini belum memiliki mata pelajaran."}
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
+                <EmptyState title="Belum Ada Mata Pelajaran" className="min-h-72" />
               ) : (
                 <MaterialList
                   materials={visibleMaterials}
@@ -279,17 +250,7 @@ function MaterialList({
   return (
     <section>
       {materials.length === 0 ? (
-        <Empty className="min-h-72 border bg-card">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <LayoutListIcon />
-            </EmptyMedia>
-            <EmptyTitle>Belum ada materi</EmptyTitle>
-            <EmptyDescription>
-              Coba pilih mata pelajaran lain atau cek kembali setelah admin menambahkan materi.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <EmptyState title="Belum Ada Materi" className="min-h-72" />
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 2xl:grid-cols-3">
           {materials.map((material, index) => (

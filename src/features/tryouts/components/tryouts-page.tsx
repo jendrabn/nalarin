@@ -9,13 +9,13 @@ import {
   CalendarDaysIcon,
   CheckCircle2Icon,
   ClockIcon,
-  LayoutListIcon,
   LockIcon,
   ListFilterIcon,
   PlayCircleIcon,
   TrophyIcon,
 } from "lucide-react"
 
+import { EmptyState } from "@/components/empty-state"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar"
 import { PageHeader } from "@/components/page-header"
@@ -23,13 +23,6 @@ import { PremiumBadge } from "@/components/premium-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty"
 import { cn } from "@/lib/utils"
 
 import type {
@@ -130,17 +123,7 @@ export function TryoutsPage({
 
         <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pt-4 pb-8 sm:px-6 lg:px-8">
           {data.examTypes.length === 0 ? (
-            <Empty className="min-h-80 border bg-card">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <LayoutListIcon />
-                </EmptyMedia>
-                <EmptyTitle>Belum ada tryout publik</EmptyTitle>
-                <EmptyDescription>
-                  Tryout akan tampil di sini setelah admin mempublikasikan jadwal.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <EmptyState title="Belum Ada Tryout Publik" className="min-h-80" />
           ) : (
             <>
               <StatusFilterBar
@@ -150,29 +133,15 @@ export function TryoutsPage({
               />
 
               {tryoutsByExamType.length === 0 ? (
-                <Empty className="min-h-72 border bg-card">
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <LayoutListIcon />
-                    </EmptyMedia>
-                    <EmptyTitle>Belum ada tryout {activeExamType?.name}</EmptyTitle>
-                    <EmptyDescription>
-                      Coba pilih tipe ujian lain atau cek lagi saat jadwal baru dirilis.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
+                <EmptyState
+                  title={`Belum Ada Tryout ${activeExamType?.name ?? ""}`.trim()}
+                  className="min-h-72"
+                />
               ) : visibleTryouts.length === 0 ? (
-                <Empty className="min-h-72 border bg-card">
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <ClockIcon />
-                    </EmptyMedia>
-                    <EmptyTitle>Tidak ada tryout pada filter ini</EmptyTitle>
-                    <EmptyDescription>
-                      Ganti status filter untuk melihat jadwal tryout {activeExamType?.name}.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
+                <EmptyState
+                  title="Tidak Ada Tryout Pada Filter Ini"
+                  className="min-h-72"
+                />
               ) : (
                 <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                   {visibleTryouts.map((tryout) => (

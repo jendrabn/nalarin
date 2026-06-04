@@ -7,13 +7,12 @@ import {
   CheckIcon,
   RotateCcwIcon,
   Settings2Icon,
-  SparklesIcon,
   XIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 
+import { EmptyState } from "@/components/empty-state"
 import { Button } from "@/components/ui/button"
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { cn } from "@/lib/utils"
 
 import { gradeGrammarQuestionAction } from "../actions"
@@ -48,25 +47,15 @@ function GrammarGameStage({ session }: { session: GrammarGameSession }) {
   if (session.totalQuestions === 0) {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-xl items-center px-4 py-10 sm:px-6 lg:px-8">
-        <Empty className="w-full">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <SparklesIcon />
-            </EmptyMedia>
-            <EmptyTitle>Belum Ada Soal Yang Cocok</EmptyTitle>
-            <EmptyDescription>
-              Coba ubah konfigurasi agar sistem menemukan soal grammar yang tersedia.
-            </EmptyDescription>
-          </EmptyHeader>
-          <div className="flex flex-wrap justify-center gap-2 pt-2">
-            <Button asChild>
-              <Link href="/grammar">
-                <Settings2Icon data-icon="inline-start" />
-                Ubah Konfigurasi
-              </Link>
-            </Button>
-          </div>
-        </Empty>
+        <div className="flex w-full flex-col items-center gap-4">
+          <EmptyState title="Belum Ada Soal Yang Cocok" className="py-0" />
+          <Button asChild>
+            <Link href="/grammar">
+              <Settings2Icon data-icon="inline-start" />
+              Ubah Konfigurasi
+            </Link>
+          </Button>
+        </div>
       </main>
     )
   }

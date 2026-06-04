@@ -2,10 +2,10 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { ArrowLeftIcon, FileTextIcon } from "lucide-react"
+import { ArrowLeftIcon } from "lucide-react"
 
+import { EmptyState } from "@/components/empty-state"
 import { Button } from "@/components/ui/button"
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { PageHeader } from "@/components/page-header"
 import { cn } from "@/lib/utils"
 
@@ -77,17 +77,10 @@ export function PracticeReviewPage({
             }}
           />
         ) : (
-          <Empty className="min-h-[24rem] border bg-card">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <FileTextIcon />
-              </EmptyMedia>
-              <EmptyTitle>Tidak Ada Soal untuk Ditinjau</EmptyTitle>
-              <EmptyDescription>
-                Sesi latihan ini belum memiliki data soal yang bisa dibuka dalam mode review.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          <EmptyState
+            title="Tidak Ada Soal Untuk Ditinjau"
+            className="min-h-[24rem]"
+          />
         )}
       </div>
     </main>

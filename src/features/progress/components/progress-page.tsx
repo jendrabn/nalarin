@@ -3,17 +3,16 @@ import {
   BarChart3Icon,
   BookOpenIcon,
   CheckCircle2Icon,
-  CircleSlashIcon,
   TargetIcon,
   TrendingDownIcon,
   TrendingUpIcon,
 } from "lucide-react"
 import type { ReactNode } from "react"
 
+import { EmptyState } from "@/components/empty-state"
 import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 
@@ -77,17 +76,7 @@ export function ProgressPage({ data }: { data: ProgressPageData }) {
             ) : null}
           </section>
         ) : (
-          <Empty className="border bg-card py-10 shadow-sm">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <CircleSlashIcon />
-              </EmptyMedia>
-              <EmptyTitle>Belum Ada Data Topik</EmptyTitle>
-              <EmptyDescription>
-                Topik akan muncul setelah ada sesi graded dengan jawaban terisi.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          <EmptyState title="Belum Ada Data Topik" className="py-12" />
         )}
 
         <ActivityCard activities={data.activities} />

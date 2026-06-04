@@ -1,13 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRightIcon, CheckCircle2Icon, FileTextIcon, TargetIcon, XCircleIcon } from "lucide-react"
+import { ArrowRightIcon, CheckCircle2Icon, TargetIcon, XCircleIcon } from "lucide-react"
 import { useState } from "react"
 import type { ReactNode } from "react"
 
+import { EmptyState } from "@/components/empty-state"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { cn } from "@/lib/utils"
 
 import type { ProgressActivityItem } from "../types"
@@ -55,17 +55,7 @@ export function ActivityCard({ activities }: { activities: ProgressActivityItem[
             ) : null}
           </div>
         ) : (
-          <Empty className="border bg-muted/20 py-10">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <FileTextIcon />
-              </EmptyMedia>
-              <EmptyTitle>Belum Ada Aktivitas</EmptyTitle>
-              <EmptyDescription>
-                Aktivitas akan muncul setelah kamu menyelesaikan latihan atau tryout.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          <EmptyState title="Belum Ada Aktivitas" className="py-12" />
         )}
       </CardContent>
     </Card>

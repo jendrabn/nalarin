@@ -8,11 +8,10 @@ import {
   useRef,
   useState,
 } from "react"
-import { FileTextIcon } from "lucide-react"
 
+import { EmptyState } from "@/components/empty-state"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
@@ -212,17 +211,7 @@ function QuestionOptionFieldBase({
   }
 
   if (question.options.length === 0) {
-    return (
-      <Empty className="border bg-muted/30 py-8">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <FileTextIcon />
-          </EmptyMedia>
-          <EmptyTitle>Opsi belum tersedia</EmptyTitle>
-          <EmptyDescription>Soal ini belum memiliki opsi jawaban.</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    )
+    return <EmptyState title="Opsi Belum Tersedia" className="py-8" />
   }
 
   return (

@@ -1,19 +1,11 @@
 import Form from "next/form";
 import Link from "next/link";
-import { LibraryBigIcon, SearchIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 
+import { EmptyState } from "@/components/empty-state";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNavbar, type SiteUser } from "@/components/site-navbar";
 import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 
 import type { BlogListingResult } from "../queries";
@@ -118,30 +110,14 @@ export function BlogIndexPage({
             ) : null}
 
             {!listing.posts.length ? (
-              <Empty className="mt-8 border bg-secondary/35">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    {query ? <SearchIcon /> : <LibraryBigIcon />}
-                  </EmptyMedia>
-                  <EmptyTitle>
-                    {hasActiveFilter
-                      ? "Artikel tidak ditemukan"
-                      : "Belum ada artikel publish"}
-                  </EmptyTitle>
-                  <EmptyDescription>
-                    {hasActiveFilter
-                      ? "Coba kata kunci atau kategori lain, atau kembali ke daftar artikel terbaru."
-                      : "Artikel yang sudah dipublish akan muncul di halaman ini."}
-                  </EmptyDescription>
-                </EmptyHeader>
-                {hasActiveFilter ? (
-                  <EmptyContent>
-                    <Button variant="outline" asChild>
-                      <Link href="/blog">Lihat semua artikel</Link>
-                    </Button>
-                  </EmptyContent>
-                ) : null}
-              </Empty>
+              <EmptyState
+                title={
+                  hasActiveFilter
+                    ? "Artikel Tidak Ditemukan"
+                    : "Belum Ada Artikel Publish"
+                }
+                className="mt-8 min-h-72"
+              />
             ) : null}
 
             <BlogPagination

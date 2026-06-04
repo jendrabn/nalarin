@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { ArrowLeftIcon, FileTextIcon, ClockIcon } from "lucide-react"
+import { ArrowLeftIcon } from "lucide-react"
 
+import { EmptyState } from "@/components/empty-state"
 import { Button } from "@/components/ui/button"
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { PageHeader } from "@/components/page-header"
 import { cn } from "@/lib/utils"
 
@@ -40,17 +40,7 @@ export function TryoutReviewPage({ data }: { data: TryoutReviewData }) {
         />
 
         {!data.resultRelease.available ? (
-          <Empty className="min-h-[24rem] border bg-card">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <ClockIcon />
-              </EmptyMedia>
-              <EmptyTitle>Review Belum Tersedia</EmptyTitle>
-              <EmptyDescription>
-                Review jawaban mengikuti jadwal rilis hasil tryout.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          <EmptyState title="Review Belum Tersedia" className="min-h-[24rem]" />
         ) : reviewEntries.length > 0 && activeEntry ? (
           <>
             <ReviewSectionTabs
@@ -108,17 +98,10 @@ export function TryoutReviewPage({ data }: { data: TryoutReviewData }) {
             />
           </>
         ) : (
-          <Empty className="min-h-[24rem] border bg-card">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <FileTextIcon />
-              </EmptyMedia>
-              <EmptyTitle>Tidak Ada Soal untuk Ditinjau</EmptyTitle>
-              <EmptyDescription>
-                Tryout ini belum memiliki data soal yang bisa dibuka dalam mode review.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          <EmptyState
+            title="Tidak Ada Soal Untuk Ditinjau"
+            className="min-h-[24rem]"
+          />
         )}
       </div>
     </main>
