@@ -5,3 +5,15 @@ args = ["shadcn@latest", "mcp"]
 [mcp_servers.next-devtools]
 command = "npx"
 args = ["-y", "next-devtools-mcp@latest"]
+
+[mcp_servers.next-devtools.tools.init]
+approval_mode = "approve"
+
+[mcp_servers.next-devtools.tools.nextjs_docs]
+approval_mode = "approve"
+
+[mcp_servers.next-devtools.tools.nextjs_index]
+approval_mode = "approve"
+
+[mcp_servers.next-devtools.tools.nextjs_call]
+approval_mode = "approve"

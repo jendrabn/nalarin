@@ -25,10 +25,10 @@ export default function GlobalError({ error }: GlobalErrorProps) {
         suppressHydrationWarning
         className="min-h-full bg-background text-foreground"
       >
-        <title>Aplikasi belum bisa dimuat</title>
+        <title>Terjadi Kesalahan Sistem</title>
         <ErrorPageState
           code="500"
-          title="Aplikasi belum bisa dimuat"
+          title="Terjadi Kesalahan Sistem"
           description="Terjadi kesalahan sistem saat menyusun halaman. Silakan kembali ke halaman sebelumnya atau buka beranda."
           tone="destructive"
         />

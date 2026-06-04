@@ -24,10 +24,7 @@ export function ErrorPageState({
       <section className="mx-auto w-full max-w-[42rem]">
         <p
           aria-label={`Kode HTTP ${code}`}
-          className={cn(
-            "font-heading text-[7.5rem] font-black leading-[0.86] tracking-normal sm:text-[10rem] lg:text-[11rem]",
-            tone === "destructive" ? "text-destructive" : "text-primary"
-          )}
+          className="font-heading text-[7.5rem] font-black leading-[0.86] tracking-normal text-primary sm:text-[10rem] lg:text-[11rem]"
         >
           {code}
         </p>

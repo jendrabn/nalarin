@@ -43,7 +43,7 @@ export function AuthEntryCard() {
         </p>
       </div>
 
-      <div className="mt-8 flex flex-col gap-3"> --ENDOL GOBLOK TOLOL
+      <div className="mt-8 flex flex-col gap-3">
         {providers.map((provider) => (
           <form key={provider.action} action={provider.action} method="GET">
             <Button

@@ -87,7 +87,7 @@ function HeroSection() {
                 </>
               }
               subtitle="Persiapkan seleksi PTN dengan alur belajar yang terarah melalui latihan fokus, tryout berkala, dan evaluasi hasil yang mudah ditindaklanjuti."
-              titleClassName="mx-auto max-w-4xl text-balance text-[2.55rem] font-extrabold leading-[1.04] tracking-tight sm:text-[3.95rem] lg:text-[4.45rem]"
+              titleClassName="mx-auto max-w-4xl text-balance text-[3rem] font-extrabold leading-[1.02] tracking-tight min-[420px]:text-[3.35rem] sm:text-[3.95rem] lg:text-[4.45rem]"
               subtitleClassName="mx-auto mt-4 max-w-xl text-pretty text-[0.95rem] leading-6 text-muted-foreground sm:mt-6 sm:text-lg sm:leading-7"
             />
           <div className="mt-7 grid w-full grid-cols-1 justify-items-stretch gap-3 min-[420px]:grid-cols-2 sm:mt-9 sm:flex sm:w-auto sm:items-center sm:justify-center sm:justify-items-center">
