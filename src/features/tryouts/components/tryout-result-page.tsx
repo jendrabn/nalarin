@@ -34,7 +34,7 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
           title={`Hasil Tryout ${data.title}`}
           subtitle="Lihat ringkasan skor, status penilaian, dan pembahasan sesi tryout ini."
           actions={
-            <Button asChild variant="outline">
+            <Button asChild variant="ghost">
               <Link href={`/tryout-sessions/${data.id}`}>
                 <ArrowLeftIcon data-icon="inline-start" />
                 Kembali

@@ -402,18 +402,18 @@ function PracticePageHeader({
 }) {
   return (
     <section className="mx-auto w-full max-w-7xl px-4 pt-6 pb-1 sm:px-6 lg:px-8">
-      <PageHeader
-        className="mb-0"
-        title={title}
-        subtitle={subtitle}
-        actions={
-          showBackButton ? (
-            <Button asChild variant="outline" className="w-fit shrink-0">
-              <Link href="/practices">
-                <ArrowLeftIcon data-icon="inline-start" />
-                Kembali Ke Latihan
-              </Link>
-            </Button>
+        <PageHeader
+          className="mb-0"
+          title={title}
+          subtitle={subtitle}
+          actions={
+            showBackButton ? (
+              <Button asChild variant="ghost">
+                <Link href="/practices">
+                  <ArrowLeftIcon data-icon="inline-start" />
+                  Kembali Ke Latihan
+                </Link>
+              </Button>
           ) : null
         }
       />

@@ -120,7 +120,7 @@ export function MaterialsExplorer({
             subtitle={pageSubtitle}
             actions={
               isExamTypeLocked ? (
-                <Button asChild variant="outline" className="w-fit shrink-0">
+                <Button asChild variant="ghost">
                   <Link href="/materials">
                     <ArrowLeftIcon data-icon="inline-start" />
                     Kembali Ke Materi

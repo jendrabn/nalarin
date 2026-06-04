@@ -249,8 +249,8 @@ function VocabularyGamePlayer({ session }: { session: VocabularyGameSession }) {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-xl items-center px-4 py-6 sm:px-6 lg:px-8">
         <div className="w-full space-y-4">
-          <div className="flex items-center gap-3">
-            <Button asChild variant="ghost" size="sm" className="rounded-full px-3 text-foreground hover:bg-accent/60">
+        <div className="flex items-center gap-3">
+            <Button asChild variant="ghost">
               <Link href={configHref} aria-label="Back to vocabulary config">
                 <ArrowLeftIcon />
                 Kembali

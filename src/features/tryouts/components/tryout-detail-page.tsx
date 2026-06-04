@@ -116,7 +116,7 @@ export function TryoutDetailPage({
           }
           className="mb-0"
           actions={
-            <Button asChild variant="outline">
+            <Button asChild variant="ghost">
               <Link href={`/tryouts/exam/${tryout.examTypeSlug}`}>
                 <ArrowLeftIcon data-icon="inline-start" />
                 Kembali

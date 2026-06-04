@@ -35,7 +35,7 @@ export function TryoutRankingPage({ data }: { data: TryoutRankingData }) {
           title={`Rangking Tryout ${data.session.title}`}
           subtitle="Lihat peringkat peserta berdasarkan skor akhir pada sesi tryout ini."
           actions={
-            <Button asChild variant="outline" className="w-fit shrink-0">
+            <Button asChild variant="ghost">
               <Link href={`/tryout-sessions/${data.session.id}/result`}>
                 <ArrowLeftIcon data-icon="inline-start" />
                 Kembali ke Hasil

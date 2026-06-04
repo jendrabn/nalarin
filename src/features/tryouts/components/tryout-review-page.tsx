@@ -30,7 +30,7 @@ export function TryoutReviewPage({ data }: { data: TryoutReviewData }) {
           title={`Review Jawaban ${data.session.title}`}
           subtitle="Tinjau jawaban untuk melihat status benar-salah dan pembahasan tiap soal."
           actions={
-            <Button asChild variant="outline">
+            <Button asChild variant="ghost">
               <Link href={`/tryout-sessions/${data.session.id}/result`}>
                 <ArrowLeftIcon data-icon="inline-start" />
                 Kembali ke Hasil

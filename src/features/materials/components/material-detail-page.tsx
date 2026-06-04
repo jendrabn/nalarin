@@ -85,7 +85,7 @@ export function MaterialDetailPage({
                 `Materi ${material.subjectName} untuk persiapan ${material.examTypeName}.`
               }
               actions={
-                <Button asChild variant="outline" className="w-fit shrink-0">
+                <Button asChild variant="ghost">
                   <Link href={`/materials/exam/${material.examTypeSlug}`}>
                     <ArrowLeftIcon data-icon="inline-start" />
                     Kembali Ke Daftar

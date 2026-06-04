@@ -209,7 +209,7 @@ function TryoutPageHeader({
         title={title}
         subtitle={subtitle}
         actions={
-          <Button asChild variant="outline" className="w-fit shrink-0">
+          <Button asChild variant="ghost">
             <Link href="/tryouts">
               <ArrowLeftIcon data-icon="inline-start" />
               Kembali Ke Tryout

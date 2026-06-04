@@ -32,7 +32,7 @@ export function PracticeReviewPage({
           title={`Review Jawaban ${summary.title}`}
           subtitle="Tinjau jawaban untuk melihat status benar-salah dan pembahasan tiap soal."
           actions={
-            <Button asChild variant="outline">
+            <Button asChild variant="ghost">
               <Link href={`/practice-sessions/${summary.id}/result`}>
                 <ArrowLeftIcon data-icon="inline-start" />
                 Kembali ke Hasil
