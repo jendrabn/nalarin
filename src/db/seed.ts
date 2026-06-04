@@ -8,7 +8,6 @@ import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { db, pool, schema } from '@/db';
-import { hashPassword } from '@/lib/password';
 
 const taxonomySeedItemSchema = z.object({
   name: z.string().trim().min(1),
@@ -307,46 +306,6 @@ async function seedBlogCategories(seedData: SeedData) {
     });
 }
 
-async function seedUsers() {
-  const [userPasswordHash, adminPasswordHash] = await Promise.all([
-    hashPassword('user123'),
-    hashPassword('admin123'),
-  ]);
-
-  const now = new Date();
-
-  await db
-    .insert(schema.users)
-    .values([
-      {
-        name: 'Seed User',
-        email: 'user@mail.com',
-        passwordHash: userPasswordHash,
-        role: 'user',
-        status: 'active',
-        emailVerifiedAt: now,
-      },
-      {
-        name: 'Seed Admin',
-        email: 'admin@mail.com',
-        passwordHash: adminPasswordHash,
-        role: 'admin',
-        status: 'active',
-        emailVerifiedAt: now,
-      },
-    ])
-    .onDuplicateKeyUpdate({
-      set: {
-        name: sql`values(${schema.users.name})`,
-        passwordHash: sql`values(${schema.users.passwordHash})`,
-        role: sql`values(${schema.users.role})`,
-        status: sql`values(${schema.users.status})`,
-        emailVerifiedAt: sql`values(${schema.users.emailVerifiedAt})`,
-        updatedAt: now,
-      },
-    });
-}
-
 async function main() {
   const seedData = await loadSeedData();
 
@@ -355,13 +314,12 @@ async function main() {
   await seedSubjects(seedData);
   await seedTopics(seedData);
   await seedBlogCategories(seedData);
-  await seedUsers();
 }
 
 main()
   .then(async () => {
     console.log(
-      'Seed completed: exam_types, exam_type_package_prices, subjects, topics, blog_categories, and users upserted.',
+      'Seed completed: exam_types, exam_type_package_prices, subjects, topics, and blog_categories upserted.',
     );
     await pool.end();
   })

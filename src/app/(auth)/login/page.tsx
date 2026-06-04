@@ -6,7 +6,7 @@ import { buildSeoMetadata } from "@/lib/seo";
 export const metadata: Metadata = buildSeoMetadata({
   title: "Masuk ke Nalarin.id",
   description:
-    "Masuk ke akun Nalarin.id untuk mengakses latihan, tryout, pembahasan, dan progres belajar.",
+    "Masuk ke akun Nalarin.id dengan Google, Facebook, atau Apple untuk mengakses latihan, tryout, pembahasan, dan progres belajar.",
   path: "/login",
   noIndex: true,
 });

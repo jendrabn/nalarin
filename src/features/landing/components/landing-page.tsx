@@ -96,7 +96,7 @@ function HeroSection() {
               className="h-11 w-full px-4 text-[0.95rem] has-data-[icon=inline-end]:pr-4 sm:h-12 sm:w-auto sm:px-5 sm:text-base sm:has-data-[icon=inline-end]:pr-5"
               asChild
             >
-              <Link href="/register">
+              <Link href="/login">
                 Mulai Gratis
                 <ArrowRightIcon data-icon="inline-end" />
               </Link>
@@ -253,12 +253,12 @@ function FinalCtaSection() {
             Bangun Ritme Belajar Lebih Rapi Mulai Hari Ini
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground">
-            Daftar gratis, coba latihan awal, lalu upgrade saat butuh tryout,
+            Mulai gratis, coba latihan awal, lalu upgrade saat butuh tryout,
             ranking, dan pembahasan penuh.
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Button variant="cta" className="h-12 px-5 text-base" asChild>
-              <Link href="/register">Daftar Gratis</Link>
+              <Link href="/login">Mulai Gratis</Link>
             </Button>
             <Button className="h-12 px-5 text-base" variant="outline" asChild>
               <Link href="/practices">Mulai Latihan</Link>

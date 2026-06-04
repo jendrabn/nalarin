@@ -33,7 +33,6 @@ export const vocabularyTypeValues = [
   'antonym',
   'definition',
   'standard',
-  'nonstandard',
 ] as const;
 export const sessionStatusValues = [
   'pending',
@@ -167,7 +166,6 @@ export const users = mysqlTable(
     name: varchar('name', { length: 255 }).notNull(),
     email: varchar('email', { length: 191 }).notNull(),
     emailVerifiedAt: timestamp('email_verified_at', { mode: 'date' }),
-    passwordHash: varchar('password_hash', { length: 255 }),
     googleId: varchar('google_id', { length: 255 }),
     facebookId: varchar('facebook_id', { length: 255 }),
     appleId: varchar('apple_id', { length: 255 }),
@@ -213,79 +211,6 @@ export const userSessions = mysqlTable(
       table.expiresAt,
     ),
     index('user_sessions_expires_at_idx').on(table.expiresAt),
-  ],
-);
-
-export const emailVerificationTokens = mysqlTable(
-  'email_verification_tokens',
-  {
-    id: int('id', { unsigned: true }).autoincrement().primaryKey(),
-    userId: int('user_id', { unsigned: true })
-      .notNull()
-      .references(() => users.id),
-    tokenHash: varchar('token_hash', { length: 255 }).notNull(),
-    expiresAt: timestamp('expires_at', { mode: 'date' }).notNull(),
-    usedAt: timestamp('used_at', { mode: 'date' }),
-    invalidatedAt: timestamp('invalidated_at', { mode: 'date' }),
-    createdAt: createdAt(),
-  },
-  (table) => [
-    uniqueIndex('email_verification_tokens_hash_uq').on(table.tokenHash),
-    index('email_verification_tokens_user_validity_idx').on(
-      table.userId,
-      table.invalidatedAt,
-      table.usedAt,
-      table.expiresAt,
-    ),
-  ],
-);
-
-export const passwordResetTokens = mysqlTable(
-  'password_reset_tokens',
-  {
-    id: int('id', { unsigned: true }).autoincrement().primaryKey(),
-    userId: int('user_id', { unsigned: true })
-      .notNull()
-      .references(() => users.id),
-    tokenHash: varchar('token_hash', { length: 255 }).notNull(),
-    expiresAt: timestamp('expires_at', { mode: 'date' }).notNull(),
-    usedAt: timestamp('used_at', { mode: 'date' }),
-    invalidatedAt: timestamp('invalidated_at', { mode: 'date' }),
-    createdAt: createdAt(),
-  },
-  (table) => [
-    uniqueIndex('password_reset_tokens_hash_uq').on(table.tokenHash),
-    index('password_reset_tokens_user_validity_idx').on(
-      table.userId,
-      table.invalidatedAt,
-      table.usedAt,
-      table.expiresAt,
-    ),
-  ],
-);
-
-export const emailChangeTokens = mysqlTable(
-  'email_change_tokens',
-  {
-    id: int('id', { unsigned: true }).autoincrement().primaryKey(),
-    userId: int('user_id', { unsigned: true })
-      .notNull()
-      .references(() => users.id),
-    newEmail: varchar('new_email', { length: 191 }).notNull(),
-    tokenHash: varchar('token_hash', { length: 255 }).notNull(),
-    expiresAt: timestamp('expires_at', { mode: 'date' }).notNull(),
-    usedAt: timestamp('used_at', { mode: 'date' }),
-    invalidatedAt: timestamp('invalidated_at', { mode: 'date' }),
-    createdAt: createdAt(),
-  },
-  (table) => [
-    uniqueIndex('email_change_tokens_hash_uq').on(table.tokenHash),
-    index('email_change_tokens_user_validity_idx').on(
-      table.userId,
-      table.invalidatedAt,
-      table.usedAt,
-      table.expiresAt,
-    ),
   ],
 );
 

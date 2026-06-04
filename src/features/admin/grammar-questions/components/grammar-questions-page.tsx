@@ -55,7 +55,12 @@ import {
   deleteGrammarQuestionsAction,
 } from "../actions"
 import { grammarQuestionColumnLabels } from "../constants"
-import type { GrammarQuestionRow } from "../queries"
+import {
+  getGrammarQuestionById,
+  type GrammarQuestionDetails,
+  type GrammarQuestionRow,
+} from "../queries"
+import { GrammarQuestionPreviewCard } from "./grammar-question-preview-card"
 import { previewGrammarQuestionSentence } from "../utils/grammar-question"
 
 type GrammarQuestionsPageProps = {
@@ -250,9 +255,10 @@ export function GrammarQuestionsPage({ questions }: GrammarQuestionsPageProps) {
   const [categoryFilter, setCategoryFilter] = useState<FilterValue>("all")
   const [statusFilter, setStatusFilter] = useState<FilterValue>("all")
   const [deleteTarget, setDeleteTarget] = useState<GrammarQuestionRow | null>(null)
-  const [viewTarget, setViewTarget] = useState<GrammarQuestionRow | null>(null)
+  const [viewTarget, setViewTarget] = useState<GrammarQuestionDetails | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [viewLoading, setViewLoading] = useState(false)
 
   const filteredQuestions = useMemo(() => {
     return questions.filter((item) => {
@@ -282,7 +288,25 @@ export function GrammarQuestionsPage({ questions }: GrammarQuestionsPageProps) {
   const columns = useMemo(
     () =>
       createColumns({
-        onView: setViewTarget,
+        onView: async (question) => {
+          setViewTarget(null)
+          setViewLoading(true)
+
+          try {
+            const detail = await getGrammarQuestionById(question.id)
+
+            if (!detail) {
+              toast.error("Grammar question not found.")
+              return
+            }
+
+            setViewTarget(detail)
+          } catch {
+            toast.error("Failed to load grammar preview.")
+          } finally {
+            setViewLoading(false)
+          }
+        },
         onEdit: (question) => router.push(`/admin/grammar/${question.id}/edit`),
         onDelete: setDeleteTarget,
       }),
@@ -397,63 +421,36 @@ export function GrammarQuestionsPage({ questions }: GrammarQuestionsPageProps) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={Boolean(viewTarget)} onOpenChange={(open) => !open && setViewTarget(null)}>
-        <DialogContent className="max-w-3xl">
+      <Dialog
+        open={Boolean(viewTarget) || viewLoading}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewTarget(null)
+            setViewLoading(false)
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl sm:max-h-[85vh]">
           <DialogHeader>
             <DialogTitle>Grammar Preview</DialogTitle>
-            <DialogDescription>Preview sentence template, answers, and distractors.</DialogDescription>
+            <DialogDescription>
+              Read-only preview of the selected grammar question, including answers and distractors.
+            </DialogDescription>
           </DialogHeader>
 
-          {viewTarget ? (
-            <div className="flex flex-col gap-5">
-              <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="soft" className={getModelEnumBadgeMeta("vocabularyLanguage", viewTarget.language).className}>
-                    {getModelEnumBadgeMeta("vocabularyLanguage", viewTarget.language).label}
-                  </Badge>
-                  <Badge variant="soft" className={getModelEnumBadgeMeta("questionDifficulty", viewTarget.difficulty).className}>
-                    {getModelEnumBadgeMeta("questionDifficulty", viewTarget.difficulty).label}
-                  </Badge>
-                  <Badge variant="outline">{viewTarget.blankCount} blanks</Badge>
-                  <Badge variant="outline">{viewTarget.distractors.length} distractors</Badge>
-                  <Badge variant="soft" className={getModelEnumBadgeMeta("contentStatus", viewTarget.status).className}>
-                    {getModelEnumBadgeMeta("contentStatus", viewTarget.status).label}
-                  </Badge>
-                </div>
-                <p className="mt-4 whitespace-pre-wrap text-base leading-7 text-foreground">
-                  {viewTarget.sentenceTemplate}
-                </p>
+          <div className="-mx-4 max-h-[70vh] overflow-y-auto px-4 no-scrollbar">
+            {viewLoading ? (
+              <div className="rounded-lg border border-dashed border-border/60 p-6 text-sm text-muted-foreground">
+                Loading preview...
               </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <section className="rounded-2xl border border-border/60 p-4">
-                  <h3 className="text-sm font-semibold text-foreground">Answers</h3>
-                  <ul className="mt-3 flex flex-col gap-2">
-                    {viewTarget.answers.map((answer) => (
-                      <li key={answer.order} className="flex items-center justify-between gap-3 rounded-xl border border-border/60 px-3 py-2">
-                        <span className="text-sm text-muted-foreground">Blank {answer.order}</span>
-                        <span className="text-sm font-medium text-foreground">{answer.answer || "-"}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-                <section className="rounded-2xl border border-border/60 p-4">
-                  <h3 className="text-sm font-semibold text-foreground">Distractors</h3>
-                  <ul className="mt-3 flex flex-wrap gap-2">
-                    {viewTarget.distractors.length > 0 ? (
-                      viewTarget.distractors.map((distractor, index) => (
-                        <Badge key={`${distractor}-${index}`} variant="outline">
-                          {distractor}
-                        </Badge>
-                      ))
-                    ) : (
-                      <li className="text-sm text-muted-foreground">No distractors.</li>
-                    )}
-                  </ul>
-                </section>
+            ) : viewTarget ? (
+              <GrammarQuestionPreviewCard question={viewTarget} />
+            ) : (
+              <div className="rounded-lg border border-dashed border-border/60 p-6 text-sm text-muted-foreground">
+                No grammar question selected.
               </div>
-            </div>
-          ) : null}
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

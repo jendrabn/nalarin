@@ -222,6 +222,9 @@ function createColumns({
 export function UsersPage({ users, currentUserId }: UsersPageProps) {
   const router = useRouter()
   const [deleteTarget, setDeleteTarget] = useState<AdminUserRow | null>(null)
+  const [bulkDeleteTargets, setBulkDeleteTargets] = useState<AdminUserRow[]>([])
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
 
   const columns = useMemo(
     () =>
@@ -252,6 +255,30 @@ export function UsersPage({ users, currentUserId }: UsersPageProps) {
     setDeleteTarget(null)
   }
 
+  async function handleBulkDelete() {
+    if (bulkDeleteTargets.length === 0) {
+      return
+    }
+
+    setIsBulkDeleting(true)
+
+    try {
+      const result = await deleteUsersAction(bulkDeleteTargets.map((user) => user.id))
+
+      if (result.success) {
+        toast.success(`${result.data.deletedCount} users deleted.`)
+        setBulkDeleteTargets([])
+        setBulkDeleteOpen(false)
+        router.refresh()
+        return
+      }
+
+      toast.error(result.message)
+    } finally {
+      setIsBulkDeleting(false)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -270,15 +297,8 @@ export function UsersPage({ users, currentUserId }: UsersPageProps) {
         getRowId={(user) => String(user.id)}
         getRowCanSelect={(user) => user.id !== currentUserId}
         onDeleteSelected={async (selectedUsers) => {
-          const result = await deleteUsersAction(selectedUsers.map((user) => user.id))
-
-          if (result.success) {
-            toast.success(`${result.data.deletedCount} users deleted.`)
-            router.refresh()
-            return true
-          }
-
-          toast.error(result.message)
+          setBulkDeleteTargets(selectedUsers)
+          setBulkDeleteOpen(true)
           return false
         }}
       />
@@ -308,6 +328,44 @@ export function UsersPage({ users, currentUserId }: UsersPageProps) {
             <AlertDialogAction asChild>
               <Button type="button" variant="destructive" onClick={() => void handleDelete()}>
                 Delete
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={bulkDeleteOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setBulkDeleteTargets([])
+            setBulkDeleteOpen(false)
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete selected users?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. {bulkDeleteTargets.length} selected user
+              {bulkDeleteTargets.length === 1 ? "" : "s"} will be removed along with their related
+              session, payment, and activity records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild disabled={isBulkDeleting}>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => void handleBulkDelete()}
+                disabled={isBulkDeleting}
+              >
+                {isBulkDeleting ? "Deleting..." : "Delete"}
               </Button>
             </AlertDialogAction>
           </AlertDialogFooter>

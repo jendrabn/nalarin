@@ -191,8 +191,12 @@ export function UserDetailPage({
                   value={user.googleId ? "Linked" : "Not linked"}
                 />
                 <DetailItem
-                  label="Password Login"
-                  value={user.passwordHashSet ? "Enabled" : "Not set"}
+                  label="Facebook Account"
+                  value={user.facebookId ? "Linked" : "Not linked"}
+                />
+                <DetailItem
+                  label="Apple Account"
+                  value={user.appleId ? "Linked" : "Not linked"}
                 />
                 <DetailItem label="Created At" value={formatAdminDateTime(user.createdAt)} />
                 <DetailItem label="Updated At" value={formatAdminDateTime(user.updatedAt)} />

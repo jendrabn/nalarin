@@ -8,7 +8,7 @@ const errorMessages: Record<string, string> = {
   account_inactive: "Akun tidak aktif. Hubungi admin jika ini keliru.",
   apple_account_mismatch: "Akun Apple ini tidak cocok dengan akun Nalarin.",
   apple_account_not_linked:
-    "Email sudah terdaftar. Login dengan email/password dulu lalu hubungkan Apple dari profil.",
+    "Akun ini sudah terdaftar. Masuk dengan Apple yang sama seperti saat akun dibuat.",
   apple_cancelled: "Login Apple dibatalkan.",
   apple_email_missing:
     "Apple tidak mengirim email akun. Izinkan akses email lalu coba lagi.",
@@ -21,7 +21,7 @@ const errorMessages: Record<string, string> = {
   auth_provider_disabled: "Provider login ini sedang tidak aktif.",
   facebook_account_mismatch: "Akun Facebook ini tidak cocok dengan akun Nalarin.",
   facebook_account_not_linked:
-    "Email sudah terdaftar. Login dengan email/password dulu lalu hubungkan Facebook dari profil.",
+    "Akun ini sudah terdaftar. Masuk dengan Facebook yang sama seperti saat akun dibuat.",
   facebook_cancelled: "Login Facebook dibatalkan.",
   facebook_email_missing:
     "Facebook tidak mengirim email akun. Izinkan akses email lalu coba lagi.",
@@ -33,7 +33,7 @@ const errorMessages: Record<string, string> = {
     "Pertukaran token Facebook gagal. Cek kembali konfigurasi OAuth.",
   google_account_mismatch: "Akun Google ini tidak cocok dengan akun Nalarin.",
   google_account_not_linked:
-    "Email sudah terdaftar. Login dengan email/password dulu lalu hubungkan Google dari profil.",
+    "Akun ini sudah terdaftar. Masuk dengan Google yang sama seperti saat akun dibuat.",
   google_cancelled: "Login Google dibatalkan.",
   google_email_unverified: "Email Google belum terverifikasi.",
   google_redirect_uri_mismatch:

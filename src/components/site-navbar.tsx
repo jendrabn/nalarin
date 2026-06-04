@@ -165,7 +165,7 @@ function GuestActions({ stacked = false }: { stacked?: boolean }) {
       >
         <Link href="/login">
           <LogInIcon data-icon="inline-start" />
-          <span>Masuk / Daftar</span>
+          <span>Masuk</span>
         </Link>
       </Button>
     </div>

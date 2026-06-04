@@ -170,14 +170,12 @@ export const modelEnums = {
       antonym: "Antonym",
       definition: "Definition",
       standard: "Standard Word",
-      nonstandard: "Nonstandard Word",
     },
     {
       synonym: "chart2",
       antonym: "chart3",
       definition: "chart5",
       standard: "chart1",
-      nonstandard: "chart4",
     },
   ),
   sessionStatus: createEnumDefinition(
@@ -351,10 +349,12 @@ export function getModelEnumBadgeMeta<Name extends ModelEnumName>(
 ) {
   const definition = modelEnums[name]
   const key = value as keyof typeof definition.labels
+  const label = definition.labels[key] ?? String(value)
+  const tone = definition.tones[key] ?? "muted"
 
   return {
-    label: definition.labels[key],
-    className: enumBadgeToneClasses[definition.tones[key]],
+    label,
+    className: enumBadgeToneClasses[tone],
   }
 }
 

@@ -60,7 +60,12 @@ import {
   vocabularyTypeLabels,
   vocabularyTypeValues,
 } from "../constants"
-import type { VocabularyRow } from "../queries"
+import {
+  getVocabularyById,
+  type VocabularyDetails,
+  type VocabularyRow,
+} from "../queries"
+import { VocabularyPreviewCard } from "./vocabulary-preview-card"
 import { previewVocabularyText } from "../utils/vocabulary"
 
 type VocabulariesPageProps = {
@@ -261,8 +266,10 @@ export function VocabulariesPage({ vocabularies }: VocabulariesPageProps) {
   const [typeFilter, setTypeFilter] = useState<FilterValue>("all")
   const [statusFilter, setStatusFilter] = useState<FilterValue>("all")
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null)
+  const [viewTarget, setViewTarget] = useState<VocabularyDetails | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [viewLoading, setViewLoading] = useState(false)
 
   const filteredVocabularies = useMemo(() => {
     return vocabularies.filter((item) => {
@@ -289,7 +296,25 @@ export function VocabulariesPage({ vocabularies }: VocabulariesPageProps) {
   const columns = useMemo(
     () =>
       createColumns({
-        onView: (vocabulary) => router.push(`/admin/vocabularies/${vocabulary.id}`),
+        onView: async (vocabulary) => {
+          setViewTarget(null)
+          setViewLoading(true)
+
+          try {
+            const detail = await getVocabularyById(vocabulary.id)
+
+            if (!detail) {
+              toast.error("Vocabulary not found.")
+              return
+            }
+
+            setViewTarget(detail)
+          } catch {
+            toast.error("Failed to load vocabulary preview.")
+          } finally {
+            setViewLoading(false)
+          }
+        },
         onEdit: (vocabulary) => router.push(`/admin/vocabularies/${vocabulary.id}/edit`),
         onDelete: setDeleteTarget,
       }),
@@ -409,6 +434,39 @@ export function VocabulariesPage({ vocabularies }: VocabulariesPageProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog
+        open={Boolean(viewTarget) || viewLoading}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewTarget(null)
+            setViewLoading(false)
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl sm:max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle>Vocabulary Preview</DialogTitle>
+            <DialogDescription>
+              Read-only preview of the selected vocabulary card, including meaning and example text.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="-mx-4 max-h-[70vh] overflow-y-auto px-4 no-scrollbar">
+            {viewLoading ? (
+              <div className="rounded-lg border border-dashed border-border/60 p-6 text-sm text-muted-foreground">
+                Loading preview...
+              </div>
+            ) : viewTarget ? (
+              <VocabularyPreviewCard vocabulary={viewTarget} />
+            ) : (
+              <div className="rounded-lg border border-dashed border-border/60 p-6 text-sm text-muted-foreground">
+                No vocabulary selected.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

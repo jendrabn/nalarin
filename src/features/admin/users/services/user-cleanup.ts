@@ -65,15 +65,6 @@ export async function deleteUserData(tx: CleanupTx, userId: number) {
 
   await Promise.all([
     tx.delete(schema.userSessions).where(eq(schema.userSessions.userId, userId)),
-    tx
-      .delete(schema.emailVerificationTokens)
-      .where(eq(schema.emailVerificationTokens.userId, userId)),
-    tx
-      .delete(schema.passwordResetTokens)
-      .where(eq(schema.passwordResetTokens.userId, userId)),
-    tx
-      .delete(schema.emailChangeTokens)
-      .where(eq(schema.emailChangeTokens.userId, userId)),
     tx.delete(schema.monthlyUsage).where(eq(schema.monthlyUsage.userId, userId)),
     tx
       .delete(schema.userProgressSnapshots)

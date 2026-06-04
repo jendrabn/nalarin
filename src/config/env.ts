@@ -39,7 +39,6 @@ const envSchema = z
     SESSION_PASSWORD: z.string().min(32),
     SESSION_COOKIE_NAME: nonEmptyString,
     SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(365),
-    BCRYPT_ROUNDS: z.coerce.number().int().min(4).max(31),
 
     GOOGLE_AUTH_ENABLED: booleanFromString,
     GOOGLE_CLIENT_ID: optionalString,
@@ -94,11 +93,6 @@ const envSchema = z
     PRACTICE_ABANDONED_HOURS: z.coerce.number().int().min(1),
     TRYOUT_ABANDONED_HOURS: z.coerce.number().int().min(1),
     SUBSCRIPTION_EXPIRY_CRON_ENABLED: booleanFromString,
-
-    LOGIN_RATE_LIMIT_MAX_ATTEMPTS: z.coerce.number().int().min(1),
-    LOGIN_RATE_LIMIT_WINDOW_MINUTES: z.coerce.number().int().min(1),
-    FORGOT_PASSWORD_MAX_REQUESTS_PER_HOUR: z.coerce.number().int().min(1),
-    RESEND_VERIFICATION_MAX_REQUESTS_PER_HOUR: z.coerce.number().int().min(1),
     AI_GENERATE_QUESTION_MAX_PER_DAY: z.coerce.number().int().min(1),
     AI_GENERATE_EXPLANATION_MAX_PER_DAY: z.coerce.number().int().min(1),
     AI_GRADING_MAX_PER_DAY: z.coerce.number().int().min(1),

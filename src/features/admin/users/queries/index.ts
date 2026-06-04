@@ -86,7 +86,8 @@ export type AdminUserRow = {
 
 export type AdminUserDetails = AdminUserRow & {
   googleId: string | null
-  passwordHashSet: boolean
+  facebookId: string | null
+  appleId: string | null
   activeSubscription: AdminUserSubscriptionSummary | null
   latestSubscription: AdminUserSubscriptionSummary | null
   latestPayment: AdminUserPaymentSummary | null
@@ -274,7 +275,8 @@ export async function getAdminUserById(id: number) {
       phoneNumber: schema.users.phoneNumber,
       emailVerifiedAt: schema.users.emailVerifiedAt,
       googleId: schema.users.googleId,
-      passwordHash: schema.users.passwordHash,
+      facebookId: schema.users.facebookId,
+      appleId: schema.users.appleId,
       createdAt: schema.users.createdAt,
       updatedAt: schema.users.updatedAt,
     })
@@ -450,7 +452,8 @@ export async function getAdminUserById(id: number) {
     phoneNumber: user.phoneNumber ?? null,
     emailVerifiedAt: user.emailVerifiedAt ?? null,
     googleId: user.googleId ?? null,
-    passwordHashSet: Boolean(user.passwordHash),
+    facebookId: user.facebookId ?? null,
+    appleId: user.appleId ?? null,
     activePackageName: getSubscriptionPackageLabel(buildSubscriptionSummary(activeSubscription)),
     activeExamTypeName: activeSubscription?.examTypeName ?? null,
     activeSubscriptionEndsAt: activeSubscription?.endsAt ?? null,

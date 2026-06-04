@@ -1,3 +1,5 @@
+"use server"
+
 import "server-only"
 
 import { desc, eq } from "drizzle-orm"
@@ -88,4 +90,3 @@ export async function getGrammarQuestionById(id: number) {
 
   return question ? normalizeGrammarQuestionRow(question) : null
 }
-

@@ -31,7 +31,6 @@ const mobileNavLinks = navLinks.map((item) =>
 const hiddenRoutePrefixes = [
   "/admin",
   "/login",
-  "/register",
   "/practice-sessions",
   "/tryout-sessions",
   "/vocabulary/play",

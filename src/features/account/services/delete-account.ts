@@ -78,18 +78,6 @@ function createDeleteStatements(userId: number) {
       WHERE user_id = ${userId}
     `,
     sql`
-      DELETE FROM email_change_tokens
-      WHERE user_id = ${userId}
-    `,
-    sql`
-      DELETE FROM password_reset_tokens
-      WHERE user_id = ${userId}
-    `,
-    sql`
-      DELETE FROM email_verification_tokens
-      WHERE user_id = ${userId}
-    `,
-    sql`
       DELETE FROM user_sessions
       WHERE user_id = ${userId}
     `,

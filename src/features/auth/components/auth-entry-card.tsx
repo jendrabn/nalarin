@@ -39,11 +39,11 @@ export function AuthEntryCard() {
           Selamat Datang di Nalarin
         </h1>
         <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-          Masuk untuk melanjutkan belajar, atau daftar untuk mulai dari awal.
+          Masuk untuk melanjutkan belajar atau daftar untuk mulai dari awal.
         </p>
       </div>
 
-      <div className="mt-8 flex flex-col gap-3">
+      <div className="mt-8 flex flex-col gap-3"> --ENDOL GOBLOK TOLOL
         {providers.map((provider) => (
           <form key={provider.action} action={provider.action} method="GET">
             <Button
