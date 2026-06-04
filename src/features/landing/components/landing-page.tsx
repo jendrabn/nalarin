@@ -60,7 +60,7 @@ function HeroSection() {
       <div className="absolute bottom-12 left-8 top-24 -z-10 hidden w-px bg-gradient-to-b from-transparent via-border/80 to-transparent xl:block" />
       <div className="absolute bottom-12 right-8 top-24 -z-10 hidden w-px bg-gradient-to-b from-transparent via-border/80 to-transparent xl:block" />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-b from-transparent via-background/70 to-background" />
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-7xl flex-col items-center justify-center gap-12 px-4 py-20 text-center sm:px-6 lg:px-8 lg:py-24">
+      <div className="mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-7xl flex-col items-center justify-center gap-8 px-4 py-10 text-center sm:min-h-[calc(100vh-4rem)] sm:gap-12 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
         <div className="hidden flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground sm:flex sm:text-[0.76rem]">
           {trustBadges.map((badge) => (
             <div
@@ -87,13 +87,13 @@ function HeroSection() {
                 </>
               }
               subtitle="Persiapkan seleksi PTN dengan alur belajar yang terarah melalui latihan fokus, tryout berkala, dan evaluasi hasil yang mudah ditindaklanjuti."
-              titleClassName="mx-auto max-w-4xl text-balance text-[3.25rem] font-extrabold leading-[1.05] tracking-tight sm:text-[3.95rem] lg:text-[4.45rem]"
-              subtitleClassName="mx-auto mt-6 max-w-xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg"
+              titleClassName="mx-auto max-w-4xl text-balance text-[2.55rem] font-extrabold leading-[1.04] tracking-tight sm:text-[3.95rem] lg:text-[4.45rem]"
+              subtitleClassName="mx-auto mt-4 max-w-xl text-pretty text-[0.95rem] leading-6 text-muted-foreground sm:mt-6 sm:text-lg sm:leading-7"
             />
-          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="mt-7 grid w-full grid-cols-1 justify-items-stretch gap-3 min-[420px]:grid-cols-2 sm:mt-9 sm:flex sm:w-auto sm:items-center sm:justify-center sm:justify-items-center">
             <Button
               variant="cta"
-              className="h-12 px-5 text-base has-data-[icon=inline-end]:pr-5"
+              className="h-11 w-full px-4 text-[0.95rem] has-data-[icon=inline-end]:pr-4 sm:h-12 sm:w-auto sm:px-5 sm:text-base sm:has-data-[icon=inline-end]:pr-5"
               asChild
             >
               <Link href="/register">
@@ -101,7 +101,11 @@ function HeroSection() {
                 <ArrowRightIcon data-icon="inline-end" />
               </Link>
             </Button>
-            <Button className="hidden h-12 px-5 text-base sm:inline-flex" variant="outline" asChild>
+            <Button
+              className="h-11 w-full px-4 text-[0.95rem] sm:h-12 sm:w-auto sm:px-5 sm:text-base"
+              variant="outline"
+              asChild
+            >
               <Link href="/tryouts">Lihat Tryout</Link>
             </Button>
           </div>
