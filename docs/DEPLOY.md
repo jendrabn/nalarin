@@ -521,7 +521,9 @@ bun run build
 pm2 startOrReload ecosystem.config.cjs --update-env
 pm2 save
 curl -I https://nalarin.web.id/logout
-curl -I https://nalarin.web.id/uploads/avatars/__nalarin-smoke-test__.png
+printf 'nalarin upload smoke test\n' > public/uploads/avatars/__nalarin-smoke-test__.txt
+curl -I https://nalarin.web.id/uploads/avatars/__nalarin-smoke-test__.txt
+rm -f public/uploads/avatars/__nalarin-smoke-test__.txt
 ```
 
 Consequence of `git reset --hard`: manual changes to Git-tracked files on the VPS will be overwritten. The `.env` file and `public/uploads` files are safe as long as they remain untracked by Git and are stored under `/var/www/nalarin`.
@@ -534,7 +536,8 @@ After PM2 reloads, the workflow runs smoke tests against the production domain:
 
 - `GET /logout` must not return a `Set-Cookie` header that clears `nalarin_session`.
 - `/logout` must not redirect to `localhost` or `127.0.0.1`.
-- `/uploads/avatars/` must be served by Nginx/public uploads.
+- A file created at runtime under `public/uploads/avatars` must return `200`
+  from `/uploads/avatars/<filename>`.
 
 If one of these checks fails, the deployment is not actually serving the fixed
 build or the reverse proxy/environment configuration is still wrong.

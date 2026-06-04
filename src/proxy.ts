@@ -1,11 +1,11 @@
 import { getIronSession } from "iron-session";
 import { NextRequest, NextResponse } from "next/server";
 
-import { env } from "@/config/env";
 import {
   type AuthSessionData,
   sessionOptions,
 } from "@/features/auth/services/session-config";
+import { getForwardedOrigin } from "@/lib/request-origin";
 
 const adminPrefix = "/admin";
 const protectedPrefixes = [
@@ -23,8 +23,10 @@ function startsWithAny(pathname: string, prefixes: string[]) {
   );
 }
 
-function redirectTo(pathname: string) {
-  return NextResponse.redirect(new URL(pathname, env.APP_URL));
+function redirectTo(request: NextRequest, pathname: string) {
+  return NextResponse.redirect(
+    new URL(pathname, getForwardedOrigin(request.headers, request.nextUrl.origin)),
+  );
 }
 
 export async function proxy(request: NextRequest) {
@@ -39,11 +41,11 @@ export async function proxy(request: NextRequest) {
 
   if (pathname === adminPrefix || pathname.startsWith(`${adminPrefix}/`)) {
     if (!isAuthenticated) {
-      return redirectTo("/login");
+      return redirectTo(request, "/login");
     }
 
     if (session.role !== "admin") {
-      return redirectTo("/profile");
+      return redirectTo(request, "/profile");
     }
   }
 
@@ -53,7 +55,7 @@ export async function proxy(request: NextRequest) {
         !startsWithAny(pathname, publicPracticePrefixes))) &&
     !isAuthenticated
   ) {
-    return redirectTo("/login");
+    return redirectTo(request, "/login");
   }
 
   return response;

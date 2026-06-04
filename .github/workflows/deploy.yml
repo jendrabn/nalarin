@@ -132,10 +132,14 @@ jobs:
               exit 1
             fi
 
-            AVATAR_SMOKE_HEADERS="$(curl -k --max-time 20 -sSI "$APP_URL_VALUE/uploads/avatars/__nalarin-smoke-test__.png" || true)"
+            AVATAR_SMOKE_FILE="$FILE_STORAGE_PUBLIC_DIR_VALUE/avatars/__nalarin-smoke-test__.txt"
+            AVATAR_SMOKE_URL="$APP_URL_VALUE/uploads/avatars/__nalarin-smoke-test__.txt"
+            printf 'nalarin upload smoke test\n' > "$AVATAR_SMOKE_FILE"
+            AVATAR_SMOKE_HEADERS="$(curl -k --max-time 20 -sSI "$AVATAR_SMOKE_URL" || true)"
+            rm -f "$AVATAR_SMOKE_FILE"
 
-            if ! printf '%s\n' "$AVATAR_SMOKE_HEADERS" | grep -Eq '^HTTP/.* 404'; then
-              echo "Smoke test gagal: /uploads/avatars tidak dilayani oleh Nginx/public uploads."
+            if ! printf '%s\n' "$AVATAR_SMOKE_HEADERS" | grep -Eq '^HTTP/.* 200'; then
+              echo "Smoke test gagal: file runtime di /uploads/avatars tidak bisa diakses."
               exit 1
             fi
           fi
