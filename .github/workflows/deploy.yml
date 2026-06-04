@@ -14,7 +14,7 @@ jobs:
   deploy:
     name: Deploy to Ubuntu VPS
     runs-on: ubuntu-22.04
-    timeout-minutes: 20
+    timeout-minutes: 45
     env:
       DEPLOY_BRANCH: main
       DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/var/www/nalarin' }}
@@ -42,12 +42,46 @@ jobs:
         run: |
           set -euo pipefail
 
-          ssh -i "$HOME/.ssh/deploy_key" -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" \
+          ssh \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=20 \
+            -o TCPKeepAlive=yes \
+            -o ConnectTimeout=30 \
+            -i "$HOME/.ssh/deploy_key" \
+            -p "$VPS_PORT" \
+            "$VPS_USER@$VPS_HOST" \
             bash -s -- "$DEPLOY_PATH" "$DEPLOY_BRANCH" <<'REMOTE'
           set -euo pipefail
 
           DEPLOY_PATH="$1"
           DEPLOY_BRANCH="$2"
+
+          run_with_heartbeat() {
+            local label="$1"
+            shift
+            local status=0
+
+            echo "Mulai: $label"
+            (
+              while true; do
+                sleep 30
+                printf '[%s] masih berjalan: %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" "$label"
+              done
+            ) &
+            local heartbeat_pid="$!"
+
+            "$@" || status="$?"
+
+            kill "$heartbeat_pid" >/dev/null 2>&1 || true
+            wait "$heartbeat_pid" 2>/dev/null || true
+
+            if [ "$status" -ne 0 ]; then
+              echo "Gagal: $label"
+              return "$status"
+            fi
+
+            echo "Selesai: $label"
+          }
 
           if [ ! -d "$DEPLOY_PATH/.git" ]; then
             echo "Deploy path $DEPLOY_PATH belum berisi repository git. Lakukan first deploy manual lebih dulu."
@@ -112,8 +146,8 @@ jobs:
             "$FILE_STORAGE_PUBLIC_DIR_VALUE/taxonomy"
           chmod -R ug+rwX "$FILE_STORAGE_PUBLIC_DIR_VALUE"
 
-          bun install
-          bun run build
+          run_with_heartbeat "bun install" bun install
+          run_with_heartbeat "Next.js production build" bun run build
 
           pm2 startOrReload ecosystem.config.cjs --update-env
           pm2 save
