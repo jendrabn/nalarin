@@ -32,29 +32,40 @@ CREATE TABLE `blog_posts` (
 	CONSTRAINT `blog_posts_slug_uq` UNIQUE(`slug`)
 );
 --> statement-breakpoint
-CREATE TABLE `email_change_tokens` (
+CREATE TABLE `email_campaign_recipients` (
 	`id` int unsigned AUTO_INCREMENT NOT NULL,
-	`user_id` int unsigned NOT NULL,
-	`new_email` varchar(191) NOT NULL,
-	`token_hash` varchar(255) NOT NULL,
-	`expires_at` timestamp NOT NULL,
-	`used_at` timestamp,
-	`invalidated_at` timestamp,
+	`campaign_id` int unsigned NOT NULL,
+	`user_id` int unsigned,
+	`email` varchar(191) NOT NULL,
+	`name` varchar(255) NOT NULL,
+	`status` enum('queued','sending','sent','failed','cancelled') NOT NULL DEFAULT 'queued',
+	`bull_job_id` varchar(191),
+	`attempts` int unsigned NOT NULL DEFAULT 0,
+	`last_error` text,
+	`sent_at` timestamp,
 	`created_at` timestamp NOT NULL DEFAULT (now()),
-	CONSTRAINT `email_change_tokens_id` PRIMARY KEY(`id`),
-	CONSTRAINT `email_change_tokens_hash_uq` UNIQUE(`token_hash`)
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `email_campaign_recipients_id` PRIMARY KEY(`id`),
+	CONSTRAINT `email_campaign_recipients_campaign_user_uq` UNIQUE(`campaign_id`,`user_id`)
 );
 --> statement-breakpoint
-CREATE TABLE `email_verification_tokens` (
+CREATE TABLE `email_campaigns` (
 	`id` int unsigned AUTO_INCREMENT NOT NULL,
-	`user_id` int unsigned NOT NULL,
-	`token_hash` varchar(255) NOT NULL,
-	`expires_at` timestamp NOT NULL,
-	`used_at` timestamp,
-	`invalidated_at` timestamp,
+	`subject` varchar(255) NOT NULL,
+	`content_html` longtext NOT NULL,
+	`content_text` longtext NOT NULL,
+	`status` enum('queued','sending','completed','failed','cancelled') NOT NULL DEFAULT 'queued',
+	`total_recipients` int unsigned NOT NULL DEFAULT 0,
+	`sent_count` int unsigned NOT NULL DEFAULT 0,
+	`failed_count` int unsigned NOT NULL DEFAULT 0,
+	`cancelled_count` int unsigned NOT NULL DEFAULT 0,
+	`created_by_admin_id` int unsigned,
+	`started_at` timestamp,
+	`completed_at` timestamp,
+	`cancelled_at` timestamp,
 	`created_at` timestamp NOT NULL DEFAULT (now()),
-	CONSTRAINT `email_verification_tokens_id` PRIMARY KEY(`id`),
-	CONSTRAINT `email_verification_tokens_hash_uq` UNIQUE(`token_hash`)
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `email_campaigns_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
 CREATE TABLE `exam_type_package_prices` (
@@ -157,18 +168,6 @@ CREATE TABLE `monthly_usage` (
 	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `monthly_usage_id` PRIMARY KEY(`id`),
 	CONSTRAINT `monthly_usage_user_exam_period_uq` UNIQUE(`user_id`,`exam_type_id`,`period`)
-);
---> statement-breakpoint
-CREATE TABLE `password_reset_tokens` (
-	`id` int unsigned AUTO_INCREMENT NOT NULL,
-	`user_id` int unsigned NOT NULL,
-	`token_hash` varchar(255) NOT NULL,
-	`expires_at` timestamp NOT NULL,
-	`used_at` timestamp,
-	`invalidated_at` timestamp,
-	`created_at` timestamp NOT NULL DEFAULT (now()),
-	CONSTRAINT `password_reset_tokens_id` PRIMARY KEY(`id`),
-	CONSTRAINT `password_reset_tokens_hash_uq` UNIQUE(`token_hash`)
 );
 --> statement-breakpoint
 CREATE TABLE `payments` (
@@ -522,6 +521,7 @@ CREATE TABLE `tryouts` (
 	`navigation_mode` enum('free','sequential') NOT NULL,
 	`enforce_end_time` boolean NOT NULL,
 	`wrong_answer_penalty` decimal(5,2) NOT NULL DEFAULT '0.00',
+	`scoring_method` enum('raw_score','irt_3pl') NOT NULL DEFAULT 'raw_score',
 	`status` enum('draft','published','archived') NOT NULL,
 	`published_at` timestamp,
 	`created_by` int unsigned,
@@ -571,7 +571,6 @@ CREATE TABLE `users` (
 	`name` varchar(255) NOT NULL,
 	`email` varchar(191) NOT NULL,
 	`email_verified_at` timestamp,
-	`password_hash` varchar(255),
 	`google_id` varchar(255),
 	`facebook_id` varchar(255),
 	`apple_id` varchar(255),
@@ -596,7 +595,7 @@ CREATE TABLE `vocabularies` (
 	`word` varchar(255) NOT NULL,
 	`language` enum('id','en') NOT NULL,
 	`difficulty` enum('easy','medium','hard') NOT NULL,
-	`type` enum('synonym','antonym','definition','standard','nonstandard') NOT NULL,
+	`type` enum('synonym','antonym','definition','standard') NOT NULL,
 	`correct_meaning` text NOT NULL,
 	`wrong_option` text NOT NULL,
 	`example_sentence` text,
@@ -644,8 +643,9 @@ CREATE TABLE `vouchers` (
 --> statement-breakpoint
 ALTER TABLE `blog_posts` ADD CONSTRAINT `blog_posts_category_id_blog_categories_id_fk` FOREIGN KEY (`category_id`) REFERENCES `blog_categories`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `blog_posts` ADD CONSTRAINT `blog_posts_author_id_users_id_fk` FOREIGN KEY (`author_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `email_change_tokens` ADD CONSTRAINT `email_change_tokens_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `email_verification_tokens` ADD CONSTRAINT `email_verification_tokens_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `email_campaign_recipients` ADD CONSTRAINT `email_campaign_recipients_campaign_id_email_campaigns_id_fk` FOREIGN KEY (`campaign_id`) REFERENCES `email_campaigns`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `email_campaign_recipients` ADD CONSTRAINT `email_campaign_recipients_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `email_campaigns` ADD CONSTRAINT `email_campaigns_created_by_admin_id_users_id_fk` FOREIGN KEY (`created_by_admin_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `exam_type_package_prices` ADD CONSTRAINT `exam_type_package_prices_package_id_exam_type_packages_id_fk` FOREIGN KEY (`package_id`) REFERENCES `exam_type_packages`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `exam_type_packages` ADD CONSTRAINT `exam_type_packages_exam_type_id_exam_types_id_fk` FOREIGN KEY (`exam_type_id`) REFERENCES `exam_types`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `grammar_questions` ADD CONSTRAINT `grammar_questions_created_by_users_id_fk` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -655,7 +655,6 @@ ALTER TABLE `materials` ADD CONSTRAINT `materials_topic_id_topics_id_fk` FOREIGN
 ALTER TABLE `materials` ADD CONSTRAINT `materials_created_by_users_id_fk` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `monthly_usage` ADD CONSTRAINT `monthly_usage_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `monthly_usage` ADD CONSTRAINT `monthly_usage_exam_type_id_exam_types_id_fk` FOREIGN KEY (`exam_type_id`) REFERENCES `exam_types`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `password_reset_tokens` ADD CONSTRAINT `password_reset_tokens_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `payments` ADD CONSTRAINT `payments_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `payments` ADD CONSTRAINT `payments_subscription_id_subscriptions_id_fk` FOREIGN KEY (`subscription_id`) REFERENCES `subscriptions`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `payments` ADD CONSTRAINT `payments_exam_type_id_exam_types_id_fk` FOREIGN KEY (`exam_type_id`) REFERENCES `exam_types`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -714,8 +713,11 @@ ALTER TABLE `vouchers` ADD CONSTRAINT `vouchers_created_by_users_id_fk` FOREIGN 
 CREATE INDEX `blog_posts_public_listing_idx` ON `blog_posts` (`status`,`published_at`);--> statement-breakpoint
 CREATE INDEX `blog_posts_category_listing_idx` ON `blog_posts` (`category_id`,`status`,`published_at`);--> statement-breakpoint
 CREATE INDEX `blog_posts_author_listing_idx` ON `blog_posts` (`author_id`,`status`,`created_at`);--> statement-breakpoint
-CREATE INDEX `email_change_tokens_user_validity_idx` ON `email_change_tokens` (`user_id`,`invalidated_at`,`used_at`,`expires_at`);--> statement-breakpoint
-CREATE INDEX `email_verification_tokens_user_validity_idx` ON `email_verification_tokens` (`user_id`,`invalidated_at`,`used_at`,`expires_at`);--> statement-breakpoint
+CREATE INDEX `email_campaign_recipients_campaign_status_idx` ON `email_campaign_recipients` (`campaign_id`,`status`);--> statement-breakpoint
+CREATE INDEX `email_campaign_recipients_user_idx` ON `email_campaign_recipients` (`user_id`);--> statement-breakpoint
+CREATE INDEX `email_campaign_recipients_bull_job_idx` ON `email_campaign_recipients` (`bull_job_id`);--> statement-breakpoint
+CREATE INDEX `email_campaigns_status_created_at_idx` ON `email_campaigns` (`status`,`created_at`);--> statement-breakpoint
+CREATE INDEX `email_campaigns_created_by_idx` ON `email_campaigns` (`created_by_admin_id`);--> statement-breakpoint
 CREATE INDEX `exam_type_package_prices_active_idx` ON `exam_type_package_prices` (`is_active`);--> statement-breakpoint
 CREATE INDEX `exam_type_packages_active_idx` ON `exam_type_packages` (`is_active`);--> statement-breakpoint
 CREATE INDEX `grammar_questions_filter_idx` ON `grammar_questions` (`language`,`difficulty`,`category`,`status`);--> statement-breakpoint
@@ -726,7 +728,6 @@ CREATE INDEX `materials_status_publish_idx` ON `materials` (`status`,`published_
 CREATE INDEX `materials_created_by_idx` ON `materials` (`created_by`);--> statement-breakpoint
 CREATE INDEX `monthly_usage_period_idx` ON `monthly_usage` (`period`);--> statement-breakpoint
 CREATE INDEX `monthly_usage_exam_type_period_idx` ON `monthly_usage` (`exam_type_id`,`period`);--> statement-breakpoint
-CREATE INDEX `password_reset_tokens_user_validity_idx` ON `password_reset_tokens` (`user_id`,`invalidated_at`,`used_at`,`expires_at`);--> statement-breakpoint
 CREATE INDEX `payments_subscription_id_idx` ON `payments` (`subscription_id`);--> statement-breakpoint
 CREATE INDEX `payments_user_status_idx` ON `payments` (`user_id`,`status`,`created_at`);--> statement-breakpoint
 CREATE INDEX `payments_voucher_status_idx` ON `payments` (`voucher_id`,`status`,`created_at`);--> statement-breakpoint

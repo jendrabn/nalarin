@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "69cf2f37-1ef6-46b3-9587-e5cb365e96e8",
+  "id": "7cd218d8-461f-462d-b5b5-44edadfcce10",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "blog_categories": {
@@ -282,8 +282,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "email_change_tokens": {
-      "name": "email_change_tokens",
+    "email_campaign_recipients": {
+      "name": "email_campaign_recipients",
       "columns": {
         "id": {
           "name": "id",
@@ -292,43 +292,66 @@
           "notNull": true,
           "autoincrement": true
         },
-        "user_id": {
-          "name": "user_id",
+        "campaign_id": {
+          "name": "campaign_id",
           "type": "int unsigned",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "new_email": {
-          "name": "new_email",
+        "user_id": {
+          "name": "user_id",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "email": {
+          "name": "email",
           "type": "varchar(191)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "token_hash": {
-          "name": "token_hash",
+        "name": {
+          "name": "name",
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp",
+        "status": {
+          "name": "status",
+          "type": "enum('queued','sending','sent','failed','cancelled')",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "'queued'"
         },
-        "used_at": {
-          "name": "used_at",
-          "type": "timestamp",
+        "bull_job_id": {
+          "name": "bull_job_id",
+          "type": "varchar(191)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "invalidated_at": {
-          "name": "invalidated_at",
+        "attempts": {
+          "name": "attempts",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "sent_at": {
+          "name": "sent_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
@@ -341,31 +364,66 @@
           "notNull": true,
           "autoincrement": false,
           "default": "(now())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
         }
       },
       "indexes": {
-        "email_change_tokens_hash_uq": {
-          "name": "email_change_tokens_hash_uq",
+        "email_campaign_recipients_campaign_user_uq": {
+          "name": "email_campaign_recipients_campaign_user_uq",
           "columns": [
-            "token_hash"
+            "campaign_id",
+            "user_id"
           ],
           "isUnique": true
         },
-        "email_change_tokens_user_validity_idx": {
-          "name": "email_change_tokens_user_validity_idx",
+        "email_campaign_recipients_campaign_status_idx": {
+          "name": "email_campaign_recipients_campaign_status_idx",
           "columns": [
-            "user_id",
-            "invalidated_at",
-            "used_at",
-            "expires_at"
+            "campaign_id",
+            "status"
+          ],
+          "isUnique": false
+        },
+        "email_campaign_recipients_user_idx": {
+          "name": "email_campaign_recipients_user_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "email_campaign_recipients_bull_job_idx": {
+          "name": "email_campaign_recipients_bull_job_idx",
+          "columns": [
+            "bull_job_id"
           ],
           "isUnique": false
         }
       },
       "foreignKeys": {
-        "email_change_tokens_user_id_users_id_fk": {
-          "name": "email_change_tokens_user_id_users_id_fk",
-          "tableFrom": "email_change_tokens",
+        "email_campaign_recipients_campaign_id_email_campaigns_id_fk": {
+          "name": "email_campaign_recipients_campaign_id_email_campaigns_id_fk",
+          "tableFrom": "email_campaign_recipients",
+          "tableTo": "email_campaigns",
+          "columnsFrom": [
+            "campaign_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "email_campaign_recipients_user_id_users_id_fk": {
+          "name": "email_campaign_recipients_user_id_users_id_fk",
+          "tableFrom": "email_campaign_recipients",
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
@@ -378,8 +436,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "email_change_tokens_id": {
-          "name": "email_change_tokens_id",
+        "email_campaign_recipients_id": {
+          "name": "email_campaign_recipients_id",
           "columns": [
             "id"
           ]
@@ -388,8 +446,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "email_verification_tokens": {
-      "name": "email_verification_tokens",
+    "email_campaigns": {
+      "name": "email_campaigns",
       "columns": {
         "id": {
           "name": "id",
@@ -398,36 +456,90 @@
           "notNull": true,
           "autoincrement": true
         },
-        "user_id": {
-          "name": "user_id",
-          "type": "int unsigned",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "token_hash": {
-          "name": "token_hash",
+        "subject": {
+          "name": "subject",
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp",
+        "content_html": {
+          "name": "content_html",
+          "type": "longtext",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "used_at": {
-          "name": "used_at",
+        "content_text": {
+          "name": "content_text",
+          "type": "longtext",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum('queued','sending','completed','failed','cancelled')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'queued'"
+        },
+        "total_recipients": {
+          "name": "total_recipients",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "sent_count": {
+          "name": "sent_count",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "failed_count": {
+          "name": "failed_count",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "cancelled_count": {
+          "name": "cancelled_count",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "created_by_admin_id": {
+          "name": "created_by_admin_id",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "started_at": {
+          "name": "started_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "invalidated_at": {
-          "name": "invalidated_at",
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "cancelled_at": {
+          "name": "cancelled_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
@@ -440,34 +552,41 @@
           "notNull": true,
           "autoincrement": false,
           "default": "(now())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
         }
       },
       "indexes": {
-        "email_verification_tokens_hash_uq": {
-          "name": "email_verification_tokens_hash_uq",
+        "email_campaigns_status_created_at_idx": {
+          "name": "email_campaigns_status_created_at_idx",
           "columns": [
-            "token_hash"
+            "status",
+            "created_at"
           ],
-          "isUnique": true
+          "isUnique": false
         },
-        "email_verification_tokens_user_validity_idx": {
-          "name": "email_verification_tokens_user_validity_idx",
+        "email_campaigns_created_by_idx": {
+          "name": "email_campaigns_created_by_idx",
           "columns": [
-            "user_id",
-            "invalidated_at",
-            "used_at",
-            "expires_at"
+            "created_by_admin_id"
           ],
           "isUnique": false
         }
       },
       "foreignKeys": {
-        "email_verification_tokens_user_id_users_id_fk": {
-          "name": "email_verification_tokens_user_id_users_id_fk",
-          "tableFrom": "email_verification_tokens",
+        "email_campaigns_created_by_admin_id_users_id_fk": {
+          "name": "email_campaigns_created_by_admin_id_users_id_fk",
+          "tableFrom": "email_campaigns",
           "tableTo": "users",
           "columnsFrom": [
-            "user_id"
+            "created_by_admin_id"
           ],
           "columnsTo": [
             "id"
@@ -477,8 +596,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "email_verification_tokens_id": {
-          "name": "email_verification_tokens_id",
+        "email_campaigns_id": {
+          "name": "email_campaigns_id",
           "columns": [
             "id"
           ]
@@ -1373,105 +1492,6 @@
       "compositePrimaryKeys": {
         "monthly_usage_id": {
           "name": "monthly_usage_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "checkConstraint": {}
-    },
-    "password_reset_tokens": {
-      "name": "password_reset_tokens",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "int unsigned",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "int unsigned",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "token_hash": {
-          "name": "token_hash",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "used_at": {
-          "name": "used_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "invalidated_at": {
-          "name": "invalidated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(now())"
-        }
-      },
-      "indexes": {
-        "password_reset_tokens_hash_uq": {
-          "name": "password_reset_tokens_hash_uq",
-          "columns": [
-            "token_hash"
-          ],
-          "isUnique": true
-        },
-        "password_reset_tokens_user_validity_idx": {
-          "name": "password_reset_tokens_user_validity_idx",
-          "columns": [
-            "user_id",
-            "invalidated_at",
-            "used_at",
-            "expires_at"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "password_reset_tokens_user_id_users_id_fk": {
-          "name": "password_reset_tokens_user_id_users_id_fk",
-          "tableFrom": "password_reset_tokens",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "password_reset_tokens_id": {
-          "name": "password_reset_tokens_id",
           "columns": [
             "id"
           ]
@@ -4821,6 +4841,14 @@
           "autoincrement": false,
           "default": "'0.00'"
         },
+        "scoring_method": {
+          "name": "scoring_method",
+          "type": "enum('raw_score','irt_3pl')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'raw_score'"
+        },
         "status": {
           "name": "status",
           "type": "enum('draft','published','archived')",
@@ -5271,13 +5299,6 @@
           "notNull": false,
           "autoincrement": false
         },
-        "password_hash": {
-          "name": "password_hash",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "google_id": {
           "name": "google_id",
           "type": "varchar(255)",
@@ -5459,7 +5480,7 @@
         },
         "type": {
           "name": "type",
-          "type": "enum('synonym','antonym','definition','standard','nonstandard')",
+          "type": "enum('synonym','antonym','definition','standard')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false

@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1780288512962,
+      "when": 1780649897158,
       "tag": "0000_initial",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1780650000000,
-      "tag": "0002_email_campaigns",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1780682400000,
-      "tag": "0003_tryout_scoring_method",
       "breakpoints": true
     }
   ]
