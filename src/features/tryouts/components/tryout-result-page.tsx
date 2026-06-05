@@ -21,6 +21,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { cn } from "@/lib/utils"
 
 import type { TryoutResultData, TryoutSectionResult } from "../types"
+import { IRT_SCORE_MEAN, IRT_SCORE_STANDARD_DEVIATION } from "../utils/irt-scoring"
 
 export function TryoutResultPage({ data }: { data: TryoutResultData }) {
   const resultLocked = !data.resultRelease.available
@@ -29,8 +30,10 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
   const scoreValue = isIrtScoring
     ? formatNumber(data.totalScore)
     : `${formatNumber(data.totalScore)} / ${formatNumber(data.totalMaxScore)}`
-  const scoreSummaryLabel = isIrtScoring ? "Score Range" : "Persentase Skor"
-  const scoreSummaryValue = isIrtScoring ? "200-1000" : `${data.scorePercentage}%`
+  const scoreSummaryLabel = isIrtScoring ? "Score Scale" : "Persentase Skor"
+  const scoreSummaryValue = isIrtScoring
+    ? `Mean ${formatNumber(IRT_SCORE_MEAN)} / SD ${formatNumber(IRT_SCORE_STANDARD_DEVIATION)}`
+    : `${data.scorePercentage}%`
 
   return (
     <main className="min-h-svh bg-muted/35 px-4 py-6 sm:px-6 lg:px-8">
@@ -101,7 +104,12 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">{scoreSummaryLabel}</p>
-                        <p className="mt-1 text-3xl font-semibold tabular-nums text-primary">
+                        <p
+                          className={cn(
+                            "mt-1 font-semibold tabular-nums text-primary",
+                            isIrtScoring ? "text-2xl" : "text-3xl",
+                          )}
+                        >
                           {scoreSummaryValue}
                         </p>
                       </div>

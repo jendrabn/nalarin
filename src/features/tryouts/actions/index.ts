@@ -14,11 +14,10 @@ import type {
   PracticeQuestionType,
 } from "@/features/practices/types"
 
+import { getIrtSectionScoreMap } from "../services/irt-score-queries"
 import { canAccessTryout } from "../utils/access"
 import {
-  IRT_SCORE_MAX,
   calculateIrtScore,
-  getIrtDifficulty,
   getIrtOptionCount,
   type IrtItemResponse,
 } from "../utils/irt-scoring"
@@ -665,7 +664,6 @@ export async function submitTryoutSectionAction(
         unansweredCount += 1
         irtResponses.push({
           isCorrect: false,
-          difficulty: getIrtDifficulty(questionSnapshot.difficulty),
           questionType,
           optionCount: getIrtOptionCount(row.optionSnapshot),
         })
@@ -695,7 +693,6 @@ export async function submitTryoutSectionAction(
 
       irtResponses.push({
         isCorrect: grade.isCorrect,
-        difficulty: getIrtDifficulty(questionSnapshot.difficulty),
         questionType,
         optionCount: getIrtOptionCount(row.optionSnapshot),
       })
@@ -753,6 +750,22 @@ export async function submitTryoutSectionAction(
       })
       .where(eq(schema.tryoutSectionSessions.id, section.id))
   })
+
+  if (scoringMethod === "irt_3pl") {
+    const irtSectionScoreMap = await getIrtSectionScoreMap(input.sessionId)
+    const calibratedScore = irtSectionScoreMap.get(section.id)
+
+    if (calibratedScore !== undefined) {
+      await db
+        .update(schema.tryoutSectionSessions)
+        .set({
+          score: calibratedScore.toFixed(2),
+          lastSavedAt: now,
+          updatedAt: now,
+        })
+        .where(eq(schema.tryoutSectionSessions.id, section.id))
+    }
+  }
 
   await recomputeTryoutSessionAggregate(input.sessionId, input.autoSubmitted === true)
 
@@ -930,7 +943,7 @@ async function recomputeTryoutSessionAggregate(sessionId: number, autoSubmitted:
     scoringMethod === "irt_3pl" && sections.length > 0
       ? totalRawScore / sections.length
       : totalRawScore
-  const totalMaxScore = scoringMethod === "irt_3pl" ? IRT_SCORE_MAX : null
+  const totalMaxScore = scoringMethod === "irt_3pl" ? 0 : null
   const totalSectionsStarted = sections.filter((section) => section.startedAt).length
   const durationUsedSeconds = sections.reduce((total, section) => {
     if (!section.startedAt || !section.submittedAt) {

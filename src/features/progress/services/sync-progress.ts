@@ -3,8 +3,6 @@ import "server-only"
 import { and, eq, sql } from "drizzle-orm"
 
 import { db, schema } from "@/db"
-import { getIrtSectionScoreMapForSessions } from "@/features/tryouts/services/irt-score-queries"
-import { IRT_SCORE_MAX } from "@/features/tryouts/utils/irt-scoring"
 
 import type { ProgressTopicSnapshot } from "../types"
 
@@ -51,16 +49,6 @@ export async function syncUserProgressSnapshots(userId: number) {
     })
   }
 
-  const irtSectionScoreMap = await getIrtSectionScoreMapForSessions(
-    Array.from(
-      new Set(
-        tryoutSectionRows
-          .filter((row) => row.scoringMethod === "irt_3pl")
-          .map((row) => row.tryoutSessionId),
-      ),
-    ),
-  )
-
   for (const row of tryoutSectionRows) {
     const isIrtScoring = row.scoringMethod === "irt_3pl"
 
@@ -70,9 +58,9 @@ export async function syncUserProgressSnapshots(userId: number) {
       subjectId: row.subjectId,
       totalCorrect: row.totalCorrect,
       totalWrong: row.totalWrong,
-      totalMaxScoreAggregate: isIrtScoring ? IRT_SCORE_MAX : Number(row.totalMaxScoreAggregate ?? 0),
+      totalMaxScoreAggregate: isIrtScoring ? 0 : Number(row.totalMaxScoreAggregate ?? 0),
       totalScoreAggregate: isIrtScoring
-        ? (irtSectionScoreMap.get(row.sectionSessionId) ?? Number(row.totalScoreAggregate ?? 0))
+        ? 0
         : Number(row.totalScoreAggregate ?? 0),
     })
   }

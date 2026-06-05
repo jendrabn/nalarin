@@ -20,7 +20,6 @@ import type {
   TryoutRankingRow,
   TryoutSectionResult,
 } from "../types"
-import { IRT_SCORE_MAX } from "../utils/irt-scoring"
 import { isFeatureReleased } from "../utils/status"
 
 type ReleaseInput = {
@@ -66,16 +65,17 @@ export async function getTryoutResultData(
       ? await applyIrtSectionScores(sessionId, rawSections)
       : rawSections
   const entitlement = await getActiveExamTypeEntitlement(userId, context.examTypeId)
-  const totalMaxScore =
-    context.scoringMethod === "irt_3pl" ? IRT_SCORE_MAX : context.totalMaxScore
+  const totalMaxScore = context.scoringMethod === "irt_3pl" ? 0 : context.totalMaxScore
   const totalScore =
     context.scoringMethod === "irt_3pl" && sections.length > 0
       ? sections.reduce((total, section) => total + section.score, 0) / sections.length
       : context.totalScore
   const scorePercentage =
-    totalMaxScore > 0
-      ? Math.round((totalScore / totalMaxScore) * 100)
-      : 0
+    context.scoringMethod === "irt_3pl"
+      ? 0
+      : totalMaxScore > 0
+        ? Math.round((totalScore / totalMaxScore) * 100)
+        : 0
 
   return {
     ...context,
@@ -190,7 +190,7 @@ export async function getTryoutRankingData(
     userAvatarUrl: row.userAvatarUrl ?? null,
     totalScore: irtScoreMap.get(row.sessionId) ?? Number(row.totalScore ?? 0),
     totalMaxScore:
-      context.scoringMethod === "irt_3pl" ? IRT_SCORE_MAX : Number(row.totalMaxScore ?? 0),
+      context.scoringMethod === "irt_3pl" ? 0 : Number(row.totalMaxScore ?? 0),
     totalCorrect: row.totalCorrect,
     totalWrong: row.totalWrong,
     totalUnanswered: row.totalUnanswered,
@@ -526,7 +526,7 @@ async function getTryoutSectionResults(
     wrongCount: row.wrongCount,
     unansweredCount: row.unansweredCount,
     score: Number(row.score ?? 0),
-    maxScore: scoringMethod === "irt_3pl" ? IRT_SCORE_MAX : Number(row.maxScore ?? 0),
+    maxScore: scoringMethod === "irt_3pl" ? 0 : Number(row.maxScore ?? 0),
   }))
 }
 
@@ -539,7 +539,7 @@ async function applyIrtSectionScores(
   return sections.map((section) => ({
     ...section,
     score: scoreMap.get(section.id) ?? section.score,
-    maxScore: IRT_SCORE_MAX,
+    maxScore: 0,
   }))
 }
 
@@ -552,7 +552,7 @@ async function applyIrtReviewSectionScores(
   return sections.map((section) => ({
     ...section,
     score: scoreMap.get(section.id) ?? section.score,
-    maxScore: IRT_SCORE_MAX,
+    maxScore: 0,
   }))
 }
 

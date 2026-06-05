@@ -144,13 +144,18 @@ const subtestPerformanceChartConfig = {
     label: "Average percentage",
     color: "var(--chart-1)",
   },
+  averageScore: {
+    label: "Average IRT Score",
+    color: "var(--chart-1)",
+  },
 } as const
 
 export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
   const isIrtScoring = insight.tryout.scoringMethod === "irt_3pl"
   const scoreLabel = isIrtScoring ? "IRT Score" : "Score"
-  const maxScoreLabel = isIrtScoring ? "Scale Max" : "Max"
+  const maxScoreLabel = "Max"
   const scorePhrase = isIrtScoring ? "IRT score" : "score"
+  const subtestChartDataKey = isIrtScoring ? "averageScore" : "averagePercentage"
   const [detailState, setDetailState] = useState<SessionDetailState>({
     open: false,
     row: null,
@@ -279,12 +284,14 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
           value={formatScore(insight.metrics.topScore)}
           description="Largest score recorded in this tryout."
         />
-        <InsightMetricCard
-          icon={TrophyIcon}
-          label={`Avg ${maxScoreLabel.toLowerCase()}`}
-          value={formatScore(insight.metrics.averageMaxScore)}
-          description="Average maximum score available per session."
-        />
+        {!isIrtScoring ? (
+          <InsightMetricCard
+            icon={TrophyIcon}
+            label={`Avg ${maxScoreLabel.toLowerCase()}`}
+            value={formatScore(insight.metrics.averageMaxScore)}
+            description="Average maximum score available per session."
+          />
+        ) : null}
       </div>
 
       <div className="grid items-start gap-4 lg:grid-cols-3">
@@ -440,10 +447,12 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
                   <CartesianGrid horizontal={false} strokeDasharray="3 3" />
                   <XAxis
                     type="number"
-                    domain={[0, 100]}
+                    domain={isIrtScoring ? [0, "dataMax"] : [0, 100]}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) => `${value}%`}
+                    tickFormatter={(value) =>
+                      isIrtScoring ? formatScore(Number(value)) : `${value}%`
+                    }
                   />
                   <YAxis
                     type="category"
@@ -458,8 +467,8 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
                     content={<ChartTooltipContent indicator="line" />}
                   />
                   <Bar
-                    dataKey="averagePercentage"
-                    fill="var(--color-averagePercentage)"
+                    dataKey={subtestChartDataKey}
+                    fill={isIrtScoring ? "var(--color-averageScore)" : "var(--color-averagePercentage)"}
                     radius={[0, 6, 6, 0]}
                     maxBarSize={24}
                   />
@@ -626,9 +635,11 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
                     <TableHead className="w-28 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                       {scoreLabel}
                     </TableHead>
-                    <TableHead className="w-24 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      {maxScoreLabel}
-                    </TableHead>
+                    {!isIrtScoring ? (
+                      <TableHead className="w-24 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        {maxScoreLabel}
+                      </TableHead>
+                    ) : null}
                     <TableHead className="w-20 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                       Correct
                     </TableHead>
@@ -663,9 +674,11 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
                         <TableCell className="text-right font-medium tabular-nums text-foreground">
                           {formatScore(section.score)}
                         </TableCell>
-                        <TableCell className="text-right tabular-nums text-foreground">
-                          {formatScore(section.maxScore)}
-                        </TableCell>
+                        {!isIrtScoring ? (
+                          <TableCell className="text-right tabular-nums text-foreground">
+                            {formatScore(section.maxScore)}
+                          </TableCell>
+                        ) : null}
                         <TableCell className="text-right tabular-nums text-foreground">
                           {formatInteger(section.correctCount)}
                         </TableCell>

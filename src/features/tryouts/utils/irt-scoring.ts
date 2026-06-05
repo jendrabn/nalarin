@@ -3,28 +3,23 @@ import type { PracticeQuestionType } from "@/features/practices/types"
 export const IRT_SCORE_MIN = 200
 export const IRT_SCORE_MEAN = 500
 export const IRT_SCORE_STANDARD_DEVIATION = 100
-export const IRT_SCORE_MAX = 1000
 
-const IRT_THETA_MIN = -3
-const IRT_THETA_MAX = 5
-const IRT_THETA_STEP = 0.05
+const IRT_THETA_MIN = -4
+const IRT_THETA_MAX = 8
+const IRT_THETA_STEP = 0.025
 const IRT_THETA_PRIOR_STANDARD_DEVIATION = 2.5
 
-export type IrtDifficulty = "easy" | "medium" | "hard"
+export type IrtItemParameters = {
+  discrimination: number
+  difficulty: number
+  guessing: number
+}
 
 export type IrtItemResponse = {
   isCorrect: boolean
-  difficulty: IrtDifficulty
   questionType: PracticeQuestionType
   optionCount: number
-}
-
-export function getIrtDifficulty(value: unknown): IrtDifficulty {
-  if (value === "easy" || value === "medium" || value === "hard") {
-    return value
-  }
-
-  return "medium"
+  parameters?: IrtItemParameters
 }
 
 export function getIrtOptionCount(value: unknown) {
@@ -39,7 +34,7 @@ export function calculateIrtScore(items: IrtItemResponse[]) {
   const theta = estimateIrtTheta(items)
   const scaledScore = IRT_SCORE_MEAN + IRT_SCORE_STANDARD_DEVIATION * theta
 
-  return Math.max(IRT_SCORE_MIN, Math.min(IRT_SCORE_MAX, scaledScore))
+  return Math.max(IRT_SCORE_MIN, scaledScore)
 }
 
 function estimateIrtTheta(items: IrtItemResponse[]) {
@@ -64,27 +59,32 @@ function estimateIrtTheta(items: IrtItemResponse[]) {
 }
 
 function getIrtProbability(theta: number, item: IrtItemResponse) {
-  const difficulty = getIrtDifficultyValue(item.difficulty)
-  const discrimination = 1
-  const guessing = getIrtGuessingValue(item)
-  const logistic = 1 / (1 + Math.exp(-discrimination * (theta - difficulty)))
+  const parameters = item.parameters ?? getDefaultIrtItemParameters(item)
+  const logistic =
+    1 /
+    (1 +
+      Math.exp(
+        -parameters.discrimination * (theta - parameters.difficulty),
+      ))
 
-  return guessing + (1 - guessing) * logistic
+  return parameters.guessing + (1 - parameters.guessing) * logistic
 }
 
-function getIrtDifficultyValue(difficulty: IrtDifficulty) {
-  if (difficulty === "easy") {
-    return -1
+export function getDefaultIrtItemParameters(item: {
+  questionType: PracticeQuestionType
+  optionCount: number
+}): IrtItemParameters {
+  return {
+    discrimination: 1,
+    difficulty: 0,
+    guessing: getIrtGuessingValue(item),
   }
-
-  if (difficulty === "hard") {
-    return 1
-  }
-
-  return 0
 }
 
-function getIrtGuessingValue(item: IrtItemResponse) {
+export function getIrtGuessingValue(item: {
+  questionType: PracticeQuestionType
+  optionCount: number
+}) {
   if (item.questionType === "multiple_choice" || item.questionType === "true_false") {
     return item.optionCount > 1 ? 1 / item.optionCount : 0
   }

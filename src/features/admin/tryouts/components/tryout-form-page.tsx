@@ -791,7 +791,7 @@ export function TryoutFormPage({
                           </SelectContent>
                         </Select>
                         <FieldDescription>
-                          IRT uses item difficulty and returns scaled scores.
+                          IRT calibrates item parameters from graded responses and returns scaled scores.
                         </FieldDescription>
                         <FieldError>{form.formState.errors.scoringMethod?.message}</FieldError>
                       </div>

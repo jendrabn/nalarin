@@ -11,7 +11,6 @@ import {
   getIrtSessionScoreMap,
 } from "@/features/tryouts/services/irt-score-queries"
 import type { TryoutSessionStatus } from "@/features/tryouts/types"
-import { IRT_SCORE_MAX } from "@/features/tryouts/utils/irt-scoring"
 
 import { getTryoutById } from "./index"
 
@@ -203,7 +202,7 @@ export async function getAdminTryoutInsightData(
       return {
         ...row,
         totalScore: irtScore,
-        totalMaxScore: IRT_SCORE_MAX,
+        totalMaxScore: 0,
       }
     })
 
@@ -211,7 +210,7 @@ export async function getAdminTryoutInsightData(
       .map((row) => ({
         ...row,
         totalScore: irtScoreMap.get(row.sessionId) ?? row.totalScore,
-        totalMaxScore: IRT_SCORE_MAX,
+        totalMaxScore: 0,
       }))
       .sort(
         (left, right) =>
@@ -322,7 +321,11 @@ export async function getAdminTryoutInsightData(
     }
 
     aggregate.scores.push(section.score)
-    aggregate.percentages.push(getPercentage(section.score, section.maxScore))
+    aggregate.percentages.push(
+      tryout.scoringMethod === "irt_3pl"
+        ? section.score
+        : getPercentage(section.score, section.maxScore),
+    )
     aggregate.correctCounts.push(section.correctCount)
     aggregate.wrongCounts.push(section.wrongCount)
     aggregate.unansweredCounts.push(section.unansweredCount)
@@ -439,7 +442,7 @@ function normalizeLeaderboardSectionRow(
     wrongCount: row.wrongCount,
     unansweredCount: row.unansweredCount,
     score: scoringMethod === "irt_3pl" ? (irtScore ?? Number(row.score ?? 0)) : Number(row.score ?? 0),
-    maxScore: scoringMethod === "irt_3pl" ? IRT_SCORE_MAX : Number(row.maxScore ?? 0),
+    maxScore: scoringMethod === "irt_3pl" ? 0 : Number(row.maxScore ?? 0),
     durationUsedSeconds: getDurationSeconds(row.startedAt, row.submittedAt),
     startedAt: row.startedAt?.toISOString() ?? null,
     submittedAt: row.submittedAt?.toISOString() ?? null,
@@ -496,7 +499,9 @@ function getScoreBuckets(
           { label: "401 - 500", min: 401, max: 500, count: 0 },
           { label: "501 - 600", min: 501, max: 600, count: 0 },
           { label: "601 - 700", min: 601, max: 700, count: 0 },
-          { label: "701 - 1000", min: 701, max: 1000, count: 0 },
+          { label: "701 - 900", min: 701, max: 900, count: 0 },
+          { label: "901 - 1100", min: 901, max: 1100, count: 0 },
+          { label: "1101+", min: 1101, max: Number.MAX_SAFE_INTEGER, count: 0 },
         ] satisfies AdminTryoutScoreBucket[])
       : ([
           { label: "0 - 20", min: 0, max: 20, count: 0 },

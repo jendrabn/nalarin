@@ -4,7 +4,6 @@ import { and, desc, eq, sql } from "drizzle-orm"
 
 import { db, schema } from "@/db"
 import { getIrtSessionScoreMap } from "@/features/tryouts/services/irt-score-queries"
-import { IRT_SCORE_MAX } from "@/features/tryouts/utils/irt-scoring"
 import { isFeatureReleased } from "@/features/tryouts/utils/status"
 
 import type {
@@ -252,7 +251,7 @@ async function getTryoutActivities(input: {
       examTypeName: row.examTypeName,
       completedAt: row.completedAt?.toISOString() ?? null,
       score: isIrtScoring ? (irtScoreMap.get(row.id) ?? Number(row.score ?? 0)) : Number(row.score ?? 0),
-      maxScore: isIrtScoring ? IRT_SCORE_MAX : Number(row.maxScore ?? 0),
+      maxScore: isIrtScoring ? 0 : Number(row.maxScore ?? 0),
       scoreDisplay: isIrtScoring ? "scaled" : "ratio",
       correct: row.correct,
       wrong: row.wrong,
