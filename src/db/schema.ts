@@ -76,6 +76,20 @@ export const transactionSourceValues = [
 ] as const;
 export const subscriptionStatusValues = ['active', 'expired', 'cancelled'] as const;
 export const subscriptionSourceValues = ['midtrans', 'manual', 'admin_grant'] as const;
+export const emailCampaignStatusValues = [
+  'queued',
+  'sending',
+  'completed',
+  'failed',
+  'cancelled',
+] as const;
+export const emailCampaignRecipientStatusValues = [
+  'queued',
+  'sending',
+  'sent',
+  'failed',
+  'cancelled',
+] as const;
 
 export const userRoleEnum = mysqlEnum('role', userRoleValues);
 export const userStatusEnum = mysqlEnum('status', userStatusValues);
@@ -123,6 +137,14 @@ export const subscriptionStatusEnum = mysqlEnum(
 export const subscriptionSourceEnum = mysqlEnum(
   'source',
   subscriptionSourceValues,
+);
+export const emailCampaignStatusEnum = mysqlEnum(
+  'status',
+  emailCampaignStatusValues,
+);
+export const emailCampaignRecipientStatusEnum = mysqlEnum(
+  'status',
+  emailCampaignRecipientStatusValues,
 );
 
 type JsonObject = Record<string, unknown>;
@@ -211,6 +233,68 @@ export const userSessions = mysqlTable(
       table.expiresAt,
     ),
     index('user_sessions_expires_at_idx').on(table.expiresAt),
+  ],
+);
+
+export const emailCampaigns = mysqlTable(
+  'email_campaigns',
+  {
+    id: int('id', { unsigned: true }).autoincrement().primaryKey(),
+    subject: varchar('subject', { length: 255 }).notNull(),
+    contentHtml: longtext('content_html').notNull(),
+    contentText: longtext('content_text').notNull(),
+    status: emailCampaignStatusEnum.default('queued').notNull(),
+    totalRecipients: int('total_recipients', { unsigned: true })
+      .default(0)
+      .notNull(),
+    sentCount: int('sent_count', { unsigned: true }).default(0).notNull(),
+    failedCount: int('failed_count', { unsigned: true }).default(0).notNull(),
+    cancelledCount: int('cancelled_count', { unsigned: true }).default(0).notNull(),
+    createdByAdminId: int('created_by_admin_id', { unsigned: true }).references(
+      () => users.id,
+    ),
+    startedAt: timestamp('started_at', { mode: 'date' }),
+    completedAt: timestamp('completed_at', { mode: 'date' }),
+    cancelledAt: timestamp('cancelled_at', { mode: 'date' }),
+    ...auditColumns(),
+  },
+  (table) => [
+    index('email_campaigns_status_created_at_idx').on(
+      table.status,
+      table.createdAt,
+    ),
+    index('email_campaigns_created_by_idx').on(table.createdByAdminId),
+  ],
+);
+
+export const emailCampaignRecipients = mysqlTable(
+  'email_campaign_recipients',
+  {
+    id: int('id', { unsigned: true }).autoincrement().primaryKey(),
+    campaignId: int('campaign_id', { unsigned: true })
+      .notNull()
+      .references(() => emailCampaigns.id),
+    userId: int('user_id', { unsigned: true }).references(() => users.id),
+    email: varchar('email', { length: 191 }).notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
+    status: emailCampaignRecipientStatusEnum.default('queued').notNull(),
+    bullJobId: varchar('bull_job_id', { length: 191 }),
+    attempts: int('attempts', { unsigned: true }).default(0).notNull(),
+    lastError: text('last_error'),
+    sentAt: timestamp('sent_at', { mode: 'date' }),
+    ...auditColumns(),
+  },
+  (table) => [
+    uniqueIndex('email_campaign_recipients_campaign_user_uq').on(
+      table.campaignId,
+      table.userId,
+    ),
+    index('email_campaign_recipients_campaign_status_idx').on(
+      table.campaignId,
+      table.status,
+    ),
+    index('email_campaign_recipients_user_idx').on(table.userId),
+    index('email_campaign_recipients_bull_job_idx').on(table.bullJobId),
   ],
 );
 

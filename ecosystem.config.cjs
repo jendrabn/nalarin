@@ -18,5 +18,15 @@ module.exports = {
         PATH: processPath,
       },
     },
+    {
+      name: "nalarin-email-worker",
+      script: "bun",
+      args: "run email:worker",
+      cwd: __dirname,
+      env: {
+        NODE_ENV: "production",
+        PATH: processPath,
+      },
+    },
   ],
 };

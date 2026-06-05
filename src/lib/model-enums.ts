@@ -19,6 +19,8 @@ import {
   transactionSourceValues,
   userRoleValues,
   userStatusValues,
+  emailCampaignRecipientStatusValues,
+  emailCampaignStatusValues,
 } from "@/db/schema"
 
 export type EnumBadgeTone =
@@ -335,6 +337,40 @@ export const modelEnums = {
       midtrans: "chart1",
       manual: "secondary",
       admin_grant: "chart4",
+    },
+  ),
+  emailCampaignStatus: createEnumDefinition(
+    emailCampaignStatusValues,
+    {
+      queued: "Queued",
+      sending: "Sending",
+      completed: "Completed",
+      failed: "Failed",
+      cancelled: "Cancelled",
+    },
+    {
+      queued: "chart3",
+      sending: "chart1",
+      completed: "chart2",
+      failed: "destructive",
+      cancelled: "muted",
+    },
+  ),
+  emailCampaignRecipientStatus: createEnumDefinition(
+    emailCampaignRecipientStatusValues,
+    {
+      queued: "Queued",
+      sending: "Sending",
+      sent: "Sent",
+      failed: "Failed",
+      cancelled: "Cancelled",
+    },
+    {
+      queued: "chart3",
+      sending: "chart1",
+      sent: "chart2",
+      failed: "destructive",
+      cancelled: "muted",
     },
   ),
 } as const

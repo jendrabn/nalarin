@@ -8,6 +8,13 @@
       "when": 1780288512962,
       "tag": "0000_initial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1780650000000,
+      "tag": "0002_email_campaigns",
+      "breakpoints": true
     }
   ]
 }

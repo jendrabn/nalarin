@@ -68,6 +68,16 @@ const envSchema = z
     SMTP_PASSWORD: optionalString,
     SMTP_FROM: optionalString,
 
+    REDIS_URL: optionalString,
+    EMAIL_QUEUE_CONCURRENCY: z.coerce.number().int().min(1).max(50).default(3),
+    EMAIL_QUEUE_RATE_LIMIT_PER_MINUTE: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(1000)
+      .default(60),
+    EMAIL_QUEUE_ATTEMPTS: z.coerce.number().int().min(1).max(10).default(3),
+
     PAYMENT_GATEWAY_ENABLED: booleanFromString,
     MIDTRANS_IS_PRODUCTION: booleanFromString,
     MIDTRANS_SERVER_KEY: optionalString,

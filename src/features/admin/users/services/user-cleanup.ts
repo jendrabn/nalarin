@@ -46,6 +46,14 @@ export async function detachUserReferences(tx: CleanupTx, userId: number) {
       .set({ authorId: null })
       .where(eq(schema.blogPosts.authorId, userId)),
     tx
+      .update(schema.emailCampaigns)
+      .set({ createdByAdminId: null })
+      .where(eq(schema.emailCampaigns.createdByAdminId, userId)),
+    tx
+      .update(schema.emailCampaignRecipients)
+      .set({ userId: null })
+      .where(eq(schema.emailCampaignRecipients.userId, userId)),
+    tx
       .update(schema.subscriptions)
       .set({
         activatedByAdminId: null,
