@@ -14,6 +14,7 @@ export type TryoutSessionStatus =
   | "cancelled"
 
 export type TryoutNavigationMode = "free" | "sequential"
+export type TryoutScoringMethod = "raw_score" | "irt_3pl"
 
 export type TryoutQuestionType = PracticeQuestionType
 export type TryoutQuestionSnapshot = PracticeQuestionSnapshot
@@ -141,6 +142,7 @@ export type TryoutResultSession = {
   durationUsedSeconds: number
   autoSubmitted: boolean
   wrongAnswerPenalty: number
+  scoringMethod: TryoutScoringMethod
   showResultAfterSubmit: boolean
   resultReleaseAt: Date | null
   showRankingAfterSubmit: boolean

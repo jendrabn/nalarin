@@ -64,6 +64,11 @@ export function ActivityCard({ activities }: { activities: ProgressActivityItem[
 
 function ActivityRow({ activity }: { activity: ProgressActivityItem }) {
   const activityLabel = getActivityTypeLabel(activity)
+  const scoreValue =
+    activity.scoreDisplay === "scaled"
+      ? formatNumber(activity.score)
+      : `${formatNumber(activity.score)} / ${formatNumber(activity.maxScore)}`
+  const scoreLabel = activity.scoreDisplay === "scaled" ? "IRT Score" : "Skor"
 
   return (
     <article className="rounded-lg border bg-background/80 p-3 shadow-[0_1px_0_rgba(0,0,0,0.02)]">
@@ -97,8 +102,8 @@ function ActivityRow({ activity }: { activity: ProgressActivityItem }) {
             />
             <ActivityMetric
               icon={<TargetIcon />}
-              label="Skor"
-              value={`${formatNumber(activity.score)} / ${formatNumber(activity.maxScore)}`}
+              label={scoreLabel}
+              value={scoreValue}
               className="text-primary"
             />
           </div>
@@ -152,7 +157,7 @@ function getActivityTypeLabel(activity: ProgressActivityItem) {
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat("id-ID", {
-    maximumFractionDigits: 1,
+    maximumFractionDigits: 2,
   }).format(value)
 }
 

@@ -32,6 +32,7 @@ export type ProgressActivityItem = {
   completedAt: string | null
   score: number
   maxScore: number
+  scoreDisplay: "ratio" | "scaled"
   correct: number
   wrong: number
   unanswered: number

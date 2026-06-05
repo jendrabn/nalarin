@@ -71,7 +71,10 @@ import { createTryoutAction, publishTryoutAction, updateTryoutAction } from "../
 import {
   tryoutNavigationModeLabels,
   tryoutNavigationModeValues,
+  tryoutScoringMethodLabels,
+  tryoutScoringMethodValues,
   type TryoutNavigationMode,
+  type TryoutScoringMethod,
 } from "../constants"
 import { TryoutQuestionPickerDialog } from "./tryout-question-picker-dialog"
 import type {
@@ -123,6 +126,7 @@ function getDefaultValues(initialValues?: TryoutDetails | null): TryoutFormValue
     showExplanationAfterSubmit: initialValues?.showExplanationAfterSubmit ?? true,
     explanationReleaseAt: toDateTimeLocalValue(initialValues?.explanationReleaseAt),
     navigationMode: initialValues?.navigationMode ?? "free",
+    scoringMethod: initialValues?.scoringMethod ?? "raw_score",
     enforceEndTime: initialValues?.enforceEndTime ?? false,
     wrongAnswerPenalty: String(initialValues?.wrongAnswerPenalty ?? 0),
     sections:
@@ -219,6 +223,7 @@ function getStepForErrors(errors: FieldErrors<TryoutFormValues>): WizardStep {
     errors.title ||
     errors.description ||
     errors.isFree ||
+    errors.scoringMethod ||
     errors.wrongAnswerPenalty
   ) {
     return "details"
@@ -716,7 +721,7 @@ export function TryoutFormPage({
                     </p>
                   ) : null}
 
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-4 md:grid-cols-3">
                     <Field data-invalid={Boolean(form.formState.errors.examTypeId)}>
                       <FieldContent>
                         <FieldLabel htmlFor={`${formId}-exam-type`} className="required">
@@ -757,6 +762,41 @@ export function TryoutFormPage({
                       </div>
                     </Field>
 
+                    <Field data-invalid={Boolean(form.formState.errors.scoringMethod)}>
+                      <FieldContent>
+                        <FieldLabel htmlFor={`${formId}-scoring-method`} className="required">
+                          Scoring Method
+                        </FieldLabel>
+                      </FieldContent>
+                      <div className="flex flex-col gap-1.5">
+                        <Select
+                          value={(watchedValues.scoringMethod ?? "raw_score") as TryoutScoringMethod}
+                          disabled={isLocked}
+                          onValueChange={(value) =>
+                            form.setValue("scoringMethod", value as TryoutScoringMethod, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            })
+                          }
+                        >
+                          <SelectTrigger id={`${formId}-scoring-method`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tryoutScoringMethodValues.map((value) => (
+                              <SelectItem key={value} value={value}>
+                                {tryoutScoringMethodLabels[value]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FieldDescription>
+                          IRT uses item difficulty and returns scaled scores.
+                        </FieldDescription>
+                        <FieldError>{form.formState.errors.scoringMethod?.message}</FieldError>
+                      </div>
+                    </Field>
+
                     <Field data-invalid={Boolean(form.formState.errors.wrongAnswerPenalty)}>
                       <FieldContent>
                         <FieldLabel htmlFor={`${formId}-penalty`} className="required">
@@ -772,7 +812,9 @@ export function TryoutFormPage({
                           {...form.register("wrongAnswerPenalty")}
                         />
                         <FieldDescription>
-                          Use 0 for no penalty or a negative value such as -0.25.
+                          {watchedValues.scoringMethod === "irt_3pl"
+                            ? "Ignored when Scoring Method is IRT."
+                            : "Use 0 for no penalty or a negative value such as -0.25."}
                         </FieldDescription>
                         <FieldError>{form.formState.errors.wrongAnswerPenalty?.message}</FieldError>
                       </div>
@@ -1534,6 +1576,13 @@ export function TryoutFormPage({
                       <span className="tabular-nums">
                         {formatReviewText(watchedValues.wrongAnswerPenalty)}
                       </span>
+                    </ReviewField>
+                    <ReviewField label="Scoring Method">
+                      {
+                        tryoutScoringMethodLabels[
+                          (watchedValues.scoringMethod ?? "raw_score") as TryoutScoringMethod
+                        ]
+                      }
                     </ReviewField>
                     <div className="md:col-span-2">
                       <ReviewField label="Description">

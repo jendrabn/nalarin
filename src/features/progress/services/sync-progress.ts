@@ -3,6 +3,8 @@ import "server-only"
 import { and, eq, sql } from "drizzle-orm"
 
 import { db, schema } from "@/db"
+import { getIrtSectionScoreMapForSessions } from "@/features/tryouts/services/irt-score-queries"
+import { IRT_SCORE_MAX } from "@/features/tryouts/utils/irt-scoring"
 
 import type { ProgressTopicSnapshot } from "../types"
 
@@ -49,15 +51,29 @@ export async function syncUserProgressSnapshots(userId: number) {
     })
   }
 
+  const irtSectionScoreMap = await getIrtSectionScoreMapForSessions(
+    Array.from(
+      new Set(
+        tryoutSectionRows
+          .filter((row) => row.scoringMethod === "irt_3pl")
+          .map((row) => row.tryoutSessionId),
+      ),
+    ),
+  )
+
   for (const row of tryoutSectionRows) {
+    const isIrtScoring = row.scoringMethod === "irt_3pl"
+
     addAggregate(aggregateMap, {
       userId,
       examTypeId: row.examTypeId,
       subjectId: row.subjectId,
       totalCorrect: row.totalCorrect,
       totalWrong: row.totalWrong,
-      totalMaxScoreAggregate: Number(row.totalMaxScoreAggregate ?? 0),
-      totalScoreAggregate: Number(row.totalScoreAggregate ?? 0),
+      totalMaxScoreAggregate: isIrtScoring ? IRT_SCORE_MAX : Number(row.totalMaxScoreAggregate ?? 0),
+      totalScoreAggregate: isIrtScoring
+        ? (irtSectionScoreMap.get(row.sectionSessionId) ?? Number(row.totalScoreAggregate ?? 0))
+        : Number(row.totalScoreAggregate ?? 0),
     })
   }
 
@@ -138,7 +154,10 @@ async function getTryoutSectionAggregateRows(userId: number) {
   return db
     .select({
       examTypeId: schema.tryouts.examTypeId,
+      tryoutSessionId: schema.tryoutSectionSessions.tryoutSessionId,
+      sectionSessionId: schema.tryoutSectionSessions.id,
       subjectId: schema.tryoutSections.subjectId,
+      scoringMethod: schema.tryouts.scoringMethod,
       totalCorrect: schema.tryoutSectionSessions.correctCount,
       totalWrong: schema.tryoutSectionSessions.wrongCount,
       totalScoreAggregate: schema.tryoutSectionSessions.score,
@@ -167,8 +186,10 @@ async function getTryoutSectionAggregateRows(userId: number) {
     )
     .groupBy(
       schema.tryouts.examTypeId,
+      schema.tryoutSectionSessions.tryoutSessionId,
       schema.tryoutSections.subjectId,
       schema.tryoutSectionSessions.id,
+      schema.tryouts.scoringMethod,
       schema.tryoutSectionSessions.correctCount,
       schema.tryoutSectionSessions.wrongCount,
       schema.tryoutSectionSessions.score,

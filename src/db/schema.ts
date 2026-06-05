@@ -26,6 +26,7 @@ export const questionTypeValues = [
 ] as const;
 export const questionDifficultyValues = ['easy', 'medium', 'hard'] as const;
 export const scoringRuleValues = ['all_or_nothing', 'partial'] as const;
+export const tryoutScoringMethodValues = ['raw_score', 'irt_3pl'] as const;
 export const contentStatusValues = ['draft', 'published', 'archived'] as const;
 export const vocabularyLanguageValues = ['id', 'en'] as const;
 export const vocabularyTypeValues = [
@@ -100,6 +101,10 @@ export const questionDifficultyEnum = mysqlEnum(
   questionDifficultyValues,
 );
 export const scoringRuleEnum = mysqlEnum('scoring_rule', scoringRuleValues);
+export const tryoutScoringMethodEnum = mysqlEnum(
+  'scoring_method',
+  tryoutScoringMethodValues,
+);
 export const contentStatusEnum = mysqlEnum('status', contentStatusValues);
 export const vocabularyLanguageEnum = mysqlEnum(
   'language',
@@ -703,6 +708,9 @@ export const tryouts = mysqlTable(
     enforceEndTime: boolean('enforce_end_time').notNull(),
     wrongAnswerPenalty: penaltyColumn('wrong_answer_penalty')
       .default('0.00')
+      .notNull(),
+    scoringMethod: tryoutScoringMethodEnum
+      .default('raw_score')
       .notNull(),
     status: contentStatusEnum.notNull(),
     publishedAt: timestamp('published_at', { mode: 'date' }),

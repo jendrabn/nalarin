@@ -6,6 +6,7 @@ import { db, schema } from "@/db"
 import { canAccessAiExplanationForExamType } from "@/features/ai-explanations/services"
 import { getActiveExamTypeEntitlement } from "@/features/premium/access"
 
+import { getIrtSectionScoreMap, getIrtSessionScoreMap } from "../services/irt-score-queries"
 import type {
   TryoutCorrectAnswerSnapshot,
   TryoutOptionSnapshot,
@@ -19,6 +20,7 @@ import type {
   TryoutRankingRow,
   TryoutSectionResult,
 } from "../types"
+import { IRT_SCORE_MAX } from "../utils/irt-scoring"
 import { isFeatureReleased } from "../utils/status"
 
 type ReleaseInput = {
@@ -58,15 +60,27 @@ export async function getTryoutResultData(
     },
     now,
   )
-  const sections = await getTryoutSectionResults(sessionId)
+  const rawSections = await getTryoutSectionResults(sessionId, context.scoringMethod)
+  const sections =
+    context.scoringMethod === "irt_3pl"
+      ? await applyIrtSectionScores(sessionId, rawSections)
+      : rawSections
   const entitlement = await getActiveExamTypeEntitlement(userId, context.examTypeId)
+  const totalMaxScore =
+    context.scoringMethod === "irt_3pl" ? IRT_SCORE_MAX : context.totalMaxScore
+  const totalScore =
+    context.scoringMethod === "irt_3pl" && sections.length > 0
+      ? sections.reduce((total, section) => total + section.score, 0) / sections.length
+      : context.totalScore
   const scorePercentage =
-    context.totalMaxScore > 0
-      ? Math.round((context.totalScore / context.totalMaxScore) * 100)
+    totalMaxScore > 0
+      ? Math.round((totalScore / totalMaxScore) * 100)
       : 0
 
   return {
     ...context,
+    totalScore,
+    totalMaxScore,
     scorePercentage,
     isFinal: context.status === "graded",
     resultRelease,
@@ -148,14 +162,35 @@ export async function getTryoutRankingData(
       asc(schema.tryoutSessions.submittedAt),
     )
 
-  const rankedRows = rows.map<TryoutRankingRow>((row, index) => ({
+  const irtScoreMap =
+    context.scoringMethod === "irt_3pl"
+      ? await getIrtSessionScoreMap(rows.map((row) => row.sessionId))
+      : new Map<number, number>()
+  const sortedRows =
+    context.scoringMethod === "irt_3pl"
+      ? [...rows].sort((a, b) => {
+          const scoreA = irtScoreMap.get(a.sessionId) ?? Number(a.totalScore ?? 0)
+          const scoreB = irtScoreMap.get(b.sessionId) ?? Number(b.totalScore ?? 0)
+
+          return (
+            scoreB - scoreA ||
+            b.totalSectionsStarted - a.totalSectionsStarted ||
+            b.totalCorrect - a.totalCorrect ||
+            a.durationUsedSeconds - b.durationUsedSeconds ||
+            (a.submittedAt?.getTime() ?? 0) - (b.submittedAt?.getTime() ?? 0)
+          )
+        })
+      : rows
+
+  const rankedRows = sortedRows.map<TryoutRankingRow>((row, index) => ({
     rank: index + 1,
     sessionId: row.sessionId,
     userId: row.userId,
     userName: row.userName,
     userAvatarUrl: row.userAvatarUrl ?? null,
-    totalScore: Number(row.totalScore ?? 0),
-    totalMaxScore: Number(row.totalMaxScore ?? 0),
+    totalScore: irtScoreMap.get(row.sessionId) ?? Number(row.totalScore ?? 0),
+    totalMaxScore:
+      context.scoringMethod === "irt_3pl" ? IRT_SCORE_MAX : Number(row.totalMaxScore ?? 0),
     totalCorrect: row.totalCorrect,
     totalWrong: row.totalWrong,
     totalUnanswered: row.totalUnanswered,
@@ -332,6 +367,12 @@ export async function getTryoutReviewData(
     sectionMap.set(row.sectionSessionId, section)
   }
 
+  const sections = Array.from(sectionMap.values())
+  const normalizedSections =
+    context.scoringMethod === "irt_3pl"
+      ? await applyIrtReviewSectionScores(sessionId, sections)
+      : sections
+
   return {
     session: context,
     resultRelease,
@@ -340,7 +381,7 @@ export async function getTryoutReviewData(
       allowedByPlan: explanationsAllowedByPlan,
       aiAllowedByPlan: aiExplanationsAllowedByPlan,
     },
-    sections: Array.from(sectionMap.values()),
+    sections: normalizedSections,
   }
 }
 
@@ -369,6 +410,7 @@ async function getTryoutSessionResultContext(sessionId: number, userId: number) 
       tryoutDescription: schema.tryouts.description,
       examTypeName: schema.examTypes.name,
       wrongAnswerPenalty: schema.tryouts.wrongAnswerPenalty,
+      scoringMethod: schema.tryouts.scoringMethod,
       showResultAfterSubmit: schema.tryouts.showResultAfterSubmit,
       resultReleaseAt: schema.tryouts.resultReleaseAt,
       showRankingAfterSubmit: schema.tryouts.showRankingAfterSubmit,
@@ -409,6 +451,7 @@ async function getTryoutSessionResultContext(sessionId: number, userId: number) 
     durationUsedSeconds: session.durationUsedSeconds,
     autoSubmitted: session.autoSubmitted,
     wrongAnswerPenalty: Number(session.wrongAnswerPenalty ?? 0),
+    scoringMethod: session.scoringMethod,
     showResultAfterSubmit: session.showResultAfterSubmit,
     resultReleaseAt: session.resultReleaseAt,
     showRankingAfterSubmit: session.showRankingAfterSubmit,
@@ -418,7 +461,10 @@ async function getTryoutSessionResultContext(sessionId: number, userId: number) 
   }
 }
 
-async function getTryoutSectionResults(sessionId: number): Promise<TryoutSectionResult[]> {
+async function getTryoutSectionResults(
+  sessionId: number,
+  scoringMethod: TryoutResultData["scoringMethod"],
+): Promise<TryoutSectionResult[]> {
   const rows = await db
     .select({
       id: schema.tryoutSectionSessions.id,
@@ -480,7 +526,33 @@ async function getTryoutSectionResults(sessionId: number): Promise<TryoutSection
     wrongCount: row.wrongCount,
     unansweredCount: row.unansweredCount,
     score: Number(row.score ?? 0),
-    maxScore: Number(row.maxScore ?? 0),
+    maxScore: scoringMethod === "irt_3pl" ? IRT_SCORE_MAX : Number(row.maxScore ?? 0),
+  }))
+}
+
+async function applyIrtSectionScores(
+  sessionId: number,
+  sections: TryoutSectionResult[],
+): Promise<TryoutSectionResult[]> {
+  const scoreMap = await getIrtSectionScoreMap(sessionId)
+
+  return sections.map((section) => ({
+    ...section,
+    score: scoreMap.get(section.id) ?? section.score,
+    maxScore: IRT_SCORE_MAX,
+  }))
+}
+
+async function applyIrtReviewSectionScores(
+  sessionId: number,
+  sections: TryoutReviewSection[],
+): Promise<TryoutReviewSection[]> {
+  const scoreMap = await getIrtSectionScoreMap(sessionId)
+
+  return sections.map((section) => ({
+    ...section,
+    score: scoreMap.get(section.id) ?? section.score,
+    maxScore: IRT_SCORE_MAX,
   }))
 }
 

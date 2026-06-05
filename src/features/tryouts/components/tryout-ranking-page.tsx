@@ -3,7 +3,6 @@ import { ArrowLeftIcon } from "lucide-react"
 import type { ReactNode } from "react"
 
 import { EmptyState } from "@/components/empty-state"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,6 +15,7 @@ import type { TryoutRankingData, TryoutRankingRow } from "../types"
 export function TryoutRankingPage({ data }: { data: TryoutRankingData }) {
   const lockedByPlan = data.release.available && !data.release.allowedByPlan
   const unavailable = !data.release.available
+  const scoreLabel = data.session.scoringMethod === "irt_3pl" ? "IRT Score" : "Skor"
 
   return (
     <main className="relative min-h-svh overflow-hidden bg-background px-4 py-6 sm:px-6 lg:px-8">
@@ -42,7 +42,7 @@ export function TryoutRankingPage({ data }: { data: TryoutRankingData }) {
           <RankingUnavailable data={data} />
         ) : (
           <>
-            {data.ownRank ? <OwnRankCard row={data.ownRank} /> : null}
+            {data.ownRank ? <OwnRankCard row={data.ownRank} scoreLabel={scoreLabel} /> : null}
 
             {lockedByPlan ? (
               <RankingLockedNotice participantCount={data.participantCount} data={data} />
@@ -68,7 +68,7 @@ export function TryoutRankingPage({ data }: { data: TryoutRankingData }) {
                             Peserta
                           </TableHead>
                           <TableHead className="text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                            Skor
+                            {scoreLabel}
                           </TableHead>
                           <TableHead className="text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                             Benar
@@ -155,7 +155,7 @@ function RankingLockedNotice({
   )
 }
 
-function OwnRankCard({ row }: { row: TryoutRankingRow }) {
+function OwnRankCard({ row, scoreLabel }: { row: TryoutRankingRow; scoreLabel: string }) {
   return (
     <Card className="border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background shadow-sm">
       <CardContent className="py-6">
@@ -172,7 +172,7 @@ function OwnRankCard({ row }: { row: TryoutRankingRow }) {
 
           <div className="overflow-hidden rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm">
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
-              <RankMiniMetric label="Skor" value={formatNumber(row.totalScore)} />
+              <RankMiniMetric label={scoreLabel} value={formatNumber(row.totalScore)} />
               <RankMiniMetric label="Benar" value={row.totalCorrect} />
               <RankMiniMetric label="Salah" value={row.totalWrong} />
               <RankMiniMetric label="Kosong" value={row.totalUnanswered} />
@@ -186,6 +186,8 @@ function OwnRankCard({ row }: { row: TryoutRankingRow }) {
 }
 
 function RankingTableRow({ row }: { row: TryoutRankingRow }) {
+  const participantName = getLeaderboardParticipantName(row)
+
   return (
     <TableRow
       className={cn(
@@ -197,15 +199,7 @@ function RankingTableRow({ row }: { row: TryoutRankingRow }) {
         #{row.rank}
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-3">
-          <Avatar className="size-10 shrink-0 ring-1 ring-border/60">
-            <AvatarImage src={row.userAvatarUrl ?? undefined} alt={row.userName} />
-            <AvatarFallback>{getInitials(row.userName)}</AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <p className="truncate font-medium text-foreground">{row.userName}</p>
-          </div>
-        </div>
+        <p className="truncate font-medium text-foreground">{participantName}</p>
       </TableCell>
       <TableCell className="text-right font-semibold tabular-nums text-foreground">
         {formatNumber(row.totalScore)}
@@ -231,13 +225,21 @@ function RankMiniMetric({ label, value }: { label: string; value: ReactNode }) {
   )
 }
 
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase()
+function getLeaderboardParticipantName(row: TryoutRankingRow) {
+  if (row.isCurrentUser) {
+    return row.userName
+  }
+
+  const nameParts = row.userName.trim().split(/\s+/).filter(Boolean)
+
+  if (nameParts.length <= 1) {
+    return nameParts[0] ?? row.userName
+  }
+
+  return [
+    nameParts[0],
+    ...nameParts.slice(1).map((part) => "*".repeat(Math.max(part.length, 3))),
+  ].join(" ")
 }
 
 function formatNumber(value: number) {

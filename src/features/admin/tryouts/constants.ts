@@ -9,6 +9,10 @@ export const tryoutNavigationModeValues = modelEnums.navigationMode.values
 export type TryoutNavigationMode = ModelEnumValue<"navigationMode">
 export const tryoutNavigationModeLabels = modelEnums.navigationMode.labels
 
+export const tryoutScoringMethodValues = modelEnums.tryoutScoringMethod.values
+export type TryoutScoringMethod = ModelEnumValue<"tryoutScoringMethod">
+export const tryoutScoringMethodLabels = modelEnums.tryoutScoringMethod.labels
+
 export const tryoutQuestionTypeLabels = modelEnums.questionType.labels
 export type TryoutQuestionType = ModelEnumValue<"questionType">
 

@@ -148,6 +148,10 @@ export function TryoutDetailPage({
                   value: tryout.wrongAnswerPenalty < 0 ? String(tryout.wrongAnswerPenalty) : "Tidak Ada",
                 },
                 {
+                  label: "Scoring",
+                  value: tryout.scoringMethod === "irt_3pl" ? "IRT" : "Raw Score",
+                },
+                {
                   label: "Navigasi",
                   value: tryout.navigationMode === "free" ? "Bebas" : "Berurutan",
                 },

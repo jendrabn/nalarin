@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import {
+  tryoutScoringMethodValues,
   tryoutNavigationModeValues,
 } from "../constants"
 
@@ -42,6 +43,7 @@ export const tryoutFormSchema = z
     showExplanationAfterSubmit: z.boolean().default(true),
     explanationReleaseAt: optionalDateTimeSchema,
     navigationMode: z.enum(tryoutNavigationModeValues),
+    scoringMethod: z.enum(tryoutScoringMethodValues).default("raw_score"),
     enforceEndTime: z.boolean().default(false),
     wrongAnswerPenalty: z.string().trim().min(1, "Penalty is required."),
     sections: z.array(tryoutSectionFormSchema).default([]),

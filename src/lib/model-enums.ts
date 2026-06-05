@@ -11,6 +11,7 @@ import {
   questionDifficultyValues,
   questionTypeValues,
   scoringRuleValues,
+  tryoutScoringMethodValues,
   sessionStatusValues,
   subscriptionSourceValues,
   subscriptionStatusValues,
@@ -139,6 +140,17 @@ export const modelEnums = {
     {
       all_or_nothing: "chart4",
       partial: "chart2",
+    },
+  ),
+  tryoutScoringMethod: createEnumDefinition(
+    tryoutScoringMethodValues,
+    {
+      raw_score: "Raw Score",
+      irt_3pl: "IRT",
+    },
+    {
+      raw_score: "secondary",
+      irt_3pl: "chart5",
     },
   ),
   contentStatus: createEnumDefinition(

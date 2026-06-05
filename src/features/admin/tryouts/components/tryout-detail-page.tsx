@@ -56,6 +56,7 @@ export function TryoutDetailPage({ tryout }: TryoutDetailPageProps) {
   const [dialogType, setDialogType] = useState<DialogType>(null)
   const statusBadge = getModelEnumBadgeMeta("contentStatus", tryout.status)
   const navigationBadge = getModelEnumBadgeMeta("navigationMode", tryout.navigationMode)
+  const scoringBadge = getModelEnumBadgeMeta("tryoutScoringMethod", tryout.scoringMethod)
 
   async function handleConfirm() {
     if (!dialogType) {
@@ -206,6 +207,14 @@ export function TryoutDetailPage({ tryout }: TryoutDetailPageProps) {
                 value={tryout.enforceEndTime ? "Enabled" : "Disabled"}
               />
               <DetailItem label="Penalty" value={tryout.wrongAnswerPenalty} />
+              <DetailItem
+                label="Scoring"
+                value={
+                  <Badge variant="soft" className={scoringBadge.className}>
+                    {scoringBadge.label}
+                  </Badge>
+                }
+              />
               <DetailItem
                 label="Navigation"
                 value={

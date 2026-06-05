@@ -15,6 +15,13 @@ import type {
 } from "@/features/practices/types"
 
 import { canAccessTryout } from "../utils/access"
+import {
+  IRT_SCORE_MAX,
+  calculateIrtScore,
+  getIrtDifficulty,
+  getIrtOptionCount,
+  type IrtItemResponse,
+} from "../utils/irt-scoring"
 import { isResultReleased, resolveTryoutAvailabilityStatus } from "../utils/status"
 
 type TryoutActionResult<T = undefined> =
@@ -56,6 +63,8 @@ type SubmitTryoutSectionInput = {
   sectionSessionId: number
   autoSubmitted?: boolean
 }
+
+type TryoutScoringMethod = "raw_score" | "irt_3pl"
 
 export async function startTryoutSessionAction(
   input: StartTryoutInput,
@@ -584,12 +593,14 @@ export async function submitTryoutSectionAction(
       wrongAnswerPenalty: schema.tryoutSectionSessions.wrongAnswerPenalty,
       tryoutSessionId: schema.tryoutSectionSessions.tryoutSessionId,
       sessionStatus: schema.tryoutSessions.status,
+      scoringMethod: schema.tryouts.scoringMethod,
     })
     .from(schema.tryoutSectionSessions)
     .innerJoin(
       schema.tryoutSessions,
       eq(schema.tryoutSectionSessions.tryoutSessionId, schema.tryoutSessions.id),
     )
+    .innerJoin(schema.tryouts, eq(schema.tryoutSessions.tryoutId, schema.tryouts.id))
     .where(
       and(
         eq(schema.tryoutSessions.id, input.sessionId),
@@ -619,10 +630,14 @@ export async function submitTryoutSectionAction(
 
   const now = new Date()
   const penalty = Number(section.wrongAnswerPenalty ?? 0)
+  const scoringMethod = isTryoutScoringMethod(section.scoringMethod)
+    ? section.scoringMethod
+    : "raw_score"
   let correctCount = 0
   let wrongCount = 0
   let unansweredCount = 0
   let score = 0
+  const irtResponses: IrtItemResponse[] = []
 
   await db.transaction(async (tx) => {
     for (const row of rows) {
@@ -648,6 +663,12 @@ export async function submitTryoutSectionAction(
 
       if (!answered) {
         unansweredCount += 1
+        irtResponses.push({
+          isCorrect: false,
+          difficulty: getIrtDifficulty(questionSnapshot.difficulty),
+          questionType,
+          optionCount: getIrtOptionCount(row.optionSnapshot),
+        })
         continue
       }
 
@@ -659,7 +680,7 @@ export async function submitTryoutSectionAction(
         correctOptionKeys,
         correctAnswerText,
         points,
-        penalty,
+        penalty: scoringMethod === "irt_3pl" ? 0 : penalty,
       })
 
       if (grade.isCorrect) {
@@ -668,7 +689,16 @@ export async function submitTryoutSectionAction(
         wrongCount += 1
       }
 
-      score += grade.score
+      if (scoringMethod === "raw_score") {
+        score += grade.score
+      }
+
+      irtResponses.push({
+        isCorrect: grade.isCorrect,
+        difficulty: getIrtDifficulty(questionSnapshot.difficulty),
+        questionType,
+        optionCount: getIrtOptionCount(row.optionSnapshot),
+      })
 
       await tx
         .insert(schema.tryoutAnswers)
@@ -701,6 +731,10 @@ export async function submitTryoutSectionAction(
             updatedAt: now,
           },
         })
+    }
+
+    if (scoringMethod === "irt_3pl") {
+      score = calculateIrtScore(irtResponses)
     }
 
     await tx
@@ -838,6 +872,7 @@ async function getTryoutSectionScoringRows(sectionSessionId: number) {
       sessionQuestionId: schema.tryoutSessionQuestions.id,
       questionSnapshot: schema.tryoutSessionQuestions.questionSnapshot,
       correctAnswerSnapshot: schema.tryoutSessionQuestions.correctAnswerSnapshot,
+      optionSnapshot: schema.tryoutSessionQuestions.optionSnapshot,
       points: schema.tryoutSessionQuestions.points,
       selectedOptionKeys: schema.tryoutAnswers.selectedOptionKeys,
       answerText: schema.tryoutAnswers.answerText,
@@ -864,8 +899,14 @@ async function recomputeTryoutSessionAggregate(sessionId: number, autoSubmitted:
       score: schema.tryoutSectionSessions.score,
       startedAt: schema.tryoutSectionSessions.startedAt,
       submittedAt: schema.tryoutSectionSessions.submittedAt,
+      scoringMethod: schema.tryouts.scoringMethod,
     })
     .from(schema.tryoutSectionSessions)
+    .innerJoin(
+      schema.tryoutSessions,
+      eq(schema.tryoutSectionSessions.tryoutSessionId, schema.tryoutSessions.id),
+    )
+    .innerJoin(schema.tryouts, eq(schema.tryoutSessions.tryoutId, schema.tryouts.id))
     .where(eq(schema.tryoutSectionSessions.tryoutSessionId, sessionId))
 
   if (sections.length === 0) {
@@ -882,7 +923,14 @@ async function recomputeTryoutSessionAggregate(sessionId: number, autoSubmitted:
     (total, section) => total + section.unansweredCount,
     0,
   )
-  const totalScore = sections.reduce((total, section) => total + Number(section.score ?? 0), 0)
+  const scoringMethod: TryoutScoringMethod =
+    sections[0]?.scoringMethod === "irt_3pl" ? "irt_3pl" : "raw_score"
+  const totalRawScore = sections.reduce((total, section) => total + Number(section.score ?? 0), 0)
+  const totalScore =
+    scoringMethod === "irt_3pl" && sections.length > 0
+      ? totalRawScore / sections.length
+      : totalRawScore
+  const totalMaxScore = scoringMethod === "irt_3pl" ? IRT_SCORE_MAX : null
   const totalSectionsStarted = sections.filter((section) => section.startedAt).length
   const durationUsedSeconds = sections.reduce((total, section) => {
     if (!section.startedAt || !section.submittedAt) {
@@ -903,6 +951,7 @@ async function recomputeTryoutSessionAggregate(sessionId: number, autoSubmitted:
         totalWrong,
         totalUnanswered,
         totalScore: totalScore.toFixed(2),
+        ...(totalMaxScore === null ? {} : { totalMaxScore: totalMaxScore.toFixed(2) }),
         totalSectionsStarted,
         durationUsedSeconds,
         lastSavedAt: now,
@@ -923,6 +972,7 @@ async function recomputeTryoutSessionAggregate(sessionId: number, autoSubmitted:
       totalWrong,
       totalUnanswered,
       totalScore: totalScore.toFixed(2),
+      ...(totalMaxScore === null ? {} : { totalMaxScore: totalMaxScore.toFixed(2) }),
       totalSectionsStarted,
       durationUsedSeconds,
       autoSubmitted,
@@ -1266,6 +1316,10 @@ function isPracticeQuestionType(value: unknown): value is PracticeQuestionType {
     value === "short_answer" ||
     value === "true_false"
   )
+}
+
+function isTryoutScoringMethod(value: unknown): value is TryoutScoringMethod {
+  return value === "raw_score" || value === "irt_3pl"
 }
 
 function gradeTryoutAnswer({

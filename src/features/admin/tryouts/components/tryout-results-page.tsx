@@ -147,6 +147,10 @@ const subtestPerformanceChartConfig = {
 } as const
 
 export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
+  const isIrtScoring = insight.tryout.scoringMethod === "irt_3pl"
+  const scoreLabel = isIrtScoring ? "IRT Score" : "Score"
+  const maxScoreLabel = isIrtScoring ? "Scale Max" : "Max"
+  const scorePhrase = isIrtScoring ? "IRT score" : "score"
   const [detailState, setDetailState] = useState<SessionDetailState>({
     open: false,
     row: null,
@@ -195,7 +199,7 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
         return {
           Rank: row.rank,
           Participant: row.userName,
-          Score: row.totalScore,
+          [scoreLabel]: row.totalScore,
           Correct: row.totalCorrect,
           Wrong: row.totalWrong,
           Blank: blank,
@@ -241,13 +245,13 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
         />
         <InsightMetricCard
           icon={BarChart3Icon}
-          label="Average score"
+          label={`Average ${isIrtScoring ? "IRT Score" : "score"}`}
           value={formatScore(insight.metrics.averageScore)}
-          description="Average score among graded participants."
+          description={`Average ${scorePhrase} among graded participants.`}
         />
         <InsightMetricCard
           icon={MedalIcon}
-          label="Median score"
+          label={`Median ${isIrtScoring ? "IRT Score" : "score"}`}
           value={formatScore(insight.metrics.medianScore)}
           description="Middle value that reduces outlier bias."
         />
@@ -265,19 +269,19 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
         />
         <InsightMetricCard
           icon={ArrowDownIcon}
-          label="Lowest score"
+          label={`Lowest ${isIrtScoring ? "IRT Score" : "score"}`}
           value={formatScore(insight.metrics.bottomScore)}
           description="Smallest score recorded in this tryout."
         />
         <InsightMetricCard
           icon={ArrowUpIcon}
-          label="Highest score"
+          label={`Highest ${isIrtScoring ? "IRT Score" : "score"}`}
           value={formatScore(insight.metrics.topScore)}
           description="Largest score recorded in this tryout."
         />
         <InsightMetricCard
           icon={TrophyIcon}
-          label="Avg max score"
+          label={`Avg ${maxScoreLabel.toLowerCase()}`}
           value={formatScore(insight.metrics.averageMaxScore)}
           description="Average maximum score available per session."
         />
@@ -368,7 +372,9 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
         <Card className="border border-border/70 bg-card/95 shadow-sm">
           <CardHeader className="space-y-1 pb-3">
             <CardTitle>Score Distribution</CardTitle>
-            <CardDescription>Share of graded participants across score bands.</CardDescription>
+            <CardDescription>
+              Share of graded participants across {isIrtScoring ? "IRT score" : "score"} bands.
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             {gradedSessionCount > 0 ? (
@@ -416,7 +422,9 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
         <Card className="border border-border/70 bg-card/95 shadow-sm">
           <CardHeader className="space-y-1 pb-3">
             <CardTitle>Subtest Performance</CardTitle>
-            <CardDescription>Average score and pace across all graded subtests.</CardDescription>
+            <CardDescription>
+              Average {scorePhrase} and pace across all graded subtests.
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             {subtestPerformanceData.length > 0 ? (
@@ -470,7 +478,8 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
           <div className="space-y-1">
             <CardTitle>Leaderboard</CardTitle>
             <CardDescription>
-              Participant rankings are ordered by total score, with a detailed subtest view available from the action menu.
+              Participant rankings are ordered by {scorePhrase}, with a detailed
+              subtest view available from the action menu.
             </CardDescription>
           </div>
           <Button type="button" variant="outline" size="sm" onClick={handleExportLeaderboard}>
@@ -490,7 +499,7 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
                     Participant
                   </TableHead>
                   <TableHead className="w-28 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Score
+                    {scoreLabel}
                   </TableHead>
                   <TableHead className="w-24 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     Correct
@@ -564,7 +573,7 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
                               }
                             >
                               <BarChart3Icon />
-                              Score details
+                              {scoreLabel} details
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -591,17 +600,18 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
         <DialogContent className="max-h-[85vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Score details {detailState.row ? `- ${detailState.row.userName}` : ""}
+              {scoreLabel} details {detailState.row ? `- ${detailState.row.userName}` : ""}
             </DialogTitle>
             <DialogDescription>
-              Participant score breakdown by subtest, including correct, wrong, blank, and duration.
+              Participant {scorePhrase} breakdown by subtest, including correct, wrong,
+              blank, and duration.
             </DialogDescription>
           </DialogHeader>
 
           {detailState.row ? (
             <div className="flex flex-col gap-4">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <DialogStat label="Total score" value={formatScore(detailState.row.totalScore)} />
+                <DialogStat label={`Total ${scorePhrase}`} value={formatScore(detailState.row.totalScore)} />
                 <DialogStat label="Correct" value={formatInteger(detailState.row.totalCorrect)} />
                 <DialogStat label="Wrong" value={formatInteger(detailState.row.totalWrong)} />
                 <DialogStat label="Duration" value={formatDuration(detailState.row.durationUsedSeconds)} />
@@ -614,10 +624,10 @@ export function TryoutResultsPage({ insight }: TryoutResultsPageProps) {
                       Subtest
                     </TableHead>
                     <TableHead className="w-28 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Score
+                      {scoreLabel}
                     </TableHead>
                     <TableHead className="w-24 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Max
+                      {maxScoreLabel}
                     </TableHead>
                     <TableHead className="w-20 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                       Correct

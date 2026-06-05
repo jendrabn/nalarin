@@ -39,6 +39,7 @@ export type PublicTryoutSummary = {
   explanationReleaseAt: string | null
   enforceEndTime: boolean
   wrongAnswerPenalty: number
+  scoringMethod: "raw_score" | "irt_3pl"
   sectionCount: number
   questionCount: number
   totalDurationMinutes: number
@@ -250,6 +251,7 @@ function selectVisibleTryoutColumns() {
     explanationReleaseAt: schema.tryouts.explanationReleaseAt,
     enforceEndTime: schema.tryouts.enforceEndTime,
     wrongAnswerPenalty: schema.tryouts.wrongAnswerPenalty,
+    scoringMethod: schema.tryouts.scoringMethod,
     navigationMode: schema.tryouts.navigationMode,
     allowReviewBeforeSubmit: schema.tryouts.allowReviewBeforeSubmit,
     shuffleQuestions: schema.tryouts.shuffleQuestions,
@@ -359,6 +361,7 @@ function mapPublicTryoutSummary(
     explanationReleaseAt: row.explanationReleaseAt?.toISOString() ?? null,
     enforceEndTime: row.enforceEndTime,
     wrongAnswerPenalty: Number(row.wrongAnswerPenalty ?? 0),
+    scoringMethod: row.scoringMethod,
     sectionCount: stats?.sectionCount ?? 0,
     questionCount: stats?.questionCount ?? 0,
     totalDurationMinutes: stats?.totalDurationMinutes ?? 0,

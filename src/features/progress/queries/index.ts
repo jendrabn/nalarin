@@ -3,6 +3,8 @@ import "server-only"
 import { and, desc, eq, sql } from "drizzle-orm"
 
 import { db, schema } from "@/db"
+import { getIrtSessionScoreMap } from "@/features/tryouts/services/irt-score-queries"
+import { IRT_SCORE_MAX } from "@/features/tryouts/utils/irt-scoring"
 import { isFeatureReleased } from "@/features/tryouts/utils/status"
 
 import type {
@@ -184,6 +186,7 @@ async function getPracticeActivities(input: {
     completedAt: row.completedAt?.toISOString() ?? null,
     score: Number(row.score ?? 0),
     maxScore: Number(row.maxScore ?? 0),
+    scoreDisplay: "ratio",
     correct: row.correct,
     wrong: row.wrong,
     unanswered: row.unanswered,
@@ -211,6 +214,7 @@ async function getTryoutActivities(input: {
       examTypeName: schema.examTypes.name,
       completedAt: schema.tryoutSessions.gradedAt,
       score: schema.tryoutSessions.totalScore,
+      scoringMethod: schema.tryouts.scoringMethod,
       maxScore: sql<string>`coalesce(nullif(${schema.tryoutSessions.totalMaxScore}, 0), (
         select coalesce(sum(tsq.points), 0)
         from tryout_session_questions tsq
@@ -229,12 +233,17 @@ async function getTryoutActivities(input: {
     .orderBy(desc(schema.tryoutSessions.gradedAt))
     .limit(30)
 
+  const irtScoreMap = await getIrtSessionScoreMap(
+    rows.filter((row) => row.scoringMethod === "irt_3pl").map((row) => row.id),
+  )
+
   return rows.map((row) => {
     const resultAvailable = isFeatureReleased({
       enabled: row.showResultAfterSubmit,
       releaseAt: row.resultReleaseAt?.toISOString() ?? null,
     })
     const reviewHref = resultAvailable ? `/tryout-sessions/${row.id}/review` : null
+    const isIrtScoring = row.scoringMethod === "irt_3pl"
 
     return {
       id: row.id,
@@ -242,8 +251,9 @@ async function getTryoutActivities(input: {
       title: row.title,
       examTypeName: row.examTypeName,
       completedAt: row.completedAt?.toISOString() ?? null,
-      score: Number(row.score ?? 0),
-      maxScore: Number(row.maxScore ?? 0),
+      score: isIrtScoring ? (irtScoreMap.get(row.id) ?? Number(row.score ?? 0)) : Number(row.score ?? 0),
+      maxScore: isIrtScoring ? IRT_SCORE_MAX : Number(row.maxScore ?? 0),
+      scoreDisplay: isIrtScoring ? "scaled" : "ratio",
       correct: row.correct,
       wrong: row.wrong,
       unanswered: row.unanswered,

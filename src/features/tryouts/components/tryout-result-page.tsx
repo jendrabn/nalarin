@@ -24,6 +24,13 @@ import type { TryoutResultData, TryoutSectionResult } from "../types"
 
 export function TryoutResultPage({ data }: { data: TryoutResultData }) {
   const resultLocked = !data.resultRelease.available
+  const isIrtScoring = data.scoringMethod === "irt_3pl"
+  const scoreLabel = isIrtScoring ? "IRT Score" : "Skor"
+  const scoreValue = isIrtScoring
+    ? formatNumber(data.totalScore)
+    : `${formatNumber(data.totalScore)} / ${formatNumber(data.totalMaxScore)}`
+  const scoreSummaryLabel = isIrtScoring ? "Score Range" : "Persentase Skor"
+  const scoreSummaryValue = isIrtScoring ? "200-1000" : `${data.scorePercentage}%`
 
   return (
     <main className="min-h-svh bg-muted/35 px-4 py-6 sm:px-6 lg:px-8">
@@ -66,8 +73,8 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <MetricCard
                       icon={<BarChart3Icon />}
-                      label="Skor"
-                      value={`${formatNumber(data.totalScore)} / ${formatNumber(data.totalMaxScore)}`}
+                      label={scoreLabel}
+                      value={scoreValue}
                       tone="score"
                     />
                     <MetricCard
@@ -93,16 +100,19 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
                   <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Persentase Skor</p>
+                        <p className="text-sm font-medium text-muted-foreground">{scoreSummaryLabel}</p>
                         <p className="mt-1 text-3xl font-semibold tabular-nums text-primary">
-                          {data.scorePercentage}%
+                          {scoreSummaryValue}
                         </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {data.totalQuestions} soal / {data.totalUnanswered} kosong
-                      </p>
+                      <div className="text-sm text-muted-foreground sm:text-right">
+                        <p>Scoring: {isIrtScoring ? "IRT" : "Raw Score"}</p>
+                        <p>{data.totalQuestions} soal / {data.totalUnanswered} kosong</p>
+                      </div>
                     </div>
-                    <Progress value={data.scorePercentage} className="mt-4 h-2" />
+                    {isIrtScoring ? null : (
+                      <Progress value={data.scorePercentage} className="mt-4 h-2" />
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -149,7 +159,7 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
                           Subtes
                         </TableHead>
                         <TableHead className="text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          Skor
+                          {isIrtScoring ? "IRT Score" : "Skor"}
                         </TableHead>
                         <TableHead className="text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           Benar
@@ -167,7 +177,11 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
                     </TableHeader>
                     <TableBody>
                       {data.sections.map((section) => (
-                        <SectionResultRow key={section.id} section={section} />
+                        <SectionResultRow
+                          key={section.id}
+                          section={section}
+                          isIrtScoring={isIrtScoring}
+                        />
                       ))}
                     </TableBody>
                   </Table>
@@ -175,7 +189,11 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
 
                 <div className="grid gap-3 md:hidden">
                   {data.sections.map((section) => (
-                    <SectionResultCard key={section.id} section={section} />
+                    <SectionResultCard
+                      key={section.id}
+                      section={section}
+                      isIrtScoring={isIrtScoring}
+                    />
                   ))}
                 </div>
               </CardContent>
@@ -198,7 +216,13 @@ function LockedResultCard({ sessionId }: { sessionId: number }) {
   )
 }
 
-function SectionResultRow({ section }: { section: TryoutSectionResult }) {
+function SectionResultRow({
+  section,
+  isIrtScoring,
+}: {
+  section: TryoutSectionResult
+  isIrtScoring: boolean
+}) {
   return (
     <TableRow>
       <TableCell>
@@ -208,7 +232,9 @@ function SectionResultRow({ section }: { section: TryoutSectionResult }) {
         </div>
       </TableCell>
       <TableCell className="text-right font-medium tabular-nums">
-        {formatNumber(section.score)} / {formatNumber(section.maxScore)}
+        {isIrtScoring
+          ? formatNumber(section.score)
+          : `${formatNumber(section.score)} / ${formatNumber(section.maxScore)}`}
       </TableCell>
       <TableCell className="text-right tabular-nums">{section.correctCount}</TableCell>
       <TableCell className="text-right tabular-nums">{section.wrongCount}</TableCell>
@@ -220,7 +246,13 @@ function SectionResultRow({ section }: { section: TryoutSectionResult }) {
   )
 }
 
-function SectionResultCard({ section }: { section: TryoutSectionResult }) {
+function SectionResultCard({
+  section,
+  isIrtScoring,
+}: {
+  section: TryoutSectionResult
+  isIrtScoring: boolean
+}) {
   return (
     <article className="rounded-xl border bg-background p-4">
       <div className="flex items-start justify-between gap-3">
@@ -229,7 +261,9 @@ function SectionResultCard({ section }: { section: TryoutSectionResult }) {
           <p className="mt-1 text-sm text-muted-foreground">{section.subjectName}</p>
         </div>
         <p className="font-semibold tabular-nums text-primary">
-          {formatNumber(section.score)}
+          {isIrtScoring
+            ? formatNumber(section.score)
+            : `${formatNumber(section.score)} / ${formatNumber(section.maxScore)}`}
         </p>
       </div>
       <div className="mt-4 grid grid-cols-4 gap-2 text-center text-xs">

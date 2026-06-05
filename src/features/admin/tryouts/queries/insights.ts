@@ -6,7 +6,12 @@ import { and, asc, desc, eq, inArray, sql } from "drizzle-orm"
 
 import { db, schema } from "@/db"
 
+import {
+  getIrtSectionScoreMapForSessions,
+  getIrtSessionScoreMap,
+} from "@/features/tryouts/services/irt-score-queries"
 import type { TryoutSessionStatus } from "@/features/tryouts/types"
+import { IRT_SCORE_MAX } from "@/features/tryouts/utils/irt-scoring"
 
 import { getTryoutById } from "./index"
 
@@ -164,7 +169,7 @@ export async function getAdminTryoutInsightData(
       ),
   ])
 
-  const sessions = sessionRows.map<TryoutMetricSessionRow>((row) => normalizeSessionRow(row))
+  let sessions = sessionRows.map<TryoutMetricSessionRow>((row) => normalizeSessionRow(row))
 
   const statusCounts: Record<TryoutSessionStatus, number> = {
     pending: 0,
@@ -179,14 +184,52 @@ export async function getAdminTryoutInsightData(
     statusCounts[row.status as TryoutSessionStatus] = Number(row.count)
   }
 
-  const leaderboardBase = leaderboardRows.map<AdminTryoutLeaderboardRow>((row, index) => ({
+  let leaderboardBase = leaderboardRows.map<AdminTryoutLeaderboardRow>((row, index) => ({
     ...normalizeSessionRow(row),
     rank: index + 1,
     sections: [],
   }))
 
+  if (tryout.scoringMethod === "irt_3pl") {
+    const irtScoreMap = await getIrtSessionScoreMap(leaderboardBase.map((row) => row.sessionId))
+
+    sessions = sessions.map((row) => {
+      const irtScore = irtScoreMap.get(row.sessionId)
+
+      if (row.status !== "graded" || irtScore === undefined) {
+        return row
+      }
+
+      return {
+        ...row,
+        totalScore: irtScore,
+        totalMaxScore: IRT_SCORE_MAX,
+      }
+    })
+
+    leaderboardBase = leaderboardBase
+      .map((row) => ({
+        ...row,
+        totalScore: irtScoreMap.get(row.sessionId) ?? row.totalScore,
+        totalMaxScore: IRT_SCORE_MAX,
+      }))
+      .sort(
+        (left, right) =>
+          right.totalScore - left.totalScore ||
+          right.totalSectionsStarted - left.totalSectionsStarted ||
+          right.totalCorrect - left.totalCorrect ||
+          left.durationUsedSeconds - right.durationUsedSeconds ||
+          (new Date(left.submittedAt ?? 0).getTime() -
+            new Date(right.submittedAt ?? 0).getTime()),
+      )
+      .map((row, index) => ({
+        ...row,
+        rank: index + 1,
+      }))
+  }
+
   const metrics = getInsightMetrics(sessions, leaderboardBase)
-  const scoreBuckets = getScoreBuckets(leaderboardBase)
+  const scoreBuckets = getScoreBuckets(leaderboardBase, tryout.scoringMethod)
 
   if (leaderboardBase.length === 0) {
     return {
@@ -254,9 +297,13 @@ export async function getAdminTryoutInsightData(
 
   const sectionsBySession = new Map<number, AdminTryoutLeaderboardSectionRow[]>()
   const sectionAggregation = new Map<number, SectionAnalyticsAccumulator>()
+  const irtSectionScoreMap =
+    tryout.scoringMethod === "irt_3pl"
+      ? await getIrtSectionScoreMapForSessions(leaderboardSessionIds)
+      : new Map<number, number>()
 
   for (const row of sectionRows) {
-    const section = normalizeLeaderboardSectionRow(row)
+    const section = normalizeLeaderboardSectionRow(row, tryout.scoringMethod, irtSectionScoreMap)
     const current = sectionsBySession.get(section.sessionId) ?? []
     current.push(section)
     sectionsBySession.set(section.sessionId, current)
@@ -356,23 +403,29 @@ function normalizeSessionRow(row: {
   }
 }
 
-function normalizeLeaderboardSectionRow(row: {
-  sessionId: number
-  sectionSessionId: number
-  sectionId: number
-  sectionTitle: string
-  subjectName: string
-  orderIndex: number
-  durationMinutes: number
-  totalQuestions: number
-  correctCount: number
-  wrongCount: number
-  unansweredCount: number
-  score: string | number
-  maxScore: string | number
-  startedAt: Date | null
-  submittedAt: Date | null
-}): AdminTryoutLeaderboardSectionRow {
+function normalizeLeaderboardSectionRow(
+  row: {
+    sessionId: number
+    sectionSessionId: number
+    sectionId: number
+    sectionTitle: string
+    subjectName: string
+    orderIndex: number
+    durationMinutes: number
+    totalQuestions: number
+    correctCount: number
+    wrongCount: number
+    unansweredCount: number
+    score: string | number
+    maxScore: string | number
+    startedAt: Date | null
+    submittedAt: Date | null
+  },
+  scoringMethod: string,
+  irtSectionScoreMap: Map<number, number>,
+): AdminTryoutLeaderboardSectionRow {
+  const irtScore = irtSectionScoreMap.get(row.sectionSessionId)
+
   return {
     sessionId: row.sessionId,
     sectionSessionId: row.sectionSessionId,
@@ -385,8 +438,8 @@ function normalizeLeaderboardSectionRow(row: {
     correctCount: row.correctCount,
     wrongCount: row.wrongCount,
     unansweredCount: row.unansweredCount,
-    score: Number(row.score ?? 0),
-    maxScore: Number(row.maxScore ?? 0),
+    score: scoringMethod === "irt_3pl" ? (irtScore ?? Number(row.score ?? 0)) : Number(row.score ?? 0),
+    maxScore: scoringMethod === "irt_3pl" ? IRT_SCORE_MAX : Number(row.maxScore ?? 0),
     durationUsedSeconds: getDurationSeconds(row.startedAt, row.submittedAt),
     startedAt: row.startedAt?.toISOString() ?? null,
     submittedAt: row.submittedAt?.toISOString() ?? null,
@@ -432,19 +485,32 @@ function getInsightMetrics(
   }
 }
 
-function getScoreBuckets(leaderboard: AdminTryoutLeaderboardRow[]): AdminTryoutScoreBucket[] {
-  const buckets = [
-    { label: "0 - 20", min: 0, max: 20, count: 0 },
-    { label: "21 - 40", min: 21, max: 40, count: 0 },
-    { label: "41 - 60", min: 41, max: 60, count: 0 },
-    { label: "61 - 80", min: 61, max: 80, count: 0 },
-    { label: "81 - 100", min: 81, max: 100, count: 0 },
-  ] satisfies AdminTryoutScoreBucket[]
+function getScoreBuckets(
+  leaderboard: AdminTryoutLeaderboardRow[],
+  scoringMethod: string,
+): AdminTryoutScoreBucket[] {
+  const buckets =
+    scoringMethod === "irt_3pl"
+      ? ([
+          { label: "200 - 400", min: 200, max: 400, count: 0 },
+          { label: "401 - 500", min: 401, max: 500, count: 0 },
+          { label: "501 - 600", min: 501, max: 600, count: 0 },
+          { label: "601 - 700", min: 601, max: 700, count: 0 },
+          { label: "701 - 1000", min: 701, max: 1000, count: 0 },
+        ] satisfies AdminTryoutScoreBucket[])
+      : ([
+          { label: "0 - 20", min: 0, max: 20, count: 0 },
+          { label: "21 - 40", min: 21, max: 40, count: 0 },
+          { label: "41 - 60", min: 41, max: 60, count: 0 },
+          { label: "61 - 80", min: 61, max: 80, count: 0 },
+          { label: "81 - 100", min: 81, max: 100, count: 0 },
+        ] satisfies AdminTryoutScoreBucket[])
 
   for (const row of leaderboard) {
-    const percentage = getPercentage(row.totalScore, row.totalMaxScore)
+    const value =
+      scoringMethod === "irt_3pl" ? row.totalScore : getPercentage(row.totalScore, row.totalMaxScore)
     const bucket =
-      buckets.find((item) => percentage >= item.min && percentage <= item.max) ?? buckets[0]
+      buckets.find((item) => value >= item.min && value <= item.max) ?? buckets[0]
     bucket.count += 1
   }
 

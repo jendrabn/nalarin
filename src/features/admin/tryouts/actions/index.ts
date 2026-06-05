@@ -85,6 +85,7 @@ function parseTryoutValues(values: TryoutFormValues) {
       showExplanationAfterSubmit: validated.data.showExplanationAfterSubmit,
       explanationReleaseAt,
       navigationMode: validated.data.navigationMode,
+      scoringMethod: validated.data.scoringMethod,
       enforceEndTime: validated.data.enforceEndTime,
       wrongAnswerPenalty,
       sections: validated.data.sections.map((section) => ({
@@ -357,6 +358,7 @@ export async function createTryoutAction(
           showExplanationAfterSubmit: parsed.data.showExplanationAfterSubmit,
           explanationReleaseAt: parsed.data.explanationReleaseAt,
           navigationMode: parsed.data.navigationMode,
+          scoringMethod: parsed.data.scoringMethod,
           enforceEndTime: parsed.data.enforceEndTime,
           wrongAnswerPenalty: String(parsed.data.wrongAnswerPenalty),
           status: "draft",
@@ -450,6 +452,7 @@ export async function updateTryoutAction(
           showExplanationAfterSubmit: parsed.data.showExplanationAfterSubmit,
           explanationReleaseAt: parsed.data.explanationReleaseAt,
           navigationMode: parsed.data.navigationMode,
+          scoringMethod: parsed.data.scoringMethod,
           enforceEndTime: parsed.data.enforceEndTime,
           wrongAnswerPenalty: String(parsed.data.wrongAnswerPenalty),
         })

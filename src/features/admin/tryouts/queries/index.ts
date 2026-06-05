@@ -10,6 +10,7 @@ import type {
   TryoutNavigationMode,
   TryoutQuestionDifficulty,
   TryoutQuestionType,
+  TryoutScoringMethod,
   TryoutStatus,
 } from "../constants"
 
@@ -33,6 +34,7 @@ export type TryoutRow = {
   showExplanationAfterSubmit: boolean
   explanationReleaseAt: Date | null
   navigationMode: TryoutNavigationMode
+  scoringMethod: TryoutScoringMethod
   enforceEndTime: boolean
   wrongAnswerPenalty: number
   status: TryoutStatus
@@ -142,6 +144,7 @@ function selectTryoutColumns() {
     showExplanationAfterSubmit: schema.tryouts.showExplanationAfterSubmit,
     explanationReleaseAt: schema.tryouts.explanationReleaseAt,
     navigationMode: schema.tryouts.navigationMode,
+    scoringMethod: schema.tryouts.scoringMethod,
     enforceEndTime: schema.tryouts.enforceEndTime,
     wrongAnswerPenalty: schema.tryouts.wrongAnswerPenalty,
     status: schema.tryouts.status,
