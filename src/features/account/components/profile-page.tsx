@@ -62,7 +62,10 @@ import {
   deleteAccountAction,
   updateProfileAction,
 } from "../actions"
-import type { ProfileFormInput } from "../schemas"
+import {
+  profileFormSchema,
+  type ProfileFormInput,
+} from "../schemas"
 
 type ProfilePageProps = {
   profile: AccountProfileData
@@ -126,12 +129,25 @@ export function ProfilePage({ profile }: ProfilePageProps) {
     setFieldErrors({})
 
     try {
+      const parsed = profileFormSchema.safeParse(formValues)
+
+      if (!parsed.success) {
+        setFieldErrors(parsed.error.flatten().fieldErrors)
+        toast.error("Periksa kembali data yang kamu isi.")
+        return
+      }
+
       const avatarUrl = avatarFile
         ? await uploadAvatar(avatarFile)
         : formValues.avatarUrl
       const result = await updateProfileAction({
         ...formValues,
-        avatarUrl,
+        name: parsed.data.name,
+        phoneNumber: parsed.data.phoneNumber ?? "",
+        birthDate: parsed.data.birthDate ?? "",
+        gender: parsed.data.gender,
+        bio: parsed.data.bio ?? "",
+        avatarUrl: avatarUrl ?? "",
       })
 
       if (!result.success) {
@@ -146,7 +162,15 @@ export function ProfilePage({ profile }: ProfilePageProps) {
         avatarObjectUrlRef.current = null
       }
       setAvatarPreview(avatarUrl ?? null)
-      setFormValues((current) => ({ ...current, avatarUrl: avatarUrl ?? "" }))
+      setFormValues((current) => ({
+        ...current,
+        name: parsed.data.name,
+        phoneNumber: parsed.data.phoneNumber ?? "",
+        birthDate: parsed.data.birthDate ?? "",
+        gender: parsed.data.gender,
+        bio: parsed.data.bio ?? "",
+        avatarUrl: avatarUrl ?? "",
+      }))
       toast.success(result.message)
       router.refresh()
     } catch (error) {
@@ -357,6 +381,8 @@ export function ProfilePage({ profile }: ProfilePageProps) {
                         }))
                       }
                       placeholder="08xxxxxxxxxx"
+                      inputMode="tel"
+                      autoComplete="tel"
                     />
                     <FieldError>{fieldErrors.phoneNumber?.[0]}</FieldError>
                   </Field>

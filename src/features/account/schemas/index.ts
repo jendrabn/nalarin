@@ -2,6 +2,26 @@ import { z } from "zod"
 
 import { PROFILE_BIO_MAX_LENGTH } from "../utils/profile"
 
+export const PROFILE_WHATSAPP_MAX_DIGITS = 15
+
+const whatsappNumberPattern = /^(?:08|62|\+62)\d+$/
+
+function getWhatsappDigitLength(value: string) {
+  return value.startsWith("+") ? value.length - 1 : value.length
+}
+
+function normalizeWhatsappNumber(value: string) {
+  if (value.startsWith("+62")) {
+    return value.slice(1)
+  }
+
+  if (value.startsWith("08")) {
+    return `62${value.slice(1)}`
+  }
+
+  return value
+}
+
 export const profileFormSchema = z.object({
   name: z
     .string()
@@ -11,9 +31,19 @@ export const profileFormSchema = z.object({
   phoneNumber: z
     .string()
     .trim()
-    .max(32, "Nomor terlalu panjang.")
-    .optional()
-    .transform((value) => (value ? value : null)),
+    .nullish()
+    .transform((value) => value ?? "")
+    .refine(
+      (value) => value === "" || whatsappNumberPattern.test(value),
+      "Nomor WhatsApp harus diawali 08, 62, atau +62 dan hanya berisi digit.",
+    )
+    .refine(
+      (value) =>
+        value === "" ||
+        getWhatsappDigitLength(value) <= PROFILE_WHATSAPP_MAX_DIGITS,
+      `Nomor WhatsApp maksimal ${PROFILE_WHATSAPP_MAX_DIGITS} digit.`,
+    )
+    .transform((value) => (value ? normalizeWhatsappNumber(value) : null)),
   birthDate: z
     .string()
     .trim()
