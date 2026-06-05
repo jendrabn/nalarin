@@ -1,7 +1,6 @@
 import Link from "next/link"
 import {
   BarChart3Icon,
-  BookOpenIcon,
   CheckCircle2Icon,
   TargetIcon,
   TrendingDownIcon,
@@ -127,7 +126,6 @@ function FilterButton({
       )}
     >
       <Link href={href}>
-        <BookOpenIcon data-icon="inline-start" />
         <span className="truncate">{label}</span>
       </Link>
     </Button>

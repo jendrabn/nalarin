@@ -16,25 +16,18 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PageHeader } from "@/components/page-header"
-import { Progress } from "@/components/ui/progress"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 
 import type { TryoutResultData, TryoutSectionResult } from "../types"
-import { IRT_SCORE_MEAN, IRT_SCORE_STANDARD_DEVIATION } from "../utils/irt-scoring"
 
 export function TryoutResultPage({ data }: { data: TryoutResultData }) {
   const resultLocked = !data.resultRelease.available
   const isIrtScoring = data.scoringMethod === "irt_3pl"
-  const scoreLabel = isIrtScoring ? "IRT Score" : "Skor"
+  const scoreLabel = isIrtScoring ? "Skor IRT" : "Skor"
   const scoreValue = isIrtScoring
     ? formatNumber(data.totalScore)
     : `${formatNumber(data.totalScore)} / ${formatNumber(data.totalMaxScore)}`
-  const scoreSummaryLabel = isIrtScoring ? "Score Scale" : "Persentase Skor"
-  const scoreSummaryValue = isIrtScoring
-    ? `Mean ${formatNumber(IRT_SCORE_MEAN)} / SD ${formatNumber(IRT_SCORE_STANDARD_DEVIATION)}`
-    : `${data.scorePercentage}%`
-
   return (
     <main className="min-h-svh bg-muted/35 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
@@ -100,28 +93,6 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
                     />
                   </div>
 
-                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">{scoreSummaryLabel}</p>
-                        <p
-                          className={cn(
-                            "mt-1 font-semibold tabular-nums text-primary",
-                            isIrtScoring ? "text-2xl" : "text-3xl",
-                          )}
-                        >
-                          {scoreSummaryValue}
-                        </p>
-                      </div>
-                      <div className="text-sm text-muted-foreground sm:text-right">
-                        <p>Scoring: {isIrtScoring ? "IRT" : "Raw Score"}</p>
-                        <p>{data.totalQuestions} soal / {data.totalUnanswered} kosong</p>
-                      </div>
-                    </div>
-                    {isIrtScoring ? null : (
-                      <Progress value={data.scorePercentage} className="mt-4 h-2" />
-                    )}
-                  </div>
                 </CardContent>
               </Card>
 
@@ -167,7 +138,7 @@ export function TryoutResultPage({ data }: { data: TryoutResultData }) {
                           Subtes
                         </TableHead>
                         <TableHead className="text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          {isIrtScoring ? "IRT Score" : "Skor"}
+                          {isIrtScoring ? "Skor IRT" : "Skor"}
                         </TableHead>
                         <TableHead className="text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           Benar

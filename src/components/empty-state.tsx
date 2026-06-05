@@ -1,4 +1,4 @@
-import { PackageOpenIcon, type LucideIcon } from "lucide-react"
+import { SearchXIcon, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -10,21 +10,23 @@ type EmptyStateProps = {
 
 export function EmptyState({
   title,
-  icon: Icon = PackageOpenIcon,
+  icon: Icon = SearchXIcon,
   className,
 }: EmptyStateProps) {
   return (
     <div
       role="status"
       className={cn(
-        "flex w-full flex-col items-center justify-center gap-3 py-10 text-center text-balance",
-        className
+        "flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/70 bg-muted/20 px-6 py-10 text-center text-balance shadow-sm",
+        className,
       )}
     >
-      <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/15">
-        <Icon className="size-5" aria-hidden="true" />
-      </div>
-      <p className="max-w-sm text-sm font-semibold leading-6 text-foreground">
+      <Icon
+        className="size-10 shrink-0 text-muted-foreground"
+        aria-hidden="true"
+        strokeWidth={1.75}
+      />
+      <p className="max-w-sm text-sm font-semibold leading-6 text-muted-foreground">
         {title}
       </p>
     </div>

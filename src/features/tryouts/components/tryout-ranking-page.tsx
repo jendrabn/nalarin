@@ -15,7 +15,7 @@ import type { TryoutRankingData, TryoutRankingRow } from "../types"
 export function TryoutRankingPage({ data }: { data: TryoutRankingData }) {
   const lockedByPlan = data.release.available && !data.release.allowedByPlan
   const unavailable = !data.release.available
-  const scoreLabel = data.session.scoringMethod === "irt_3pl" ? "IRT Score" : "Skor"
+  const scoreLabel = data.session.scoringMethod === "irt_3pl" ? "Skor IRT" : "Skor"
 
   return (
     <main className="relative min-h-svh overflow-hidden bg-background px-4 py-6 sm:px-6 lg:px-8">

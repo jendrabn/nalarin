@@ -46,6 +46,14 @@ type EmailCampaignFormPageProps = {
 
 const FORM_ID = "email-campaign-form"
 
+function TableColumnHeader({ children }: { children: string }) {
+  return (
+    <span className="-ml-2 inline-flex h-8 items-center px-2 text-[0.8rem] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+      {children}
+    </span>
+  )
+}
+
 function RecipientPicker({
   users,
   selectedIds,
@@ -157,26 +165,26 @@ function RecipientPicker({
                     aria-label="Select filtered recipients"
                   />
                 </TableHead>
-                <TableHead className="uppercase tracking-[0.16em] text-[0.64rem] text-muted-foreground">
-                  Name
+                <TableHead>
+                  <TableColumnHeader>Name</TableColumnHeader>
                 </TableHead>
-                <TableHead className="uppercase tracking-[0.16em] text-[0.64rem] text-muted-foreground">
-                  Email
+                <TableHead>
+                  <TableColumnHeader>Email</TableColumnHeader>
                 </TableHead>
-                <TableHead className="uppercase tracking-[0.16em] text-[0.64rem] text-muted-foreground">
-                  Role
+                <TableHead>
+                  <TableColumnHeader>Role</TableColumnHeader>
                 </TableHead>
-                <TableHead className="uppercase tracking-[0.16em] text-[0.64rem] text-muted-foreground">
-                  Package
+                <TableHead>
+                  <TableColumnHeader>Package</TableColumnHeader>
                 </TableHead>
-                <TableHead className="uppercase tracking-[0.16em] text-[0.64rem] text-muted-foreground">
-                  Gender
+                <TableHead>
+                  <TableColumnHeader>Gender</TableColumnHeader>
                 </TableHead>
-                <TableHead className="uppercase tracking-[0.16em] text-[0.64rem] text-muted-foreground">
-                  Phone
+                <TableHead>
+                  <TableColumnHeader>Phone</TableColumnHeader>
                 </TableHead>
-                <TableHead className="uppercase tracking-[0.16em] text-[0.64rem] text-muted-foreground">
-                  Created At
+                <TableHead>
+                  <TableColumnHeader>Created At</TableColumnHeader>
                 </TableHead>
               </TableRow>
             </TableHeader>

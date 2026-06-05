@@ -68,7 +68,7 @@ function ActivityRow({ activity }: { activity: ProgressActivityItem }) {
     activity.scoreDisplay === "scaled"
       ? formatNumber(activity.score)
       : `${formatNumber(activity.score)} / ${formatNumber(activity.maxScore)}`
-  const scoreLabel = activity.scoreDisplay === "scaled" ? "IRT Score" : "Skor"
+  const scoreLabel = activity.scoreDisplay === "scaled" ? "Skor IRT" : "Skor"
 
   return (
     <article className="rounded-lg border bg-background/80 p-3 shadow-[0_1px_0_rgba(0,0,0,0.02)]">

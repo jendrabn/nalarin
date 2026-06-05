@@ -25,6 +25,14 @@ const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
   updatedAt: false,
 }
 
+function TableColumnHeader({ children }: { children: string }) {
+  return (
+    <span className="-ml-2 inline-flex h-8 items-center px-2 text-[0.8rem] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+      {children}
+    </span>
+  )
+}
+
 function getProgress(campaign: AdminEmailCampaignRow) {
   if (campaign.totalRecipients === 0) {
     return 0
@@ -74,7 +82,7 @@ function createColumns({
     {
       id: "progress",
       meta: { label: "Progress" },
-      header: () => <span className="uppercase tracking-[0.16em]">Progress</span>,
+      header: () => <TableColumnHeader>Progress</TableColumnHeader>,
       cell: ({ row }) => {
         const progress = getProgress(row.original)
 
