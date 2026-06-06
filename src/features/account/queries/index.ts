@@ -1,15 +1,19 @@
 import "server-only"
 
-import { and, eq, sql } from "drizzle-orm"
+import { and, desc, eq, gt, sql } from "drizzle-orm"
 
 import { db, schema } from "@/db"
-import { getCurrentActiveSubscriptions } from "@/features/premium/queries"
 
 function getMonthlyUsagePeriod(date = new Date()) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, "0")
 
   return `${year}-${month}-01`
+}
+
+function readSnapshotNumber(snapshot: Record<string, unknown> | null, key: string) {
+  const value = snapshot?.[key]
+  return typeof value === "number" ? value : null
 }
 
 export async function getAccountProfile(userId: number) {
@@ -30,9 +34,43 @@ export async function getAccountProfile(userId: number) {
         createdAt: true,
       },
     }),
-    getCurrentActiveSubscriptions(userId),
     db
       .select({
+        id: schema.subscriptions.id,
+        examTypeId: schema.subscriptions.examTypeId,
+        examTypeSlug: schema.examTypes.slug,
+        examTypeName: schema.examTypes.name,
+        packageId: schema.subscriptions.packageId,
+        packagePriceId: schema.subscriptions.packagePriceId,
+        startsAt: schema.subscriptions.startsAt,
+        endsAt: schema.subscriptions.endsAt,
+        benefitSnapshot: schema.subscriptions.benefitSnapshot,
+        practiceQuotaPerMonth: schema.examTypePackages.practiceQuotaPerMonth,
+        quizQuotaPerMonth: schema.examTypePackages.quizQuotaPerMonth,
+        tryoutQuotaPerMonth: schema.examTypePackages.tryoutQuotaPerMonth,
+        aiExplanationQuotaPerMonth:
+          schema.examTypePackages.aiExplanationQuotaPerMonth,
+      })
+      .from(schema.subscriptions)
+      .innerJoin(
+        schema.examTypes,
+        eq(schema.subscriptions.examTypeId, schema.examTypes.id),
+      )
+      .leftJoin(
+        schema.examTypePackages,
+        eq(schema.subscriptions.packageId, schema.examTypePackages.id),
+      )
+      .where(
+        and(
+          eq(schema.subscriptions.userId, userId),
+          eq(schema.subscriptions.status, "active"),
+          gt(schema.subscriptions.endsAt, new Date()),
+        ),
+      )
+      .orderBy(desc(schema.subscriptions.endsAt)),
+    db
+      .select({
+        examTypeId: schema.monthlyUsage.examTypeId,
         practiceSessionsCount: sql<number>`coalesce(sum(${schema.monthlyUsage.practiceSessionsCount}), 0)`,
         quizSessionsCount: sql<number>`coalesce(sum(${schema.monthlyUsage.quizSessionsCount}), 0)`,
         tryoutSessionsCount: sql<number>`coalesce(sum(${schema.monthlyUsage.tryoutSessionsCount}), 0)`,
@@ -44,15 +82,91 @@ export async function getAccountProfile(userId: number) {
           eq(schema.monthlyUsage.userId, userId),
           eq(schema.monthlyUsage.period, period),
         ),
-      ),
+      )
+      .groupBy(schema.monthlyUsage.examTypeId),
   ])
 
   if (!user) {
     return null
   }
 
-  const usage = usageRows[0]
-  const activeNames = subscriptions.map((subscription) => subscription.examTypeName)
+  const usageByExamType = new Map(
+    usageRows.flatMap((usage) =>
+      usage.examTypeId === null
+        ? []
+        : [
+            [
+              usage.examTypeId,
+              {
+                practiceSessionsCount: Number(
+                  usage.practiceSessionsCount ?? 0,
+                ),
+                quizSessionsCount: Number(usage.quizSessionsCount ?? 0),
+                tryoutSessionsCount: Number(usage.tryoutSessionsCount ?? 0),
+                aiExplanationSessionsCount: Number(
+                  usage.aiExplanationSessionsCount ?? 0,
+                ),
+              },
+            ] as const,
+          ],
+    ),
+  )
+  const activeSubscriptions = subscriptions.flatMap((subscription) => {
+    if (
+      subscription.examTypeId === null ||
+      subscription.packageId === null ||
+      subscription.packagePriceId === null
+    ) {
+      return []
+    }
+
+    const benefitSnapshot =
+      (subscription.benefitSnapshot as Record<string, unknown> | null) ?? null
+    const usage = usageByExamType.get(subscription.examTypeId)
+
+    return [
+      {
+        id: subscription.id,
+        examTypeId: subscription.examTypeId,
+        examTypeSlug: subscription.examTypeSlug,
+        examTypeName: subscription.examTypeName,
+        packageId: subscription.packageId,
+        packagePriceId: subscription.packagePriceId,
+        packageName: subscription.examTypeName,
+        startsAt: subscription.startsAt.toISOString(),
+        endsAt: subscription.endsAt.toISOString(),
+        limits: {
+          practiceSessionsPerMonth:
+            readSnapshotNumber(benefitSnapshot, "practiceQuotaPerMonth") ??
+            subscription.practiceQuotaPerMonth ??
+            -1,
+          quizSessionsPerMonth:
+            readSnapshotNumber(benefitSnapshot, "quizQuotaPerMonth") ??
+            subscription.quizQuotaPerMonth ??
+            -1,
+          tryoutSessionsPerMonth:
+            readSnapshotNumber(benefitSnapshot, "tryoutQuotaPerMonth") ??
+            subscription.tryoutQuotaPerMonth ??
+            -1,
+          aiExplanationsPerMonth:
+            readSnapshotNumber(benefitSnapshot, "aiExplanationQuotaPerMonth") ??
+            subscription.aiExplanationQuotaPerMonth ??
+            -1,
+        },
+        usage: {
+          period,
+          practiceSessionsCount: usage?.practiceSessionsCount ?? 0,
+          quizSessionsCount: usage?.quizSessionsCount ?? 0,
+          tryoutSessionsCount: usage?.tryoutSessionsCount ?? 0,
+          aiExplanationSessionsCount:
+            usage?.aiExplanationSessionsCount ?? 0,
+        },
+      },
+    ]
+  })
+  const activeNames = activeSubscriptions.map(
+    (subscription) => subscription.examTypeName,
+  )
   const activeDescription =
     activeNames.length > 0
       ? `Paket aktif: ${activeNames.join(", ")}.`
@@ -77,25 +191,7 @@ export async function getAccountProfile(userId: number) {
       code: activeNames.length > 0 ? "exam-type" : "none",
       name: activeNames.length > 0 ? "Premium" : "Belum Berlangganan",
       description: activeDescription,
-      subscription: subscriptions[0]
-        ? {
-            startsAt: subscriptions[0].startsAt,
-            endsAt: subscriptions[0].endsAt,
-          }
-        : null,
-      limits: {
-        practiceSessionsPerMonth: null,
-        quizSessionsPerMonth: null,
-        tryoutSessionsPerMonth: null,
-        aiExplanationsPerMonth: null,
-      },
-      usage: {
-        period,
-        practiceSessionsCount: Number(usage?.practiceSessionsCount ?? 0),
-        quizSessionsCount: Number(usage?.quizSessionsCount ?? 0),
-        tryoutSessionsCount: Number(usage?.tryoutSessionsCount ?? 0),
-        aiExplanationSessionsCount: Number(usage?.aiExplanationSessionsCount ?? 0),
-      },
+      activeSubscriptions,
     },
   }
 }

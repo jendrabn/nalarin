@@ -26,7 +26,7 @@ export function formatProfileDate(value: string | Date | null) {
 }
 
 export function getUsagePercent(used: number, limit: number | null) {
-  if (limit === null) {
+  if (limit === null || limit < 0) {
     return 100
   }
 
@@ -38,7 +38,7 @@ export function getUsagePercent(used: number, limit: number | null) {
 }
 
 export function formatUsageLimit(used: number, limit: number | null) {
-  if (limit === null) {
+  if (limit === null || limit < 0) {
     return `${used} / Tanpa Batas`
   }
 

@@ -4,9 +4,8 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import {
   AlertTriangleIcon,
-  CalendarDaysIcon,
+  ChevronRightIcon,
   ImagePlusIcon,
-  ShieldCheckIcon,
   Trash2Icon,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -16,6 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -34,6 +34,13 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Field,
   FieldDescription,
@@ -73,6 +80,42 @@ type ProfilePageProps = {
 
 type FieldErrors = Record<string, string[] | undefined>
 
+type ActiveSubscription =
+  AccountProfileData["plan"]["activeSubscriptions"][number]
+
+type SubscriptionUsageItem = {
+  label: string
+  value: number
+  limit: number
+}
+
+function getSubscriptionUsageItems(
+  subscription: ActiveSubscription,
+): SubscriptionUsageItem[] {
+  return [
+    {
+      label: "Latihan",
+      value: subscription.usage.practiceSessionsCount,
+      limit: subscription.limits.practiceSessionsPerMonth,
+    },
+    {
+      label: "Quiz",
+      value: subscription.usage.quizSessionsCount,
+      limit: subscription.limits.quizSessionsPerMonth,
+    },
+    {
+      label: "Tryout",
+      value: subscription.usage.tryoutSessionsCount,
+      limit: subscription.limits.tryoutSessionsPerMonth,
+    },
+    {
+      label: "Pembahasan AI",
+      value: subscription.usage.aiExplanationSessionsCount,
+      limit: subscription.limits.aiExplanationsPerMonth,
+    },
+  ]
+}
+
 export function ProfilePage({ profile }: ProfilePageProps) {
   const router = useRouter()
   const fileInputRef = React.useRef<HTMLInputElement>(null)
@@ -94,6 +137,8 @@ export function ProfilePage({ profile }: ProfilePageProps) {
   const [deleteOpen, setDeleteOpen] = React.useState(false)
   const [deleteEmail, setDeleteEmail] = React.useState("")
   const [isDeleting, setIsDeleting] = React.useState(false)
+  const [selectedSubscriptionId, setSelectedSubscriptionId] =
+    React.useState<number | null>(null)
 
   React.useEffect(() => {
     return () => {
@@ -233,29 +278,14 @@ export function ProfilePage({ profile }: ProfilePageProps) {
     setAvatarPreview(objectUrl)
   }
 
-  const usageItems = [
-    {
-      label: "Latihan",
-      value: profile.plan.usage.practiceSessionsCount,
-      limit: profile.plan.limits.practiceSessionsPerMonth,
-    },
-    {
-      label: "Quiz",
-      value: profile.plan.usage.quizSessionsCount,
-      limit: profile.plan.limits.quizSessionsPerMonth,
-    },
-    {
-      label: "Tryout",
-      value: profile.plan.usage.tryoutSessionsCount,
-      limit: profile.plan.limits.tryoutSessionsPerMonth,
-    },
-    {
-      label: "Pembahasan AI",
-      value: profile.plan.usage.aiExplanationSessionsCount,
-      limit: profile.plan.limits.aiExplanationsPerMonth,
-    },
-  ]
-
+  const activeSubscriptions = profile.plan.activeSubscriptions
+  const selectedSubscription =
+    activeSubscriptions.find(
+      (subscription) => subscription.id === selectedSubscriptionId,
+    ) ?? null
+  const selectedUsageItems = selectedSubscription
+    ? getSubscriptionUsageItems(selectedSubscription)
+    : []
   const deleteDisabled =
     deleteEmail.trim().toLowerCase() !== profile.user.email.toLowerCase()
 
@@ -267,69 +297,126 @@ export function ProfilePage({ profile }: ProfilePageProps) {
           subtitle="Kelola profil untuk memperbarui identitas akun, foto profil, dan akses belajar."
         />
 
-        <Card className="border-primary/10 shadow-sm shadow-primary/5">
-          <CardHeader className="gap-3 sm:grid-cols-[1fr_auto] sm:items-start">
-            <div className="min-w-0">
-              <CardTitle className="text-xl font-semibold">
-                Status Plan
-              </CardTitle>
-              <CardDescription className="mt-1 leading-6">
-                Pantau paket aktif dan penggunaan limit bulan ini.
-              </CardDescription>
-            </div>
-            <Badge
-              size="default"
-              className="bg-primary/10 text-primary ring-1 ring-primary/15"
-            >
-              <ShieldCheckIcon data-icon="inline-start" />
-              {profile.plan.name}
-            </Badge>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {profile.plan.subscription ? (
-              <div className="rounded-xl border border-primary/10 bg-primary/[0.03] p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {profile.plan.description}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Periode penggunaan: {formatProfileDate(profile.plan.usage.period)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CalendarDaysIcon className="size-4" />
-                    {`${formatProfileDate(profile.plan.subscription.startsAt)} - ${formatProfileDate(
-                      profile.plan.subscription.endsAt,
-                    )}`}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            <div className="grid gap-3 md:grid-cols-3">
-              {usageItems.map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-xl border border-border bg-background p-4"
+        {activeSubscriptions.length > 0 ? (
+          <section>
+            <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 md:grid md:snap-none md:grid-cols-2 md:overflow-visible md:pb-0 lg:grid-cols-3">
+              {activeSubscriptions.map((subscription) => (
+                <Card
+                  key={subscription.id}
+                  role="button"
+                  tabIndex={0}
+                  size="sm"
+                  className="w-[88%] max-w-sm shrink-0 snap-start cursor-pointer border border-primary/10 shadow-sm shadow-primary/5 transition-colors hover:bg-primary/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:w-auto md:max-w-none md:shrink"
+                  onClick={() => setSelectedSubscriptionId(subscription.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault()
+                      setSelectedSubscriptionId(subscription.id)
+                    }
+                  }}
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-medium text-foreground">
-                      {item.label}
-                    </p>
-                    <p className="text-sm font-semibold text-primary">
-                      {formatUsageLimit(item.value, item.limit)}
-                    </p>
-                  </div>
-                  <Progress
-                    value={getUsagePercent(item.value, item.limit)}
-                    className="mt-3 h-1.5"
-                  />
-                </div>
+                  <CardHeader className="gap-2 pb-0 sm:grid-cols-[1fr_auto] sm:items-start">
+                    <div className="min-w-0">
+                      <CardTitle className="truncate">
+                        {subscription.examTypeName}
+                      </CardTitle>
+                    </div>
+                    <CardAction>
+                      <Badge
+                        variant="soft"
+                        className="bg-primary/10 text-primary ring-1 ring-primary/15"
+                      >
+                        Aktif
+                      </Badge>
+                    </CardAction>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-3">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div className="rounded-md border border-border bg-muted/30 px-2.5 py-2">
+                        <p className="text-[11px] font-medium text-muted-foreground">
+                          Mulai
+                        </p>
+                        <p className="mt-0.5 text-xs font-medium text-foreground">
+                          {formatProfileDate(subscription.startsAt)}
+                        </p>
+                      </div>
+                      <div className="rounded-md border border-border bg-muted/30 px-2.5 py-2">
+                        <p className="text-[11px] font-medium text-muted-foreground">
+                          Berakhir
+                        </p>
+                        <p className="mt-0.5 text-xs font-medium text-foreground">
+                          {formatProfileDate(subscription.endsAt)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 rounded-md bg-muted/40 px-2.5 py-1.5 text-xs font-medium text-muted-foreground">
+                      <span>Penggunaan bulan ini</span>
+                      <ChevronRightIcon className="size-3.5" />
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </section>
+        ) : null}
+
+        <Dialog
+          open={Boolean(selectedSubscription)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedSubscriptionId(null)
+            }
+          }}
+        >
+          <DialogContent className="max-w-2xl">
+            {selectedSubscription ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle>{selectedSubscription.examTypeName}</DialogTitle>
+                  <DialogDescription>
+                    {formatProfileDate(selectedSubscription.startsAt)} -{" "}
+                    {formatProfileDate(selectedSubscription.endsAt)}. Periode
+                    penggunaan {formatProfileDate(selectedSubscription.usage.period)}.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {selectedUsageItems.map((item) => {
+                    const hasLimit = item.limit >= 0
+                    const remaining = Math.max(item.limit - item.value, 0)
+
+                    return (
+                      <div
+                        key={item.label}
+                        className="rounded-lg border border-border bg-background p-3"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-medium text-foreground">
+                              {item.label}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {hasLimit
+                                ? `Sisa ${remaining} sesi`
+                                : "Tanpa batas bulanan"}
+                            </p>
+                          </div>
+                          <p className="shrink-0 text-xs font-semibold text-primary">
+                            {formatUsageLimit(item.value, item.limit)}
+                          </p>
+                        </div>
+                        <Progress
+                          value={getUsagePercent(item.value, item.limit)}
+                          className="mt-3 h-1.5"
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            ) : null}
+          </DialogContent>
+        </Dialog>
 
         <form onSubmit={handleSubmit} className="mt-5">
           <Card className="shadow-sm">
