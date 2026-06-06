@@ -21,7 +21,6 @@ type EmailCampaignsPageProps = {
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
-  createdByAdminName: false,
   updatedAt: false,
 }
 
@@ -107,16 +106,6 @@ function createColumns({
       meta: { label: emailCampaignColumnLabels.failedCount },
       header: ({ column }) => <SortableHeader column={column}>Failed</SortableHeader>,
       cell: ({ row }) => <span className="tabular-nums">{row.original.failedCount}</span>,
-    },
-    {
-      accessorKey: "createdByAdminName",
-      meta: { label: emailCampaignColumnLabels.createdByAdminName },
-      header: ({ column }) => <SortableHeader column={column}>Created By</SortableHeader>,
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {row.original.createdByAdminName ?? "-"}
-        </span>
-      ),
     },
     {
       accessorKey: "createdAt",

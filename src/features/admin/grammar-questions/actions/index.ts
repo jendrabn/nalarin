@@ -85,7 +85,7 @@ function revalidateGrammarRoutes(questionId?: number) {
 export async function createGrammarQuestionAction(
   values: GrammarQuestionFormValues,
 ): Promise<GrammarQuestionActionResult<{ id: number }>> {
-  const user = await requireAdmin()
+  await requireAdmin()
   const parsed = parseGrammarQuestionValues(values)
 
   if (!parsed.success) {
@@ -103,7 +103,6 @@ export async function createGrammarQuestionAction(
         answers: parsed.data.answers,
         distractors: parsed.data.distractors,
         status: parsed.data.status,
-        createdBy: user.id,
       })
       .$returningId()
 
@@ -277,7 +276,7 @@ function parseGrammarQuestionImportRow(values: GrammarQuestionImportRowValues) {
 export async function importGrammarQuestionRowsAction(
   rows: GrammarQuestionImportRowValues[],
 ): Promise<ImportGrammarQuestionActionResult> {
-  const user = await requireAdmin()
+  await requireAdmin()
 
   if (rows.length === 0) {
     return {
@@ -307,7 +306,6 @@ export async function importGrammarQuestionRowsAction(
         answers: row.data.answers,
         distractors: row.data.distractors,
         status: row.data.status,
-        createdBy: user.id,
       })),
     )
 

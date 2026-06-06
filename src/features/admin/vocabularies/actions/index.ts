@@ -88,7 +88,7 @@ function revalidateVocabularyRoutes(vocabularyId?: number) {
 export async function createVocabularyAction(
   values: VocabularyFormValues,
 ): Promise<VocabularyActionResult<{ id: number }>> {
-  const user = await requireAdmin()
+  await requireAdmin()
   const parsed = parseVocabularyValues(values)
 
   if (!parsed.success) {
@@ -107,7 +107,6 @@ export async function createVocabularyAction(
         wrongOption: parsed.data.wrongOption,
         exampleSentence: parsed.data.exampleSentence,
         status: parsed.data.status,
-        createdBy: user.id,
       })
       .$returningId()
 
@@ -263,7 +262,7 @@ type ImportVocabularyActionResult =
 export async function importVocabularyRowsAction(
   rows: VocabularyImportRowValues[],
 ): Promise<ImportVocabularyActionResult> {
-  const user = await requireAdmin()
+  await requireAdmin()
 
   if (rows.length === 0) {
     return {
@@ -283,7 +282,6 @@ export async function importVocabularyRowsAction(
         wrongOption: normalizeVocabularyWrongOption(row.wrongOption),
         exampleSentence: normalizeNullableText(row.exampleSentence),
         status: row.status,
-        createdBy: user.id,
       })),
     )
 

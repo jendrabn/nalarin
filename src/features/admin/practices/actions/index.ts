@@ -270,7 +270,7 @@ async function insertPracticeComposition(
 export async function createPracticeAction(
   values: PracticeFormValues,
 ): Promise<PracticeActionResult<{ id: number; slug: string }>> {
-  const user = await requireAdmin()
+  await requireAdmin()
   const parsed = parsePracticeValues(values)
 
   if (!parsed.success) {
@@ -307,7 +307,6 @@ export async function createPracticeAction(
           navigationMode: "free" as const,
           status: "draft",
           publishedAt: null,
-          createdBy: user.id,
         })
         .$returningId()
 

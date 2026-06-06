@@ -30,25 +30,9 @@ async function getSessionIds(tx: CleanupTx, userId: number) {
 export async function detachUserReferences(tx: CleanupTx, userId: number) {
   await Promise.all([
     tx
-      .update(schema.questions)
-      .set({ createdBy: null })
-      .where(eq(schema.questions.createdBy, userId)),
-    tx
-      .update(schema.practices)
-      .set({ createdBy: null })
-      .where(eq(schema.practices.createdBy, userId)),
-    tx
-      .update(schema.tryouts)
-      .set({ createdBy: null })
-      .where(eq(schema.tryouts.createdBy, userId)),
-    tx
       .update(schema.blogPosts)
       .set({ authorId: null })
       .where(eq(schema.blogPosts.authorId, userId)),
-    tx
-      .update(schema.emailCampaigns)
-      .set({ createdByAdminId: null })
-      .where(eq(schema.emailCampaigns.createdByAdminId, userId)),
     tx
       .update(schema.emailCampaignRecipients)
       .set({ userId: null })

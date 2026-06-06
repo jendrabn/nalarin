@@ -24,7 +24,6 @@ export type MaterialRow = {
   isFree: boolean
   status: (typeof schema.contentStatusValues)[number]
   publishedAt: Date | null
-  createdBy: number | null
   createdAt: Date
   updatedAt: Date
 }
@@ -72,7 +71,6 @@ type MaterialLookupRow = {
   isFree: boolean
   status: (typeof schema.contentStatusValues)[number]
   publishedAt: Date | null
-  createdBy: number | null
   createdAt: Date
   updatedAt: Date
 }
@@ -98,7 +96,6 @@ function selectMaterialColumns() {
     isFree: schema.materials.isFree,
     status: schema.materials.status,
     publishedAt: schema.materials.publishedAt,
-    createdBy: schema.materials.createdBy,
     createdAt: schema.materials.createdAt,
     updatedAt: schema.materials.updatedAt,
   } as const
@@ -115,7 +112,6 @@ function normalizeMaterialRow(row: MaterialLookupRow): MaterialRow {
     youtubeUrl: row.youtubeUrl ?? null,
     content: row.content ?? null,
     publishedAt: row.publishedAt ?? null,
-    createdBy: row.createdBy ?? null,
   }
 }
 

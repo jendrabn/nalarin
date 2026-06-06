@@ -269,7 +269,6 @@ async function persistQuestionOptions(
 }
 
 async function persistQuestion(
-  adminUserId: number,
   questionId: number | null,
   parsed: Awaited<ReturnType<typeof parseQuestionValues>>,
 ) {
@@ -319,10 +318,7 @@ async function persistQuestion(
       const [created] = await db.transaction(async (tx) => {
         const [inserted] = await tx
           .insert(schema.questions)
-          .values({
-            ...payload,
-            createdBy: adminUserId,
-          })
+          .values(payload)
           .$returningId()
 
         await persistQuestionOptions(tx, inserted.id, parsed.data.type, parsed.data.options)
@@ -390,16 +386,16 @@ async function persistQuestion(
 export async function createQuestionAction(
   values: QuestionFormValues,
 ): Promise<QuestionActionResult<{ id: number }>> {
-  const user = await requireAdmin()
-  return persistQuestion(user.id, null, parseQuestionValues(values))
+  await requireAdmin()
+  return persistQuestion(null, parseQuestionValues(values))
 }
 
 export async function updateQuestionAction(
   questionId: number,
   values: QuestionFormValues,
 ): Promise<QuestionActionResult<{ id: number }>> {
-  const user = await requireAdmin()
-  return persistQuestion(user.id, questionId, parseQuestionValues(values))
+  await requireAdmin()
+  return persistQuestion(questionId, parseQuestionValues(values))
 }
 
 export async function deleteQuestionAction(
@@ -542,7 +538,7 @@ export async function importQuestionRowsAction(
 ): Promise<
   QuestionActionResult<{ importedCount: number; skippedCount: number }>
 > {
-  const user = await requireAdmin()
+  await requireAdmin()
 
   let importedCount = 0
   let skippedCount = 0
@@ -652,7 +648,7 @@ export async function importQuestionRowsAction(
       continue
     }
 
-    const result = await persistQuestion(user.id, null, parsed)
+    const result = await persistQuestion(null, parsed)
 
     if (result.success) {
       importedCount += 1
@@ -672,11 +668,11 @@ export async function importQuestionRowsAction(
 export async function saveQuestionDraftsAction(
   drafts: QuestionFormValues[],
 ): Promise<QuestionActionResult<{ importedCount: number }>> {
-  const user = await requireAdmin()
+  await requireAdmin()
   let importedCount = 0
 
   for (const draft of drafts) {
-    const result = await persistQuestion(user.id, null, parseQuestionValues(draft))
+    const result = await persistQuestion(null, parseQuestionValues(draft))
 
     if (result.success) {
       importedCount += 1

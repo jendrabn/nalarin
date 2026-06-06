@@ -33,7 +33,6 @@ export const emailCampaignColumnLabels = {
   sentCount: "Sent",
   failedCount: "Failed",
   cancelledCount: "Cancelled",
-  createdByAdminName: "Created By",
   createdAt: "Created At",
   updatedAt: "Updated At",
 } as const

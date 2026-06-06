@@ -255,9 +255,6 @@ export const emailCampaigns = mysqlTable(
     sentCount: int('sent_count', { unsigned: true }).default(0).notNull(),
     failedCount: int('failed_count', { unsigned: true }).default(0).notNull(),
     cancelledCount: int('cancelled_count', { unsigned: true }).default(0).notNull(),
-    createdByAdminId: int('created_by_admin_id', { unsigned: true }).references(
-      () => users.id,
-    ),
     startedAt: timestamp('started_at', { mode: 'date' }),
     completedAt: timestamp('completed_at', { mode: 'date' }),
     cancelledAt: timestamp('cancelled_at', { mode: 'date' }),
@@ -268,7 +265,6 @@ export const emailCampaigns = mysqlTable(
       table.status,
       table.createdAt,
     ),
-    index('email_campaigns_created_by_idx').on(table.createdByAdminId),
   ],
 );
 
@@ -441,7 +437,6 @@ export const questions = mysqlTable(
     year: int('year', { unsigned: true }),
     points: scoreColumn('points').notNull(),
     status: contentStatusEnum.notNull(),
-    createdBy: int('created_by', { unsigned: true }).references(() => users.id),
     ...auditColumns(),
   },
   (table) => [
@@ -456,7 +451,6 @@ export const questions = mysqlTable(
       table.difficulty,
       table.updatedAt,
     ),
-    index('questions_created_by_idx').on(table.createdBy),
   ],
 );
 
@@ -508,7 +502,6 @@ export const practices = mysqlTable(
     navigationMode: navigationModeEnum.notNull(),
     status: contentStatusEnum.notNull(),
     publishedAt: timestamp('published_at', { mode: 'date' }),
-    createdBy: int('created_by', { unsigned: true }).references(() => users.id),
     ...auditColumns(),
   },
   (table) => [
@@ -521,7 +514,6 @@ export const practices = mysqlTable(
       table.isFree,
     ),
     index('practices_status_publish_idx').on(table.status, table.publishedAt),
-    index('practices_created_by_idx').on(table.createdBy),
   ],
 );
 
@@ -714,7 +706,6 @@ export const tryouts = mysqlTable(
       .notNull(),
     status: contentStatusEnum.notNull(),
     publishedAt: timestamp('published_at', { mode: 'date' }),
-    createdBy: int('created_by', { unsigned: true }).references(() => users.id),
     ...auditColumns(),
   },
   (table) => [
@@ -726,7 +717,6 @@ export const tryouts = mysqlTable(
     ),
     index('tryouts_schedule_idx').on(table.status, table.startsAt, table.endsAt),
     index('tryouts_publish_idx').on(table.status, table.publishedAt),
-    index('tryouts_created_by_idx').on(table.createdBy),
   ],
 );
 
@@ -1041,7 +1031,6 @@ export const vouchers = mysqlTable(
     promoDescription: text('promo_description'),
     isActive: boolean('is_active').default(true).notNull(),
     internalNotes: text('internal_notes'),
-    createdBy: int('created_by', { unsigned: true }).references(() => users.id),
     deletedAt: timestamp('deleted_at', { mode: 'date' }),
     ...auditColumns(),
   },
@@ -1327,7 +1316,6 @@ export const materials = mysqlTable(
     isFree: boolean('is_free').default(true).notNull(),
     status: contentStatusEnum.notNull(),
     publishedAt: timestamp('published_at', { mode: 'date' }),
-    createdBy: int('created_by', { unsigned: true }).references(() => users.id),
     ...auditColumns(),
   },
   (table) => [
@@ -1340,7 +1328,6 @@ export const materials = mysqlTable(
       table.isFree,
     ),
     index('materials_status_publish_idx').on(table.status, table.publishedAt),
-    index('materials_created_by_idx').on(table.createdBy),
   ],
 );
 
@@ -1356,7 +1343,6 @@ export const vocabularies = mysqlTable(
     wrongOption: text('wrong_option').notNull(),
     exampleSentence: text('example_sentence'),
     status: contentStatusEnum.notNull(),
-    createdBy: int('created_by', { unsigned: true }).references(() => users.id),
     ...auditColumns(),
   },
   (table) => [
@@ -1367,7 +1353,6 @@ export const vocabularies = mysqlTable(
       table.status,
     ),
     index('vocabularies_status_created_at_idx').on(table.status, table.createdAt),
-    index('vocabularies_created_by_idx').on(table.createdBy),
   ],
 );
 
@@ -1382,7 +1367,6 @@ export const grammarQuestions = mysqlTable(
     answers: json('answers').$type<GrammarQuestionAnswerArray>().notNull(),
     distractors: json('distractors').$type<string[]>().notNull(),
     status: contentStatusEnum.notNull(),
-    createdBy: int('created_by', { unsigned: true }).references(() => users.id),
     ...auditColumns(),
   },
   (table) => [
@@ -1396,6 +1380,5 @@ export const grammarQuestions = mysqlTable(
       table.status,
       table.createdAt,
     ),
-    index('grammar_questions_created_by_idx').on(table.createdBy),
   ],
 );

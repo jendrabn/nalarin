@@ -89,21 +89,6 @@ export async function purgeAccountData(
   userId: number,
 ) {
   await tx
-    .update(schema.questions)
-    .set({ createdBy: null, updatedAt: new Date() })
-    .where(eq(schema.questions.createdBy, userId))
-
-  await tx
-    .update(schema.practices)
-    .set({ createdBy: null, updatedAt: new Date() })
-    .where(eq(schema.practices.createdBy, userId))
-
-  await tx
-    .update(schema.tryouts)
-    .set({ createdBy: null, updatedAt: new Date() })
-    .where(eq(schema.tryouts.createdBy, userId))
-
-  await tx
     .update(schema.blogPosts)
     .set({ authorId: null, updatedAt: new Date() })
     .where(eq(schema.blogPosts.authorId, userId))

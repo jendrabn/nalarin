@@ -1643,7 +1643,6 @@ Menyimpan master soal beserta tipe, tingkat kesulitan, kunci teks, pembahasan, t
 | year | Tahun soal, nullable |
 | points | Bobot nilai default |
 | status | enum ContentStatus |
-| created_by | FK users, nullable |
 | created_at | Tanggal dibuat |
 | updated_at | Tanggal update |
 
@@ -1679,7 +1678,6 @@ Digunakan untuk `multiple_choice`, `multiple_answer`, dan `true_false`. Tidak di
 | quiz_duration_minutes | Durasi quiz dalam menit, nullable. Wajib diisi jika practice digunakan dalam Mode Quiz. |
 | status | enum ContentStatus |
 | **published_at** | **Waktu pertama kali dipublish, nullable. Diisi saat status pertama berubah ke `published`; tidak berubah jika di-unpublish dan re-publish.** |
-| created_by | FK users, nullable |
 | created_at | Tanggal dibuat |
 | updated_at | Tanggal update |
 
@@ -1798,7 +1796,6 @@ Menyimpan master tryout/event yang dibuat admin.
 | wrong_answer_penalty | DECIMAL(5,2), default `0.00`. Nilai skor yang diberikan untuk setiap jawaban **salah** pada soal objektif. Berlaku untuk seluruh section kecuali section yang memiliki override. Nilai harus `≤ 0`. Contoh: `0` = tidak ada penalti, `-1.00` = kurangi 1 poin, `-0.25` = kurangi 0.25 poin. |
 | status | enum ContentStatus |
 | **published_at** | **Waktu pertama kali dipublish, nullable. Diisi saat status pertama berubah ke `published`; tidak berubah meskipun tryout di-unpublish ke `draft` kemudian di-publish ulang. Lihat aturan transisi di Section 9.2a.** |
-| created_by | FK users, nullable |
 | created_at | Tanggal dibuat |
 | updated_at | Tanggal update |
 
@@ -2080,7 +2077,6 @@ Menyimpan materi pelajaran berupa konten video YouTube dan/atau teks rich text y
 | is_free | Boolean — menentukan apakah materi dapat diakses user Free |
 | status | enum ContentStatus |
 | **published_at** | **Waktu pertama kali dipublish, nullable. Diisi saat status pertama berubah ke `published`; tidak berubah jika di-unpublish dan re-publish.** |
-| created_by | FK users, nullable |
 | created_at | Tanggal dibuat |
 | updated_at | Tanggal update |
 
@@ -2101,7 +2097,6 @@ Menyimpan data kosakata yang digunakan dalam Game Kosakata. Setiap record mewaki
 | wrong_options | JSON array of strings — opsi salah (distractor) yang ditampilkan sebagai pilihan alternatif dalam game. Minimal 1 elemen, maksimal 3. Contoh: `["biasa dan tidak berkesan", "menyedihkan dan membosankan"]` |
 | example_sentence | Contoh penggunaan kata dalam kalimat, TEXT nullable |
 | status | enum ContentStatus |
-| created_by | FK users, nullable |
 | created_at | Tanggal dibuat |
 | updated_at | Tanggal update |
 
@@ -2121,7 +2116,6 @@ Menyimpan soal grammar fill-in-the-blank yang digunakan dalam Game Grammar. Seti
 | answers | JSON — array of objects berurutan berdasarkan `order`, masing-masing merepresentasikan jawaban benar untuk satu blank. Format: `[{"order": 1, "answer": "goes"}, {"order": 2, "answer": "does"}]`. Urutan wajib sesuai nomor placeholder di `sentence_template`. |
 | distractors | JSON — array of strings berisi opsi salah yang ditampilkan sebagai chip tambahan di pool. Minimal 1 elemen. Tidak boleh mengandung nilai yang sama dengan salah satu `answers` (case-insensitive). Contoh: `["go", "going", "did", "doing"]` |
 | status | enum ContentStatus |
-| created_by | FK users, nullable |
 | created_at | Tanggal dibuat |
 | updated_at | Tanggal update |
 
@@ -2368,7 +2362,6 @@ Service layer memvalidasi konsistensi relasi pada saat operasi create dan update
   - Jadwal, setting tampilan hasil/ranking/pembahasan, dan `allow_review_before_submit` hanya dapat diedit selama belum ada `tryout_sessions` untuk tryout tersebut.
   - Section, soal, `wrong_answer_penalty`, `shuffle_questions`, dan `shuffle_options` dilarang diedit setelah ada session apapun.
   - Transisi `published → draft` hanya diizinkan jika belum ada session. `published → archived` diizinkan kapan saja. `archived` bersifat final.
-- Field `created_by` pada questions, practices, tryouts, **materials, vocabularies, dan grammar_questions** wajib diisi untuk konten yang dibuat melalui admin panel. Nullable hanya untuk data seed, migrasi, atau import sistem lama.
 - Record `practice_questions` tidak boleh dihapus jika sudah direferensikan oleh `practice_session_questions`. Jika soal harus dikeluarkan dari practice, buat versi baru practice.
 - Record `tryout_questions` tidak boleh dihapus jika sudah direferensikan oleh `tryout_session_questions`. Jika soal harus dikeluarkan dari section, buat versi baru tryout.
 - `scoring_rule` wajib diisi (NOT NULL) untuk soal bertipe `multiple_answer`. Validasi ini diterapkan di level service layer dan import Excel.

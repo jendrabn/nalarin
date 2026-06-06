@@ -16,7 +16,7 @@ type VoucherActionResult<T = unknown> = ActionResult<VoucherFormValues, T>
 export async function createVoucherAction(
   values: VoucherFormValues,
 ): Promise<VoucherActionResult<{ id: number }>> {
-  const admin = await requireAdmin()
+  await requireAdmin()
   const parsed = voucherFormSchema.safeParse(values)
 
   if (!parsed.success) {
@@ -43,7 +43,6 @@ export async function createVoucherAction(
         promoDescription: data.promoDescription || null,
         isActive: data.isActive,
         internalNotes: data.internalNotes || null,
-        createdBy: admin.id,
       })
       .$returningId()
 

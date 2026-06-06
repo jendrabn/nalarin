@@ -27,7 +27,6 @@ export type PracticeRow = {
   quizDurationMinutes: number | null
   status: PracticeStatus
   publishedAt: Date | null
-  createdBy: number | null
   questionCount: number
   sessionCount: number
   createdAt: Date
@@ -119,7 +118,6 @@ function selectPracticeColumns() {
     quizDurationMinutes: schema.practices.quizDurationMinutes,
     status: schema.practices.status,
     publishedAt: schema.practices.publishedAt,
-    createdBy: schema.practices.createdBy,
     createdAt: schema.practices.createdAt,
     updatedAt: schema.practices.updatedAt,
   } as const
@@ -136,7 +134,6 @@ function normalizePracticeRow(
     topicName: row.topicName ?? null,
     quizDurationMinutes: row.quizDurationMinutes ?? null,
     publishedAt: row.publishedAt ?? null,
-    createdBy: row.createdBy ?? null,
     questionCount: counts.questionCount ?? 0,
     sessionCount: counts.sessionCount ?? 0,
   }

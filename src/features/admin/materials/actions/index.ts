@@ -233,7 +233,7 @@ async function ensureMaterialExamTypeSlug(examTypeId: number) {
 export async function createMaterialAction(
   values: MaterialFormValues,
 ): Promise<MaterialActionResult<{ id: number; slug: string }>> {
-  const user = await requireAdmin()
+  await requireAdmin()
   const parsed = parseMaterialValues(values)
 
   if (!parsed.success) {
@@ -293,7 +293,6 @@ export async function createMaterialAction(
         isFree: parsed.data.isFree,
         status: parsed.data.status,
         publishedAt,
-        createdBy: user.id,
       })
       .$returningId()
 

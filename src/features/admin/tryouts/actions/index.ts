@@ -322,7 +322,7 @@ async function insertTryoutComposition(
 export async function createTryoutAction(
   values: TryoutFormValues,
 ): Promise<TryoutActionResult<{ id: number; slug: string }>> {
-  const user = await requireAdmin()
+  await requireAdmin()
   const parsed = parseTryoutValues(values)
 
   if (!parsed.success) {
@@ -363,7 +363,6 @@ export async function createTryoutAction(
           wrongAnswerPenalty: String(parsed.data.wrongAnswerPenalty),
           status: "draft",
           publishedAt: null,
-          createdBy: user.id,
         })
         .$returningId()
 

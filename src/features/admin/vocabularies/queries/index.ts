@@ -16,8 +16,6 @@ export type VocabularyRow = {
   wrongOption: string
   exampleSentence: string | null
   status: (typeof schema.contentStatusValues)[number]
-  createdBy: number | null
-  createdByName: string | null
   createdAt: Date
   updatedAt: Date
 }
@@ -35,8 +33,6 @@ function selectVocabularyColumns() {
     wrongOption: schema.vocabularies.wrongOption,
     exampleSentence: schema.vocabularies.exampleSentence,
     status: schema.vocabularies.status,
-    createdBy: schema.vocabularies.createdBy,
-    createdByName: schema.users.name,
     createdAt: schema.vocabularies.createdAt,
     updatedAt: schema.vocabularies.updatedAt,
   } as const
@@ -52,8 +48,6 @@ function normalizeVocabularyRow(row: {
   wrongOption: string | null
   exampleSentence: string | null
   status: (typeof schema.contentStatusValues)[number]
-  createdBy: number | null
-  createdByName: string | null
   createdAt: Date
   updatedAt: Date
 }): VocabularyRow {
@@ -61,8 +55,6 @@ function normalizeVocabularyRow(row: {
     ...row,
     wrongOption: row.wrongOption ?? "",
     exampleSentence: row.exampleSentence ?? null,
-    createdBy: row.createdBy ?? null,
-    createdByName: row.createdByName ?? null,
   }
 }
 
@@ -70,7 +62,6 @@ export async function getVocabularies() {
   const rows = await db
     .select(selectVocabularyColumns())
     .from(schema.vocabularies)
-    .leftJoin(schema.users, eq(schema.vocabularies.createdBy, schema.users.id))
     .orderBy(desc(schema.vocabularies.createdAt))
 
   return rows.map(normalizeVocabularyRow)
@@ -80,7 +71,6 @@ export async function getVocabularyById(id: number) {
   const rows = await db
     .select(selectVocabularyColumns())
     .from(schema.vocabularies)
-    .leftJoin(schema.users, eq(schema.vocabularies.createdBy, schema.users.id))
     .where(eq(schema.vocabularies.id, id))
     .limit(1)
 

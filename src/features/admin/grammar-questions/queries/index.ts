@@ -18,8 +18,6 @@ export type GrammarQuestionRow = {
   answers: { order: number; answer: string }[]
   distractors: string[]
   status: (typeof schema.contentStatusValues)[number]
-  createdBy: number | null
-  createdByName: string | null
   createdAt: Date
   updatedAt: Date
 }
@@ -36,8 +34,6 @@ function selectGrammarQuestionColumns() {
     answers: schema.grammarQuestions.answers,
     distractors: schema.grammarQuestions.distractors,
     status: schema.grammarQuestions.status,
-    createdBy: schema.grammarQuestions.createdBy,
-    createdByName: schema.users.name,
     createdAt: schema.grammarQuestions.createdAt,
     updatedAt: schema.grammarQuestions.updatedAt,
   } as const
@@ -52,8 +48,6 @@ function normalizeGrammarQuestionRow(row: {
   answers: { order: number; answer: string }[] | null
   distractors: string[] | null
   status: (typeof schema.contentStatusValues)[number]
-  createdBy: number | null
-  createdByName: string | null
   createdAt: Date
   updatedAt: Date
 }): GrammarQuestionRow {
@@ -62,8 +56,6 @@ function normalizeGrammarQuestionRow(row: {
     blankCount: getGrammarQuestionBlankCount(row.sentenceTemplate),
     answers: row.answers ?? [],
     distractors: row.distractors ?? [],
-    createdBy: row.createdBy ?? null,
-    createdByName: row.createdByName ?? null,
     category: row.category ?? null,
   }
 }
@@ -72,7 +64,6 @@ export async function getGrammarQuestions() {
   const rows = await db
     .select(selectGrammarQuestionColumns())
     .from(schema.grammarQuestions)
-    .leftJoin(schema.users, eq(schema.grammarQuestions.createdBy, schema.users.id))
     .orderBy(desc(schema.grammarQuestions.createdAt))
 
   return rows.map(normalizeGrammarQuestionRow)
@@ -82,7 +73,6 @@ export async function getGrammarQuestionById(id: number) {
   const rows = await db
     .select(selectGrammarQuestionColumns())
     .from(schema.grammarQuestions)
-    .leftJoin(schema.users, eq(schema.grammarQuestions.createdBy, schema.users.id))
     .where(eq(schema.grammarQuestions.id, id))
     .limit(1)
 

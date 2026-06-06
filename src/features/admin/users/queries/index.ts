@@ -103,9 +103,6 @@ export type AdminUserDetails = AdminUserRow & {
     progressSnapshots: number
   }
   contentStats: {
-    questions: number
-    practices: number
-    tryouts: number
     blogPosts: number
   }
 }
@@ -302,9 +299,6 @@ export async function getAdminUserById(id: number) {
     tryoutSessionRows,
     monthlyUsageRows,
     progressSnapshotRows,
-    authoredQuestionRows,
-    authoredPracticeRows,
-    authoredTryoutRows,
     authoredBlogPostRows,
   ] = await Promise.all([
     db
@@ -413,24 +407,6 @@ export async function getAdminUserById(id: number) {
       .where(eq(schema.userProgressSnapshots.userId, id)),
     db
       .select({
-        questions: sql<number>`count(*)`,
-      })
-      .from(schema.questions)
-      .where(eq(schema.questions.createdBy, id)),
-    db
-      .select({
-        practices: sql<number>`count(*)`,
-      })
-      .from(schema.practices)
-      .where(eq(schema.practices.createdBy, id)),
-    db
-      .select({
-        tryouts: sql<number>`count(*)`,
-      })
-      .from(schema.tryouts)
-      .where(eq(schema.tryouts.createdBy, id)),
-    db
-      .select({
         blogPosts: sql<number>`count(*)`,
       })
       .from(schema.blogPosts)
@@ -474,9 +450,6 @@ export async function getAdminUserById(id: number) {
       progressSnapshots: Number(progressSnapshotRows[0]?.progressSnapshots ?? 0),
     },
     contentStats: {
-      questions: Number(authoredQuestionRows[0]?.questions ?? 0),
-      practices: Number(authoredPracticeRows[0]?.practices ?? 0),
-      tryouts: Number(authoredTryoutRows[0]?.tryouts ?? 0),
       blogPosts: Number(authoredBlogPostRows[0]?.blogPosts ?? 0),
     },
   } satisfies AdminUserDetails

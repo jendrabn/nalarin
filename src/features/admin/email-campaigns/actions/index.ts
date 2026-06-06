@@ -117,7 +117,7 @@ async function markEnqueueFailure(campaignId: number, recipientIds: number[], er
 export async function createEmailCampaignAction(
   values: EmailCampaignFormValues,
 ): Promise<EmailCampaignActionResult<{ id: number }>> {
-  const admin = await requireAdmin()
+  await requireAdmin()
   const parsed = parseEmailCampaignValues(values)
 
   if (!parsed.success) {
@@ -168,7 +168,6 @@ export async function createEmailCampaignAction(
         contentHtml: parsed.data.contentHtml,
         contentText: parsed.data.contentText,
         totalRecipients: users.length,
-        createdByAdminId: admin.id,
       })
       .$returningId()
 

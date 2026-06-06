@@ -19,7 +19,6 @@ export type AdminEmailCampaignRow = {
   sentCount: number
   failedCount: number
   cancelledCount: number
-  createdByAdminName: string | null
   createdAt: Date
   updatedAt: Date
   startedAt: Date | null
@@ -67,7 +66,6 @@ function mapCampaignRow(row: {
   sentCount: number
   failedCount: number
   cancelledCount: number
-  createdByAdminName: string | null
   createdAt: Date
   updatedAt: Date
   startedAt: Date | null
@@ -76,7 +74,6 @@ function mapCampaignRow(row: {
 }): AdminEmailCampaignRow {
   return {
     ...row,
-    createdByAdminName: row.createdByAdminName ?? null,
     startedAt: row.startedAt ?? null,
     completedAt: row.completedAt ?? null,
     cancelledAt: row.cancelledAt ?? null,
@@ -93,7 +90,6 @@ export async function getAdminEmailCampaigns() {
       sentCount: schema.emailCampaigns.sentCount,
       failedCount: schema.emailCampaigns.failedCount,
       cancelledCount: schema.emailCampaigns.cancelledCount,
-      createdByAdminName: schema.users.name,
       createdAt: schema.emailCampaigns.createdAt,
       updatedAt: schema.emailCampaigns.updatedAt,
       startedAt: schema.emailCampaigns.startedAt,
@@ -101,7 +97,6 @@ export async function getAdminEmailCampaigns() {
       cancelledAt: schema.emailCampaigns.cancelledAt,
     })
     .from(schema.emailCampaigns)
-    .leftJoin(schema.users, eq(schema.emailCampaigns.createdByAdminId, schema.users.id))
     .orderBy(desc(schema.emailCampaigns.createdAt))
 
   return rows.map(mapCampaignRow)
@@ -119,7 +114,6 @@ export async function getAdminEmailCampaignById(id: number) {
       sentCount: schema.emailCampaigns.sentCount,
       failedCount: schema.emailCampaigns.failedCount,
       cancelledCount: schema.emailCampaigns.cancelledCount,
-      createdByAdminName: schema.users.name,
       createdAt: schema.emailCampaigns.createdAt,
       updatedAt: schema.emailCampaigns.updatedAt,
       startedAt: schema.emailCampaigns.startedAt,
@@ -127,7 +121,6 @@ export async function getAdminEmailCampaignById(id: number) {
       cancelledAt: schema.emailCampaigns.cancelledAt,
     })
     .from(schema.emailCampaigns)
-    .leftJoin(schema.users, eq(schema.emailCampaigns.createdByAdminId, schema.users.id))
     .where(eq(schema.emailCampaigns.id, id))
     .limit(1)
 

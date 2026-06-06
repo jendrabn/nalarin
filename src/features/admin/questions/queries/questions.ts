@@ -49,7 +49,6 @@ export type QuestionRow = {
 }
 
 export type QuestionDetails = QuestionRow & {
-  createdBy: number | null
   options: QuestionOptionRow[]
 }
 
@@ -167,10 +166,7 @@ export async function getQuestions() {
 
 export async function getQuestionById(id: number) {
   const row = await db
-    .select({
-      ...selectQuestionColumns(),
-      createdBy: schema.questions.createdBy,
-    })
+    .select(selectQuestionColumns())
     .from(schema.questions)
     .innerJoin(schema.subjects, eq(schema.questions.subjectId, schema.subjects.id))
     .innerJoin(schema.examTypes, eq(schema.subjects.examTypeId, schema.examTypes.id))
@@ -200,7 +196,6 @@ export async function getQuestionById(id: number) {
 
   return {
     ...normalizeQuestionRow(question, options.length),
-    createdBy: question.createdBy ?? null,
     options: options.map((option) => ({
       ...option,
       imageUrl: option.imageUrl ?? null,

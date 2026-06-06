@@ -245,18 +245,6 @@ export function UserDetailPage({
 
               <dl className="grid gap-4 sm:grid-cols-2">
                 <DetailItem
-                  label="Questions Authored"
-                  value={user.contentStats.questions.toLocaleString("id-ID")}
-                />
-                <DetailItem
-                  label="Practices Authored"
-                  value={user.contentStats.practices.toLocaleString("id-ID")}
-                />
-                <DetailItem
-                  label="Tryouts Authored"
-                  value={user.contentStats.tryouts.toLocaleString("id-ID")}
-                />
-                <DetailItem
                   label="Blog Posts Authored"
                   value={user.contentStats.blogPosts.toLocaleString("id-ID")}
                 />

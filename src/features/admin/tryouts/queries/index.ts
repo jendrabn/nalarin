@@ -39,7 +39,6 @@ export type TryoutRow = {
   wrongAnswerPenalty: number
   status: TryoutStatus
   publishedAt: Date | null
-  createdBy: number | null
   sectionCount: number
   questionCount: number
   sessionCount: number
@@ -149,7 +148,6 @@ function selectTryoutColumns() {
     wrongAnswerPenalty: schema.tryouts.wrongAnswerPenalty,
     status: schema.tryouts.status,
     publishedAt: schema.tryouts.publishedAt,
-    createdBy: schema.tryouts.createdBy,
     createdAt: schema.tryouts.createdAt,
     updatedAt: schema.tryouts.updatedAt,
   } as const
@@ -175,7 +173,6 @@ function normalizeTryoutRow(
     explanationReleaseAt: row.explanationReleaseAt ?? null,
     wrongAnswerPenalty: Number(row.wrongAnswerPenalty),
     publishedAt: row.publishedAt ?? null,
-    createdBy: row.createdBy ?? null,
     sectionCount: counts.sectionCount ?? 0,
     questionCount: counts.questionCount ?? 0,
     sessionCount: counts.sessionCount ?? 0,
