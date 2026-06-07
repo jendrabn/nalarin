@@ -454,10 +454,21 @@ export function ProfilePage({ profile }: ProfilePageProps) {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between gap-3 rounded-md bg-muted/40 px-2.5 py-1.5 text-xs font-medium text-muted-foreground">
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between gap-3 rounded-md bg-muted/40 px-2.5 py-1.5 text-left text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      onPointerDown={(event) => {
+                        event.stopPropagation()
+                      }}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        handleSubscriptionSelect(subscription.id)
+                      }}
+                      aria-label={`Lihat penggunaan bulan ini untuk ${subscription.examTypeName}`}
+                    >
                       <span>Penggunaan bulan ini</span>
-                      <ChevronRightIcon className="size-3.5" />
-                    </div>
+                      <ChevronRightIcon className="size-3.5 shrink-0" />
+                    </button>
                   </CardContent>
                 </Card>
               ))}
