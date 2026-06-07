@@ -119,7 +119,6 @@ function FeatureHighlightsSection() {
   return (
     <section id="fitur" className="border-y bg-secondary/60 py-20 sm:py-24">
       <SectionHeading
-        eyebrow="Fitur Utama"
         title="Belajar Dengan Alur Yang Bisa Diukur"
         description="Nalarin menyatukan latihan, quiz, tryout, review, dan progres agar setiap sesi belajar punya tindak lanjut."
       />
@@ -151,7 +150,6 @@ function HowItWorksSection() {
   return (
     <section id="cara-kerja" className="border-y bg-secondary/60 py-20 sm:py-24">
       <SectionHeading
-        eyebrow="Cara Kerja"
         title="Dari Target Tes Ke Review Yang Bisa Ditindaklanjuti"
         description="Pilih target, mulai latihan, lalu gunakan hasil review untuk menentukan prioritas belajar berikutnya."
       />
@@ -191,7 +189,6 @@ async function PricingSection() {
   return (
     <section id="pricing" className="bg-background py-20 sm:py-24">
       <SectionHeading
-        eyebrow="Paket Belajar"
         title="Mulai Gratis, Upgrade Saat Butuh Akses Lebih Luas"
         description="Pilih akses belajar sesuai ritme persiapanmu, dari latihan dasar sampai tryout intensif dengan pembahasan penuh."
       />
@@ -207,8 +204,7 @@ function FaqSection() {
     <section id="faq" className="border-y bg-secondary/60 py-20 sm:py-24">
       <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
         <div>
-          <p className="text-sm font-semibold text-primary">FAQ</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-normal sm:text-4xl">
+          <h2 className="text-3xl font-semibold tracking-normal sm:text-4xl">
             Pertanyaan Yang Sering Muncul
           </h2>
           <p className="mt-4 text-base leading-7 text-muted-foreground">
@@ -271,21 +267,18 @@ function FinalCtaSection() {
 }
 
 function SectionHeading({
-  eyebrow,
   title,
   description,
 }: {
-  eyebrow: string;
   title: string;
   description: string;
 }) {
   return (
     <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-      <p className="text-sm font-semibold text-primary">{eyebrow}</p>
-      <h2 className="mt-3 text-balance text-3xl font-semibold tracking-normal sm:text-4xl">
+      <h2 className="text-balance text-[1.9rem] font-medium leading-[1.15] tracking-normal text-foreground/95 sm:text-4xl sm:font-semibold sm:leading-[1.08]">
         {title}
       </h2>
-      <p className="mt-4 text-base leading-7 text-muted-foreground">
+      <p className="mx-auto mt-3 max-w-2xl text-pretty text-[0.96rem] leading-7 text-muted-foreground/85 sm:mt-4 sm:text-base sm:leading-7">
         {description}
       </p>
     </div>

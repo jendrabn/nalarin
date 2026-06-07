@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   ChevronDownIcon,
   ChevronRightIcon,
-  LogInIcon,
   MenuIcon,
 } from "lucide-react";
 
@@ -49,7 +48,7 @@ export function SiteNavbar({ user }: SiteNavbarProps) {
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/78 shadow-sm shadow-primary/5 backdrop-blur-xl">
       <nav className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between md:hidden">
-          <SiteLogo />
+          <SiteLogo className="h-6 w-[8.5rem]" />
           <div className="flex items-center gap-1">
             <ThemeToggle />
             <Sheet>
@@ -154,18 +153,17 @@ function GuestActions({ stacked = false }: { stacked?: boolean }) {
   return (
     <div className={stacked ? "flex flex-col gap-2" : "flex items-center gap-2"}>
       <Button
-        variant="cta"
+        variant="outline-primary"
         size="xl"
         className={
           stacked
             ? "h-12 w-full rounded-full px-5 text-base"
-            : "h-10 rounded-full px-4 shadow-md shadow-primary/20 hover:!translate-y-0 hover:!scale-100 hover:shadow-lg hover:shadow-primary/30"
+            : "h-10 rounded-full px-4"
         }
         asChild
       >
         <Link href="/login">
-          <LogInIcon data-icon="inline-start" />
-          <span>Masuk</span>
+          <span>Masuk / Daftar</span>
         </Link>
       </Button>
     </div>

@@ -119,7 +119,15 @@ function getSubscriptionUsageItems(
 export function ProfilePage({ profile }: ProfilePageProps) {
   const router = useRouter()
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const subscriptionTrackRef = React.useRef<HTMLDivElement>(null)
   const avatarObjectUrlRef = React.useRef<string | null>(null)
+  const subscriptionDragStateRef = React.useRef({
+    pointerId: -1,
+    isDragging: false,
+    hasMoved: false,
+    startX: 0,
+    startScrollLeft: 0,
+  })
   const [formValues, setFormValues] = React.useState<ProfileFormInput>({
     name: profile.user.name,
     phoneNumber: profile.user.phoneNumber ?? "",
@@ -289,6 +297,95 @@ export function ProfilePage({ profile }: ProfilePageProps) {
   const deleteDisabled =
     deleteEmail.trim().toLowerCase() !== profile.user.email.toLowerCase()
 
+  function handleSubscriptionPointerDown(
+    event: React.PointerEvent<HTMLDivElement>,
+  ) {
+    if (event.pointerType !== "mouse" || event.button !== 0) {
+      return
+    }
+
+    const track = subscriptionTrackRef.current
+
+    if (!track) {
+      return
+    }
+
+    subscriptionDragStateRef.current = {
+      pointerId: event.pointerId,
+      isDragging: true,
+      hasMoved: false,
+      startX: event.clientX,
+      startScrollLeft: track.scrollLeft,
+    }
+
+    track.setPointerCapture(event.pointerId)
+  }
+
+  function handleSubscriptionPointerMove(
+    event: React.PointerEvent<HTMLDivElement>,
+  ) {
+    const dragState = subscriptionDragStateRef.current
+
+    if (!dragState.isDragging || dragState.pointerId !== event.pointerId) {
+      return
+    }
+
+    const track = subscriptionTrackRef.current
+
+    if (!track) {
+      return
+    }
+
+    const deltaX = event.clientX - dragState.startX
+
+    if (Math.abs(deltaX) > 4) {
+      dragState.hasMoved = true
+    }
+
+    track.scrollLeft = dragState.startScrollLeft - deltaX
+    event.preventDefault()
+  }
+
+  function endSubscriptionPointerDrag(
+    event: React.PointerEvent<HTMLDivElement>,
+  ) {
+    const dragState = subscriptionDragStateRef.current
+
+    if (dragState.pointerId !== event.pointerId) {
+      return
+    }
+
+    const track = subscriptionTrackRef.current
+
+    if (track?.hasPointerCapture(event.pointerId)) {
+      track.releasePointerCapture(event.pointerId)
+    }
+
+    subscriptionDragStateRef.current = {
+      pointerId: -1,
+      isDragging: false,
+      hasMoved: false,
+      startX: 0,
+      startScrollLeft: 0,
+    }
+  }
+
+  function handleSubscriptionClickCapture(
+    event: React.MouseEvent<HTMLDivElement>,
+  ) {
+    if (!subscriptionDragStateRef.current.hasMoved) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    subscriptionDragStateRef.current.hasMoved = false
+  }
+
+  function handleSubscriptionSelect(subscriptionId: number) {
+    setSelectedSubscriptionId(subscriptionId)
+  }
+
   return (
     <main className="bg-background py-8 text-foreground sm:py-10">
       <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
@@ -299,19 +396,27 @@ export function ProfilePage({ profile }: ProfilePageProps) {
 
         {activeSubscriptions.length > 0 ? (
           <section>
-            <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 md:grid md:snap-none md:grid-cols-2 md:overflow-visible md:pb-0 lg:grid-cols-3">
+            <div
+              ref={subscriptionTrackRef}
+              className="-mx-4 grid auto-cols-[82%] grid-flow-col items-start gap-3 overflow-x-auto px-4 pb-2 pt-1 scroll-smooth snap-x snap-mandatory [scrollbar-width:none] sm:auto-cols-[46%] lg:mx-0 lg:px-0 lg:auto-cols-[380px] md:cursor-grab md:select-none md:active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
+              onPointerDown={handleSubscriptionPointerDown}
+              onPointerMove={handleSubscriptionPointerMove}
+              onPointerUp={endSubscriptionPointerDrag}
+              onPointerCancel={endSubscriptionPointerDrag}
+              onClickCapture={handleSubscriptionClickCapture}
+            >
               {activeSubscriptions.map((subscription) => (
                 <Card
                   key={subscription.id}
                   role="button"
                   tabIndex={0}
                   size="sm"
-                  className="w-[88%] max-w-sm shrink-0 snap-start cursor-pointer border border-primary/10 shadow-sm shadow-primary/5 transition-colors hover:bg-primary/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:w-auto md:max-w-none md:shrink"
-                  onClick={() => setSelectedSubscriptionId(subscription.id)}
+                  className="w-full self-start snap-start cursor-pointer border border-primary/10 shadow-sm shadow-primary/5 transition-colors hover:bg-primary/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  onClick={() => handleSubscriptionSelect(subscription.id)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault()
-                      setSelectedSubscriptionId(subscription.id)
+                      handleSubscriptionSelect(subscription.id)
                     }
                   }}
                 >
