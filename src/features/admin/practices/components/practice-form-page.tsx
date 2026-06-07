@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useMemo, useState } from "react"
+import { useEffect, useId, useMemo, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm, useWatch, type FieldErrors, type Resolver } from "react-hook-form"
@@ -31,7 +31,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Field,
   FieldContent,
@@ -173,6 +173,38 @@ function formatReviewText(value: string | null | undefined, fallback = "-") {
   return trimmed ? trimmed : fallback
 }
 
+function formatReviewMinutes(value: string | null | undefined) {
+  const text = formatReviewText(value)
+  return text === "-" ? text : `${text} minutes`
+}
+
+function formatCountMap(counts: Map<string, number>) {
+  if (counts.size === 0) {
+    return "-"
+  }
+
+  return Array.from(counts)
+    .map(([label, count]) => `${label}: ${count}`)
+    .join(", ")
+}
+
+function ReviewField({
+  label,
+  children,
+  className,
+}: {
+  label: string
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={cn("rounded-lg border border-border/60 bg-muted/20 p-3", className)}>
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <div className="mt-1 break-words text-sm font-medium">{children}</div>
+    </div>
+  )
+}
+
 export function PracticeFormPage({
   mode,
   practiceId,
@@ -236,6 +268,55 @@ export function PracticeFormPage({
         !selectedQuestionIds.has(String(question.id)),
     )
   }, [lookups.questions, questions, selectedExamTypeId, selectedSubjectId])
+  const questionStats = useMemo(() => {
+    const lookupById = new Map(lookups.questions.map((question) => [String(question.id), question]))
+    const typeCounts = new Map<string, number>()
+    const difficultyCounts = new Map<string, number>()
+    const topicCounts = new Map<string, number>()
+    let missingLookupCount = 0
+    let totalPoints = 0
+    let pointsCount = 0
+
+    questions.forEach((question) => {
+      const points = Number(question.points || 0)
+
+      if (Number.isFinite(points)) {
+        totalPoints += points
+        pointsCount += 1
+      }
+
+      const selectedQuestion = lookupById.get(question.questionId)
+
+      if (!selectedQuestion) {
+        missingLookupCount += 1
+        return
+      }
+
+      const questionType = getModelEnumBadgeMeta("questionType", selectedQuestion.type).label
+      const questionDifficulty = getModelEnumBadgeMeta(
+        "questionDifficulty",
+        selectedQuestion.difficulty,
+      ).label
+      const topic = selectedQuestion.topicName ?? "No topic"
+
+      typeCounts.set(questionType, (typeCounts.get(questionType) ?? 0) + 1)
+      difficultyCounts.set(
+        questionDifficulty,
+        (difficultyCounts.get(questionDifficulty) ?? 0) + 1,
+      )
+      topicCounts.set(topic, (topicCounts.get(topic) ?? 0) + 1)
+    })
+
+    return {
+      averagePoints: pointsCount > 0 ? totalPoints / pointsCount : 0,
+      difficultySummary: formatCountMap(difficultyCounts),
+      missingLookupCount,
+      topicCount: topicCounts.size,
+      topicSummary: formatCountMap(topicCounts),
+      totalPoints,
+      typeSummary: formatCountMap(typeCounts),
+    }
+  }, [lookups.questions, questions])
 
   function setQuestions(nextQuestions: PracticeFormValues["questions"]) {
     form.setValue("questions", nextQuestions, {
@@ -949,17 +1030,21 @@ export function PracticeFormPage({
                   <CardDescription>Confirm the package before saving or publishing.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-lg border border-border/60 p-3">
-                      <p className="text-sm text-muted-foreground">Questions</p>
-                      <p className="text-lg font-semibold tabular-nums">{questions.length}</p>
-                    </div>
-                    <div className="rounded-lg border border-border/60 p-3">
-                      <p className="text-sm text-muted-foreground">Access</p>
-                      <Badge variant={watchedValues.isFree ? "secondary" : "outline"}>
-                        {watchedValues.isFree ? "Free" : "Paid"}
-                      </Badge>
-                    </div>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <ReviewField label="Questions">
+                      <span className="tabular-nums">{questions.length}</span>
+                    </ReviewField>
+                    <ReviewField label="Total points">
+                      <span className="tabular-nums">{questionStats.totalPoints}</span>
+                    </ReviewField>
+                    <ReviewField label="Average points">
+                      <span className="tabular-nums">
+                        {questionStats.averagePoints.toFixed(2)}
+                      </span>
+                    </ReviewField>
+                    <ReviewField label="Access">
+                      {watchedValues.isFree ? "Free" : "Paid"}
+                    </ReviewField>
                   </div>
                 </CardContent>
               </Card>
@@ -970,29 +1055,16 @@ export function PracticeFormPage({
                   <CardDescription>Bank-soal metadata and settings.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-3 text-sm md:grid-cols-2">
-                    <div className="rounded-lg border border-border/60 p-3">
-                      <span className="text-muted-foreground">Exam type</span>
-                      <p className="font-medium">{selectedExamType?.name ?? "-"}</p>
-                    </div>
-                    <div className="rounded-lg border border-border/60 p-3">
-                      <span className="text-muted-foreground">Subject</span>
-                      <p className="font-medium">{selectedSubject?.name ?? "-"}</p>
-                    </div>
-                    <div className="rounded-lg border border-border/60 p-3">
-                      <span className="text-muted-foreground">Topic</span>
-                      <p className="font-medium">{selectedTopic?.name ?? "-"}</p>
-                    </div>
-                    <div className="rounded-lg border border-border/60 p-3 md:col-span-2">
-                      <span className="text-muted-foreground">Title</span>
-                      <p className="font-medium">{watchedValues.title || "-"}</p>
-                    </div>
-                    <div className="rounded-lg border border-border/60 p-3 md:col-span-2">
-                      <span className="text-muted-foreground">Description</span>
-                      <p className="whitespace-pre-wrap font-medium">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <ReviewField label="Exam type">{selectedExamType?.name ?? "-"}</ReviewField>
+                    <ReviewField label="Subject">{selectedSubject?.name ?? "-"}</ReviewField>
+                    <ReviewField label="Topic">{selectedTopic?.name ?? "-"}</ReviewField>
+                    <ReviewField label="Title">{formatReviewText(watchedValues.title)}</ReviewField>
+                    <ReviewField label="Description" className="sm:col-span-2">
+                      <span className="whitespace-pre-wrap">
                         {formatReviewText(watchedValues.description)}
-                      </p>
-                    </div>
+                      </span>
+                    </ReviewField>
                   </div>
                 </CardContent>
               </Card>
@@ -1003,136 +1075,53 @@ export function PracticeFormPage({
                   <CardDescription>Quiz timing for this practice.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-4">
-                    <div className="grid gap-3 text-sm md:grid-cols-2">
-                      <div className="rounded-lg border border-border/60 p-3 md:col-span-2">
-                        <span className="text-muted-foreground">Quiz duration</span>
-                        <p className="font-medium tabular-nums">
-                          {formatReviewText(watchedValues.quizDurationMinutes)} minutes
-                        </p>
-                      </div>
-                    </div>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <ReviewField label="Quiz duration">
+                      <span className="tabular-nums">
+                        {formatReviewMinutes(watchedValues.quizDurationMinutes)}
+                      </span>
+                    </ReviewField>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Questions</CardTitle>
-                  <CardDescription>Selected questions and point overrides.</CardDescription>
+                  <CardTitle>Question Statistics</CardTitle>
+                  <CardDescription>Resume of the selected question set.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {questions.length > 0 ? (
-                    <div className="overflow-hidden rounded-lg border border-border/60">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-12">
-                              #
-                            </TableHead>
-                            <TableHead className="min-w-[22rem]">
-                              Question
-                            </TableHead>
-                            <TableHead>
-                              Topic
-                            </TableHead>
-                            <TableHead>
-                              Type
-                            </TableHead>
-                            <TableHead>
-                              Difficulty
-                            </TableHead>
-                            <TableHead className="text-right">
-                              Point
-                            </TableHead>
-                            <TableHead className="text-right">
-                              Year
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {questions.map((question, questionIndex) => {
-                            const selectedQuestion = lookups.questions.find(
-                              (item) => String(item.id) === question.questionId,
-                            )
-                            const questionBadge = selectedQuestion
-                              ? getModelEnumBadgeMeta("questionType", selectedQuestion.type)
-                              : null
-                            const difficultyBadge = selectedQuestion
-                              ? getModelEnumBadgeMeta("questionDifficulty", selectedQuestion.difficulty)
-                              : null
-
-                            return (
-                              <TableRow key={`review-${question.questionId}-${questionIndex}`}>
-                                <TableCell className="tabular-nums text-muted-foreground">
-                                  {questionIndex + 1}
-                                </TableCell>
-                                <TableCell className="whitespace-normal">
-                                  <div className="flex min-w-[22rem] max-w-[36rem] flex-col gap-1">
-                                    <span className="font-medium">
-                                      {selectedQuestion
-                                        ? previewText(selectedQuestion.title, `Question ${selectedQuestion.id}`)
-                                        : `Question ${question.questionId || "-"}`}
-                                    </span>
-                                    <span className="line-clamp-2 text-sm text-muted-foreground">
-                                      {selectedQuestion
-                                        ? previewText(selectedQuestion.content)
-                                        : "This question is no longer available in the lookup."}
-                                    </span>
-                                  </div>
-                                </TableCell>
-                                <TableCell>{selectedQuestion?.topicName ?? "-"}</TableCell>
-                                <TableCell>
-                                  {questionBadge ? (
-                                    <Badge variant="soft" className={questionBadge.className}>
-                                      {questionBadge.label}
-                                    </Badge>
-                                  ) : (
-                                    <span className="text-sm text-muted-foreground">-</span>
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  {difficultyBadge ? (
-                                    <Badge variant="soft" className={difficultyBadge.className}>
-                                      {difficultyBadge.label}
-                                    </Badge>
-                                  ) : (
-                                    <span className="text-sm text-muted-foreground">-</span>
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-right tabular-nums">
-                                  {formatReviewText(question.points)}
-                                </TableCell>
-                                <TableCell className="text-right tabular-nums text-muted-foreground">
-                                  {selectedQuestion?.year ?? "-"}
-                                </TableCell>
-                              </TableRow>
-                            )
-                          })}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  ) : (
-                    <div className="rounded-lg border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
-                      No questions added to this practice.
-                    </div>
-                  )}
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <ReviewField label="Question types" className="sm:col-span-2">
+                      {questionStats.typeSummary}
+                    </ReviewField>
+                    <ReviewField label="Difficulty" className="sm:col-span-2">
+                      {questionStats.difficultySummary}
+                    </ReviewField>
+                    <ReviewField label="Topics">
+                      <span className="tabular-nums">{questionStats.topicCount}</span>
+                    </ReviewField>
+                    <ReviewField label="Topic spread" className="sm:col-span-2">
+                      {questionStats.topicSummary}
+                    </ReviewField>
+                    <ReviewField label="Missing lookup">
+                      <span className="tabular-nums">{questionStats.missingLookupCount}</span>
+                    </ReviewField>
+                  </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Final Action</CardTitle>
-                  <CardDescription>Save this practice as draft or publish it now.</CardDescription>
-                </CardHeader>
+              <div className="flex flex-col gap-3 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
                 {rootError ? (
-                  <CardContent>
-                    <p className="text-sm text-destructive" aria-live="polite">
-                      {rootError}
-                    </p>
-                  </CardContent>
-                ) : null}
-                <CardFooter className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                  <p className="text-sm text-destructive" aria-live="polite">
+                    {rootError}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Save this practice as draft or publish it now.
+                  </p>
+                )}
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
                   <Button type="button" variant="outline" asChild>
                     <Link href={backHref}>
                       <ArrowLeftIcon data-icon="inline-start" />
@@ -1160,8 +1149,8 @@ export function PracticeFormPage({
                       </Button>
                     </>
                   ) : null}
-                </CardFooter>
-              </Card>
+                </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

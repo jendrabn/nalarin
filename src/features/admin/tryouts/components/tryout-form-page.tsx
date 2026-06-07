@@ -35,7 +35,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -50,7 +49,6 @@ import {
   FieldLegend,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import {
@@ -213,6 +211,21 @@ function formatReviewText(value: string | null | undefined, fallback = "-") {
   return trimmed ? trimmed : fallback
 }
 
+function formatReviewMinutes(value: string | null | undefined) {
+  const text = formatReviewText(value)
+  return text === "-" ? text : `${text} minutes`
+}
+
+function formatCountMap(counts: Map<string, number>) {
+  if (counts.size === 0) {
+    return "-"
+  }
+
+  return Array.from(counts)
+    .map(([label, count]) => `${label}: ${count}`)
+    .join(", ")
+}
+
 function getEnabledLabel(value: boolean | null | undefined) {
   return value ? "Enabled" : "Disabled"
 }
@@ -250,11 +263,19 @@ function getStepForErrors(errors: FieldErrors<TryoutFormValues>): WizardStep {
   return "sections"
 }
 
-function ReviewField({ label, children }: { label: string; children: ReactNode }) {
+function ReviewField({
+  label,
+  children,
+  className,
+}: {
+  label: string
+  children: ReactNode
+  className?: string
+}) {
   return (
-    <div className="flex flex-col gap-1 rounded-lg border border-border/60 p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <div className="text-sm font-medium sm:text-right">{children}</div>
+    <div className={cn("rounded-lg border border-border/60 bg-muted/20 p-3", className)}>
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <div className="mt-1 break-words text-sm font-medium">{children}</div>
     </div>
   )
 }
@@ -291,7 +312,8 @@ export function TryoutFormPage({
 
   const watchedValues = useWatch({ control: form.control }) as TryoutFormValues
   const watchedExamTypeId = watchedValues.examTypeId ?? ""
-  const sections = watchedValues.sections ?? []
+  const watchedSections = watchedValues.sections
+  const sections = useMemo(() => watchedSections ?? [], [watchedSections])
   const rootError = form.formState.errors.root?.message
   const totalQuestions = sections.reduce(
     (total, section) => total + (section.questions?.length ?? 0),
@@ -301,6 +323,52 @@ export function TryoutFormPage({
     const duration = Number(section.durationMinutes || 0)
     return total + (Number.isFinite(duration) ? duration : 0)
   }, 0)
+  const questionStats = useMemo(() => {
+    const lookupById = new Map(lookups.questions.map((question) => [String(question.id), question]))
+    const typeCounts = new Map<string, number>()
+    const difficultyCounts = new Map<string, number>()
+    let missingLookupCount = 0
+    let totalPoints = 0
+    let pointsCount = 0
+
+    sections.forEach((section) => {
+      section.questions.forEach((question) => {
+        const points = Number(question.points || 0)
+
+        if (Number.isFinite(points)) {
+          totalPoints += points
+          pointsCount += 1
+        }
+
+        const selectedQuestion = lookupById.get(question.questionId)
+
+        if (!selectedQuestion) {
+          missingLookupCount += 1
+          return
+        }
+
+        const questionType = getModelEnumBadgeMeta("questionType", selectedQuestion.type).label
+        const questionDifficulty = getModelEnumBadgeMeta(
+          "questionDifficulty",
+          selectedQuestion.difficulty,
+        ).label
+
+        typeCounts.set(questionType, (typeCounts.get(questionType) ?? 0) + 1)
+        difficultyCounts.set(
+          questionDifficulty,
+          (difficultyCounts.get(questionDifficulty) ?? 0) + 1,
+        )
+      })
+    })
+
+    return {
+      averagePoints: pointsCount > 0 ? totalPoints / pointsCount : 0,
+      difficultySummary: formatCountMap(difficultyCounts),
+      missingLookupCount,
+      totalPoints,
+      typeSummary: formatCountMap(typeCounts),
+    }
+  }, [lookups.questions, sections])
 
   const selectedExamTypeId = Number(watchedExamTypeId || 0)
   const selectedExamType = lookups.examTypes.find(
@@ -1544,7 +1612,7 @@ export function TryoutFormPage({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <ReviewField label="Sections">
                       <span className="tabular-nums">{sections.length}</span>
                     </ReviewField>
@@ -1553,6 +1621,9 @@ export function TryoutFormPage({
                     </ReviewField>
                     <ReviewField label="Total duration">
                       <span className="tabular-nums">{totalDurationMinutes} minutes</span>
+                    </ReviewField>
+                    <ReviewField label="Access">
+                      {watchedValues.isFree ? "Free" : "Paid"}
                     </ReviewField>
                   </div>
                 </CardContent>
@@ -1564,13 +1635,8 @@ export function TryoutFormPage({
                   <CardDescription>Exam family, access, title, and scoring baseline.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-3 md:grid-cols-2">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     <ReviewField label="Exam type">{selectedExamType?.name ?? "-"}</ReviewField>
-                    <ReviewField label="Access">
-                      <Badge variant={watchedValues.isFree ? "secondary" : "outline"}>
-                        {watchedValues.isFree ? "Free" : "Paid"}
-                      </Badge>
-                    </ReviewField>
                     <ReviewField label="Title">{formatReviewText(watchedValues.title)}</ReviewField>
                     <ReviewField label="Default penalty">
                       <span className="tabular-nums">
@@ -1584,13 +1650,11 @@ export function TryoutFormPage({
                         ]
                       }
                     </ReviewField>
-                    <div className="md:col-span-2">
-                      <ReviewField label="Description">
-                        <span className="whitespace-pre-wrap text-left sm:text-right">
-                          {formatReviewText(watchedValues.description)}
-                        </span>
-                      </ReviewField>
-                    </div>
+                    <ReviewField label="Description" className="sm:col-span-2">
+                      <span className="whitespace-pre-wrap">
+                        {formatReviewText(watchedValues.description)}
+                      </span>
+                    </ReviewField>
                   </div>
                 </CardContent>
               </Card>
@@ -1603,86 +1667,78 @@ export function TryoutFormPage({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-4">
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <ReviewField label="Starts at">
-                        {formatReviewDateTime(watchedValues.startsAt)}
-                      </ReviewField>
-                      <ReviewField label="Ends at">
-                        {formatReviewDateTime(watchedValues.endsAt)}
-                      </ReviewField>
-                      <ReviewField label="Enforce end time">
-                        {getEnabledLabel(watchedValues.enforceEndTime)}
-                      </ReviewField>
-                      <ReviewField label="Navigation mode">
-                        {
-                          tryoutNavigationModeLabels[
-                            (watchedValues.navigationMode ?? "free") as TryoutNavigationMode
-                          ]
-                        }
-                      </ReviewField>
-                    </div>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <ReviewField label="Starts at">
+                      {formatReviewDateTime(watchedValues.startsAt)}
+                    </ReviewField>
+                    <ReviewField label="Ends at">
+                      {formatReviewDateTime(watchedValues.endsAt)}
+                    </ReviewField>
+                    <ReviewField label="Enforce end time">
+                      {getEnabledLabel(watchedValues.enforceEndTime)}
+                    </ReviewField>
+                    <ReviewField label="Navigation mode">
+                      {
+                        tryoutNavigationModeLabels[
+                          (watchedValues.navigationMode ?? "free") as TryoutNavigationMode
+                        ]
+                      }
+                    </ReviewField>
+                    <ReviewField label="Result">
+                      {getEnabledLabel(watchedValues.showResultAfterSubmit)}
+                      <span className="block text-muted-foreground">
+                        {formatReviewDateTime(watchedValues.resultReleaseAt)}
+                      </span>
+                    </ReviewField>
+                    <ReviewField label="Ranking">
+                      {getEnabledLabel(watchedValues.showRankingAfterSubmit)}
+                      <span className="block text-muted-foreground">
+                        {formatReviewDateTime(watchedValues.rankingReleaseAt)}
+                      </span>
+                    </ReviewField>
+                    <ReviewField label="Explanation">
+                      {getEnabledLabel(watchedValues.showExplanationAfterSubmit)}
+                      <span className="block text-muted-foreground">
+                        {formatReviewDateTime(watchedValues.explanationReleaseAt)}
+                      </span>
+                    </ReviewField>
+                    <ReviewField label="Shuffle questions">
+                      {getEnabledLabel(watchedValues.shuffleQuestions)}
+                    </ReviewField>
+                    <ReviewField label="Shuffle options">
+                      {getEnabledLabel(watchedValues.shuffleOptions)}
+                    </ReviewField>
+                    <ReviewField label="Review before submit">
+                      {getEnabledLabel(watchedValues.allowReviewBeforeSubmit)}
+                    </ReviewField>
+                  </div>
+                </CardContent>
+              </Card>
 
-                    <Separator />
-
-                    <div className="grid gap-3 md:grid-cols-3">
-                      <ReviewField label="Result">
-                        <div className="flex flex-col gap-1">
-                          <Badge
-                            variant={
-                              watchedValues.showResultAfterSubmit ? "secondary" : "outline"
-                            }
-                          >
-                            {getEnabledLabel(watchedValues.showResultAfterSubmit)}
-                          </Badge>
-                          <span className="text-muted-foreground">
-                            {formatReviewDateTime(watchedValues.resultReleaseAt)}
-                          </span>
-                        </div>
-                      </ReviewField>
-                      <ReviewField label="Ranking">
-                        <div className="flex flex-col gap-1">
-                          <Badge
-                            variant={
-                              watchedValues.showRankingAfterSubmit ? "secondary" : "outline"
-                            }
-                          >
-                            {getEnabledLabel(watchedValues.showRankingAfterSubmit)}
-                          </Badge>
-                          <span className="text-muted-foreground">
-                            {formatReviewDateTime(watchedValues.rankingReleaseAt)}
-                          </span>
-                        </div>
-                      </ReviewField>
-                      <ReviewField label="Explanation">
-                        <div className="flex flex-col gap-1">
-                          <Badge
-                            variant={
-                              watchedValues.showExplanationAfterSubmit ? "secondary" : "outline"
-                            }
-                          >
-                            {getEnabledLabel(watchedValues.showExplanationAfterSubmit)}
-                          </Badge>
-                          <span className="text-muted-foreground">
-                            {formatReviewDateTime(watchedValues.explanationReleaseAt)}
-                          </span>
-                        </div>
-                      </ReviewField>
-                    </div>
-
-                    <Separator />
-
-                    <div className="grid gap-3 md:grid-cols-3">
-                      <ReviewField label="Shuffle questions">
-                        {getEnabledLabel(watchedValues.shuffleQuestions)}
-                      </ReviewField>
-                      <ReviewField label="Shuffle options">
-                        {getEnabledLabel(watchedValues.shuffleOptions)}
-                      </ReviewField>
-                      <ReviewField label="Review before submit">
-                        {getEnabledLabel(watchedValues.allowReviewBeforeSubmit)}
-                      </ReviewField>
-                    </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Question Statistics</CardTitle>
+                  <CardDescription>Resume of questions across all sections.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <ReviewField label="Total points">
+                      <span className="tabular-nums">{questionStats.totalPoints}</span>
+                    </ReviewField>
+                    <ReviewField label="Average points">
+                      <span className="tabular-nums">
+                        {questionStats.averagePoints.toFixed(2)}
+                      </span>
+                    </ReviewField>
+                    <ReviewField label="Missing lookup">
+                      <span className="tabular-nums">{questionStats.missingLookupCount}</span>
+                    </ReviewField>
+                    <ReviewField label="Question types" className="sm:col-span-2">
+                      {questionStats.typeSummary}
+                    </ReviewField>
+                    <ReviewField label="Difficulty" className="sm:col-span-2">
+                      {questionStats.difficultySummary}
+                    </ReviewField>
                   </div>
                 </CardContent>
               </Card>
@@ -1696,70 +1752,48 @@ export function TryoutFormPage({
                 </CardHeader>
                 <CardContent>
                   {sections.length > 0 ? (
-                    <div className="overflow-hidden rounded-lg border border-border/60">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="min-w-[18rem]">
-                              Section
-                            </TableHead>
-                            <TableHead>
-                              Subject
-                            </TableHead>
-                            <TableHead>
-                              Duration
-                            </TableHead>
-                            <TableHead>
-                              Penalty
-                            </TableHead>
-                            <TableHead className="text-right">
-                              Questions
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {sections.map((section, sectionIndex) => {
-                            const subject = lookups.subjects.find(
-                              (item) => String(item.id) === section.subjectId,
-                            )
-                            const sectionQuestionCount = section.questions?.length ?? 0
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                      {sections.map((section, sectionIndex) => {
+                        const subject = lookups.subjects.find(
+                          (item) => String(item.id) === section.subjectId,
+                        )
+                        const sectionQuestionCount = section.questions?.length ?? 0
 
-                            return (
-                              <TableRow key={`${section.id || "new"}-${sectionIndex}`}>
-                                <TableCell className="whitespace-normal">
-                                  <div className="flex min-w-[18rem] flex-col gap-1">
-                                    <span className="font-medium">
-                                      {formatReviewText(section.title, `Section ${sectionIndex + 1}`)}
-                                    </span>
-                                    <span className="line-clamp-2 text-sm text-muted-foreground">
-                                      {formatReviewText(section.description, "No description")}
-                                    </span>
-                                  </div>
-                                </TableCell>
-                                <TableCell>{subject?.name ?? "-"}</TableCell>
-                                <TableCell>
-                                  <span className="tabular-nums">
-                                    {formatReviewText(section.durationMinutes)} minutes
-                                  </span>
-                                </TableCell>
-                                <TableCell>
-                                  <span className="tabular-nums">
-                                    {formatReviewText(
-                                      section.wrongAnswerPenalty,
-                                      watchedValues.wrongAnswerPenalty || "-",
-                                    )}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <Badge variant="secondary">
-                                    <span className="tabular-nums">{sectionQuestionCount}</span>
-                                  </Badge>
-                                </TableCell>
-                              </TableRow>
-                            )
-                          })}
-                        </TableBody>
-                      </Table>
+                        return (
+                          <div
+                            key={`${section.id || "new"}-${sectionIndex}`}
+                            className="rounded-lg border border-border/60 bg-muted/20 p-3"
+                          >
+                            <div className="mb-3">
+                              <p className="text-sm font-medium">
+                                {formatReviewText(section.title, `Section ${sectionIndex + 1}`)}
+                              </p>
+                              <p className="line-clamp-2 text-xs text-muted-foreground">
+                                {formatReviewText(section.description, "No description")}
+                              </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <span className="text-muted-foreground">Subject</span>
+                              <span className="font-medium">{subject?.name ?? "-"}</span>
+                              <span className="text-muted-foreground">Duration</span>
+                              <span className="font-medium tabular-nums">
+                                {formatReviewMinutes(section.durationMinutes)}
+                              </span>
+                              <span className="text-muted-foreground">Penalty</span>
+                              <span className="font-medium tabular-nums">
+                                {formatReviewText(
+                                  section.wrongAnswerPenalty,
+                                  watchedValues.wrongAnswerPenalty || "-",
+                                )}
+                              </span>
+                              <span className="text-muted-foreground">Questions</span>
+                              <span className="font-medium tabular-nums">
+                                {sectionQuestionCount}
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
                   ) : (
                     <div className="rounded-lg border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
@@ -1769,19 +1803,17 @@ export function TryoutFormPage({
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Final Action</CardTitle>
-                  <CardDescription>Save this tryout as draft or publish it now.</CardDescription>
-                </CardHeader>
+              <div className="flex flex-col gap-3 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
                 {rootError ? (
-                  <CardContent>
-                    <p className="text-sm text-destructive" aria-live="polite">
-                      {rootError}
-                    </p>
-                  </CardContent>
-                ) : null}
-                <CardFooter className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                  <p className="text-sm text-destructive" aria-live="polite">
+                    {rootError}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Save this tryout as draft or publish it now.
+                  </p>
+                )}
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
                   <Button type="button" variant="outline" asChild>
                     <Link href={backHref}>
                       <ArrowLeftIcon data-icon="inline-start" />
@@ -1809,8 +1841,8 @@ export function TryoutFormPage({
                       </Button>
                     </>
                   ) : null}
-                </CardFooter>
-              </Card>
+                </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
