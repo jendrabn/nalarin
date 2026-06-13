@@ -17,7 +17,8 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 
-const EXAM_TYPE_PLACEHOLDER_IMAGE = "/images/placeholders/exam-type-logo.svg"
+const PRICE_DISPLAY_FONT_CLASS =
+  "[font-family:'Bahnschrift_Condensed','Arial_Narrow','Roboto_Condensed','Aptos_Display',sans-serif]"
 
 export type PricingPlanCardAction = {
   label: string
@@ -66,29 +67,35 @@ export function PricingPlanCards({
             tone === "pending" && "pricing-card--pending",
           )}
         >
-          <div className="relative h-36 overflow-hidden bg-sky-100/70 dark:bg-sky-950/30">
+          <div className="relative aspect-video overflow-hidden bg-muted">
             {plan.coverUrl ? (
               <Image
                 src={plan.coverUrl}
                 alt=""
                 fill
                 sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
-                className="object-cover"
+                className="object-cover object-center transition duration-500 group-hover:scale-[1.025] group-hover:saturate-110 group-hover:contrast-105 motion-reduce:transform-none motion-reduce:transition-none"
                 unoptimized
               />
             ) : (
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(255,255,255,0.78),transparent_28%),linear-gradient(135deg,rgba(186,230,253,0.58),rgba(224,242,254,0.36)_52%,rgba(240,249,255,0.62))] dark:bg-[radial-gradient(circle_at_22%_18%,rgba(125,211,252,0.18),transparent_30%),linear-gradient(135deg,rgba(12,74,110,0.36),rgba(8,47,73,0.22)_52%,rgba(15,23,42,0.28))]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(255,255,255,0.55),transparent_28%),linear-gradient(135deg,rgba(186,230,253,0.72),rgba(224,242,254,0.46)_52%,rgba(240,249,255,0.7))] dark:bg-[radial-gradient(circle_at_22%_18%,rgba(125,211,252,0.2),transparent_30%),linear-gradient(135deg,rgba(12,74,110,0.44),rgba(8,47,73,0.28)_52%,rgba(15,23,42,0.36))]" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent" />
-            <div className="absolute left-5 top-5 flex size-16 items-center justify-center rounded-lg border bg-background/90 shadow-lg backdrop-blur">
-              <Image
-                src={plan.logoUrl ?? EXAM_TYPE_PLACEHOLDER_IMAGE}
-                alt={plan.logoUrl ? `${plan.name} logo` : ""}
-                width={56}
-                height={56}
-                className="size-12 object-contain"
-                unoptimized
-              />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.04),transparent_42%,rgba(0,0,0,0.12)),linear-gradient(90deg,rgba(0,0,0,0.16),transparent_32%,transparent_68%,rgba(0,0,0,0.1))]" />
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card/72 via-card/26 to-transparent dark:from-card/78 dark:via-card/28" />
+            <div className="absolute inset-0 ring-1 ring-inset ring-black/10 dark:ring-white/10" />
+            <div className="absolute left-5 top-5 flex size-14 items-center justify-center overflow-hidden rounded-md border border-white/70 bg-white/90 shadow-[0_12px_28px_-18px_rgba(15,23,42,0.8)] backdrop-blur-md dark:border-white/15 dark:bg-slate-950/80">
+              {plan.logoUrl ? (
+                <Image
+                  src={plan.logoUrl}
+                  alt={`${plan.name} logo`}
+                  width={56}
+                  height={56}
+                  className="size-10 object-contain"
+                  unoptimized
+                />
+              ) : (
+                <div className="size-full bg-[radial-gradient(circle_at_28%_22%,rgba(255,255,255,0.68),transparent_32%),linear-gradient(135deg,rgba(186,230,253,0.8),rgba(224,242,254,0.5)_52%,rgba(240,249,255,0.76))] dark:bg-[radial-gradient(circle_at_28%_22%,rgba(125,211,252,0.22),transparent_34%),linear-gradient(135deg,rgba(12,74,110,0.48),rgba(8,47,73,0.3)_52%,rgba(15,23,42,0.42))]" />
+              )}
             </div>
           </div>
 
@@ -112,7 +119,12 @@ export function PricingPlanCards({
                 {plan.durationMonths} bulan
               </p>
               <div className="flex flex-col gap-1">
-                <p className="text-3xl font-bold tracking-normal">
+                <p
+                  className={cn(
+                    PRICE_DISPLAY_FONT_CLASS,
+                    "text-[2.25rem] font-bold leading-none tracking-[0.025em] text-foreground sm:text-[2.45rem]",
+                  )}
+                >
                   {formatCurrencyIDR(plan.finalPrice)}
                 </p>
                 {plan.discountPercent > 0 ? (
@@ -120,7 +132,12 @@ export function PricingPlanCards({
                     <span className="font-semibold text-amber-700 dark:text-amber-300">
                       Diskon {plan.discountPercent}%
                     </span>
-                    <span className="whitespace-nowrap text-muted-foreground line-through">
+                    <span
+                      className={cn(
+                        PRICE_DISPLAY_FONT_CLASS,
+                        "whitespace-nowrap text-base font-normal tracking-[0.025em] text-muted-foreground line-through",
+                      )}
+                    >
                       {formatCurrencyIDR(plan.price)}
                     </span>
                   </div>
