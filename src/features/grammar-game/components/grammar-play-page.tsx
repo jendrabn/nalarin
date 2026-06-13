@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useRef, useState, type DragEvent } from "react"
+import { useRouter } from "next/navigation"
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react"
 import {
   ArrowLeftIcon,
   CheckIcon,
@@ -39,6 +40,14 @@ type BoardState = {
 
 const advanceQuestionDelayMs = 2000
 
+function createClientSessionKey() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID()
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
 export function GrammarPlayPage({ session }: GrammarPlayPageProps) {
   return <GrammarGameStage session={session} />
 }
@@ -60,10 +69,11 @@ function GrammarGameStage({ session }: { session: GrammarGameSession }) {
     )
   }
 
-  return <GrammarGamePlayer session={session} />
+  return <GrammarGamePlayer key={session.sessionId} session={session} />
 }
 
 function GrammarGamePlayer({ session }: { session: GrammarGameSession }) {
+  const router = useRouter()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [board, setBoard] = useState<BoardState>(() => createBoardState(session.questions[0]))
   const [selectedChipId, setSelectedChipId] = useState<string | null>(null)
@@ -96,10 +106,6 @@ function GrammarGamePlayer({ session }: { session: GrammarGameSession }) {
     () => `/grammar?${buildGrammarGameSearchParams(session.config)}`,
     [session.config],
   )
-  const restartHref = useMemo(
-    () => `/grammar/play?${buildGrammarGameSearchParams(session.config)}`,
-    [session.config],
-  )
   const sortAvailableChips = (chips: GrammarGameChip[]) =>
     [...chips].sort(
       (first, second) =>
@@ -107,19 +113,40 @@ function GrammarGamePlayer({ session }: { session: GrammarGameSession }) {
         (chipToneIndexById.get(second.id) ?? Number.MAX_SAFE_INTEGER),
     )
 
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        window.clearTimeout(timeoutRef.current)
-      }
-    }
-  }, [])
-
-  const clearActiveTimer = () => {
+  const clearActiveTimer = useCallback(() => {
     if (timeoutRef.current) {
       window.clearTimeout(timeoutRef.current)
       timeoutRef.current = null
     }
+  }, [])
+
+  const resetGameState = useCallback(() => {
+    clearActiveTimer()
+    setCurrentIndex(0)
+    setBoard(createBoardState(session.questions[0]))
+    setSelectedChipId(null)
+    setHoverBlankOrder(null)
+    setHoverPool(false)
+    setFeedback(null)
+    setIsLocked(false)
+    setIsSubmitting(false)
+    setCorrectBlankCount(0)
+    setWrongBlankCount(0)
+    setCompletedQuestions(0)
+  }, [clearActiveTimer, session.questions])
+
+  useEffect(() => {
+    return () => {
+      clearActiveTimer()
+    }
+  }, [clearActiveTimer])
+
+  const handlePlayAgain = () => {
+    resetGameState()
+    router.replace(
+      `/grammar/play?${buildGrammarGameSearchParams(session.config, createClientSessionKey())}`,
+      { scroll: false },
+    )
   }
 
   const advanceQuestion = () => {
@@ -299,11 +326,11 @@ function GrammarGamePlayer({ session }: { session: GrammarGameSession }) {
     return (
       <GrammarGameResult
         configHref={configHref}
-        restartHref={restartHref}
         totalQuestions={session.totalQuestions}
         correctBlankCount={correctBlankCount}
         wrongBlankCount={wrongBlankCount}
         accuracy={accuracy}
+        onPlayAgain={handlePlayAgain}
       />
     )
   }
@@ -644,18 +671,18 @@ function BlankSlot({
 
 function GrammarGameResult({
   configHref,
-  restartHref,
   totalQuestions,
   correctBlankCount,
   wrongBlankCount,
   accuracy,
+  onPlayAgain,
 }: {
   configHref: string
-  restartHref: string
   totalQuestions: number
   correctBlankCount: number
   wrongBlankCount: number
   accuracy: number
+  onPlayAgain: () => void
 }) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-xl items-center px-4 py-6 sm:px-6 lg:px-8">
@@ -682,11 +709,14 @@ function GrammarGameResult({
             </div>
 
             <div className="grid gap-2 sm:grid-cols-2">
-              <Button asChild size="lg" className="h-11 w-full rounded-full">
-                <Link href={restartHref}>
-                  <RotateCcwIcon data-icon="inline-start" />
-                  Main Lagi
-                </Link>
+              <Button
+                type="button"
+                size="lg"
+                className="h-11 w-full rounded-full"
+                onClick={onPlayAgain}
+              >
+                <RotateCcwIcon data-icon="inline-start" />
+                Main Lagi
               </Button>
               <Button asChild variant="outline" size="lg" className="h-11 w-full rounded-full">
                 <Link href={configHref}>

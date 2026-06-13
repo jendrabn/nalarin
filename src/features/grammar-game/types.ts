@@ -36,6 +36,7 @@ export type GrammarGameQuestion = {
 }
 
 export type GrammarGameSession = {
+  sessionId: string
   config: GrammarGameConfig
   availableCount: number
   requestedCount: number
@@ -65,4 +66,3 @@ export type GrammarQuestionSubmissionResult = {
   correctCount: number
   totalCount: number
 }
-

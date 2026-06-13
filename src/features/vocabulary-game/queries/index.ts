@@ -3,10 +3,12 @@ import "server-only"
 import { desc, eq, sql } from "drizzle-orm"
 
 import { db, schema } from "@/db"
-
 import {
-  shuffleArray,
-} from "../utils"
+  createServerSessionId,
+  randomBoolean,
+  shuffleWithSecureRandom,
+} from "@/lib/server-random"
+
 import type {
   VocabularyGameConfig,
   VocabularyGameQuestion,
@@ -45,9 +47,7 @@ function getQuestionDedupeKey(row: VocabularyRow) {
   return [
     row.word.trim().toLowerCase(),
     row.language,
-    row.difficulty,
     row.type,
-    row.correctMeaning.trim().toLowerCase(),
   ].join("|")
 }
 
@@ -63,7 +63,7 @@ function buildGameQuestion(row: VocabularyRow): VocabularyGameQuestion | null {
     return null
   }
 
-  const correctSide = Math.random() < 0.5 ? "left" : "right"
+  const correctSide = randomBoolean() ? "left" : "right"
 
   return {
     vocabularyId: row.id,
@@ -101,15 +101,18 @@ export async function getVocabularyGameSession(
 
   const filteredRows = rows.filter((row) => matchesConfig(row, config))
   const uniqueRows = Array.from(
-    new Map(filteredRows.map((row) => [getQuestionDedupeKey(row), row])).values(),
+    new Map(
+      shuffleWithSecureRandom(filteredRows).map((row) => [getQuestionDedupeKey(row), row]),
+    ).values(),
   )
-  const shuffledRows = shuffleArray(uniqueRows)
+  const shuffledRows = shuffleWithSecureRandom(uniqueRows)
   const selectedRows = shuffledRows.slice(0, Math.min(config.count, shuffledRows.length))
   const questions = selectedRows
     .map(buildGameQuestion)
     .filter((question): question is VocabularyGameQuestion => question !== null)
 
   return {
+    sessionId: createServerSessionId(),
     config,
     availableCount: filteredRows.length,
     requestedCount: config.count,

@@ -3,9 +3,9 @@ import "server-only"
 import { desc, eq } from "drizzle-orm"
 
 import { db, schema } from "@/db"
+import { createServerSessionId, shuffleWithSecureRandom } from "@/lib/server-random"
 
 import {
-  shuffleArray,
   normalizeGrammarText,
   parseGrammarSentenceTemplate,
 } from "../utils"
@@ -47,12 +47,7 @@ function matchesConfig(row: GrammarQuestionRow, config: GrammarGameConfig) {
 }
 
 function getGrammarQuestionDedupeKey(row: GrammarQuestionRow) {
-  return [
-    row.sentenceTemplate.trim().toLowerCase(),
-    row.language,
-    row.difficulty,
-    normalizeGrammarText(row.category ?? ""),
-  ].join("|")
+  return normalizeGrammarText(row.sentenceTemplate)
 }
 
 function buildChips(row: GrammarQuestionRow): GrammarGameChip[] {
@@ -70,7 +65,7 @@ function buildChips(row: GrammarQuestionRow): GrammarGameChip[] {
     }))
     .filter((chip) => chip.text.length > 0)
 
-  return shuffleArray([...answerChips, ...distractorChips])
+  return shuffleWithSecureRandom([...answerChips, ...distractorChips])
 }
 
 function buildGameQuestion(row: GrammarQuestionRow): GrammarGameQuestion | null {
@@ -145,15 +140,21 @@ export async function getGrammarGameSession(
 
   const filteredRows = rows.filter((row) => matchesConfig(row, config))
   const uniqueRows = Array.from(
-    new Map(filteredRows.map((row) => [getGrammarQuestionDedupeKey(row), row])).values(),
+    new Map(
+      shuffleWithSecureRandom(filteredRows).map((row) => [
+        getGrammarQuestionDedupeKey(row),
+        row,
+      ]),
+    ).values(),
   )
-  const shuffledRows = shuffleArray(uniqueRows)
+  const shuffledRows = shuffleWithSecureRandom(uniqueRows)
   const selectedRows = shuffledRows.slice(0, Math.min(config.count, shuffledRows.length))
   const questions = selectedRows
     .map(buildGameQuestion)
     .filter((question): question is GrammarGameQuestion => question !== null)
 
   return {
+    sessionId: createServerSessionId(),
     config,
     availableCount: filteredRows.length,
     requestedCount: config.count,

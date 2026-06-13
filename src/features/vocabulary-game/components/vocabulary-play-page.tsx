@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import type { PointerEvent } from "react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   ArrowLeftIcon,
   CheckIcon,
@@ -46,6 +47,14 @@ const advanceQuestionDelayMs = 1000
 const maxSwipeDistanceRatio = 0.75
 const maxSwipeDistancePx = 300
 
+function createClientSessionKey() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID()
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
 export function VocabularyPlayPage({ session }: VocabularyPlayPageProps) {
   return <VocabularyGameStage session={session} />
 }
@@ -67,10 +76,11 @@ function VocabularyGameStage({ session }: { session: VocabularyGameSession }) {
     )
   }
 
-  return <VocabularyGamePlayer session={session} />
+  return <VocabularyGamePlayer key={session.sessionId} session={session} />
 }
 
 function VocabularyGamePlayer({ session }: { session: VocabularyGameSession }) {
+  const router = useRouter()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [dragState, setDragState] = useState<DragState>({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -80,7 +90,6 @@ function VocabularyGamePlayer({ session }: { session: VocabularyGameSession }) {
   const [correctCount, setCorrectCount] = useState(0)
   const [wrongCount, setWrongCount] = useState(0)
   const [showExampleSentence, setShowExampleSentence] = useState(false)
-  const [sessionKey] = useState(() => String(Date.now()))
   const pointerRef = useRef<{
     pointerId: number | null
     startX: number
@@ -100,28 +109,44 @@ function VocabularyGamePlayer({ session }: { session: VocabularyGameSession }) {
   const progressPercent =
     session.totalQuestions === 0 ? 0 : Math.min((answeredCount / session.totalQuestions) * 100, 100)
   const finished = currentIndex >= session.totalQuestions || activeQuestion === null
-  const restartHref = useMemo(
-    () => `/vocabulary/play?${buildVocabularyGameSearchParams(session.config, sessionKey)}`,
-    [session.config, sessionKey],
-  )
   const configHref = useMemo(
     () => `/vocabulary?${buildVocabularyGameSearchParams(session.config)}`,
     [session.config],
   )
 
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        window.clearTimeout(timeoutRef.current)
-      }
-    }
-  }, [])
-
-  const clearActiveTimer = () => {
+  const clearActiveTimer = useCallback(() => {
     if (timeoutRef.current) {
       window.clearTimeout(timeoutRef.current)
       timeoutRef.current = null
     }
+  }, [])
+
+  const resetGameState = useCallback(() => {
+    clearActiveTimer()
+    pointerRef.current.pointerId = null
+    setCurrentIndex(0)
+    setDragState({ x: 0, y: 0 })
+    setIsDragging(false)
+    setIsLocked(false)
+    setFeedback(null)
+    setAnswers([])
+    setCorrectCount(0)
+    setWrongCount(0)
+    setShowExampleSentence(false)
+  }, [clearActiveTimer])
+
+  useEffect(() => {
+    return () => {
+      clearActiveTimer()
+    }
+  }, [clearActiveTimer])
+
+  const handlePlayAgain = () => {
+    resetGameState()
+    router.replace(
+      `/vocabulary/play?${buildVocabularyGameSearchParams(session.config, createClientSessionKey())}`,
+      { scroll: false },
+    )
   }
 
   const advanceQuestion = () => {
@@ -262,11 +287,14 @@ function VocabularyGamePlayer({ session }: { session: VocabularyGameSession }) {
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2">
-                <Button asChild size="lg" className="h-11 w-full rounded-full">
-                  <Link href={restartHref}>
-                    <RotateCcwIcon data-icon="inline-start" />
-                    Main Lagi
-                  </Link>
+                <Button
+                  type="button"
+                  size="lg"
+                  className="h-11 w-full rounded-full"
+                  onClick={handlePlayAgain}
+                >
+                  <RotateCcwIcon data-icon="inline-start" />
+                  Main Lagi
                 </Button>
                 <Button asChild variant="outline" size="lg" className="h-11 w-full rounded-full">
                   <Link href={configHref}>

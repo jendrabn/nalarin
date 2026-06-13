@@ -26,6 +26,7 @@ export type VocabularyGameQuestion = {
 }
 
 export type VocabularyGameSession = {
+  sessionId: string
   config: VocabularyGameConfig
   availableCount: number
   requestedCount: number

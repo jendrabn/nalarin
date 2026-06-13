@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { connection } from "next/server"
 
 import { buildSeoMetadata } from "@/lib/seo"
 
@@ -12,6 +13,7 @@ type VocabularyPlayPageProps = {
     difficulty?: string | string[]
     type?: string | string[]
     count?: string | string[]
+    session?: string | string[]
   }>
 }
 
@@ -24,6 +26,8 @@ export const metadata: Metadata = buildSeoMetadata({
 })
 
 export default async function Page({ searchParams }: VocabularyPlayPageProps) {
+  await connection()
+
   const query = await (searchParams ?? Promise.resolve({}))
 
   const session = await getVocabularyGameSession(parseVocabularyGameConfig(query))

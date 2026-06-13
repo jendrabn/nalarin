@@ -78,12 +78,17 @@ export function buildGrammarGameSearchParams(
     category: string
     count: number
   },
+  session?: string,
 ) {
   const params = new URLSearchParams()
   params.set("language", config.language)
   params.set("difficulty", config.difficulty)
   params.set("category", config.category)
   params.set("count", String(config.count))
+
+  if (session) {
+    params.set("session", session)
+  }
 
   return params.toString()
 }
@@ -196,4 +201,3 @@ export function parseGrammarSentenceTemplate(template: string): {
     errors,
   }
 }
-
